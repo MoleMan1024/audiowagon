@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+SPDX-FileCopyrightText: 2021 MoleMan1024 <moleman1024dev@gmail.com>
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+		xmlns:app="http://schemas.android.com/apk/res-auto"
+		android:id="@+id/legal_disclaimer_activity"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		android:orientation="vertical">
+
+	<com.google.android.material.appbar.AppBarLayout
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content">
+
+		<androidx.appcompat.widget.Toolbar
+				style="@style/MyToolbar"
+				android:id="@+id/legalDisclaimerToolbar"
+				android:layout_width="match_parent"
+				android:layout_height="?attr/actionBarSize"
+				android:background="?attr/colorPrimary" />
+	</com.google.android.material.appbar.AppBarLayout>
+
+	<ScrollView
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content">
+
+		<androidx.constraintlayout.widget.ConstraintLayout
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				app:layout_constraintStart_toStartOf="parent"
+				app:layout_constraintEnd_toEndOf="parent"
+				app:layout_constraintTop_toBottomOf="parent"
+				android:layout_marginTop="16dp"
+				android:paddingHorizontal="32dp"
+				android:paddingVertical="16dp">
+
+			<TextView
+					android:text="@string/legal_disclaimer_distraction_heading"
+					android:layout_width="wrap_content"
+					android:layout_height="wrap_content"
+					android:id="@+id/legalDisclaimerDistractionHeading"
+					android:textSize="@dimen/car_headline2_size"
+					app:layout_constraintStart_toStartOf="parent"
+					app:layout_constraintTop_toTopOf="parent"
+					android:textStyle="bold" />
+
+			<TextView
+					android:text="@string/legal_disclaimer_distraction_text"
+					android:layout_width="wrap_content"
+					android:layout_height="wrap_content"
+					android:id="@+id/legalDisclaimerDistractionText"
+					android:textSize="@dimen/car_body2_size"
+					android:paddingBottom="32dp"
+					app:layout_constraintStart_toStartOf="parent"
+					app:layout_constraintTop_toBottomOf="@+id/legalDisclaimerDistractionHeading" />
+
+			<TextView
+					android:text="@string/legal_disclaimer_liability_heading"
+					android:layout_width="wrap_content"
+					android:layout_height="wrap_content"
+					android:id="@+id/legalDisclaimerLiabilityHeading"
+					android:textSize="@dimen/car_headline2_size"
+					app:layout_constraintStart_toStartOf="parent"
+					app:layout_constraintTop_toBottomOf="@+id/legalDisclaimerDistractionText"
+					android:textStyle="bold" />
+
+			<TextView
+					android:text="@string/legal_disclaimer_liability_text"
+					android:layout_width="wrap_content"
+					android:layout_height="wrap_content"
+					android:id="@+id/legalDisclaimerLiabilityText"
+					android:textSize="@dimen/car_body2_size"
+					android:paddingBottom="32dp"
+					app:layout_constraintStart_toStartOf="parent"
+					app:layout_constraintTop_toBottomOf="@+id/legalDisclaimerLiabilityHeading" />
+
+			<TextView
+					android:text="@string/legal_disclaimer_license_heading"
+					android:layout_width="wrap_content"
+					android:layout_height="wrap_content"
+					android:id="@+id/legalDisclaimerLicenseHeading"
+					android:textSize="@dimen/car_headline2_size"
+					app:layout_constraintStart_toStartOf="parent"
+					app:layout_constraintTop_toBottomOf="@+id/legalDisclaimerLiabilityText"
+					android:textStyle="bold" />
+
+			<TextView
+					android:text="@string/legal_disclaimer_license_text"
+					android:layout_width="wrap_content"
+					android:layout_height="wrap_content"
+					android:id="@+id/legalDisclaimerLicenseText"
+					android:textSize="@dimen/car_body2_size"
+					android:paddingBottom="32dp"
+					app:layout_constraintStart_toStartOf="parent"
+					app:layout_constraintTop_toBottomOf="@+id/legalDisclaimerLicenseHeading" />
+
+			<TextView
+					android:text="@string/legal_disclaimer_third_party_licenses_heading"
+					android:layout_width="wrap_content"
+					android:layout_height="wrap_content"
+					android:id="@+id/legalDisclaimer3rdPartyLicenseHeading"
+					android:textSize="@dimen/car_headline2_size"
+					app:layout_constraintStart_toStartOf="parent"
+					app:layout_constraintTop_toBottomOf="@+id/legalDisclaimerLicenseText"
+					android:textStyle="bold" />
+
+			<TextView
+					android:text="@string/legal_disclaimer_third_party_licenses_text"
+					android:layout_width="wrap_content"
+					android:layout_height="wrap_content"
+					android:id="@+id/legalDisclaimer3rdPartyLicenseText"
+					android:textSize="@dimen/car_body2_size"
+					android:paddingBottom="32dp"
+					app:layout_constraintStart_toStartOf="parent"
+					app:layout_constraintTop_toBottomOf="@+id/legalDisclaimer3rdPartyLicenseHeading" />
+
+			<LinearLayout
+					android:orientation="horizontal"
+					android:layout_height="140dp"
+					android:layout_width="wrap_content"
+					android:layout_marginTop="32dp"
+					app:layout_constraintTop_toBottomOf="@id/legalDisclaimer3rdPartyLicenseText"
+					app:layout_constraintStart_toStartOf="parent"
+					app:layout_constraintEnd_toEndOf="parent">
+
+				<Button
+						android:text="@string/legal_disclaimer_cancel_btn"
+						android:layout_width="wrap_content"
+						android:layout_height="wrap_content"
+						android:id="@+id/legalDisclaimerCancelBtn"
+						android:layout_marginEnd="64dp"
+						style="?android:attr/buttonBarButtonStyle" />
+
+				<Button
+						android:text="@string/legal_disclaimer_confirm_btn"
+						android:layout_width="wrap_content"
+						android:layout_height="wrap_content"
+						android:id="@+id/legalDisclaimerAgreeBtn"
+						android:layout_marginLeft="64dp"
+						style="?android:attr/buttonBarButtonStyle" />
+			</LinearLayout>
+		</androidx.constraintlayout.widget.ConstraintLayout>
+
+	</ScrollView>
+
+</LinearLayout>

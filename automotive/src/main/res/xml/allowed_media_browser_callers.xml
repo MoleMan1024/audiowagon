@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- taken from
+https://github.com/android/uamp/blob/main/common/src/main/res/xml/allowed_media_browser_callers.xml
+and modified -->
+<!--
+Copyright (C) 2018 The Android Open Source Project
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<!--
+
+Format (v2):
+
+  The format for allowed callers is as follows:
+
+  <signature name="App Name" package="app.package.name">
+     <key release="true">...sha-256 hash...</key>
+     ...
+  </signature>
+
+  Where:
+  - 'name' is a friendly name for the app; this is only used for documentation purposes and is
+    otherwise ignored.
+  - 'package' is the package name of the app to allow.
+
+  There can be multiple keys for each app included. The value of 'release' must be 'true' or
+  'false', but it also only for documentation. The value inside the 'key' tag is the SHA-256
+  hash of the public key of the signing certificate for the app.
+
+Adding New Keys:
+
+  If you want to add a new signature to allowed_callers and you don't know its signature,
+  PackageValidator will print the caller's package name and signature to logcat (INFO level).
+
+  Spaces and newlines are ignored.
+-->
+<allowed_callers>
+    <!-- https://developer.android.com/guide/topics/media-apps/interacting-with-assistant#signatures -->
+    <signature
+            name="Google"
+            package="com.google.android.googlequicksearchbox">
+        <key release="false">
+            19:75:b2:f1:71:77:bc:89:a5:df:f3:1f:9e:64:a6:ca:e2:81:a5:3d:c1:d1:d5:9b:1d:14:7f:e1:c8:2a:fa:00
+        </key>
+        <key release="true">
+            f0:fd:6c:5b:41:0f:25:cb:25:c3:b5:33:46:c8:97:2f:ae:30:f8:ee:74:11:df:91:04:80:ad:6b:2d:60:db:83
+        </key>
+    </signature>
+
+    <signature
+            name="Google Assistant on Android Automotive OS"
+            package="com.google.android.carassistant">
+        <key release="false">
+            17:E2:81:11:06:2F:97:A8:60:79:7A:83:70:5B:F8:2C:7C:C0:29:35:56:6D:46:22:BC:4E:CF:EE:1B:EB:F8:15
+        </key>
+        <key release="true">
+            74:B6:FB:F7:10:E8:D9:0D:44:D3:40:12:58:89:B4:23:06:A6:2C:43:79:D0:E5:A6:62:20:E3:A6:8A:BF:90:E2
+        </key>
+    </signature>
+
+    <signature
+            name="Google Media Controller Test app"
+            package="com.example.android.mediacontroller">
+        <key release="false">
+            07:ee:6e:59:6e:80:e3:e7:81:9f:7c:fa:4b:98:3e:a7:50:da:e8:55:9f:27:fe:58:ed:c1:a7:76:a6:d2:15:41
+        </key>
+    </signature>
+</allowed_callers>
+

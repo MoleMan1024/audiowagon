@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+SPDX-FileCopyrightText: 2021 MoleMan1024 <moleman1024dev@gmail.com>
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+		xmlns:dist="http://schemas.android.com/apk/distribution"
+		xmlns:tools="http://schemas.android.com/tools"
+		package="de.moleman1024.audiowagon">
+
+	<uses-permission android:name="android.permission.WAKE_LOCK" />
+	<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+
+	<uses-feature
+			android:name="android.hardware.type.automotive"
+			android:required="true" />
+	<uses-feature
+			android:name="android.hardware.wifi"
+			android:required="false" />
+	<uses-feature
+			android:name="android.hardware.screen.portrait"
+			android:required="false" />
+	<uses-feature
+			android:name="android.hardware.screen.landscape"
+			android:required="false" />
+	<uses-feature
+			android:name="android.hardware.usb.host"
+			android:required="true" />
+
+	<queries>
+		<intent>
+			<action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
+		</intent>
+	</queries>
+
+	<application
+			android:allowBackup="false"
+			android:appCategory="audio"
+			android:icon="@mipmap/ic_launcher"
+			android:label="@string/app_name"
+			android:supportsRtl="false"
+			android:testOnly="false"
+			android:directBootAware="true"
+			android:requestLegacyExternalStorage="${requestLegacyExternalStorage}"
+			android:theme="@style/AppTheme">
+		<meta-data
+				android:name="com.android.automotive"
+				android:resource="@xml/automotive_app_desc" />
+		<dist:module dist:instant="true" />
+
+		<activity
+				android:name=".activities.LegalDisclaimerActivity"
+				android:label="@string/legal_disclaimer_title"
+				android:theme="@style/AppTheme" />
+
+		<activity
+				android:name=".activities.SettingsActivity"
+				android:exported="true"
+				android:label="@string/settings_title"
+				android:theme="@style/AppTheme">
+			<intent-filter>
+				<action android:name="android.intent.action.APPLICATION_PREFERENCES" />
+			</intent-filter>
+		</activity>
+
+		<!-- FIXME: does not seem to work on AAOS in Polestar 2, works fine on Pixel 3 with AAOS. Setting
+ 	 		   distractionOptimized=true does not help either (also Play store automatic review does not like it when I
+ 	 		   set that) -->
+		<activity
+				android:name=".activities.USBDummyActivity"
+				android:noHistory="true"
+				android:excludeFromRecents="true"
+				android:directBootAware="true"
+				android:exported="true"
+				android:label="@string/app_name"
+				android:theme="@style/TransparentTheme">
+			<intent-filter>
+				<action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
+			</intent-filter>
+			<meta-data
+					android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"
+					android:resource="@xml/device_filter" />
+		</activity>
+
+		<service
+				android:name=".AudioBrowserService"
+				android:enabled="true"
+				android:exported="true"
+				android:foregroundServiceType="mediaPlayback"
+				android:label="@string/app_name"
+				tools:ignore="ExportedService">
+			<intent-filter>
+				<action android:name="android.media.browse.MediaBrowserService" />
+				<action android:name="android.intent.action.MEDIA_BUTTON" />
+			</intent-filter>
+		</service>
+		<receiver android:name="androidx.media.session.MediaButtonReceiver">
+			<intent-filter>
+				<action android:name="android.intent.action.MEDIA_BUTTON" />
+			</intent-filter>
+		</receiver>
+		<provider
+				android:name=".AlbumArtContentProvider"
+				android:authorities="de.moleman1024.audiowagon"
+				android:exported="true"
+				tools:ignore="ExportedContentProvider" />
+	</application>
+</manifest>

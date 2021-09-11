@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+SPDX-FileCopyrightText: 2021 MoleMan1024 <moleman1024dev@gmail.com>
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
+<!-- initial translation by: learnincurve, Mroek -->
+<resources>
+	<string name="app_name">AudioWagon</string>
+	<string name="queue_title">Spill av kø</string>
+	<string name="search_group_tracks">Spor</string>
+	<string name="search_group_artists">Artister</string>
+	<string name="search_group_albums">Albumer</string>
+	<string name="browse_tree_category_tracks">Spor</string>
+	<string name="browse_tree_category_artists">Artister</string>
+	<string name="browse_tree_category_albums">Albumer</string>
+	<string name="browse_tree_pseudo_track_shuffle_all">Tilfeldig rekkefølge</string>
+	<string name="browse_tree_pseudo_play_all">Avspill alle</string>
+	<string name="browse_tree_unknown_album">Ukjent album</string>
+	<string name="browse_tree_unknown_artist">Ukjent artist</string>
+	<string name="browse_tree_various_artists">Diverse artister</string>
+	<string name="browse_tree_no_entries_title">Ingen audiofiler</string>
+	<string name="browse_tree_no_usb_drive">Koble til USB-stasjon</string>
+	<string name="browse_tree_usb_drive_ejected">USB-stasjon løst ut eller kan ikke leses</string>
+	<string name="browse_tree_need_to_agree_legal_title">Juridisk ansvarsfraskrivelse ikke avtalt</string>
+	<string name="browse_tree_need_to_agree_legal_desc">Sjekk innstillinger</string>
+	<string name="toast_indexing_started">USB-indeksering påbegynt …</string>
+	<string name="toast_indexing_completed">USB-indeksering ferdig</string>
+	<string name="toast_no_next_track">Neste spor finnes ikke</string>
+	<string name="toast_no_prev_track">Forrige spor finnes ikke</string>
+	<string name="toast_eject_completed">USB-enhet løst ut, kan fjernes trygt</string>
+	<string name="toast_error">FEIL: %1$s</string>a
+	<string name="toast_error_audio_focus_denied">Kunne ikke overta lydfokus</string>
+	<string name="toast_error_USB_init">Feil i USB-tilkobling</string>
+	<string name="toast_error_no_filesystem">Ingen støttede filsystemer</string>
+	<string name="toast_error_library_creation_fail">Bibliotekopprettelse feilet</string>
+	<string name="toast_error_invalid_state">Ugyldig tilstand</string>
+	<string name="toast_error_IO">I/O feil</string>
+	<string name="toast_error_malformed_data">Korrupte data</string>
+	<string name="toast_error_timeout">Tidsavbrudd</string>
+	<string name="toast_error_not_supported">Ikke støttet</string>
+	<string name="toast_error_no_USB_device">Ingen USB-enhet</string>
+	<string name="toast_error_unknown">Ukjent</string>
+	<string name="notif_action_play">Spill av</string>
+	<string name="notif_action_pause">Pause</string>
+	<string name="notif_action_stop">Stopp</string>
+	<string name="notif_action_next">Neste</string>
+	<string name="notif_action_prev">Forrige</string>
+	<string name="notif_channel_name">AudioWagon varslinger</string>
+	<string name="notif_channel_desc">AudioWagon varslingskanal</string>
+	<string name="notif_channel_name_indexing">AudioWagon indekseringsvarsler</string>
+	<string name="notif_channel_desc_indexing">AudioWagon indekserings-varslingskanal</string>
+	<string name="notif_indexing_title">USB indekseringsstatus</string>
+	<string name="notif_indexing_text_in_progress">Pågår …</string>
+	<string name="notif_indexing_text_in_progress_num_items">Elementer funnet: %1$d …</string>
+	<string name="notif_indexing_text_completed">Fullført</string>
+	<string name="action_shuffle_turn_on">Tilfeldig rekkefølge</string>
+	<string name="action_shuffle_turn_off">Standard rekkefølge</string>
+	<string name="action_repeat_turn_on">Gjenta på</string>
+	<string name="action_repeat_turn_off">Gjenta av</string>
+	<string name="action_eject">Løs ut</string>
+	<string name="settings_title">Innstillinger</string>
+	<string name="setting_enable_equalizer_title">Equalizer</string>
+	<string name="setting_sound_category_title">Lyd</string>
+	<string name="setting_equalizer_preset_title">Forhåndsinnstilling for equalizer</string>
+	<string name="equalizer_preset_less_bass">Mindre bass</string>
+	<string name="equalizer_preset_more_bass">Mer bass</string>
+	<string name="equalizer_preset_less_treble">Mindre diskant</string>
+	<string name="equalizer_preset_more_treble">Mer diskant</string>
+	<string name="equalizer_preset_P2">P2</string>
+	<string name="equalizer_preset_P2_plus">P2+</string>
+	<string name="equalizer_preset_V_shape">V-form</string>
+	<string name="setting_general_category_title">Generelt</string>
+	<string name="setting_log_to_USB_title">Skriv loggfiler til USB-stasjon</string>
+	<!-- since some persons already consider USB to be an outdated technology, we should address our users formally
+	(i.e. "Sie") they are likely millennials or older ;-) -->
+	<string name="setting_log_to_USB_desc">Gi disse loggfilene til utvikleren når du rapporterer feil.</string>
+	<string name="setting_USB_status_title">USB status</string>
+	<string name="setting_USB_status_ok">OK</string>
+	<string name="setting_USB_status_not_connected">Ikke tilkoblet</string>
+	<string name="setting_USB_status_unknown">Ukjent. Prøv å koble til USB-stasjonen igjen eller start Android på nytt</string>
+	<string name="setting_USB_status_connected_no_permission">Tilkoblet. Ikke tilgangsrettigheter</string>
+	<string name="setting_USB_status_error">Lese/skrivefeil. Prøv å koble til USB-stasjonen igjen eller
+reparér/formatér hvis det feiler (FAT32)</string>
+	<string name="setting_USB_status_ejected">Utløst. Du kan nå trygt fjerne USB-stasjonen</string>
+	<string name="setting_USB_status_not_compatible">Ikke kompatibel. Vennligst formatér din USB-stasjon m/FAT32 filsystem</string>
+	<string name="setting_show_legal_disclaimer_title">Vis juridisk ansvarsfraskrivelse</string>
+	<string name="setting_show_legal_disclaimer_desc">Du må samtykke til juridisk ansvarsfraskrivelse før du bruker appen</string>
+	<string name="setting_version">Versjon</string>
+	<string name="legal_disclaimer_title">AudioWagon: Ansvarsfraskrivelse</string>
+	<string name="legal_disclaimer_distraction_heading">Sjåførdistraksjon</string>
+	<string name="legal_disclaimer_distraction_text">Du godtar å overholde alle gjeldende statlige og lokale lover
+angående distrahering av sjåføren og bruk av kjøretøyets infotainmentsystemer ved bruk av denne programvaren.\n Bruk
+denne programvaren kun når trafikkforholdene tillater det på en trygg måte.</string>
+	<string name="legal_disclaimer_liability_heading">Garanti / Ansvar</string>
+	<string name="legal_disclaimer_liability_text">Denne programvaren tilbys som den er, uten noen form for garanti.
+Ikke under noen omstendigheter skal utviklerne holdes ansvarlige for eventuelle skader forårsaket av denne
+programvaren.</string>
+	<string name="legal_disclaimer_license_heading">Lisens</string>
+	<string name="legal_disclaimer_license_text">Denne programvaren er lisensiert under GPLv3.\nLaget av MoleMan1024</string>
+	<string name="legal_disclaimer_third_party_licenses_heading">3.parts lisenser</string>
+	<string name="legal_disclaimer_third_party_licenses_text">Denne appen bruker innhold fra følgende andre
+utviklere/prosjekter, alle lisensiert under Apache 2.0:\n\n&#x2013; diverse biblioteker fra Android Open Source
+Project\n&#x2013; libaums-biblioteket laget av Magnus Jahnen\n&#x2013; Material design vektorikoner fra
+Google\n\nLisenstekster:\nwww.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/licenses/gpl-3.0.html</string>
+	<string name="legal_disclaimer_confirm_btn">Enig</string>
+	<string name="legal_disclaimer_cancel_btn">Avbryt</string>
+	<string name="toast_error_no_tracks">Ingen spor</string>
+	<string name="toast_error_not_enough_space_for_log">Ikke nok plass til å skrive loggfiler</string>
+</resources>

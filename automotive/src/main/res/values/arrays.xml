@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+SPDX-FileCopyrightText: 2021 MoleMan1024 <moleman1024dev@gmail.com>
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
+<resources>
+	<string-array name="equalizer_presets">
+		<item>@string/equalizer_preset_less_bass</item>
+		<item>@string/equalizer_preset_more_bass</item>
+		<item>@string/equalizer_preset_less_treble</item>
+		<item>@string/equalizer_preset_more_treble</item>
+		<item>@string/equalizer_preset_P2</item>
+		<item>@string/equalizer_preset_P2_plus</item>
+		<item>@string/equalizer_preset_V_shape</item>
+	</string-array>
+	<string-array name="equalizer_preset_values">
+		<item>LESS_BASS</item>
+		<item>MORE_BASS</item>
+		<item>LESS_HIGHS</item>
+		<item>MORE_HIGHS</item>
+		<item>P2</item>
+		<item>P2_PLUS</item>
+		<item>V_SHAPE</item>
+	</string-array>
+</resources>

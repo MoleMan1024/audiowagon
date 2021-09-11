@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+SPDX-FileCopyrightText: 2021 MoleMan1024 <moleman1024dev@gmail.com>
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
+<!-- initial translation by: Stef H. -->
+<resources>
+	<string name="app_name">AudioWagon</string>
+	<string name="queue_title">Afspeellijst</string>
+	<string name="search_group_tracks">Nummers</string>
+	<string name="search_group_artists">Artiesten</string>
+	<string name="search_group_albums">Albums</string>
+	<string name="browse_tree_category_tracks">Nummers</string>
+	<string name="browse_tree_category_artists">Artiesten</string>
+	<string name="browse_tree_category_albums">Albums</string>
+	<string name="browse_tree_pseudo_track_shuffle_all">Alles willekeurig afspelen</string>
+	<string name="browse_tree_pseudo_play_all">Alles afspelen</string>
+	<string name="browse_tree_unknown_album">Onbekend album</string>
+	<string name="browse_tree_unknown_artist">Onbekende artiest</string>
+	<string name="browse_tree_various_artists">Diverse artiesten</string>
+	<string name="browse_tree_no_entries_title">Geen audio bestanden</string>
+	<string name="browse_tree_no_usb_drive">Plug USB-stick in</string>
+	<string name="browse_tree_usb_drive_ejected">USB-stick verwijderd of onleesbaar</string>
+	<string name="browse_tree_need_to_agree_legal_title">Legal disclaimer niet geaccepteerd</string>
+	<string name="browse_tree_need_to_agree_legal_desc">Check de instellingen</string>
+	<string name="toast_indexing_started">USB indexering gestart …</string>
+	<string name="toast_indexing_completed">USB indexering voltooid</string>
+	<string name="toast_no_next_track">Geen volgend nummer</string>
+	<string name="toast_no_prev_track">Geen voorgaand nummer</string>
+	<string name="toast_eject_completed">USB-stick kan veilig verwijderd worden</string>
+	<string name="toast_error">FOUT: %1$s</string>
+	<string name="toast_error_audio_focus_denied">Audio focus geweigerd</string>
+	<string name="toast_error_USB_init">Verbindingsfout met USB-stick</string>
+	<string name="toast_error_no_filesystem">Niet ondersteund bestandsformaat</string>
+	<string name="toast_error_library_creation_fail">Aanmaken verzameling mislukt</string>
+	<string name="toast_error_invalid_state">Ongeldige status</string>
+	<string name="toast_error_IO">I/O fout</string>
+	<string name="toast_error_malformed_data">Data beschadigd</string>
+	<string name="toast_error_timeout">Timeout</string>
+	<string name="toast_error_not_supported">Niet ondersteund</string>
+	<string name="toast_error_no_USB_device">Geen USB-stick</string>
+	<string name="toast_error_unknown">Onbekend</string>
+	<string name="notif_action_play">Play</string>
+	<string name="notif_action_pause">Pauze</string>
+	<string name="notif_action_stop">Stop</string>
+	<string name="notif_action_next">Volgende</string>
+	<string name="notif_action_prev">Vorige</string>
+	<string name="notif_channel_name">AudioWagon notificaties</string>
+	<string name="notif_channel_desc">AudioWagon notificatiekanaal</string>
+	<string name="notif_channel_name_indexing">AudioWagon indexering notificaties</string>
+	<string name="notif_channel_desc_indexing">AudioWagon indexering notificatiekanaal</string>
+	<string name="notif_indexing_title">USB indexering status</string>
+	<string name="notif_indexing_text_in_progress">Bezig …</string>
+	<string name="notif_indexing_text_in_progress_num_items">Gevonden items: %1$d …</string>
+	<string name="notif_indexing_text_completed">Voltooid</string>
+	<string name="action_shuffle_turn_on">Willekeurig aan</string>
+	<string name="action_shuffle_turn_off">Willekeurig uit</string>
+	<string name="action_repeat_turn_on">Herhalen aan</string>
+	<string name="action_repeat_turn_off">Herhalen uit</string>
+	<string name="action_eject">Ontkoppelen</string>
+	<string name="settings_title">Instellingen</string>
+	<string name="setting_enable_equalizer_title">Equalizer</string>
+	<string name="setting_sound_category_title">Geluid</string>
+	<string name="setting_equalizer_preset_title">Equalizer voorkeursinstelling</string>
+	<string name="equalizer_preset_less_bass">Minder bass</string>
+	<string name="equalizer_preset_more_bass">Meer bass</string>
+	<string name="equalizer_preset_less_treble">Minder treble</string>
+	<string name="equalizer_preset_more_treble">Meer treble</string>
+	<string name="equalizer_preset_P2">P2</string>
+	<string name="equalizer_preset_P2_plus">P2+</string>
+	<string name="equalizer_preset_V_shape">V-vorm</string>
+	<string name="setting_general_category_title">Algemeen</string>
+	<string name="setting_log_to_USB_title">Schrijf log bestanden naar USB-stick</string>
+	<!-- since some persons already consider USB to be an outdated technology, we should address our users formally
+	(i.e. "Sie") they are likely millennials or older ;-) -->
+	<string name="setting_log_to_USB_desc">Geef deze log bestanden aan de ontwikkelaar wanneer je een bug wilt doorgeven.</string>
+	<string name="setting_USB_status_title">USB Status</string>
+	<string name="setting_USB_status_ok">OK</string>
+	<string name="setting_USB_status_not_connected">Niet verbonden</string>
+	<string name="setting_USB_status_unknown">Onbekend. Probeer de USB-stick opnieuw in te steken of herstart Android</string>
+	<string name="setting_USB_status_connected_no_permission">Verbonden. Geen toestemming</string>
+	<string name="setting_USB_status_error">Lees/schrijf fout, probeer de USB-stick opnieuw in te steken of herstel/herformatteer (FAT32)
+wanneer onsuccesvol</string>
+	<string name="setting_USB_status_ejected">Succesvol ontkoppeld. Je kunt nu de USB-stick veilig verwijderen</string>
+	<string name="setting_USB_status_not_compatible">Niet compatibel. Formatteer de USB-stick als FAT32 bestandsysteem</string>
+	<string name="setting_show_legal_disclaimer_title">Toon legal disclaimer</string>
+	<string name="setting_show_legal_disclaimer_desc">Je dient de legal disclaimer te accepteren om deze app te gebruiken.</string>
+	<string name="setting_version">Versie</string>
+	<string name="legal_disclaimer_title">AudioWagon: Legal disclaimer</string>
+	<string name="legal_disclaimer_distraction_heading">Afleiding bestuurder</string>
+	<string name="legal_disclaimer_distraction_text">Je stemt in je te houden aan de van toepassing zijnde federale en lokale wetgeving
+betreffende bestuurder afleiding en bediening van een in-voertuig infotainment systeem tijdens het gebruik van deze software
+applicatie.\nGebruik deze software alleen wanneer de verkeersomstandigheden dit absoluut veilig toelaten.</string>
+	<string name="legal_disclaimer_liability_heading">Garantie / Aansprakelijkheid</string>
+	<string name="legal_disclaimer_liability_text">Deze software wordt aangeboden "as-is", zonder enige vorm van garantie of enige vorm
+van aansprakelijkheid. Auteurs zullen en kunnen op geen enkele manier aansprakelijk worden gesteld ten aanzien van enige
+vorm van schade ontstaan door het gebruik van deze software.</string>
+	<string name="legal_disclaimer_license_heading">Licentie</string>
+	<string name="legal_disclaimer_license_text">Deze software is gelicenseerd onder GPLv3.\nGemaakt door MoleMan1024</string>
+	<string name="legal_disclaimer_third_party_licenses_heading">3rd party licenties</string>
+	<string name="legal_disclaimer_third_party_licenses_text">Deze app gebruikt content van de volgende andere makers, allen gelicenseerd onder Apache 2.0:\n\n&#x2013;
+meerdere libraries gemaakt door de Android Open Source Project\n&#x2013; de libaums library is gemaakt door Magnus Jahnen\n&#x2013; Material design vector iconen
+zijn gemaakt door Google\n\nLicentie teksten:\nwww.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/licenses/gpl-3.0.html</string>
+	<string name="legal_disclaimer_confirm_btn">Accepteren</string>
+	<string name="legal_disclaimer_cancel_btn">Annuleren</string>
+	<string name="toast_error_no_tracks">Geen nummers</string>
+	<string name="toast_error_not_enough_space_for_log">Niet genoeg ruimte om log bestand te schrijven</string>
+</resources>

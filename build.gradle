@@ -1,0 +1,35 @@
+/*
+SPDX-FileCopyrightText: 2021 MoleMan1024 <moleman1024dev@gmail.com>
+SPDX-License-Identifier: GPL-3.0-or-later
+*/
+buildscript {
+	ext {
+		minSdkVersion = 29
+		compileSdkVersion = 30
+		targetSdkVersion = 30
+		androidx_app_compat_version = "1.3.1"
+		androidx_lifecycle_version = "2.3.1"
+		androidx_media_version = "1.4.1"
+		kotlin_version = "1.5.10"
+	}
+
+	repositories {
+		google()
+		mavenCentral()
+	}
+	dependencies {
+		classpath "com.android.tools.build:gradle:4.2.2"
+		classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+	}
+}
+
+allprojects {
+	repositories {
+		google()
+		mavenCentral()
+	}
+}
+
+task clean(type: Delete) {
+	delete rootProject.buildDir
+}

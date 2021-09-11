@@ -1,0 +1,102 @@
+/*
+SPDX-FileCopyrightText: 2021 MoleMan1024 <moleman1024dev@gmail.com>
+SPDX-License-Identifier: GPL-3.0-or-later
+*/
+plugins {
+	id "com.android.application"
+	// switch this to com.android.library to load it into non-automotive app for regular Android
+/*
+	id "com.android.library"
+*/
+	id "kotlin-android"
+	id "kotlin-kapt"
+	id "jacoco"
+}
+
+android {
+	compileSdkVersion rootProject.compileSdkVersion
+	buildToolsVersion "30.0.3"
+
+	defaultConfig {
+		applicationId "de.moleman1024.audiowagon"
+		minSdkVersion rootProject.minSdkVersion
+		targetSdkVersion rootProject.targetSdkVersion
+		versionCode 30
+		versionName "0.3.0"
+		resValue "string", "VERSION_NAME", versionName
+		testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+		manifestPlaceholders["requestLegacyExternalStorage"] = "false"
+		setProperty("archivesBaseName", applicationId + "-" + versionName)
+	}
+
+	buildTypes {
+		debug {
+			//testCoverageEnabled true
+			manifestPlaceholders["requestLegacyExternalStorage"] = "true"
+		}
+		release {
+			minifyEnabled true
+			shrinkResources true
+			proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
+		}
+	}
+
+	packagingOptions {
+		exclude "META-INF/spring.factories"
+		exclude "META-INF/spring.handlers"
+		exclude "META-INF/spring.schemas"
+		exclude "META-INF/spring.tooling"
+		exclude "META-INF/license.txt"
+		exclude "META-INF/notice.txt"
+	}
+}
+
+// using Jacoco for coverage reports due to to this bug in IntelliJ coverage runner:
+// https://youtrack.jetbrains.com/issue/KTIJ-17010
+/*jacoco {
+	toolVersion = "0.8.7"
+
+	tasks.withType(Test) {
+		jacoco.includeNoLocationClasses = true
+		jacoco.excludes = ["jdk.internal.*"]
+	}
+}*/
+
+dependencies {
+	def room_version = "2.3.0"
+	def junit_version = "4.13.2"
+	def mockito_version = "3.11.1"
+	def espresso_version = "3.4.0"
+	def androidx_test_version = "1.4.0"
+
+	implementation "com.google.android.material:material:1.4.0"
+	implementation "androidx.preference:preference-ktx:1.1.1"
+	implementation "androidx.media:media:$androidx_media_version"
+	implementation "androidx.appcompat:appcompat:$androidx_app_compat_version"
+	implementation "androidx.room:room-runtime:$room_version"
+	implementation "androidx.constraintlayout:constraintlayout:2.1.0"
+	kapt "androidx.room:room-compiler:$room_version"
+	implementation "androidx.room:room-ktx:$room_version"
+	implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.0"
+	implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
+	implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+	implementation "androidx.lifecycle:lifecycle-runtime-ktx:$androidx_lifecycle_version"
+	implementation files("libs/libaums-0.8.0.aar")
+
+	// junit4 for local unit tests
+	testImplementation "junit:junit:$junit_version"
+	testImplementation "androidx.test:core:$androidx_test_version"
+	testImplementation "org.mockito:mockito-core:$mockito_version"
+	testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.5.0"
+
+	// junit4 for instrumented tests on device/emulator
+	androidTestImplementation "androidx.test:core:$androidx_test_version"
+	androidTestImplementation "androidx.test:runner:$androidx_test_version"
+	androidTestImplementation "androidx.test:rules:$androidx_test_version"
+	androidTestImplementation "androidx.test.ext:junit:1.1.3"
+	androidTestImplementation "androidx.test.espresso:espresso-core:$espresso_version"
+	androidTestImplementation "org.mockito:mockito-core:$mockito_version"
+	androidTestImplementation "org.mockito:mockito-android:$mockito_version"
+	androidTestImplementation "org.springframework:spring-context:5.3.8"
+	androidTestImplementation "org.springframework:spring-test:5.3.8"
+}
