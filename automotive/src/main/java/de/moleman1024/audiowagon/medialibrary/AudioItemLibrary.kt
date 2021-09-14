@@ -11,6 +11,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.support.v4.media.MediaDescriptionCompat
 import android.support.v4.media.MediaMetadataCompat
+import androidx.annotation.VisibleForTesting
 import androidx.media.utils.MediaConstants
 import de.moleman1024.audiowagon.GUI
 import de.moleman1024.audiowagon.R
@@ -23,6 +24,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.consumeEach
 import java.io.IOException
+import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.coroutineContext
 
 const val CONTENT_HIERARCHY_ID_ROOT: String = "/"
@@ -100,32 +102,18 @@ class AudioItemLibrary(
                 ?: throw RuntimeException("No repository for file: $audioFile")
             val trackIDInDatabase: Long? = repo.getDatabaseIDForTrack(audioFile)
             if (trackIDInDatabase == null) {
+                extractMetadataAndPopulateDB(audioFile, repo, coroutineContext)
+            } else {
                 try {
-                    val metadata: AudioItem = metadataMaker.extractMetadataFrom(audioFile)
-                    repo.populateDatabaseFrom(audioFile, metadata)
-                } catch (exc: IOException) {
-                    // this can happen for example for files with strange filenames, the file will be ignored
-                    logger.exception(TAG, "I/O exception when processing file: $audioFile", exc)
-                    if ("MAX_RECOVERY_ATTEMPTS|No filesystem".toRegex().containsMatchIn(exc.stackTraceToString())) {
-                        coroutineContext.cancel(CancellationException("Unrecoverable I/O exception in buildLibrary()"))
-                        notifyObservers(CannotRecoverUSBException())
+                    val audioFileHasChanged = repo.hasAudioFileChangedForTrack(audioFile, trackIDInDatabase)
+                    if (!audioFileHasChanged) {
+                        repo.trackIDsToKeep.add(trackIDInDatabase)
+                    } else {
+                        repo.removeTrack(trackIDInDatabase)
+                        extractMetadataAndPopulateDB(audioFile, repo, coroutineContext)
                     }
                 } catch (exc: RuntimeException) {
-                    logger.exception(TAG, "Exception when processing file: $audioFile", exc)
-                    if (exc.stackTraceToString().contains("setDataSourceCallback failed")) {
-                        coroutineContext.cancel(CancellationException("setDataSourceCallback failed in buildLibrary()"))
-                        notifyObservers(CannotRecoverUSBException())
-                    }
-                }
-            } else {
-                val audioFileHasChanged = repo.hasAudioFileChangedForTrack(audioFile, trackIDInDatabase)
-                if (!audioFileHasChanged) {
-                    repo.trackIDsToKeep.add(trackIDInDatabase)
-                } else {
-                    repo.removeTrack(trackIDInDatabase)
-                    // TODO: small duplication with lines above
-                    val metadata: AudioItem = metadataMaker.extractMetadataFrom(audioFile)
-                    repo.populateDatabaseFrom(audioFile, metadata)
+                    logger.exception(TAG, exc.message.toString(), exc)
                 }
             }
             numFilesSeenWhenBuildingLibrary++
@@ -142,6 +130,26 @@ class AudioItemLibrary(
             repo.clean()
         }
         isBuildingLibray = false
+    }
+
+    private fun extractMetadataAndPopulateDB(
+        audioFile: AudioFile,
+        repo: AudioItemRepository,
+        coroutineContext: CoroutineContext
+    ) {
+        try {
+            val metadata: AudioItem = metadataMaker.extractMetadataFrom(audioFile)
+            repo.populateDatabaseFrom(audioFile, metadata)
+        } catch (exc: IOException) {
+            // this can happen for example for files with strange filenames, the file will be ignored
+            logger.exception(TAG, "I/O exception when processing file: $audioFile", exc)
+            if ("MAX_RECOVERY_ATTEMPTS|No filesystem".toRegex().containsMatchIn(exc.stackTraceToString())) {
+                coroutineContext.cancel(CancellationException("Unrecoverable I/O exception in buildLibrary()"))
+                notifyObservers(CannotRecoverUSBException())
+            }
+        } catch (exc: RuntimeException) {
+            logger.exception(TAG, "Exception when processing file: $audioFile", exc)
+        }
     }
 
     /**
@@ -420,6 +428,11 @@ class AudioItemLibrary(
 
     private fun notifyObservers(exc: Exception) {
         libraryExceptionObservers.forEach { it(exc) }
+    }
+
+    @VisibleForTesting(otherwise = VisibleForTesting.NONE)
+    fun extractMetadataFrom(audioFile: AudioFile): AudioItem {
+        return metadataMaker.extractMetadataFrom(audioFile)
     }
 
 }

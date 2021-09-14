@@ -17,6 +17,7 @@ import de.moleman1024.audiowagon.AudioBrowserService
 import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.filestorage.usb.ACTION_USB_ATTACHED
 import de.moleman1024.audiowagon.log.Logger
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 
 private const val TAG = "USBDummyAct"
@@ -33,6 +34,7 @@ private val logger = Logger
  * https://stackoverflow.com/questions/12388914/usb-device-access-pop-up-suppression
  * FIXME: does not seem to work on AAOS in Polestar 2, works fine on Pixel 3 with AAOS
  */
+@ExperimentalCoroutinesApi
 class USBDummyActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?, persistentState: PersistableBundle?) {

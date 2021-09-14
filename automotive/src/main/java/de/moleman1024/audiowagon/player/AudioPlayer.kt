@@ -31,9 +31,9 @@ const val MEDIA_ERROR_INVALID_STATE = -38
 const val MEDIA_ERROR_AUDIO_FOCUS_DENIED = -1249
 
 /**
- * Mostly a facade class towards the more complex MediaPlayer
+ * Manages two [MediaPlayer] instances + equalizer etc.
  *
- * For valid/invalid state transitions:
+ * For valid/invalid state transitions of [MediaPlayer] see:
  * https://developer.android.com/reference/android/media/MediaPlayer#valid-and-invalid-states
  */
 class AudioPlayer(
@@ -66,7 +66,7 @@ class AudioPlayer(
     private var setupNextPlayerJob: Job? = null
 
     init {
-        scope.launch(dispatcher) {
+        launchInScopeSafely {
             logger.debug(TAG, "Using single thread dispatcher for AudioPlayer: ${android.os.Process.myTid()}")
             initMediaPlayers()
             initEqualizers()
@@ -516,7 +516,7 @@ class AudioPlayer(
     }
 
     private fun onPreparedPlayFromQueue(mediaPlayer: MediaPlayer?) {
-        scope.launch(dispatcher) {
+        launchInScopeSafely {
             logger.debug(TAG, "onPreparedListener(mediaPlayer=$mediaPlayer)")
             setState(mediaPlayer, AudioPlayerState.PREPARED)
             // first start the current player so the user can already listen to music, prepare next player in
@@ -864,6 +864,16 @@ class AudioPlayer(
             }
             equalizerFlip?.setPreset(preset)
             equalizerFlop?.setPreset(preset)
+        }
+    }
+
+    private fun launchInScopeSafely(func: suspend () -> Unit) {
+        scope.launch(dispatcher) {
+            try {
+                func()
+            } catch (exc: Exception) {
+                logger.exception(TAG, exc.message.toString(), exc)
+            }
         }
     }
 

@@ -162,11 +162,12 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     @ExperimentalCoroutinesApi
     private fun observeAudioFileStorage() {
         audioFileStorage.storageObservers.add { storageChange ->
+            val allStorageIDs = audioItemLibrary.getAllStorageIDs()
+            logger.debug(TAG, "Storage IDs in library before change: $allStorageIDs")
             if (storageChange.error.isNotBlank()) {
                 gui.showErrorToastMsg(getString(R.string.toast_error_USB, storageChange.error))
                 audioSession.stopPlayer()
                 // TODO: this needs to change to properly support multiple storages
-                val allStorageIDs = audioItemLibrary.getAllStorageIDs()
                 allStorageIDs.forEach { onStorageLocationRemoved(it) }
                 return@add
             }
@@ -174,6 +175,8 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                 StorageAction.ADD -> onStorageLocationAdded(storageChange.id)
                 StorageAction.REMOVE -> onStorageLocationRemoved(storageChange.id)
             }
+            val allStorageIDsAfter = audioItemLibrary.getAllStorageIDs()
+            logger.debug(TAG, "Storage IDs in library after change: $allStorageIDsAfter")
         }
     }
 
@@ -529,7 +532,9 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             } else {
                 logger.exception(TAG, "Uncaught exception (USB is OK)", throwable)
                 logger.flushToUSB()
+                audioFileStorage.shutdown()
             }
+            stopService()
             oldHandler?.uncaughtException(thread, throwable)
             killProcess()
         }

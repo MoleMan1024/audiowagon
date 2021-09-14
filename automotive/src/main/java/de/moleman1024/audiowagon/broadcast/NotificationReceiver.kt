@@ -34,21 +34,21 @@ class NotificationReceiver(
         }
         logger.debug(TAG, "Received notification: $intent")
         when (intent.action) {
-            ACTION_PLAY -> {
-                scope.launch(dispatcher) { audioPlayer.start() }
-            }
-            ACTION_PAUSE -> {
-                scope.launch(dispatcher) { audioPlayer.pause() }
-            }
-            ACTION_NEXT -> {
-                scope.launch(dispatcher) { audioPlayer.skipNextTrack() }
-            }
-            ACTION_PREV -> {
-                scope.launch(dispatcher) { audioPlayer.skipPreviousTrack() }
-            }
+            ACTION_PLAY -> scope.launch(dispatcher) { callSafely { audioPlayer.start() } }
+            ACTION_PAUSE -> scope.launch(dispatcher) { callSafely { audioPlayer.pause() } }
+            ACTION_NEXT -> scope.launch(dispatcher) { callSafely { audioPlayer.skipNextTrack() } }
+            ACTION_PREV -> scope.launch(dispatcher) { callSafely { audioPlayer.skipPreviousTrack() } }
             else -> {
                 logger.warning(TAG, "Ignoring unhandled action: ${intent.action}")
             }
+        }
+    }
+
+    private inline fun <T> callSafely(call: () -> T) {
+        try {
+            call()
+        } catch (exc: Exception) {
+            logger.exception(TAG, exc.message.toString(), exc)
         }
     }
 

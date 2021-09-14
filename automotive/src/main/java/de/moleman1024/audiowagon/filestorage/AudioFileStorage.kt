@@ -6,7 +6,6 @@ SPDX-License-Identifier: GPL-3.0-or-later
 package de.moleman1024.audiowagon.filestorage
 
 import android.content.Context
-import android.content.pm.ApplicationInfo
 import android.media.MediaDataSource
 import android.net.Uri
 import de.moleman1024.audiowagon.GUI
@@ -127,6 +126,7 @@ open class AudioFileStorage(
     private fun removeDevice(device: MediaDevice) {
         logger.debug(TAG, "Removing device from storage: ${device.getLongName()}")
         val storageLocations: List<AudioFileStorageLocation> = audioFileStorageLocations.filter { it.device == device }
+        logger.debug(TAG, "audioFileStorageLocations at start of removeDevice(): $audioFileStorageLocations")
         if (storageLocations.isEmpty()) {
             logger.warning(TAG, "Device ${device.getID()} is not in storage (storage is empty)")
             val storageChange = StorageChange(id = "", StorageAction.REMOVE)
@@ -137,7 +137,11 @@ open class AudioFileStorage(
         // we first notify the observers before remove the storage location, the observer will access it
         val storageChange = StorageChange(storageLocation.storageID, StorageAction.REMOVE)
         notifyObservers(storageChange)
-        audioFileStorageLocations.remove(storageLocation)
+        // TODO: the initial design of the app allowed for multiple audio file storage locations in parallel, I
+        //  kinda of gave up on that midway, should re-design the classes a bit
+        // (check why calling audioFileStorageLocations.remove(storageLocation) does not work)
+        audioFileStorageLocations.clear()
+        logger.debug(TAG, "audioFileStorageLocations cleared at end of removeDevice()")
     }
 
     private fun detachStorageForDevice(device: MediaDevice) {

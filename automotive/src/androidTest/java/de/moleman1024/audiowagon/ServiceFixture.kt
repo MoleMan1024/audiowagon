@@ -15,9 +15,11 @@ import android.support.v4.media.MediaBrowserCompat
 import androidx.media.MediaBrowserServiceCompat
 import androidx.test.platform.app.InstrumentationRegistry
 import de.moleman1024.audiowagon.log.Logger
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 private const val TAG = "ServiceFixture"
 
+@ExperimentalCoroutinesApi
 class ServiceFixture {
     var isBound = false
     private val targetContext = InstrumentationRegistry.getInstrumentation().targetContext

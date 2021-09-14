@@ -8,12 +8,18 @@ package de.moleman1024.audiowagon.activities
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.widget.Toast
 import androidx.preference.ListPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreferenceCompat
+import de.moleman1024.audiowagon.GUI
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.log.Logger
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.runBlocking
 
 private const val TAG = "SettingsFragm"
 private val logger = Logger
@@ -25,6 +31,7 @@ const val PREF_ENABLE_EQUALIZER = "enableEqualizer"
 const val PREF_EQUALIZER_PRESET = "equalizerPreset"
 const val PREF_EQUALIZER_PRESET_DEFAULT = "LESS_BASS"
 
+@ExperimentalCoroutinesApi
 class SettingsFragment : PreferenceFragmentCompat() {
     private val listener = SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
         run {
@@ -52,6 +59,12 @@ class SettingsFragment : PreferenceFragmentCompat() {
         updateEqualizerSwitch(sharedPreferences)
         updateEqualizerPreset(sharedPreferences)
         updateUSBStatus(sharedPreferences)
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        logger.debug(TAG, "onCreate()")
+        super.onCreate(savedInstanceState)
+        preferenceManager.sharedPreferences.registerOnSharedPreferenceChangeListener(listener)
     }
 
     private fun updateUSBStatus(sharedPreferences: SharedPreferences) {
@@ -87,12 +100,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
             ?: PREF_EQUALIZER_PRESET_DEFAULT
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        logger.debug(TAG, "onCreate()")
-        super.onCreate(savedInstanceState)
-        preferenceManager.sharedPreferences.registerOnSharedPreferenceChangeListener(listener)
-    }
-
     override fun onResume() {
         logger.debug(TAG, "onResume()")
         super.onResume()
@@ -114,32 +121,48 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
     override fun onPreferenceTreeClick(preference: Preference?): Boolean {
         logger.debug(TAG, "onPreferenceTreeClick(preference=$preference)")
-        return when (preference?.key) {
-            PREF_LOG_TO_USB_KEY -> {
-                if ((preference as SwitchPreferenceCompat).isChecked) {
-                    (activity as SettingsActivity).enableLogToUSB()
-                } else {
-                    (activity as SettingsActivity).disableLogToUSB()
+        try {
+            when (preference?.key) {
+                PREF_LOG_TO_USB_KEY -> {
+                    if ((preference as SwitchPreferenceCompat).isChecked) {
+                        (activity as SettingsActivity).enableLogToUSB()
+                    } else {
+                        (activity as SettingsActivity).disableLogToUSB()
+                    }
                 }
-                true
-            }
-            PREF_LEGAL_DISCLAIMER -> {
-                val showLegalDisclaimerIntent = Intent(context, LegalDisclaimerActivity::class.java)
-                startActivity(showLegalDisclaimerIntent)
-                true
-            }
-            PREF_ENABLE_EQUALIZER -> {
-                if ((preference as SwitchPreferenceCompat).isChecked) {
-                    findPreference<ListPreference>(PREF_EQUALIZER_PRESET)?.isEnabled = true
-                    (activity as SettingsActivity).enableEqualizer()
-                } else {
-                    findPreference<ListPreference>(PREF_EQUALIZER_PRESET)?.isEnabled = false
-                    (activity as SettingsActivity).disableEqualizer()
+                PREF_LEGAL_DISCLAIMER -> {
+                    val showLegalDisclaimerIntent = Intent(context, LegalDisclaimerActivity::class.java)
+                    startActivity(showLegalDisclaimerIntent)
                 }
-                true
+                PREF_ENABLE_EQUALIZER -> {
+                    if ((preference as SwitchPreferenceCompat).isChecked) {
+                        findPreference<ListPreference>(PREF_EQUALIZER_PRESET)?.isEnabled = true
+                        (activity as SettingsActivity).enableEqualizer()
+                    } else {
+                        findPreference<ListPreference>(PREF_EQUALIZER_PRESET)?.isEnabled = false
+                        (activity as SettingsActivity).disableEqualizer()
+                    }
+                }
             }
-            else -> {
-                super.onPreferenceTreeClick(preference)
+        } catch (exc: RuntimeException) {
+            logger.exception(TAG, exc.message.toString(), exc)
+            if (preference != null) {
+                revertSwitch(preference)
+                val error = requireContext().getString(
+                    R.string.toast_error, requireContext().getString(R.string.toast_error_invalid_state)
+                )
+                val toast = Toast.makeText(context, error, Toast.LENGTH_SHORT)
+                toast.show()
+            }
+        }
+        return super.onPreferenceTreeClick(preference)
+    }
+
+    private fun revertSwitch(preference: Preference) {
+        when (preference.key) {
+            PREF_LOG_TO_USB_KEY, PREF_ENABLE_EQUALIZER -> {
+                val switch = (preference as SwitchPreferenceCompat)
+                switch.isChecked = !switch.isChecked
             }
         }
     }

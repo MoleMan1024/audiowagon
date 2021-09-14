@@ -73,37 +73,42 @@ class USBDeviceConnections(
                 // one of the built-in USB devices (e.g. bluetooth dongle) has attached/detached, ignore these
                 return
             } catch (exc: RuntimeException) {
-                logger.exception(TAG, exc.toString(), exc)
+                logger.exception(TAG, exc.message.toString(), exc)
                 return
             }
-            when (intent.action) {
-                ACTION_USB_ATTACHED -> {
-                    runBlocking(dispatcher) {
-                        onAttachedUSBDeviceFoundJob?.let {
-                            logger.debug(TAG, "Cancelling onAttachedUSBDeviceFoundJob")
-                            it.cancelAndJoin()
+            try {
+                when (intent.action) {
+                    ACTION_USB_ATTACHED -> {
+                        runBlocking(dispatcher) {
+                            onAttachedUSBDeviceFoundJob?.let {
+                                logger.debug(TAG, "Cancelling onAttachedUSBDeviceFoundJob")
+                                it.cancelAndJoin()
+                            }
+                            onAttachedUSBDeviceFound(usbDeviceWrapper)
                         }
-                        onAttachedUSBDeviceFound(usbDeviceWrapper)
+                    }
+                    UsbManager.ACTION_USB_DEVICE_ATTACHED -> {
+                        onAttachedUSBDeviceFoundJob = scope.launch(dispatcher) {
+                            // wait a bit to give USBDummyActivity a chance to catch this instead and send
+                            // ACTION_USB_ATTACHED (see above)
+                            delay(400)
+                            onAttachedUSBDeviceFound(usbDeviceWrapper)
+                            onAttachedUSBDeviceFoundJob = null
+                        }
+                    }
+                    UsbManager.ACTION_USB_DEVICE_DETACHED -> onUSBDeviceDetached(usbDeviceWrapper)
+                    ACTION_USB_PERMISSION_CHANGE -> {
+                        if (!isDeviceConnected(usbDeviceWrapper)) {
+                            logger.warning(TAG, "Received permission change for USB device that is not connected")
+                            return
+                        }
+                        usbDevicePermissions.onUSBPermissionChanged(intent, usbDeviceWrapper)
+                        onUSBPermissionChanged(usbDeviceWrapper)
                     }
                 }
-                UsbManager.ACTION_USB_DEVICE_ATTACHED -> {
-                    onAttachedUSBDeviceFoundJob = scope.launch(dispatcher) {
-                        // wait a bit to give USBDummyActivity a chance to catch this instead and send
-                        // ACTION_USB_ATTACHED (see above)
-                        delay(400)
-                        onAttachedUSBDeviceFound(usbDeviceWrapper)
-                        onAttachedUSBDeviceFoundJob = null
-                    }
-                }
-                UsbManager.ACTION_USB_DEVICE_DETACHED -> onUSBDeviceDetached(usbDeviceWrapper)
-                ACTION_USB_PERMISSION_CHANGE -> {
-                    if (!isDeviceConnected(usbDeviceWrapper)) {
-                        logger.warning(TAG, "Received permission change for USB device that is not connected")
-                        return
-                    }
-                    usbDevicePermissions.onUSBPermissionChanged(intent, usbDeviceWrapper)
-                    onUSBPermissionChanged(usbDeviceWrapper)
-                }
+            } catch (exc: RuntimeException) {
+                logger.exception(TAG, exc.message.toString(), exc)
+                return
             }
         }
     }
@@ -223,6 +228,11 @@ class USBDeviceConnections(
             updateUSBStatusInSettings(R.string.setting_USB_status_not_compatible)
             notifyObservers(deviceChange)
             return
+        } catch (exc: IllegalStateException) {
+            logger.exception(TAG, "Illegal state when initiating filesystem, missing permission?", exc)
+            val deviceChange = DeviceChange(error = context.getString(R.string.toast_error_USB_init))
+            notifyObservers(deviceChange)
+            return
         }
         if (isLogToUSB) {
             try {
@@ -244,9 +254,6 @@ class USBDeviceConnections(
      */
     private fun onUSBDeviceDetached(device: USBMediaDevice) {
         try {
-            // TODO: Any try to access USB device at this point will result in libuams to retry several times and then
-            //  throw an I/O exception. So we don't even try that here. However it seems the handle to the device
-            //  still exists (need to check internals of libaums library) ...
             logger.debug(TAG, "onUSBDeviceDetached: $device")
             device.preventLoggingToDetachedDevice()
             val deviceChange = DeviceChange(device, DeviceAction.DISCONNECT)

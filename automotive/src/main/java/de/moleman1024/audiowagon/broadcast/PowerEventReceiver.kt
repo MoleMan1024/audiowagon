@@ -15,10 +15,10 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 private const val TAG = "PowerEvtReceiver"
 private val logger = Logger
 
+@ExperimentalCoroutinesApi
 class PowerEventReceiver : BroadcastReceiver() {
     var audioBrowserService: AudioBrowserService? = null
 
-    @ExperimentalCoroutinesApi
     override fun onReceive(context: Context?, intent: Intent?) {
         if (intent == null) {
             return

@@ -5,6 +5,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 package de.moleman1024.audiowagon.medialibrary
 
+import android.media.MediaMetadataRetriever
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -29,6 +30,5 @@ class AudioItemLibraryTest {
         audioItemLibrary.removeRepository(storageID)
         assertFalse(audioItemLibrary.areAnyStoragesAvail())
     }
-
 
 }

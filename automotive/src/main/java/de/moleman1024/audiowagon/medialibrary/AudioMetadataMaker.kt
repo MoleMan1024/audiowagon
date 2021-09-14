@@ -30,6 +30,9 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
         logger.debug(TAG, "Extracting metadata for: $audioFile")
         val metadataRetriever = MediaMetadataRetriever()
         val dataSource = audioFileStorage.getDataSourceForAudioFile(audioFile)
+        // TODO: find out reason for
+        //  java.lang.RuntimeException: setDataSourceCallback failed: status = 0x80000000
+        //  that sometimes happens for some files
         metadataRetriever.setDataSource(dataSource)
         if (dataSource is USBAudioDataSource && dataSource.isClosed) {
             throw IOException("Data source was closed while extracting metadata")

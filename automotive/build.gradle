@@ -21,8 +21,8 @@ android {
 		applicationId "de.moleman1024.audiowagon"
 		minSdkVersion rootProject.minSdkVersion
 		targetSdkVersion rootProject.targetSdkVersion
-		versionCode 30
-		versionName "0.3.0"
+		versionCode 31
+		versionName "0.3.1"
 		resValue "string", "VERSION_NAME", versionName
 		testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 		manifestPlaceholders["requestLegacyExternalStorage"] = "false"
@@ -33,11 +33,13 @@ android {
 		debug {
 			//testCoverageEnabled true
 			manifestPlaceholders["requestLegacyExternalStorage"] = "true"
+			setProperty("archivesBaseName", defaultConfig.applicationId)
 		}
 		release {
 			minifyEnabled true
 			shrinkResources true
 			proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
+			setProperty("archivesBaseName", defaultConfig.applicationId + "-" + defaultConfig.versionName)
 		}
 	}
 

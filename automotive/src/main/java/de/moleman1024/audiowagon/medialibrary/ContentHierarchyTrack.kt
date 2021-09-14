@@ -38,8 +38,8 @@ class ContentHierarchyTrack(
         val track: AudioItem
         try {
             track = repo.getTrack(getDatabaseID(id))
-        } catch (exc: IllegalArgumentException) {
-            logger.error(TAG, exc.toString())
+        } catch (exc: RuntimeException) {
+            logger.exception(TAG, exc.message.toString(), exc)
             return listOf()
         }
         return listOf(track)

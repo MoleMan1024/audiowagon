@@ -126,7 +126,6 @@ class AudioSession(
 
     private fun prepareMediaNotifications() {
         // TODO: this seems to have no effect in Android Automotive
-        // icons taken from https://fonts.google.com/icons
         val playIcon = IconCompat.createWithResource(context, R.drawable.baseline_play_arrow_24)
         val playAction = createNotificationAction(ACTION_PLAY, playIcon, R.string.notif_action_play)
         val pauseIcon = IconCompat.createWithResource(context, R.drawable.baseline_pause_24)
@@ -296,7 +295,7 @@ class AudioSession(
                 newPlaybackState =
                     playbackStateBuilder.setErrorMessage(PlaybackStateCompat.ERROR_CODE_UNKNOWN_ERROR, "").build()
                 if (audioPlayerStatus.playbackState == PlaybackStateCompat.STATE_PLAYING) {
-                    scope.launch(dispatcher) {
+                    launchInScopeSafely {
                         audioFocusChangeListener.cancelAudioFocusLossJob()
                     }
                 }
@@ -315,7 +314,7 @@ class AudioSession(
             audioFocusChangeListener.playbackState = newPlaybackState.state
             logger.debug(TAG, "newPlaybackState=$newPlaybackState")
             sendNotificationBasedOnPlaybackState()
-            scope.launch(dispatcher) {
+            launchInScopeSafely {
                 setMediaSessionPlaybackState(playbackState)
             }
         }
@@ -351,7 +350,7 @@ class AudioSession(
         // I/O errors or device unplugged
         logger.warning(TAG, "I/O error or USB device unplugged, recovering")
         initPlaybackState()
-        scope.launch(dispatcher) {
+        launchInScopeSafely {
             audioPlayer.reInitAfterError()
         }
     }
@@ -363,7 +362,7 @@ class AudioSession(
             val contentHierarchyID: String? = queueChange.currentItem?.description?.mediaId
             logger.debug(TAG, "Current track content hierarchy ID: $contentHierarchyID")
             logger.flushToUSB()
-            scope.launch(dispatcher) {
+            launchInScopeSafely {
                 if (contentHierarchyID != null) {
                     val audioItem: AudioItem = audioItemLibrary.getAudioItemForTrack(contentHierarchyID)
                     val metadata: MediaMetadataCompat = audioItemLibrary.createMetadataForItem(audioItem)
@@ -453,90 +452,100 @@ class AudioSession(
                 AudioSessionChangeType.ON_PLAY -> {
                     audioFocusChangeListener.lastUserRequestedStateChange = audioSessionChange.type
                     scope.launch(dispatcher) {
-                        try {
+                        callSafelyAndShowErrorsOnGUI(audioSessionChange.type.name) {
                             if (playbackState.isStopped) {
                                 val queueIndex = audioPlayer.getPlaybackQueueIndex()
                                 audioPlayer.preparePlayFromQueue(queueIndex, playbackState.position.toInt())
                             }
                             audioPlayer.start()
-                        } catch (exc: RuntimeException) {
-                            logger.exception(TAG, "Exception in AudioSessionChange.ON_PLAY", exc)
-                            if (exc is NoItemsInQueueException) {
-                                gui.showErrorToastMsg(context.getString(R.string.toast_error_no_tracks))
-                            }
                         }
                     }
                 }
                 AudioSessionChangeType.ON_PLAY_FROM_MEDIA_ID -> {
                     audioFocusChangeListener.lastUserRequestedStateChange = AudioSessionChangeType.ON_PLAY
                     scope.launch(dispatcher) {
-                        playFromContentHierarchyID(audioSessionChange.contentHierarchyID)
+                        callSafelyAndShowErrorsOnGUI(audioSessionChange.type.name) {
+                            playFromContentHierarchyID(audioSessionChange.contentHierarchyID)
+                        }
                     }
                 }
                 AudioSessionChangeType.ON_SKIP_TO_QUEUE_ITEM -> {
                     scope.launch(dispatcher) {
-                        playFromQueueId(audioSessionChange.queueID)
+                        callSafelyAndShowErrorsOnGUI(audioSessionChange.type.name) {
+                            playFromQueueId(audioSessionChange.queueID)
+                        }
                     }
                 }
                 AudioSessionChangeType.ON_STOP -> {
                     audioFocusChangeListener.lastUserRequestedStateChange = audioSessionChange.type
                     scope.launch(dispatcher) {
-                        storePlaybackState()
-                        // TODO: release some more things in audiosession/player, e.g. queue/index in queue?
+                        callSafelyAndShowErrorsOnGUI(audioSessionChange.type.name) {
+                            storePlaybackState()
+                            // TODO: release some more things in audiosession/player, e.g. queue/index in queue?
+                        }
                     }
                 }
                 AudioSessionChangeType.ON_ENABLE_LOG_TO_USB -> {
                     scope.launch(dispatcher) {
-                        try {
+                        callSafelyAndShowErrorsOnGUI(audioSessionChange.type.name) {
                             audioFileStorage.enableLogToUSB()
-                        } catch (exc: DriveAlmostFullException) {
-                            logger.exceptionLogcatOnly(TAG, "Drive is almost full, cannot log to USB", exc)
-                            gui.showErrorToastMsg(context.getString(R.string.toast_error_not_enough_space_for_log))
                         }
                     }
                 }
                 AudioSessionChangeType.ON_DISABLE_LOG_TO_USB -> {
                     scope.launch(dispatcher) {
-                        audioFileStorage.disableLogToUSB()
+                        callSafelyAndShowErrorsOnGUI(audioSessionChange.type.name) {
+                            audioFileStorage.disableLogToUSB()
+                        }
                     }
                 }
                 AudioSessionChangeType.ON_ENABLE_EQUALIZER -> {
                     scope.launch(dispatcher) {
-                        audioPlayer.enableEqualizer()
+                        callSafelyAndShowErrorsOnGUI(audioSessionChange.type.name) {
+                            audioPlayer.enableEqualizer()
+                        }
                     }
                 }
                 AudioSessionChangeType.ON_DISABLE_EQUALIZER -> {
                     scope.launch(dispatcher) {
-                        audioPlayer.disableEqualizer()
+                        callSafelyAndShowErrorsOnGUI(audioSessionChange.type.name) {
+                            audioPlayer.disableEqualizer()
+                        }
                     }
                 }
                 AudioSessionChangeType.ON_SET_EQUALIZER_PRESET -> {
                     scope.launch(dispatcher) {
-                        val equalizerPreset = EqualizerPreset.valueOf(audioSessionChange.equalizerPreset)
-                        audioPlayer.setEqualizerPreset(equalizerPreset)
+                        callSafelyAndShowErrorsOnGUI(audioSessionChange.type.name) {
+                            val equalizerPreset = EqualizerPreset.valueOf(audioSessionChange.equalizerPreset)
+                            audioPlayer.setEqualizerPreset(equalizerPreset)
+                        }
                     }
                 }
                 AudioSessionChangeType.ON_EJECT -> {
                     audioFocusChangeListener.lastUserRequestedStateChange = AudioSessionChangeType.ON_STOP
                     scope.launch(dispatcher) {
-                        storePlaybackState()
-                        audioPlayer.prepareForEject()
-                        audioFileStorage.disableLogToUSB()
-                        audioFileStorage.removeAllDevicesFromStorage()
-                        gui.showToastMsg(context.getString(R.string.toast_eject_completed))
+                        callSafelyAndShowErrorsOnGUI(audioSessionChange.type.name) {
+                            storePlaybackState()
+                            audioPlayer.prepareForEject()
+                            audioFileStorage.disableLogToUSB()
+                            audioFileStorage.removeAllDevicesFromStorage()
+                            gui.showToastMsg(context.getString(R.string.toast_eject_completed))
+                        }
                     }
                 }
                 AudioSessionChangeType.ON_PLAY_FROM_SEARCH -> {
                     audioFocusChangeListener.lastUserRequestedStateChange = AudioSessionChangeType.ON_PLAY
                     scope.launch(dispatcher) {
-                        if (audioSessionChange.unspecificToPlay.isBlank()) {
-                            playFromSearch(
-                                audioSessionChange.trackToPlay,
-                                audioSessionChange.albumToPlay,
-                                audioSessionChange.artistToPlay
-                            )
-                        } else {
-                            playUnspecificFromSearch(audioSessionChange.unspecificToPlay)
+                        callSafelyAndShowErrorsOnGUI(audioSessionChange.type.name) {
+                            if (audioSessionChange.unspecificToPlay.isBlank()) {
+                                playFromSearch(
+                                    audioSessionChange.trackToPlay,
+                                    audioSessionChange.albumToPlay,
+                                    audioSessionChange.artistToPlay
+                                )
+                            } else {
+                                playUnspecificFromSearch(audioSessionChange.unspecificToPlay)
+                            }
                         }
                     }
                 }
@@ -547,9 +556,27 @@ class AudioSession(
         }
     }
 
+    private inline fun <T> callSafelyAndShowErrorsOnGUI(exceptionMsg: String, call: () -> T) {
+        try {
+            call()
+        } catch (exc: Exception) {
+            logger.exception(TAG, "Exception in $exceptionMsg", exc)
+            when (exc) {
+                is NoItemsInQueueException -> gui.showErrorToastMsg(context.getString(R.string.toast_error_no_tracks))
+                is DriveAlmostFullException -> {
+                    logger.exceptionLogcatOnly(TAG, "Drive is almost full, cannot log to USB", exc)
+                    gui.showErrorToastMsg(context.getString(R.string.toast_error_not_enough_space_for_log))
+                }
+                else -> {
+                    // ignore
+                }
+            }
+        }
+    }
+
     private fun recoverFromError() {
         logger.debug(TAG, "recoverFromError()")
-        scope.launch(dispatcher) {
+        launchInScopeSafely {
             // TODO: naming
             audioPlayer.prepareForEject()
         }
@@ -730,7 +757,7 @@ class AudioSession(
             // when restoring from persistent state instead (to save storage space)
             playbackStateToPersist.queueIDs = queueIDs.subList(queueIndex, queueIndex+1)
         }
-        scope.launch(dispatcher) {
+        launchInScopeSafely {
             persistentStorage.store(playbackStateToPersist)
         }
     }
@@ -769,6 +796,16 @@ class AudioSession(
             queueIndex = audioPlayer.getPlaybackQueueIndex()
         }
         return queueIndex
+    }
+
+    private fun launchInScopeSafely(func: suspend () -> Unit) {
+        scope.launch(dispatcher) {
+            try {
+                func()
+            } catch (exc: Exception) {
+                logger.exception(TAG, exc.message.toString(), exc)
+            }
+        }
     }
 
     // TODO: split file, too long

@@ -49,7 +49,7 @@ class AudioItemRepository(
 
     suspend fun getTrack(id: Long): AudioItem {
         val track: Track = withContext(dispatcher) {
-            database.trackDAO().queryByID(id) ?: throw IllegalArgumentException("No track for id: $id")
+            database.trackDAO().queryByID(id) ?: throw RuntimeException("No track for id: $id")
         }
         return createAudioItemForTrack(track)
     }
@@ -212,7 +212,7 @@ class AudioItemRepository(
 
     fun hasAudioFileChangedForTrack(audioFile: AudioFile, trackID: Long): Boolean {
         val track =
-            database.trackDAO().queryByID(trackID) ?: throw IllegalArgumentException("No track for id: $trackID")
+            database.trackDAO().queryByID(trackID) ?: throw RuntimeException("No track for id: $trackID")
         // ignore the millisecond part in the timestamps
         val trackLastModSec = track.lastModifiedEpochTime / 1000
         val audioFileLastModSec = audioFile.lastModifiedDate.time / 1000

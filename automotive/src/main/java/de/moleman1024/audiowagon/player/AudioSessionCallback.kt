@@ -59,27 +59,27 @@ class AudioSessionCallback(
         logger.debug(TAG, "onCustomAction($action, $extras)")
         when (action) {
             ACTION_SHUFFLE_ON -> {
-                scope.launch(dispatcher) {
+                launchInScopeSafely {
                     audioPlayer.setShuffleOn()
                 }
             }
             ACTION_SHUFFLE_OFF -> {
-                scope.launch(dispatcher) {
+                launchInScopeSafely {
                     audioPlayer.setShuffleOff()
                 }
             }
             ACTION_REPEAT_ON -> {
-                scope.launch(dispatcher) {
+                launchInScopeSafely {
                     audioPlayer.setRepeatOn()
                 }
             }
             ACTION_REPEAT_OFF -> {
-                scope.launch(dispatcher) {
+                launchInScopeSafely {
                     audioPlayer.setRepeatOff()
                 }
             }
             ACTION_EJECT -> {
-                scope.launch(dispatcher) {
+                launchInScopeSafely {
                     notifyObservers(AudioSessionChange(AudioSessionChangeType.ON_EJECT))
                 }
             }
@@ -153,7 +153,7 @@ class AudioSessionCallback(
                 }
             }
         }
-        scope.launch(dispatcher) {
+        launchInScopeSafely {
             notifyObservers(audioSessionChange)
         }
     }
@@ -161,10 +161,8 @@ class AudioSessionCallback(
     override fun onPause() {
         logger.debug(TAG, "onPause()")
         super.onPause()
-        scope.launch(dispatcher) {
+        launchInScopeSafely {
             audioPlayer.pause()
-            // TODO: maybe release audio source, when started again start from stored position? To prevent issue:
-            //  when USB device unplugged when media data source is still referenced it cannot be closed
             notifyObservers(AudioSessionChange(AudioSessionChangeType.ON_PAUSE))
         }
     }
@@ -172,7 +170,7 @@ class AudioSessionCallback(
     override fun onSeekTo(pos: Long) {
         logger.debug(TAG, "onSeekTo(pos=$pos)")
         super.onSeekTo(pos)
-        scope.launch(dispatcher) {
+        launchInScopeSafely {
             audioPlayer.seekTo(pos.toInt())
         }
     }
@@ -180,7 +178,7 @@ class AudioSessionCallback(
     override fun onSkipToNext() {
         logger.debug(TAG, "onSkipToNext()")
         super.onSkipToNext()
-        scope.launch(dispatcher) {
+        launchInScopeSafely {
             audioPlayer.skipNextTrack()
         }
     }
@@ -188,7 +186,7 @@ class AudioSessionCallback(
     override fun onSkipToPrevious() {
         logger.debug(TAG, "onSkipToPrevious()")
         super.onSkipToPrevious()
-        scope.launch(dispatcher) {
+        launchInScopeSafely {
             audioPlayer.skipPreviousTrack()
         }
     }
@@ -209,7 +207,7 @@ class AudioSessionCallback(
         logger.debug(TAG, "onStop()")
         // super.onStop() will release audio focus
         super.onStop()
-        scope.launch(dispatcher) {
+        launchInScopeSafely {
             audioPlayer.stop()
             notifyObservers(AudioSessionChange(AudioSessionChangeType.ON_STOP))
         }
@@ -230,6 +228,16 @@ class AudioSessionCallback(
         logger.debug(TAG, "onPrepareFromUri(uri=$uri)")
         // not supported, but it seems this is needed for Google Assistant?
         super.onPrepareFromUri(uri, extras)
+    }
+
+    private fun launchInScopeSafely(func: suspend () -> Unit) {
+        scope.launch(dispatcher) {
+            try {
+                func()
+            } catch (exc: Exception) {
+                logger.exception(TAG, exc.message.toString(), exc)
+            }
+        }
     }
 
     // we don't use onSetShuffleMode and onSetRepeatMode here because AAOS does not display the GUI icons for these

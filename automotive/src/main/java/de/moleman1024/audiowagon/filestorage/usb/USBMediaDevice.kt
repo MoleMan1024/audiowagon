@@ -161,7 +161,7 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
         }
         fileSystem = usbDevice.initFilesystem(context)
         if (fileSystem == null) {
-            logger.error(TAG, "No filesystem!")
+            logger.error(TAG, "No filesystem in $this")
             return
         }
         volumeLabel = fileSystem?.volumeLabel?.trim() ?: ""
@@ -426,7 +426,7 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
         return result
     }
 
-    fun isDriveAlmostFull(): Boolean {
+    private fun isDriveAlmostFull(): Boolean {
         if (!hasFileSystem()) {
             throw NoFileSystemException()
         }

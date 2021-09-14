@@ -33,7 +33,7 @@ class ContentHierarchyGroupTracks(id: String, context: Context, audioItemLibrary
     override suspend fun getAudioItems(): List<AudioItem> {
         val items: MutableList<AudioItem> = mutableListOf()
         for (repo in audioItemLibrary.storageToRepoMap.values) {
-            // TODO: this can be improved, we don't need to request all tracks here
+            // TODO: this can be improved, we don't need to request all tracks here, adds latency
             items += repo.getAllTracks()
         }
         val groupIndex = getDatabaseID(id).toInt()
