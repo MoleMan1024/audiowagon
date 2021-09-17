@@ -24,6 +24,11 @@ const val RESOURCE_ROOT_URI = "android.resource://de.moleman1024.audiowagon/draw
 const val METADATA_KEY_SAMPLERATE = 38
 const val METADATA_KEY_BITS_PER_SAMPLE = 39
 
+/**
+ * Extract metadata from audio files.
+ *
+ * See also https://developer.android.com/reference/kotlin/android/media/MediaMetadataRetriever
+ */
 class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
 
     fun extractMetadataFrom(audioFile: AudioFile): AudioItem {

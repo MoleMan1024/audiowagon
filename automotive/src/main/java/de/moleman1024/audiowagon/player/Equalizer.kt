@@ -13,6 +13,9 @@ private val logger = Logger
 private const val NUM_EQ_BANDS: Short = 5
 private const val NUM_RETRIES = 3
 
+/**
+ * See https://developer.android.com/reference/kotlin/android/media/audiofx/Equalizer
+ */
 class Equalizer(audioSessionID: Int) {
     private val equalizerNormalPriority = 0
     private val equalizer = Equalizer(equalizerNormalPriority, audioSessionID)

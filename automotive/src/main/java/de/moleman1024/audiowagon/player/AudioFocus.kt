@@ -19,6 +19,7 @@ private val logger = Logger
 /**
  * See https://developer.android.com/guide/topics/media-apps/audio-focus#audio-focus-8-0
  * and https://source.android.com/devices/automotive
+ * and https://developer.android.com/guide/topics/media-apps/audio-app/mediasession-callbacks
  */
 class AudioFocus(context: Context) {
     private var audioManager: AudioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager

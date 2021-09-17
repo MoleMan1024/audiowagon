@@ -33,6 +33,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.Bundle
 import android.os.IBinder
+import android.os.PowerManager
 import android.support.v4.media.MediaBrowserCompat.MediaItem
 import android.support.v4.media.session.PlaybackStateCompat
 import androidx.annotation.VisibleForTesting
@@ -46,10 +47,7 @@ import de.moleman1024.audiowagon.authorization.PackageValidation
 import de.moleman1024.audiowagon.authorization.USBDevicePermissions
 import de.moleman1024.audiowagon.broadcast.PowerEventReceiver
 import de.moleman1024.audiowagon.exceptions.CannotRecoverUSBException
-import de.moleman1024.audiowagon.filestorage.AudioFileStorage
-import de.moleman1024.audiowagon.filestorage.AudioFileStorageLocation
-import de.moleman1024.audiowagon.filestorage.IndexingStatus
-import de.moleman1024.audiowagon.filestorage.StorageAction
+import de.moleman1024.audiowagon.filestorage.*
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.*
 import de.moleman1024.audiowagon.persistence.PersistentPlaybackState
@@ -73,9 +71,18 @@ const val CMD_DISABLE_EQUALIZER = "de.moleman1024.audiowagon.CMD_DISABLE_EQUALIZ
 const val CMD_SET_EQUALIZER_PRESET = "de.moleman1024.audiowagon.CMD_SET_EQUALIZER_PRESET"
 const val EQUALIZER_PRESET_KEY = "preset"
 
+@ExperimentalCoroutinesApi
+/**
+ * This is the main entry point of the app.
+ *
+ * See
+ * https://developer.android.com/training/cars/media
+ * https://developer.android.com/training/cars/media/automotive-os
+ * https://developers.google.com/cars/design/automotive-os/apps/media/interaction-model/playing-media
+ *
+ */
 // We need to use MediaBrowserServiceCompat instead of MediaBrowserService because the latter does not support
 // searching
-@ExperimentalCoroutinesApi
 class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     private var lifecycleRegistry: LifecycleRegistry = LifecycleRegistry(this)
     private lateinit var audioItemLibrary: AudioItemLibrary
@@ -95,6 +102,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     private var isServiceForeground: Boolean = false
     private var latestContentHierarchyIDRequested: String = ""
     private var lastAudioPlayerState: AudioPlayerState = AudioPlayerState.IDLE
+    private var isShuttingDown: Boolean = false
     // needs to be public for accessing logging from testcases
     val logger = Logger
 
@@ -110,10 +118,21 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         powerEventReceiver = PowerEventReceiver()
         powerEventReceiver.audioBrowserService = this
         val shutdownFilter = IntentFilter().apply {
-            addAction(Intent.ACTION_SHUTDOWN)
             addAction(ACTION_QUICKBOOT_POWEROFF)
+            addAction(Intent.ACTION_BATTERY_CHANGED)
+            addAction(Intent.ACTION_BATTERY_LOW)
+            addAction(Intent.ACTION_DREAMING_STARTED)
+            addAction(Intent.ACTION_POWER_DISCONNECTED)
+            addAction(Intent.ACTION_POWER_CONNECTED)
+            addAction(Intent.ACTION_REBOOT)
             addAction(Intent.ACTION_SCREEN_OFF)
             addAction(Intent.ACTION_SCREEN_ON)
+            addAction(Intent.ACTION_SHUTDOWN)
+            addAction(Intent.ACTION_MY_PACKAGE_REPLACED)
+            addAction(Intent.ACTION_MY_PACKAGE_SUSPENDED)
+            addAction(Intent.ACTION_MY_PACKAGE_UNSUSPENDED)
+            addAction(PowerManager.ACTION_DEVICE_IDLE_MODE_CHANGED)
+            addAction(PowerManager.ACTION_POWER_SAVE_MODE_CHANGED)
         }
         registerReceiver(powerEventReceiver, shutdownFilter)
         startup()
@@ -314,6 +333,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         }
         logger.info(TAG, "Audio library has been built for storages: $storageIDs")
         notifyBrowserChildrenChangedAllLevels()
+        audioFileStorage.notifyIndexingIssues()
     }
 
     private suspend fun restoreFromPersistent(state: PersistentPlaybackState) {
@@ -334,11 +354,16 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
 
     private fun onStorageLocationRemoved(storageID: String) {
         logger.info(TAG, "Storage location was removed: $storageID")
+        if (isShuttingDown) {
+            logger.debug(TAG, "Shutdown is in progress")
+            return
+        }
         runBlocking(dispatcher) {
             cancelRestoreFromPersistent()
             cancelLoadChildren()
             cancelLibraryCreation()
         }
+        audioSession.storePlaybackState()
         audioSession.reset()
         if (storageID.isNotBlank()) {
             try {
@@ -349,6 +374,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             }
         }
         notifyBrowserChildrenChangedAllLevels()
+        stopService()
     }
 
     private fun notifyBrowserChildrenChangedAllLevels() {
@@ -368,6 +394,9 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         }
     }
 
+    /**
+     * See https://developer.android.com/guide/components/services#Lifecycle
+     */
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         logger.debug(TAG, "onStartCommand(intent=$intent, flags=$flags, startid=$startId)")
         lifecycleRegistry.currentState = Lifecycle.State.STARTED
@@ -376,6 +405,9 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     }
 
     @Suppress("RedundantNullableReturnType")
+    /**
+     * https://developer.android.com/guide/components/bound-services#Lifecycle
+     */
     override fun onBind(intent: Intent?): IBinder? {
         logger.debug(TAG, "onBind()")
         return super.onBind(intent)
@@ -393,7 +425,6 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     override fun onTaskRemoved(rootIntent: Intent?) {
         logger.debug(TAG, "onTaskRemoved()")
         audioSession.shutdown()
-        stopService()
         super.onTaskRemoved(rootIntent)
     }
 
@@ -412,7 +443,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
 
     override fun onDestroy() {
         // FIXME: this will not close the mediabrowser client GUI, make sure it will still work when service destroyed
-        // TODO: check "Stopping service due to app idle"
+        // TODO: check "Stopping service due to app idle", happens sometimes but does not call any method of service?
         logger.debug(TAG, "onDestroy()")
         shutdown()
         unregisterReceiver(powerEventReceiver)
@@ -421,6 +452,10 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
 
     @Synchronized
     fun shutdown() {
+        if (isShuttingDown) {
+            logger.warning(TAG, "Already shutting down")
+        }
+        isShuttingDown = true
         logger.info(TAG, "shutdown()")
         if (lifecycleRegistry.currentState == Lifecycle.State.DESTROYED) {
             return
@@ -438,6 +473,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         stopService()
         // since we use lifecycle scope almost everywhere, this should cancel all pending coroutines
         lifecycleRegistry.currentState = Lifecycle.State.DESTROYED
+        // process should be stopped soon afterwards
     }
 
     private suspend fun cancelLibraryCreation() {

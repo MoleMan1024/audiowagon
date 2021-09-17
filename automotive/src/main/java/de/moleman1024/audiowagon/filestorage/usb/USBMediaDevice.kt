@@ -19,6 +19,7 @@ import com.github.mjdev.libaums.fs.UsbFile
 import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.exceptions.DriveAlmostFullException
 import de.moleman1024.audiowagon.exceptions.NoFileSystemException
+import de.moleman1024.audiowagon.exceptions.TooManyFilesInDirException
 import de.moleman1024.audiowagon.filestorage.AudioFile
 import de.moleman1024.audiowagon.filestorage.MediaDevice
 import de.moleman1024.audiowagon.log.Logger
@@ -30,6 +31,7 @@ import java.time.format.DateTimeFormatter
 private const val TAG = "USBMediaDevice"
 private val logger = Logger
 private const val MINIMUM_FREE_SPACE_FOR_LOGGING_MB = 10
+private const val LOG_DIRECTORY = "aw_logs"
 
 // subclass 6 means that the usb mass storage device implements the SCSI transparent command set
 private const val INTERFACE_SUBCLASS = 6
@@ -37,12 +39,16 @@ private const val INTERFACE_SUBCLASS = 6
 // protocol 80 means the communication happens only via bulk transfers
 private const val INTERFACE_PROTOCOL = 80
 
+private const val DEFAULT_FILESYSTEM_CHUNK_SIZE = 32768
+
 class USBMediaDevice(private val context: Context, private val usbDevice: USBDevice): MediaDevice {
     private var fileSystem: FileSystem? = null
     private var serialNum: String = ""
     private var isSerialNumAvail: Boolean? = null
     private var logFile: UsbFile? = null
     private var volumeLabel: String = ""
+    private var logDirectoryNum: Int = 0
+    val directoriesWithIssues = mutableListOf<String>()
 
     fun requestPermission(intentBroadcast: PendingIntent) {
         usbDevice.requestPermission(intentBroadcast)
@@ -166,6 +172,24 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
         }
         volumeLabel = fileSystem?.volumeLabel?.trim() ?: ""
         logger.debug(TAG, "Initialized filesystem with volume label: $volumeLabel")
+        if (areTooManyFilesInDir(getRoot())) {
+            throw TooManyFilesInDirException()
+        }
+    }
+
+    /**
+     * libaums has a bug where more than 128 in root directory will corrupt the filesystem, avoid reading such
+     * filesystems and notify user (see https://github.com/MoleMan1024/audiowagon_beta/issues/14)
+     */
+    private fun areTooManyFilesInDir(directory: UsbFile): Boolean {
+        var numFiles = 0
+        directory.list().forEach {
+            if (it.trim().matches(Regex(".*\\.\\w\\w\\w\\w?$"))) {
+                numFiles++
+            }
+        }
+        logger.verbose(TAG, "Found $numFiles files in ${directory.absolutePath}")
+        return numFiles >= 128
     }
 
     fun enableLogging() {
@@ -182,9 +206,31 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
         val now = LocalDateTime.now()
         val logFileName = "audiowagon_${now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"))}.log"
         try {
-            logFile = getRoot().createFile(logFileName)
-            logger.debug(TAG, "Logging to file on USB device: $logFile")
-            logger.setUSBFile(logFile!!, fileSystem?.chunkSize ?: 32768)
+            // libaums has a bug where more than 128 files in a directory will corrupt the filesystem, so we also
+            // avoid writing too many log files in the same directory
+            // (see https://github.com/MoleMan1024/audiowagon_beta/issues/14 )
+            var logDirectory: UsbFile? = null
+            var tries = 0
+            while (tries < 100) {
+                logDirectory = getRoot().search("${LOG_DIRECTORY}_$logDirectoryNum")
+                if (logDirectory == null) {
+                    logDirectory = getRoot().createDirectory("${LOG_DIRECTORY}_$logDirectoryNum")
+                    break
+                } else {
+                    if (logDirectory.list().size >= 128) {
+                        logDirectoryNum++
+                    } else {
+                        break
+                    }
+                }
+                tries++
+            }
+            if (logDirectory == null) {
+                throw TooManyFilesInDirException()
+            }
+            logFile = logDirectory.createFile(logFileName)
+            logger.debug(TAG, "Logging to file on USB device: ${logFile!!.absolutePath}")
+            logger.setUSBFile(logFile!!, fileSystem?.chunkSize ?: DEFAULT_FILESYSTEM_CHUNK_SIZE)
             logVersionToUSBLogfile()
         } catch (exc: IOException) {
             logger.exception(TAG, "Cannot create log file on USB device", exc)
@@ -251,6 +297,7 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
      * Traverses files/directories depth-first
      */
     fun walkTopDown(rootDirectory: UsbFile): Sequence<UsbFile> = sequence {
+        directoriesWithIssues.clear()
         val stack = ArrayDeque<Iterator<UsbFile>>()
         val allFilesDirs = mutableMapOf<String, Unit>()
         stack.add(rootDirectory.listFiles().iterator())
@@ -260,10 +307,18 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
                 if (!allFilesDirs.containsKey(fileOrDirectory.absolutePath)) {
                     allFilesDirs[fileOrDirectory.absolutePath] = Unit
                     if (!fileOrDirectory.isDirectory) {
-                        logger.verbose(TAG, "Found file/dir: ${fileOrDirectory.absolutePath}")
+                        logger.verbose(TAG, "Found file: ${fileOrDirectory.absolutePath}")
                         yield(fileOrDirectory)
                     } else {
-                        stack.add(fileOrDirectory.listFiles().iterator())
+                        if (!areTooManyFilesInDir(fileOrDirectory)) {
+                            stack.add(fileOrDirectory.listFiles().iterator())
+                        } else {
+                            // libaums has a bug where using listFiles() with more than 128 files in a directory will
+                            // corrupt the filesystem, avoid reading such directories
+                            // (see https://github.com/MoleMan1024/audiowagon_beta/issues/14 )
+                            logger.warning(TAG, "Ignoring directory with more than 128 files: $fileOrDirectory")
+                            directoriesWithIssues.add(fileOrDirectory.absolutePath)
+                        }
                     }
                 }
             } else {
@@ -399,6 +454,13 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
         return serialNum
     }
 
+    private fun isDriveAlmostFull(): Boolean {
+        if (!hasFileSystem()) {
+            throw NoFileSystemException()
+        }
+        return fileSystem!!.freeSpace < 1024 * 1024 * MINIMUM_FREE_SPACE_FOR_LOGGING_MB
+    }
+
     override fun equals(other: Any?): Boolean {
         if (other !is USBMediaDevice) {
             return false
@@ -424,13 +486,6 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
             result = 31 * result + volumeLabel.hashCode()
         }
         return result
-    }
-
-    private fun isDriveAlmostFull(): Boolean {
-        if (!hasFileSystem()) {
-            throw NoFileSystemException()
-        }
-        return fileSystem!!.freeSpace < 1024 * 1024 * MINIMUM_FREE_SPACE_FOR_LOGGING_MB
     }
 
 }

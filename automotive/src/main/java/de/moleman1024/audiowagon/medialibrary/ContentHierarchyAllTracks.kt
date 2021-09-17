@@ -28,7 +28,7 @@ class ContentHierarchyAllTracks(
     ContentHierarchyElement(CONTENT_HIERARCHY_TRACKS_ROOT, context, audioItemLibrary) {
 
     override suspend fun getMediaItems(): List<MediaItem> {
-        var mediaItems = mutableListOf<MediaItem>()
+        val mediaItems = mutableListOf<MediaItem>()
         if (!audioItemLibrary.areAnyStoragesAvail()) {
             logger.debug(TAG, "Showing pseudo MediaItem 'no entries available'")
             mediaItems += createPseudoNoEntriesItem()

@@ -106,4 +106,6 @@ Vektorgrafiken, entwickelt von Google\n\nLizenzvereinbarungen:\nwww.apache.org/l
 	<string name="legal_disclaimer_cancel_btn">Abbrechen</string>
 	<string name="toast_error_no_tracks">Keine Titel</string>
 	<string name="toast_error_not_enough_space_for_log">Zu wenig freier Speicherplatz für Logdatei</string>
+	<string name="setting_USB_status_too_many_files_in_dir">Zu viele Dateien in einem Verzeichnis, bitte verwenden
+Sie Unterverzeichnisse.</string>
 </resources>

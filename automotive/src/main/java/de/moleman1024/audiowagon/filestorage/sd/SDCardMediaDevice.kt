@@ -47,7 +47,7 @@ class SDCardMediaDevice(val id: String) : MediaDevice {
                 if (!allFilesDirs.containsKey(fileOrDirectory.absolutePath)) {
                     allFilesDirs[fileOrDirectory.absolutePath] = Unit
                     if (!fileOrDirectory.isDirectory) {
-                        logger.verbose(TAG, "Found file/dir: ${fileOrDirectory.absolutePath}")
+                        logger.verbose(TAG, "Found file: ${fileOrDirectory.absolutePath}")
                         yield(fileOrDirectory)
                     } else {
                         stack.add(fileOrDirectory.listFiles()!!.iterator())

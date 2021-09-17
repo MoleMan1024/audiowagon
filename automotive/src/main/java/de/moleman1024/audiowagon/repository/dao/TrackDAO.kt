@@ -19,6 +19,9 @@ interface TrackDAO {
     @Query("SELECT * FROM track ORDER BY name ASC")
     fun queryAll(): List<Track>
 
+    @Query("SELECT * FROM track ORDER BY random() LIMIT :maxNumItems")
+    fun queryRandom(maxNumItems: Int): List<Track>
+
     @Query("SELECT * FROM track WHERE uriString = :uri")
     fun queryByURI(uri: String): Track?
 

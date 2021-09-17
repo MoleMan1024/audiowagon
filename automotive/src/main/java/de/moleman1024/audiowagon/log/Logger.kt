@@ -32,9 +32,9 @@ object Logger : LoggerInterface {
     private var isStoreLogs = false
     private const val maxBufferLines: Int = 1000
     private val buffer = mutableListOf<String>()
+    private val dispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
     @VisibleForTesting(otherwise = VisibleForTesting.NONE)
     private val storedLogs = mutableListOf<String>()
-    private val dispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
 
     override fun setUSBFile(usbFileForLogging: UsbFile, chunkSize: Int) {
         usbFileHasError = false
@@ -44,11 +44,13 @@ object Logger : LoggerInterface {
         runBlocking(dispatcher) {
             try {
                 bufOutStream = BufferedOutputStream(outStream, chunkSize)
-                bufOutStream?.write("Flushing ${buffer.size} lines from buffer to log file\n".toByteArray())
-                buffer.forEach {
-                    bufOutStream?.write(it.toByteArray())
+                if (buffer.size > 0) {
+                    bufOutStream?.write("Flushing ${buffer.size} lines from buffer to log file\n".toByteArray())
+                    buffer.forEach {
+                        bufOutStream?.write(it.toByteArray())
+                    }
+                    bufOutStream?.flush()
                 }
-                bufOutStream?.flush()
             } catch (exc: IOException) {
                 exceptionLogcatOnly(TAG, "Could not write to USB log file", exc)
                 usbFileHasError = true

@@ -36,6 +36,12 @@ private val USB_ACTIONS = listOf(
 )
 private val logger = Logger
 
+/**
+ * The USB device connection is done via the USB host mode, see
+ * https://developer.android.com/guide/topics/connectivity/usb/host
+ * supported by the libaums library to achieve FAT32 filesystem access without rooting the Android device,
+ * see https://github.com/magnusja/libaums
+ */
 class USBDeviceConnections(
     private val context: Context,
     val scope: CoroutineScope,
@@ -213,9 +219,20 @@ class USBDeviceConnections(
         } else {
             connectedDevice = getConnectedDevice(device)
         }
+        // TODO: improve this, does not look nice with so many catch statements
         try {
             connectedDevice.initFilesystem()
-        } catch (exc: IOException) {
+        } catch(exc: TooManyFilesInDirException) {
+            logger.exception(TAG, exc.message.toString(), exc)
+            connectedDevice.close()
+            updateUSBStatusInSettings(R.string.setting_USB_status_too_many_files_in_dir)
+            val deviceChange = exc.message?.let {
+                DeviceChange(error = context.getString(R.string.setting_USB_status_too_many_files_in_dir))
+            }
+            deviceChange?.let { notifyObservers(it) }
+            return
+        }
+        catch (exc: IOException) {
             logger.exception(TAG, "I/O exception when attaching USB drive", exc)
             updateUSBStatusInSettings(R.string.setting_USB_status_error)
             val deviceChange = exc.message?.let { DeviceChange(error = it) }
@@ -254,8 +271,8 @@ class USBDeviceConnections(
      */
     private fun onUSBDeviceDetached(device: USBMediaDevice) {
         try {
-            logger.debug(TAG, "onUSBDeviceDetached: $device")
             device.preventLoggingToDetachedDevice()
+            logger.debug(TAG, "onUSBDeviceDetached: $device")
             val deviceChange = DeviceChange(device, DeviceAction.DISCONNECT)
             notifyObservers(deviceChange)
         } catch (exc: IOException) {
@@ -335,6 +352,13 @@ class USBDeviceConnections(
             addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED)
             addAction(UsbManager.ACTION_USB_DEVICE_DETACHED)
             addAction(ACTION_USB_PERMISSION_CHANGE)
+            addAction(Intent.ACTION_MEDIA_UNMOUNTED)
+            addAction(Intent.ACTION_MEDIA_UNMOUNTABLE)
+            addAction(Intent.ACTION_MEDIA_MOUNTED)
+            addAction(Intent.ACTION_MEDIA_EJECT)
+            addAction(Intent.ACTION_MEDIA_REMOVED)
+            addAction(Intent.ACTION_MEDIA_BAD_REMOVAL)
+            addAction(Intent.ACTION_MEDIA_NOFS)
         }
         context.registerReceiver(usbBroadcastReceiver, filter)
     }

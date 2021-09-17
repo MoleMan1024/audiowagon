@@ -179,7 +179,7 @@ class AudioItemLibrary(
             CONTENT_HIERARCHY_TRACKS_ROOT -> ContentHierarchyAllTracks(context, this, audioFileStorage)
             CONTENT_HIERARCHY_ALBUMS_ROOT -> ContentHierarchyAllAlbums(context, this)
             CONTENT_HIERARCHY_ARTISTS_ROOT -> ContentHierarchyAllArtists(context, this)
-            CONTENT_HIERARCHY_SHUFFLE_ALL -> ContentHierarchyShuffleAll(context, this, audioFileStorage)
+            CONTENT_HIERARCHY_SHUFFLE_ALL -> ContentHierarchyShuffleAll(context, this)
             CONTENT_HIERARCHY_NONE -> ContentHierarchyNone(context, this)
             else -> {
                 when (ContentHierarchyElement.getType(contentHierarchyID)) {

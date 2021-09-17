@@ -17,6 +17,7 @@ import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.produce
 import java.io.File
 import java.net.URLConnection
+import java.nio.charset.StandardCharsets
 import java.util.*
 
 private const val URI_SCHEME = "sdAudio"
@@ -40,8 +41,9 @@ class SDCardStorageLocation(override val device: SDCardMediaDevice) : AudioFileS
                         continue
                     }
                     val builder: Uri.Builder = Uri.Builder()
-                    builder.scheme(URI_SCHEME).authority(storageID)
-                        .appendEncodedPath(file.absolutePath.removePrefix("/"))
+                    builder.scheme(URI_SCHEME).authority(storageID).appendEncodedPath(
+                        Uri.encode(file.absolutePath.removePrefix("/"), StandardCharsets.UTF_8.toString())
+                    )
                     val audioFile = AudioFile(builder.build())
                     audioFile.lastModifiedDate = Date(file.lastModified())
                     send(audioFile)
@@ -97,6 +99,11 @@ class SDCardStorageLocation(override val device: SDCardMediaDevice) : AudioFileS
 
     private fun isPlaylistFile(contentType: String): Boolean {
         return listOf("mpequrl", "mpegurl").any { it in contentType }
+    }
+
+    override fun getDirectoriesWithIndexingIssues(): List<String> {
+        // TODO
+        return emptyList()
     }
 
 }

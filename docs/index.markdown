@@ -28,6 +28,15 @@ This app will **play audio files** from an attached **USB flash drive** in cars 
 - **equalizer** with multiple presets
 - partial support for **voice input**
 
+## Limitations
+
+- You can only put up to 128 *files* into any directory. You can use as many *directories* as you want though. I advise a
+  directory structure like this: `D:/Music/<Artist>/<Album>/<Song1..n>.mp3`. If you don't follow this rule AudioWagon
+  version 0.2.5 will corrupt your USB drive and you will lose your files on it. The next version will prevent the data loss,
+  however the limitation will still exist until the underlying issue can be fixed (in upcoming version directories with
+  more than 128 files in them will be ignored).
+- In AudioWagon version 0.2.5 you can only use about 500 tracks maximum. This will be improved in the upcoming version.
+
 ## How to use
 
 - Format a USB flash drive using **FAT32** filesystem
@@ -99,7 +108,7 @@ on your USB drive might be damaged.
 
 ### Does the app support voice input?
 
-Partially. The following utterances work with Google Assistant:
+Partially. The following utterances work with Google Assistant (at least in English):
 
 - "Play"
 - "Pause"
@@ -107,6 +116,7 @@ Partially. The following utterances work with Google Assistant:
 - "Previous track"
 - "Skip ahead &lt;number&gt; seconds"
 - "Skip backwards &lt;number&gt; seconds"
+- "Volume up/down"
 
 However playing a song/artist/album by name (e.g. "play artist &lt;artistname&gt; on AudioWagon") does *not* work (if
 you find out why, please let me know).

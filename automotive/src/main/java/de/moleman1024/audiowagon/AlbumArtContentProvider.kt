@@ -29,6 +29,9 @@ private val logger = Logger
 const val AUTHORITY = "de.moleman1024.audiowagon"
 const val TRACK_ART_PATH = "trackArt"
 
+/**
+ * See https://developer.android.com/guide/topics/providers/content-provider-creating
+ */
 class AlbumArtContentProvider : ContentProvider() {
     private var defaultAlbumArtBitmap: Bitmap? = null
 

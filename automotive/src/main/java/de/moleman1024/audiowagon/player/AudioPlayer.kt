@@ -33,6 +33,9 @@ const val MEDIA_ERROR_AUDIO_FOCUS_DENIED = -1249
 /**
  * Manages two [MediaPlayer] instances + equalizer etc.
  *
+ * API: https://developer.android.com/reference/android/media/MediaPlayer
+ * Guide: https://developer.android.com/guide/topics/media/mediaplayer
+ *
  * For valid/invalid state transitions of [MediaPlayer] see:
  * https://developer.android.com/reference/android/media/MediaPlayer#valid-and-invalid-states
  */
@@ -58,8 +61,7 @@ class AudioPlayer(
     // A single thread executor is used to confine access to queue and other shared state variables to a single
     // thread when called from coroutines. MediaPlayer is not thread-safe, must be accessed from a thread that has
     // a Looper.
-    // See https://developer.android.com/reference/android/media/MediaPlayer
-    // and https://kotlinlang.org/docs/shared-mutable-state-and-concurrency.html#thread-confinement-fine-grained
+    // See https://kotlinlang.org/docs/shared-mutable-state-and-concurrency.html#thread-confinement-fine-grained
     private val dispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
     private val playbackQueue = PlaybackQueue(dispatcher)
     private val playerStatusDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
@@ -875,6 +877,14 @@ class AudioPlayer(
                 logger.exception(TAG, exc.message.toString(), exc)
             }
         }
+    }
+
+    suspend fun isPlaybackQueueEmpty(): Boolean = withContext(dispatcher) {
+        return@withContext playbackQueue.getCurrentItem() == null
+    }
+
+    suspend fun isIdle(): Boolean = withContext(dispatcher) {
+        return@withContext getState(currentMediaPlayer) == AudioPlayerState.IDLE
     }
 
 }

@@ -7,12 +7,12 @@ package de.moleman1024.audiowagon.medialibrary
 
 import android.content.Context
 import android.support.v4.media.MediaBrowserCompat.MediaItem
-import de.moleman1024.audiowagon.filestorage.AudioFileStorage
+
+private const val NUM_ITEMS_FOR_SHUFFLE_ALL = 500
 
 class ContentHierarchyShuffleAll(
     context: Context,
-    audioItemLibrary: AudioItemLibrary,
-    private val audioFileStorage: AudioFileStorage
+    audioItemLibrary: AudioItemLibrary
 ) :
     ContentHierarchyElement(CONTENT_HIERARCHY_SHUFFLE_ALL, context, audioItemLibrary) {
 
@@ -20,9 +20,17 @@ class ContentHierarchyShuffleAll(
         throw RuntimeException("Not browsable")
     }
 
+    /**
+     * We only return 500 items here, assuming for example 2 minute tracks * 500 items = 16.6 hours of music. This is
+     * done to avoid issues with huge media libraries, we don't want playback queues with 20k tracks.
+     */
     override suspend fun getAudioItems(): List<AudioItem> {
-        val allTracks = ContentHierarchyAllTracks(context, audioItemLibrary, audioFileStorage).getAudioItems()
-        return allTracks.shuffled()
+        val items: MutableList<AudioItem> = mutableListOf()
+        val numItemsPerRepo: Int = NUM_ITEMS_FOR_SHUFFLE_ALL / audioItemLibrary.storageToRepoMap.size
+        for (repo in audioItemLibrary.storageToRepoMap.values) {
+            items += repo.getRandomTracks(numItemsPerRepo)
+        }
+        return items
     }
 
 }

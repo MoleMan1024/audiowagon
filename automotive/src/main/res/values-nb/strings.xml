@@ -97,7 +97,7 @@ Ikke under noen omstendigheter skal utviklerne holdes ansvarlige for eventuelle 
 programvaren.</string>
 	<string name="legal_disclaimer_license_heading">Lisens</string>
 	<string name="legal_disclaimer_license_text">Denne programvaren er lisensiert under GPLv3.\nLaget av MoleMan1024</string>
-	<string name="legal_disclaimer_third_party_licenses_heading">3.parts lisenser</string>
+	<string name="legal_disclaimer_third_party_licenses_heading">Tredjepartslisenser</string>
 	<string name="legal_disclaimer_third_party_licenses_text">Denne appen bruker innhold fra følgende andre
 utviklere/prosjekter, alle lisensiert under Apache 2.0:\n\n&#x2013; diverse biblioteker fra Android Open Source
 Project\n&#x2013; libaums-biblioteket laget av Magnus Jahnen\n&#x2013; Material design vektorikoner fra
@@ -105,5 +105,6 @@ Google\n\nLisenstekster:\nwww.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/licen
 	<string name="legal_disclaimer_confirm_btn">Enig</string>
 	<string name="legal_disclaimer_cancel_btn">Avbryt</string>
 	<string name="toast_error_no_tracks">Ingen spor</string>
-	<string name="toast_error_not_enough_space_for_log">Ikke nok plass til å skrive loggfiler</string>
+	<string name="toast_error_not_enough_space_for_log">Utilstrekkelig plass til å skrive loggfil</string>
+	<string name="setting_USB_status_too_many_files_in_dir">For mange filer i en mappe, bruk undermapper</string>
 </resources>

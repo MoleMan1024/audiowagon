@@ -18,6 +18,9 @@ private val logger = Logger
 const val INDEXING_NOTIF_CHANNEL: String = "IndexingNotifChan"
 const val INDEXING_NOTIFICATION_ID: Int = 25468
 
+/**
+ * See https://developers.google.com/cars/design/automotive-os/components/toast
+ */
 open class GUI(private val scope: CoroutineScope, private val context: Context) {
     private var changeIndexingNotifJob: Job? = null
     private var notificationManager: NotificationManager =

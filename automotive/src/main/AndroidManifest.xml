@@ -63,7 +63,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 			</intent-filter>
 		</activity>
 
-		<!-- FIXME: does not seem to work on AAOS in Polestar 2, works fine on Pixel 3 with AAOS. Setting
+		<!-- FIXME: does not work on AAOS in Polestar 2, works fine on Pixel 3 with AAOS. Setting
  	 		   distractionOptimized=true does not help either (also Play store automatic review does not like it when I
  	 		   set that) -->
 		<activity

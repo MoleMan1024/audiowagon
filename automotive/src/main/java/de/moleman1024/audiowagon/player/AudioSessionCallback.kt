@@ -19,6 +19,9 @@ import kotlinx.coroutines.launch
 private const val TAG = "AudioSessCB"
 private val logger = Logger
 
+/**
+ * See https://developer.android.com/reference/android/support/v4/media/session/MediaSessionCompat.Callback
+ */
 class AudioSessionCallback(
     private val audioPlayer: AudioPlayer,
     private val scope: CoroutineScope,

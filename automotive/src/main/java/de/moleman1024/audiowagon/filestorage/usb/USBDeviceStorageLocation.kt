@@ -17,7 +17,9 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.produce
 import java.net.URLConnection
+import java.nio.charset.StandardCharsets
 import java.util.*
+import kotlin.RuntimeException
 
 private const val URI_SCHEME = "usbAudio"
 private const val TAG = "USBDevStorLoc"
@@ -33,18 +35,22 @@ class USBDeviceStorageLocation(override val device: USBMediaDevice) : AudioFileS
     override fun indexAudioFiles(scope: CoroutineScope): ReceiveChannel<AudioFile> {
         logger.debug(TAG, "indexAudioFiles(${device.getShortName()})")
         return scope.produce {
-            for (usbFile in device.walkTopDown(device.getRoot())) {
-                if (!isPlayableAudioFile(usbFile)) {
-                    logger.debug(TAG, "Skipping non-audio file: $usbFile")
-                    continue
+            try {
+                for (usbFile in device.walkTopDown(device.getRoot())) {
+                    if (!isPlayableAudioFile(usbFile)) {
+                        logger.debug(TAG, "Skipping unsupported file: $usbFile")
+                        continue
+                    }
+                    val builder: Uri.Builder = Uri.Builder()
+                    builder.scheme(URI_SCHEME).authority(storageID).appendEncodedPath(
+                        Uri.encode(usbFile.absolutePath.removePrefix("/"), StandardCharsets.UTF_8.toString())
+                    )
+                    val audioFile = AudioFile(builder.build())
+                    audioFile.lastModifiedDate = Date(usbFile.lastModified())
+                    send(audioFile)
                 }
-                val builder: Uri.Builder = Uri.Builder()
-                builder.scheme(URI_SCHEME).authority(storageID).appendEncodedPath(
-                    usbFile.absolutePath.removePrefix("/")
-                )
-                val audioFile = AudioFile(builder.build())
-                audioFile.lastModifiedDate = Date(usbFile.lastModified())
-                send(audioFile)
+            } catch (exc: RuntimeException) {
+                logger.exception(TAG, exc.message.toString(), exc)
             }
         }
     }
@@ -67,8 +73,6 @@ class USBDeviceStorageLocation(override val device: USBMediaDevice) : AudioFileS
         isDetached = true
     }
 
-    // TODO: might want to check also if audio file format is compatible with player
-    // see https://source.android.com/compatibility/10/android-10-cdd#5_1_3_audio_codecs_details
     private fun isPlayableAudioFile(usbFile: UsbFile): Boolean {
         if (usbFile.isDirectory || usbFile.isRoot) {
             return false
@@ -81,10 +85,7 @@ class USBDeviceStorageLocation(override val device: USBMediaDevice) : AudioFileS
             logger.exception(TAG, "Error when guessing content type of: ${usbFile.name}", exc)
             return false
         }
-        if (!guessedContentType.startsWith("audio")) {
-            return false
-        }
-        if (isPlaylistFile(guessedContentType)) {
+        if (!isSupportedContentType(guessedContentType)) {
             return false
         }
         return true
@@ -97,7 +98,30 @@ class USBDeviceStorageLocation(override val device: USBMediaDevice) : AudioFileS
         return fileName.replace("#", "")
     }
 
-    // TODO: check for other things that are not playable audio file
+    /**
+     * Check if Android MediaPlayer supports the given content type.
+     * See https://source.android.com/compatibility/10/android-10-cdd#5_1_3_audio_codecs_details
+     * For example .wma is not supported.
+     */
+    private fun isSupportedContentType(contentType: String): Boolean {
+        if (!contentType.startsWith("audio")) {
+            return false
+        }
+        if (isPlaylistFile(contentType)) {
+            return false
+        }
+        if (listOf(
+                "3gp", "aac", "amr", "flac", "m4a", "matroska", "mid", "mp3", "mp4", "mpeg", "mpg", "ogg", "opus",
+                "vorbis", "wav", "xmf"
+            ).any {
+                it in contentType
+            }
+        ) {
+            return true
+        }
+        return false
+    }
+
     /**
      * Checks if the given audio content/MIME type string represents a playlist (e.g. "mpegurl" is for .m3u
      * playlists)
@@ -110,6 +134,10 @@ class USBDeviceStorageLocation(override val device: USBMediaDevice) : AudioFileS
 
     override fun toString(): String {
         return "USBDeviceStorageLocation{${device.getID()}}"
+    }
+
+    override fun getDirectoriesWithIndexingIssues(): List<String> {
+        return device.directoriesWithIssues
     }
 
 }

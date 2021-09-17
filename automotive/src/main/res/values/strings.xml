@@ -150,4 +150,6 @@ Project\n&#x2013; the libaums library created by Magnus Jahnen\n&#x2013; Materia
 	<string name="legal_disclaimer_cancel_btn">Cancel</string>
 	<string name="toast_error_no_tracks">No tracks</string>
 	<string name="toast_error_not_enough_space_for_log">Not enough space to write log file</string>
+	<string name="setting_USB_status_too_many_files_in_dir">Too many files in a directory, please use
+subdirectories</string>
 </resources>

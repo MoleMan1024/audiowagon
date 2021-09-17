@@ -27,7 +27,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.channels.produce
-import kotlinx.coroutines.launch
 
 
 private const val TAG = "AudioFileStor"
@@ -35,13 +34,16 @@ private val logger = Logger
 
 /**
  * This class manages storage locations and provides functions to index them for audio files
+ *
+ * We need to implement this ourselves, none of the stuff in https://developer.android.com/training/data-storage will
+ * work for USB
  */
 open class AudioFileStorage(
-    val context: Context,
-    val scope: CoroutineScope,
-    dispatcher: CoroutineDispatcher,
+    private val context: Context,
+    private val scope: CoroutineScope,
+    private val dispatcher: CoroutineDispatcher,
     usbDevicePermissions: USBDevicePermissions,
-    val gui: GUI
+    private val gui: GUI
 ) {
     private val audioFileStorageLocations: MutableList<AudioFileStorageLocation> = mutableListOf()
     private var usbDeviceConnections: USBDeviceConnections = USBDeviceConnections(
@@ -172,31 +174,28 @@ open class AudioFileStorage(
      */
     @ExperimentalCoroutinesApi
     fun indexStorageLocations(storageIDs: List<String>): ReceiveChannel<AudioFile> {
-        return scope.produce {
-            if (!storageIDs.all { isStorageIDKnown(it) }) {
-                throw RuntimeException("Unknown storage id(s) given in: $storageIDs")
-            }
-            val audioFileProducerChannels = mutableListOf<ReceiveChannel<AudioFile>>()
-            storageIDs.forEach {
-                logger.debug(TAG, "Creating audio file producer channel for storage: $it")
-                val storageLoc = getStorageLocationForID(it)
-                val audioFileChannel = storageLoc.indexAudioFiles(this)
-                storageLoc.indexingStatus = IndexingStatus.INDEXING
-                audioFileProducerChannels.add(audioFileChannel)
-            }
-            // merge multiple audio file producing channels into single output channel
-            // read about coroutines scope/context: https://elizarov.medium.com/coroutine-context-and-scope-c8b255d59055
-            logger.debug(TAG, "Merging audio file producer channels: $audioFileProducerChannels")
-            audioFileProducerChannels.forEach {
-                scope.launch {
-                    it.consumeEach {
-                        logger.verbose(TAG, "Channel produced audiofile: $it")
-                        if (isClosedForSend) {
-                            logger.warning(TAG, "Audio file producer channel was closed")
-                            return@launch
-                        }
-                        send(it)
+        if (!storageIDs.all { isStorageIDKnown(it) }) {
+            throw RuntimeException("Unknown storage id(s) given in: $storageIDs")
+        }
+        val audioFileProducerChannels = mutableListOf<ReceiveChannel<AudioFile>>()
+        storageIDs.forEach {
+            logger.debug(TAG, "Creating audio file producer channel for storage: $it")
+            val storageLoc = getStorageLocationForID(it)
+            val audioFileChannel = storageLoc.indexAudioFiles(scope)
+            storageLoc.indexingStatus = IndexingStatus.INDEXING
+            audioFileProducerChannels.add(audioFileChannel)
+        }
+        logger.debug(TAG, "Merging audio file producer channels: $audioFileProducerChannels")
+        // read about coroutines scope/context: https://elizarov.medium.com/coroutine-context-and-scope-c8b255d59055
+        return scope.produce(dispatcher) {
+            audioFileProducerChannels.forEach { channel ->
+                channel.consumeEach {
+                    logger.verbose(TAG, "Channel produced audiofile: $it")
+                    if (isClosedForSend) {
+                        logger.error(TAG, "Audio file producer channel was closed")
+                        return@consumeEach
                     }
+                    send(it)
                 }
             }
         }
@@ -294,6 +293,20 @@ open class AudioFileStorage(
         closeDataSources()
         audioFileStorageLocations.forEach {
             it.close()
+        }
+    }
+
+    fun notifyIndexingIssues() {
+        val directoriesWithIndexingIssues = mutableListOf<String>()
+        audioFileStorageLocations.forEach {
+            directoriesWithIndexingIssues += it.getDirectoriesWithIndexingIssues()
+        }
+        if (directoriesWithIndexingIssues.size > 0) {
+            gui.showErrorToastMsg(context.getString(R.string.setting_USB_status_too_many_files_in_dir))
+            usbDeviceConnections.updateUSBStatusInSettings(R.string.setting_USB_status_too_many_files_in_dir)
+            directoriesWithIndexingIssues.forEach {
+                logger.warning(TAG, "Could not index audio files in directory (too many files in directory): $it")
+            }
         }
     }
 

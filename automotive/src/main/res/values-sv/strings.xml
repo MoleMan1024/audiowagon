@@ -105,6 +105,8 @@ Google\n\nLicenstexter:\nwww.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/licens
 	</string>
 	<string name="legal_disclaimer_confirm_btn">Godkänn</string>
 	<string name="legal_disclaimer_cancel_btn">Avbryt</string>
-	<string name="toast_error_no_tracks">Inget spår</string>
-	<string name="toast_error_not_enough_space_for_log">Inte tillräckligt med utrymme för att skriva loggfiler</string>
+	<string name="toast_error_no_tracks">Inga spår</string>
+	<string name="toast_error_not_enough_space_for_log">Inte tillräckligt utrymme att skriva logg-fil</string>
+	<string name="setting_USB_status_too_many_files_in_dir">För många filer i en katalog. Vänligen använd
+underkataloger</string>
 </resources>

@@ -62,6 +62,7 @@ class AudioSession(
     private var mediaSession: MediaSessionCompat
     private var audioSessionCallback: AudioSessionCallback
     var sessionToken: MediaSessionCompat.Token
+    // See https://developer.android.com/reference/android/support/v4/media/session/PlaybackStateCompat
     private lateinit var playbackState: PlaybackStateCompat
     private var notificationManager: NotificationManager =
         context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -78,6 +79,9 @@ class AudioSession(
     private val audioFocusChangeListener: AudioFocusChangeCallback =
         AudioFocusChangeCallback(audioPlayer, scope, dispatcher)
     private val notificationReceiver: NotificationReceiver = NotificationReceiver(audioPlayer, scope, dispatcher)
+    private var storePersistentJob: Job? = null
+    private var isFirstOnPlayEvent: Boolean = true
+    private var onPlayCalledBeforeUSBReady: Boolean = false
 
     init {
         logger.debug(TAG, "Init AudioSession()")
@@ -203,6 +207,9 @@ class AudioSession(
         context.unregisterReceiver(notificationReceiver)
     }
 
+    /**
+     * See https://developers.google.com/cars/design/automotive-os/apps/media/create-your-app/customize-playback
+     */
     private fun initPlaybackState() {
         val actions = createPlaybackActions()
         val customActionShuffleOn = createCustomActionShuffleIsOff()
@@ -396,7 +403,7 @@ class AudioSession(
 
     fun shutdown() {
         logger.debug(TAG, "shutdown()")
-        reset()
+        clearSession()
         deleteNotificationChannel()
         runBlocking(dispatcher) {
             audioFocusChangeListener.cancelAudioFocusLossJob()
@@ -408,8 +415,15 @@ class AudioSession(
     fun reset() {
         logger.debug(TAG, "reset()")
         runBlocking(dispatcher) {
-            audioFocusChangeListener.cancelAudioFocusLossJob()
             audioPlayer.reset()
+        }
+        clearSession()
+    }
+
+    private fun clearSession() {
+        logger.debug(TAG, "clearSession()")
+        runBlocking(dispatcher) {
+            audioFocusChangeListener.cancelAudioFocusLossJob()
         }
         currentQueueItem = null
         // default notification without any content
@@ -451,15 +465,7 @@ class AudioSession(
             when (audioSessionChange.type) {
                 AudioSessionChangeType.ON_PLAY -> {
                     audioFocusChangeListener.lastUserRequestedStateChange = audioSessionChange.type
-                    scope.launch(dispatcher) {
-                        callSafelyAndShowErrorsOnGUI(audioSessionChange.type.name) {
-                            if (playbackState.isStopped) {
-                                val queueIndex = audioPlayer.getPlaybackQueueIndex()
-                                audioPlayer.preparePlayFromQueue(queueIndex, playbackState.position.toInt())
-                            }
-                            audioPlayer.start()
-                        }
-                    }
+                    handleOnPlay()
                 }
                 AudioSessionChangeType.ON_PLAY_FROM_MEDIA_ID -> {
                     audioFocusChangeListener.lastUserRequestedStateChange = AudioSessionChangeType.ON_PLAY
@@ -551,6 +557,42 @@ class AudioSession(
                 }
                 AudioSessionChangeType.ON_PAUSE -> {
                     audioFocusChangeListener.lastUserRequestedStateChange = audioSessionChange.type
+                }
+            }
+        }
+    }
+
+    private fun handleOnPlay() {
+        scope.launch(dispatcher) {
+            if (isFirstOnPlayEvent) {
+                isFirstOnPlayEvent = false
+                if (audioPlayer.isIdle() || audioPlayer.isPlaybackQueueEmpty()) {
+                    // The user probably just started the car and the car is trying to resume playback. This
+                    // is a feature of e.g. Polestar 2 with software >= P2127. However this event will come too
+                    // early, before the USB drive permission is granted. Latch this onPlay() here and perform it
+                    // later
+                    onPlayCalledBeforeUSBReady = true
+                    logger.debug(TAG, "Storing onPlay() call for later")
+                    return@launch
+                }
+            }
+            try {
+                if (playbackState.isStopped) {
+                    val queueIndex = audioPlayer.getPlaybackQueueIndex()
+                    audioPlayer.preparePlayFromQueue(queueIndex, playbackState.position.toInt())
+                }
+                audioPlayer.start()
+            } catch (exc: Exception) {
+                logger.exception(TAG, "Exception in handleOnPlay()", exc)
+                when (exc) {
+                    is NoItemsInQueueException -> gui.showErrorToastMsg(context.getString(R.string.toast_error_no_tracks))
+                    is DriveAlmostFullException -> {
+                        logger.exceptionLogcatOnly(TAG, "Drive is almost full, cannot log to USB", exc)
+                        gui.showErrorToastMsg(context.getString(R.string.toast_error_not_enough_space_for_log))
+                    }
+                    else -> {
+                        // ignore
+                    }
                 }
             }
         }
@@ -676,6 +718,11 @@ class AudioSession(
         } catch (exc: NoItemsInQueueException) {
             logger.warning(TAG, "No items in play queue")
         }
+        if (onPlayCalledBeforeUSBReady) {
+            onPlayCalledBeforeUSBReady = false
+            logger.debug(TAG, "Starting playback that was requested during startup before")
+            audioPlayer.start()
+        }
     }
 
     private suspend fun playFromQueueId(queueId: Long) {
@@ -757,8 +804,14 @@ class AudioSession(
             // when restoring from persistent state instead (to save storage space)
             playbackStateToPersist.queueIDs = queueIDs.subList(queueIndex, queueIndex+1)
         }
-        launchInScopeSafely {
+        runBlocking(dispatcher) {
+            if (storePersistentJob != null) {
+                storePersistentJob?.cancelAndJoin()
+            }
+        }
+        storePersistentJob = launchInScopeSafely {
             persistentStorage.store(playbackStateToPersist)
+            storePersistentJob = null
         }
     }
 
@@ -798,8 +851,8 @@ class AudioSession(
         return queueIndex
     }
 
-    private fun launchInScopeSafely(func: suspend () -> Unit) {
-        scope.launch(dispatcher) {
+    private fun launchInScopeSafely(func: suspend () -> Unit): Job {
+        return scope.launch(dispatcher) {
             try {
                 func()
             } catch (exc: Exception) {

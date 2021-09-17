@@ -21,6 +21,9 @@ private const val TAG = "SettingsAct"
 private val logger = Logger
 
 @ExperimentalCoroutinesApi
+/**
+ * See https://developer.android.com/guide/topics/ui/settings
+ */
 class SettingsActivity : AppCompatActivity() {
     private lateinit var mediaBrowser: MediaBrowserCompat
     private lateinit var mediaController: MediaControllerCompat

@@ -11,7 +11,7 @@ import java.util.Date
 /**
  * This class is an abstraction for an audio file on a storage device.
  *
- * @property uri Contains the ID of the storage device and the filepath of the file
+ * @property uri Contains the ID of the storage device and the filepath of the file (perecent encoded)
  * @property lastModifiedDate The unix timestamp when the file was last modified. This is used to check if the
  * metadata of the file has changed (e.g. updated MP3 tags)
  */

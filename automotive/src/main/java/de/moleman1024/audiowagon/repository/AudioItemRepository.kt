@@ -26,6 +26,9 @@ const val MAX_DATABASE_SEARCH_ROWS = 10
 private const val TAG = "AudioItemRepo"
 private val logger = Logger
 
+/**
+ * See https://developer.android.com/training/data-storage/room
+ */
 class AudioItemRepository(
     val storageID: String,
     val context: Context,
@@ -287,6 +290,20 @@ class AudioItemRepository(
             items += audioItemTrack
         }
         logger.debug(TAG, "Returning ${items.size} tracks")
+        return items
+    }
+
+    suspend fun getRandomTracks(maxNumItems: Int): List<AudioItem> {
+        if (maxNumItems <= 0) {
+            throw IllegalArgumentException("Invalid number of random tracks: $maxNumItems")
+        }
+        val items: MutableList<AudioItem> = mutableListOf()
+        val tracks: List<Track> = database.trackDAO().queryRandom(maxNumItems)
+        for (track in tracks) {
+            val audioItemTrack: AudioItem = createAudioItemForTrack(track)
+            items += audioItemTrack
+        }
+        logger.debug(TAG, "Returning ${items.size} random tracks")
         return items
     }
 

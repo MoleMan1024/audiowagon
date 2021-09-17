@@ -23,4 +23,5 @@ interface AudioFileStorageLocation {
     fun getBufferedDataSourceForURI(uri: Uri): MediaDataSource
     fun close()
     fun setDetached()
+    fun getDirectoriesWithIndexingIssues(): List<String>
 }
