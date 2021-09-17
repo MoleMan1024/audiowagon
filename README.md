@@ -1,6 +1,8 @@
 # AudioWagon
 
-[Documentation](https://moleman1024.github.io/audiowagon/)
+AudioWagon is a [Android Automotive OS](https://developers.google.com/cars/design/automotive-os) USB media player
 
-[Issues](https://github.com/MoleMan1024/audiowagon/issues)
+![AudioWagon in car](docs/img/audiowagon.jpg)
+
+[Documentation](https://moleman1024.github.io/audiowagon/)
 

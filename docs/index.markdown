@@ -36,6 +36,7 @@ This app will **play audio files** from an attached **USB flash drive** in cars 
   however the limitation will still exist until the underlying issue can be fixed (in upcoming version directories with
   more than 128 files in them will be ignored).
 - In AudioWagon version 0.2.5 you can only use about 500 tracks maximum. This will be improved in the upcoming version.
+- Can *not* play back .wma files
 
 ## How to use
 

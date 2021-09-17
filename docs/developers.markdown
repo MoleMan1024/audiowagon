@@ -14,7 +14,7 @@ TODO: draft, clean up, provide info about app architecture, etc.
 My development environment is Windows, if you use Linux or Mac, some steps may differ (e.g. *gradle* wrapper setup).
 These steps assume basic knowledge about build and install process on Android in general:
 
-- Get latest Android Studio
+- Get latest [Android Studio](https://developer.android.com/studio)
 - In Android Studio download the Android 10 SDK
 - Clone the project from Github
 - Load the project into Android Studio
