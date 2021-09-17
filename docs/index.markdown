@@ -6,6 +6,8 @@ nav_order: 1
 
 # AudioWagon documentation
 
+This project is currently in **OPEN BETA**.
+
 This app will **play audio files** from an attached **USB flash drive** in cars equipped with **Android™ Automotive OS**
 (for example Polestar 2™, Volvo XC40 Recharge™, &hellip;)[^1].
 
@@ -137,25 +139,47 @@ built into certain car models.
 
 ### How do I report an issue?
 
-Please create an [issue on github](https://github.com/MoleMan1024/audiowagon/issues) or send an e-mail.
+OPEN BETA:
 
-To report an issue please keep logging to USB *activated* in the settings at all times. If possible provide all of
-the following info to me:
+I advise all beta testers to keep logging to USB *activated* in the settings at all times. If possible provide all of
+the following info to me at my email (or you can use [GitHub](https://github.com/MoleMan1024/audiowagon/issues)):
 
 - What happened? Describe all steps that you did exactly
 - What did you expect to happen?
 - At what date/time did the issue happen? (so I can align with the timestamps in the log files)
 - Which version of AudioWagon were you using? (see Settings)
 - Which version is your car's software? (e.g. P2124 on a Polestar2)
-- Log files are being created continously on your USB drive (if this is enabled in the settings). Please attach these
-logfiles from around the date/time when this happened (also provide previous logfile). They have filenames like
-`audiowagon_<date_and_time>.log`.
+- Log files are being created continously on your USB drive (if this is enabled in the settings). Please attach these 
+logfiles from around the date/time when this happened (also provide previous logfile). They have filenames like 
+`aw_logs_<num>/audiowagon_<date_and_time>.log`.
 
 ### How to contribute?
 
-I am currently looking for volunteer native speakers to translate the GUI texts in the app to all languages (except
-English, German, Dutch, Norwegian, Swedish). You can get the
-[English strings to translate here](https://github.com/MoleMan1024/audiowagon/automotive/src/main/res/values/strings.xml).
+#### Open beta
+
+If you provide me with the **e-mail address that you use in your car for your Google account** I can invite you to the
+beta version. If you are interested, please contact me.
+
+**⚠️ PLEASE NOTE ⚠️**: recently (2021-09-11) I have been getting more and more reports of people who cannot see the app
+after being invited to the beta test. This issue also affects me now: when searching in PlayStore in the car,
+I can no longer find my app. I have no clue why this is happening, I have contacted Google about it.
+
+Update 2021-09-14: today another beta tester and I were able to see the app again in the PlayStore in the car. I still 
+have no clue why it disappeared, still waiting for a response from Google. I want to wait on that before I add
+more people to the beta test, it will be frustrating to new beta testers if the issue happens again and they can't
+install the app.
+
+Update 2021-09-16: Google replied, but unfortunately it was not very helpful, I think I have not yet gone beyond the
+first support tier&hellip; Good news is that a few more people have reported now they can see the app again, so it might
+have been a temporary indexing problem with Google servers only. Also I am thinking about switching to
+actual open beta (i.e. no invites required) and releasing a new version soon (maybe this weekend).
+
+
+#### Native speakers
+
+I am currently looking for **volunteer native speakers to translate** the GUI texts in the app to all languages
+(except German, English, Dutch, Swedish, Norwegian). You can get the 
+[English strings to translate here](https://github.com/MoleMan1024/audiowagon/blob/master/automotive/src/main/res/values/strings.xml). 
 
 
 ## Contact
