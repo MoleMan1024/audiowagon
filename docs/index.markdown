@@ -174,6 +174,11 @@ first support tier&hellip; Good news is that a few more people have reported now
 have been a temporary indexing problem with Google servers only. Also I am thinking about switching to
 actual open beta (i.e. no invites required) and releasing a new version soon (maybe this weekend).
 
+Update 2021-09-18: It turns out you cannot use public open beta (i.e. no invites) for an Automotive app. So I will push 
+version 0.3.4 to the existing beta test today. It should arrive for all testers during the coming days. I will also 
+invite the remaining beta testers that applied and hope that the issue described above does not appear again. Thanks for
+your patience.
+
 
 #### Native speakers
 

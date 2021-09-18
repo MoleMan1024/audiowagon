@@ -18,7 +18,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- the project is now *public open beta* (i.e. no invites necessary anymore)
 - add uncaught exception handler that will flush to USB if possible to have more information before app exits
 - do not store USB status in settings persistently
 - try to improve recovery of app after issues with USB drive

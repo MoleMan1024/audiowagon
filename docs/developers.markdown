@@ -81,7 +81,8 @@ each release you make. Also note that any larger change you make (e.g. change co
 trigger Google's review process.
 
 - In Closed testing, switch category in top right to *Automotive OS only* and create a closed test track (NOTE: closed 
-  tests were giving me trouble at some point, the app was not visible in the car for some days)
+  tests were giving me trouble at some point, the app was not visible in the car for some days. Also note that "Open
+  testing" is *not* allowed for Automotive OS apps)
 - Add the country you use for your Play Store in the *Countries / regions* tab
 - In *Testers*, create an e-mail list and add your own e-mail. Make sure to use the e-mail address associated with your
   Google account in the car
