@@ -40,7 +40,7 @@ open class GUI(private val scope: CoroutineScope, private val context: Context) 
         }
         logger.debug(TAG, "Creating indexing notification channel")
         val importance = NotificationManager.IMPORTANCE_LOW
-        // TODO: check where this name and description appear
+        // this appears in the notification area (pull down vertical line at top of screen in Polestar 2 while indexing)
         val notifChannelName = context.getString(R.string.notif_channel_name_indexing)
         val notifChannelDesc = context.getString(R.string.notif_channel_desc_indexing)
         val channel = NotificationChannel(INDEXING_NOTIF_CHANNEL, notifChannelName, importance).apply {

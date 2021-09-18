@@ -11,9 +11,6 @@ import android.support.v4.media.MediaDescriptionCompat
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.log.Logger
 
-private const val TAG = "CHRoot"
-private val logger = Logger
-
 class ContentHierarchyRoot(
     context: Context, audioItemLibrary: AudioItemLibrary
 ) :

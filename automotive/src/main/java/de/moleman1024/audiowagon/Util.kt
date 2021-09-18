@@ -11,7 +11,6 @@ import androidx.preference.PreferenceManager
 import de.moleman1024.audiowagon.activities.PERSISTENT_STORAGE_LEGAL_DISCLAIMER_AGREED
 import de.moleman1024.audiowagon.activities.PERSISTENT_STORAGE_LEGAL_DISCLAIMER_VERSION
 import de.moleman1024.audiowagon.medialibrary.AudioItemType
-import java.io.UnsupportedEncodingException
 import java.net.URLEncoder
 import java.util.*
 

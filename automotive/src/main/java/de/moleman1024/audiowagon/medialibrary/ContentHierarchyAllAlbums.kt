@@ -13,9 +13,6 @@ import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.log.Logger
 
-private const val TAG = "CHAllAlbums"
-private val logger = Logger
-
 /**
  * All albums
  */
