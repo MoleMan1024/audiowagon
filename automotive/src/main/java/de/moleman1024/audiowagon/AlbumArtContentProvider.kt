@@ -85,7 +85,7 @@ class AlbumArtContentProvider : ContentProvider() {
         val stream = ByteArrayOutputStream()
         val quality = 90
         defaultAlbumArtBitmap = bitmap
-        // TODO: I am getting some warnings in log on Nexus 3 XL AAOS that this takes some time
+        // TODO: I am getting some warnings in log on Pixel 3 XL AAOS that this takes some time
         defaultAlbumArtBitmap?.compress(Bitmap.CompressFormat.JPEG, quality, stream)
         defaultAlbumArtByteArray = stream.toByteArray()
         setDefaultAlbumArtByteArray(defaultAlbumArtByteArray)

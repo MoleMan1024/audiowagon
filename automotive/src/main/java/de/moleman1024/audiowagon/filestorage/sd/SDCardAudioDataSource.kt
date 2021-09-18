@@ -10,6 +10,9 @@ import java.io.File
 import java.io.RandomAccessFile
 import kotlin.math.min
 
+/**
+ * NOTE: SD card support is only enabled in debug builds used in the Android emulator
+ */
 class SDCardAudioDataSource(private var file: File) : MediaDataSource() {
     var isClosed: Boolean = false
     var randomAccessFile: RandomAccessFile = RandomAccessFile(file, "r")

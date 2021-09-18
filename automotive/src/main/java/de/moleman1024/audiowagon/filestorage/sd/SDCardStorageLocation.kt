@@ -24,6 +24,9 @@ private const val URI_SCHEME = "sdAudio"
 private const val TAG = "SDCardStorLoc"
 private val logger = Logger
 
+/**
+ * NOTE: SD card support is only enabled in debug builds used in the Android emulator
+ */
 class SDCardStorageLocation(override val device: SDCardMediaDevice) : AudioFileStorageLocation {
     override val storageID: String
         get() = device.getID()

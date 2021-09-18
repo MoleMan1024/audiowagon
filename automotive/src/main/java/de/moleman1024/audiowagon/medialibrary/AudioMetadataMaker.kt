@@ -211,7 +211,7 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
         val stream = ByteArrayOutputStream()
         logger.debug(TAG, "Compressing resized image")
         val quality = 90
-        // TODO: I am getting some warnings in log on Nexus 3 XL AAOS that this takes some time
+        // TODO: I am getting some warnings in log on Pixel 3 XL AAOS that this takes some time
         resizedBitmap?.compress(Bitmap.CompressFormat.JPEG, quality, stream) ?: return null
         return stream.toByteArray()
     }
@@ -223,10 +223,10 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
         // TODO: bitsPerSample is null sometimes
         val bitsPerSample = metadataRetriever.extractMetadata(METADATA_KEY_BITS_PER_SAMPLE)
         val kbpsStr = "%.2f".format(bitRate?.toFloat()?.div(1000.0))
-        // When playing back files with samplerates > 48 kHz on the default AAOS build for Nexus 3 phone the are
+        // When playing back files with samplerates > 48 kHz on the default AAOS build for Pixel 3 XL phone the are
         // resampling artifacts in some files. These do not appear in a Polestar 2 car however, likely a different
         // resampler is used.
-        // Also on Nexus 3 with AAOS default build some MP3s sound bad, also sounds like the resampler
+        // Also on Pixel 3 XL with AAOS default build some MP3s sound bad, also sounds like the resampler
         logger.info(TAG, "Audio metadata: " +
                 "sampleRate=$sampleRate Hz, " +
                 "bitsPerSample=$bitsPerSample bits, " +

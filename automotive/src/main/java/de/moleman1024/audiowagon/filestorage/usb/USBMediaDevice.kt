@@ -428,7 +428,8 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
 
     /**
      * It seems that when USB-device-detached intent is received, the permissions to e.g. access serial numbers are
-     * already revoked. Thus we copy the serial number and store it as a property when we still have the permission
+     * already revoked. Thus we copy the serial number and store it as a property when we still have the permission.
+     * Note that accessing the USB drive serial number does not work in the car (probably due to security permissions).
      */
     private fun getSerialNum(): String {
         if (isSerialNumAvail != null && !isSerialNumAvail!!) {

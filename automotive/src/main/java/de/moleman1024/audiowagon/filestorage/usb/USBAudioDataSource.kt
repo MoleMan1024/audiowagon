@@ -46,8 +46,7 @@ open class USBAudioDataSource(
             logger.debug(TAG, "closed usbFile=$usbFile")
             usbFile = null
         } catch (exc: IOException) {
-            // This will trigger a fatal SIGABRT and the app will be restarted. But since this happens only
-            // when the USB drive is unplugged while being in use, this is the "safest" way to "recover" the app
+            // If we rethrow this, it will trigger a fatal SIGABRT and the app will be restarted.
             logger.exceptionLogcatOnly(TAG, "Error while closing USB file, did you unplug the device?", exc)
         }
     }

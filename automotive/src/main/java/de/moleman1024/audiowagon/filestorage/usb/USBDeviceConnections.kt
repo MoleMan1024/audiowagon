@@ -348,7 +348,7 @@ class USBDeviceConnections(
             addAction(ACTION_USB_ATTACHED)
             addAction(ACTION_USB_UPDATE)
             // USB_DEVICE_ATTACHED is not desired here, it should be handled by manifest. However that does not work
-            // on Polestar 2 car. Works fine on Nexus 3 XL with AAOS though...
+            // on Polestar 2 car. Works fine on Pixel 3 XL with AAOS though...
             addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED)
             addAction(UsbManager.ACTION_USB_DEVICE_DETACHED)
             addAction(ACTION_USB_PERMISSION_CHANGE)

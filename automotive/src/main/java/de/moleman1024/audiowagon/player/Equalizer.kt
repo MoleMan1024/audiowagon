@@ -20,7 +20,7 @@ class Equalizer(audioSessionID: Int) {
     private val equalizerNormalPriority = 0
     private val equalizer = Equalizer(equalizerNormalPriority, audioSessionID)
     private var currentPreset: EqualizerPreset = EqualizerPreset.LESS_BASS
-    // Polestar 2 and Nexus 3 XL have 5 bands EQs, with Q approx 0.6
+    // Polestar 2 and Pixel 3 XL have 5 bands EQs, with Q approx 0.6
     // center 60 from 30 til 120 -1500 mB til 1500 mB
     // center 230 from 120 til 460 -1500 mB til 1500 mB
     // center 910 from 460 til 1800 -1500 mB til 1500 mB

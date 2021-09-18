@@ -25,15 +25,15 @@ class PowerEventReceiver : BroadcastReceiver() {
         if (intent == null) {
             return
         }
-        // TODO: ACTION_SHUTDOWN does not seem to work on Polestar 2(?), works fine on Pixel 3 XL AAOS.
-        //  Cannot use android.car.permission.CAR_POWER, reserved for system signed apps
+        // TODO: ACTION_SHUTDOWN does not work on Polestar 2, works fine on Pixel 3 XL AAOS.
+        //  Cannot use android.car.permission.CAR_POWER, it is reserved for system signed apps.
         //  These log lines never appear in logfile on USB stick in car, possibly USB_DEVICE_DETACHED arrives before
-        //  ACTION_SHUTDOWN
+        //  ACTION_SHUTDOWN.
         logger.debug(TAG, "Received notification: $intent")
         when (intent.action) {
             Intent.ACTION_SHUTDOWN -> audioBrowserService?.shutdown()
             Intent.ACTION_BATTERY_CHANGED -> {
-                // on Nexus 3 XL this also arrives "randomly" sometimes, does not seem suitable for detecting shutdown
+                // on Pixel 3 XL this also arrives "randomly" sometimes, does not seem suitable for detecting shutdown
                 val status: Int = intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1)
                 logger.debug(TAG, "battery extras status: $status")
             }

@@ -17,7 +17,7 @@ taken from: https://github.com/magnusja/libaums/blob/develop/app/src/main/res/xm
  * limitations under the License.
  */
 -->
-<!-- FIXME: does not work in Polestar 2 car (see USBDummyActiviy), works fine in Nexus 3 XL phone with AAOS -->
+<!-- FIXME: does not work in Polestar 2 car (see USBDummyActiviy), works fine in Pixel 3 XL phone with AAOS -->
 <resources>
 	<usb-device
 			class="8"
