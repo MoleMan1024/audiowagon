@@ -30,6 +30,10 @@ This app will **play audio files** from an attached **USB flash drive** in cars 
 - **equalizer** with multiple presets
 - partial support for **voice input**
 
+## Release notes
+
+Please see Github for a [list of changes for each version of the app](https://github.com/MoleMan1024/audiowagon/blob/master/CHANGELOG.md)
+
 ## Limitations
 
 - You can only put up to 128 *files* into any directory. You can use as many *directories* as you want though. I advise a
@@ -37,8 +41,9 @@ This app will **play audio files** from an attached **USB flash drive** in cars 
   version 0.2.5 will corrupt your USB drive and you will lose your files on it. The next version will prevent the data loss,
   however the limitation will still exist until the underlying issue can be fixed (in upcoming version directories with
   more than 128 files in them will be ignored).
-- In AudioWagon version 0.2.5 you can only use about 500 tracks maximum. This will be improved in the upcoming version.
-- Can *not* play back .wma files
+- In AudioWagon version 0.2.5 you can only use about a couple hundred to a few thousand tracks maximum, above that you
+  might see the app hang when looking at browsing tracks. This has been improved in version 0.3.4.
+- The app can *not* play back .wma files
 
 ## How to use
 
@@ -159,26 +164,6 @@ logfiles from around the date/time when this happened (also provide previous log
 
 If you provide me with the **e-mail address that you use in your car for your Google account** I can invite you to the
 beta version. If you are interested, please contact me.
-
-**⚠️ PLEASE NOTE ⚠️**: recently (2021-09-11) I have been getting more and more reports of people who cannot see the app
-after being invited to the beta test. This issue also affects me now: when searching in PlayStore in the car,
-I can no longer find my app. I have no clue why this is happening, I have contacted Google about it.
-
-Update 2021-09-14: today another beta tester and I were able to see the app again in the PlayStore in the car. I still 
-have no clue why it disappeared, still waiting for a response from Google. I want to wait on that before I add
-more people to the beta test, it will be frustrating to new beta testers if the issue happens again and they can't
-install the app.
-
-Update 2021-09-16: Google replied, but unfortunately it was not very helpful, I think I have not yet gone beyond the
-first support tier&hellip; Good news is that a few more people have reported now they can see the app again, so it might
-have been a temporary indexing problem with Google servers only. Also I am thinking about switching to
-actual open beta (i.e. no invites required) and releasing a new version soon (maybe this weekend).
-
-Update 2021-09-18: It turns out you cannot use public open beta (i.e. no invites) for an Automotive app. So I will push 
-version 0.3.4 to the existing beta test today. It should arrive for all testers during the coming days. I will also 
-invite the remaining beta testers that applied and hope that the issue described above does not appear again. Thanks for
-your patience.
-
 
 #### Native speakers
 

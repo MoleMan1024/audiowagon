@@ -80,7 +80,7 @@ class AudioSession(
         AudioFocusChangeCallback(audioPlayer, scope, dispatcher)
     private val notificationReceiver: NotificationReceiver = NotificationReceiver(audioPlayer, scope, dispatcher)
     private var storePersistentJob: Job? = null
-    private var isFirstOnPlayEvent: Boolean = true
+    private var isFirstOnPlayEventAfterReset: Boolean = true
     private var onPlayCalledBeforeUSBReady: Boolean = false
 
     init {
@@ -414,6 +414,7 @@ class AudioSession(
 
     fun reset() {
         logger.debug(TAG, "reset()")
+        isFirstOnPlayEventAfterReset = true
         runBlocking(dispatcher) {
             audioPlayer.reset()
         }
@@ -564,13 +565,15 @@ class AudioSession(
 
     private fun handleOnPlay() {
         scope.launch(dispatcher) {
-            if (isFirstOnPlayEvent) {
-                isFirstOnPlayEvent = false
+            if (isFirstOnPlayEventAfterReset) {
+                isFirstOnPlayEventAfterReset = false
                 if (audioPlayer.isIdle() || audioPlayer.isPlaybackQueueEmpty()) {
                     // The user probably just started the car and the car is trying to resume playback. This
                     // is a feature of e.g. Polestar 2 with software >= P2127. However this event will come too
                     // early, before the USB drive permission is granted. Latch this onPlay() here and perform it
-                    // later
+                    // later.
+                    // If the user tried to start the playback haptically the playback queue would not be
+                    // empty and the media player should be prepared already as well.
                     onPlayCalledBeforeUSBReady = true
                     logger.debug(TAG, "Storing onPlay() call for later")
                     return@launch

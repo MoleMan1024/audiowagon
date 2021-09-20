@@ -122,6 +122,7 @@ class AudioPlayer(
                     playbackQueue.clear()
                     return@launch
                 }
+                cancelSetupNextPlayerJob()
                 playbackQueue.incrementIndex()
                 currentMediaPlayer = getNextPlayer()
                 notifyPlayerStatusChange()
@@ -618,7 +619,12 @@ class AudioPlayer(
             logger.debug(TAG, "This is the last track, no next player necessary")
             return
         }
-        currentMediaPlayer?.setNextMediaPlayer(mediaPlayer)
+        try {
+            currentMediaPlayer?.setNextMediaPlayer(mediaPlayer)
+        } catch (exc: IllegalArgumentException) {
+            logger.exception(TAG, "Exception setting next media player $mediaPlayer for current " +
+                    "media player: $currentMediaPlayer", exc)
+        }
     }
 
     @Suppress("RedundantSuspendModifier")
@@ -626,7 +632,11 @@ class AudioPlayer(
         if (!isAtLeastPrepared(currentMediaPlayer)) {
             return
         }
-        currentMediaPlayer?.setNextMediaPlayer(null)
+        try {
+            currentMediaPlayer?.setNextMediaPlayer(null)
+        } catch (exc: IllegalArgumentException) {
+            logger.exception(TAG, exc.message.toString(), exc)
+        }
     }
 
     private suspend fun playQueueAtIndex(index: Int) {
@@ -716,7 +726,6 @@ class AudioPlayer(
             logger.debug(TAG, "reset()")
             stop()
             setPlayQueueAndNotify(listOf())
-            cancelSetupNextPlayerJob()
             reInitAllPlayers()
             resetPlayerStatus()
         }
@@ -754,6 +763,7 @@ class AudioPlayer(
 
     private suspend fun reInitAllPlayers() {
         withContext(dispatcher) {
+            cancelSetupNextPlayerJob()
             resetAllPlayers()
             releaseAllPlayers()
             initMediaPlayers()

@@ -29,6 +29,8 @@ class PowerEventReceiver : BroadcastReceiver() {
         //  Cannot use android.car.permission.CAR_POWER, it is reserved for system signed apps.
         //  These log lines never appear in logfile on USB stick in car, possibly USB_DEVICE_DETACHED arrives before
         //  ACTION_SHUTDOWN.
+        //  I have the impression the app is suspended to RAM and is not actually shut down when the car is "shut
+        //  down"...
         logger.debug(TAG, "Received notification: $intent")
         when (intent.action) {
             Intent.ACTION_SHUTDOWN -> audioBrowserService?.shutdown()

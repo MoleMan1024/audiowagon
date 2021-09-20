@@ -104,6 +104,6 @@ zijn gemaakt door Google\n\nLicentie teksten:\nwww.apache.org/licenses/LICENSE-2
 	<string name="legal_disclaimer_confirm_btn">Accepteren</string>
 	<string name="legal_disclaimer_cancel_btn">Annuleren</string>
 	<string name="toast_error_no_tracks">Geen nummers</string>
-	<string name="toast_error_not_enough_space_for_log">Niet genoeg ruimte om log bestand te schrijven</string>
-	<string name="setting_USB_status_too_many_files_in_dir">Te veel bestanden in een map, gebruik submappen</string>
+	<string name="toast_error_not_enough_space_for_log">Onvoldoende opslagruimte om log-bestand op te slaan</string>
+	<string name="setting_USB_status_too_many_files_in_dir">Teveel bestanden in een map, creëer sub-mappen</string>
 </resources>
