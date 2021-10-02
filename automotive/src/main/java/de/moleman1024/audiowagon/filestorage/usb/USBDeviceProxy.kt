@@ -114,6 +114,7 @@ class USBDeviceProxy(
 
     override fun close() {
         massStorageDevice?.close()
+        massStorageDevice = null
     }
 
     override fun equals(other: Any?): Boolean {

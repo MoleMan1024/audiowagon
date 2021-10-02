@@ -24,4 +24,5 @@ interface AudioFileStorageLocation {
     fun close()
     fun setDetached()
     fun getDirectoriesWithIndexingIssues(): List<String>
+    fun cancelIndexAudioFiles()
 }

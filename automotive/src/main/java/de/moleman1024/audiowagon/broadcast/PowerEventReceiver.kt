@@ -8,8 +8,7 @@ package de.moleman1024.audiowagon.broadcast
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.os.BatteryManager
-import android.os.Bundle
+import android.os.PowerManager
 import de.moleman1024.audiowagon.AudioBrowserService
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -26,19 +25,17 @@ class PowerEventReceiver : BroadcastReceiver() {
             return
         }
         // TODO: ACTION_SHUTDOWN does not work on Polestar 2, works fine on Pixel 3 XL AAOS.
-        //  Cannot use android.car.permission.CAR_POWER, it is reserved for system signed apps.
+        //  Cannot use CarPowerManager with android.car.permission.CAR_POWER, it is reserved for system signed apps.
         //  These log lines never appear in logfile on USB stick in car, possibly USB_DEVICE_DETACHED arrives before
         //  ACTION_SHUTDOWN.
         //  I have the impression the app is suspended to RAM and is not actually shut down when the car is "shut
         //  down"...
         logger.debug(TAG, "Received notification: $intent")
         when (intent.action) {
-            Intent.ACTION_SHUTDOWN -> audioBrowserService?.shutdown()
-            Intent.ACTION_BATTERY_CHANGED -> {
-                // on Pixel 3 XL this also arrives "randomly" sometimes, does not seem suitable for detecting shutdown
-                val status: Int = intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1)
-                logger.debug(TAG, "battery extras status: $status")
-            }
+            Intent.ACTION_SHUTDOWN,
+            Intent.ACTION_SCREEN_OFF -> audioBrowserService?.suspend()
+            Intent.ACTION_SCREEN_ON -> audioBrowserService?.wakeup()
+            // Intent.ACTION_BATTERY_CHANGED was not helpful
             else -> {
                 // ignore
             }

@@ -32,7 +32,7 @@ This app will **play audio files** from an attached **USB flash drive** in cars 
 
 ## Release notes
 
-Please see Github for a [list of changes for each version of the app](https://github.com/MoleMan1024/audiowagon/blob/master/CHANGELOG.md)
+Please see Github for a [list of changes for each version of the app](https://github.com/MoleMan1024/audiowagon/blob/master/CHANGELOG.md).
 
 ## Limitations
 

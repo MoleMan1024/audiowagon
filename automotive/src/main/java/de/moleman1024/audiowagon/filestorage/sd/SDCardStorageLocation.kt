@@ -32,6 +32,7 @@ class SDCardStorageLocation(override val device: SDCardMediaDevice) : AudioFileS
         get() = device.getID()
     override var indexingStatus: IndexingStatus = IndexingStatus.NOT_INDEXED
     override var isDetached: Boolean = false
+    private var isIndexingCancelled: Boolean = false
 
     @ExperimentalCoroutinesApi
     override fun indexAudioFiles(scope: CoroutineScope): ReceiveChannel<AudioFile> {
@@ -39,6 +40,10 @@ class SDCardStorageLocation(override val device: SDCardMediaDevice) : AudioFileS
         return scope.produce {
             try {
                 for (file in device.walkTopDown(device.getRoot())) {
+                    if (isIndexingCancelled) {
+                        logger.debug(TAG, "Cancel indexAudioFiles()")
+                        break
+                    }
                     if (!isPlayableAudioFile(file)) {
                         logger.debug(TAG, "Skipping non-audio file: $file")
                         continue
@@ -53,6 +58,8 @@ class SDCardStorageLocation(override val device: SDCardMediaDevice) : AudioFileS
                 }
             } catch (exc: RuntimeException) {
                 logger.exception(TAG, exc.message.toString(), exc)
+            } finally {
+                isIndexingCancelled = false
             }
         }
     }
@@ -107,6 +114,11 @@ class SDCardStorageLocation(override val device: SDCardMediaDevice) : AudioFileS
     override fun getDirectoriesWithIndexingIssues(): List<String> {
         // TODO
         return emptyList()
+    }
+
+    override fun cancelIndexAudioFiles() {
+        logger.debug(TAG, "Cancelling audio file indexing")
+        isIndexingCancelled = true
     }
 
 }

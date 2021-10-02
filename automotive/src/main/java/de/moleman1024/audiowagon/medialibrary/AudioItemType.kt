@@ -13,6 +13,7 @@ enum class AudioItemType {
     GROUP_ALBUMS,
     GROUP_ARTISTS,
     GROUP_TRACKS,
+    GROUP_TRACKS_IN_ALBUM,
     UNKNOWN_ALBUM,
     TRACK,
     TRACKS_FOR_ALBUM,

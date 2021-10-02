@@ -3,7 +3,7 @@ SPDX-FileCopyrightText: 2021 MoleMan1024 <moleman1024dev@gmail.com>
 SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-package de.moleman1024.audiowagon.medialibrary
+package de.moleman1024.audiowagon.medialibrary.contenthierarchy
 
 import android.content.Context
 import android.net.Uri
@@ -13,46 +13,51 @@ import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.filestorage.AudioFileStorage
 import de.moleman1024.audiowagon.log.Logger
+import de.moleman1024.audiowagon.medialibrary.*
 
-private const val TAG = "CHAllTracks"
+private const val TAG = "CHRootTracks"
 private val logger = Logger
 
 /**
- * All tracks
+ * The browse view showing all tracks on the device (plus a pseudo item to shuffle all tracks) (or showing groups of
+ * tracks)
  */
-class ContentHierarchyAllTracks(
+class ContentHierarchyRootTracks(
     context: Context,
     audioItemLibrary: AudioItemLibrary,
     private val audioFileStorage: AudioFileStorage
 ) :
-    ContentHierarchyElement(CONTENT_HIERARCHY_TRACKS_ROOT, context, audioItemLibrary) {
+    ContentHierarchyElement(ContentHierarchyID(ContentHierarchyType.ROOT_TRACKS), context, audioItemLibrary) {
 
     override suspend fun getMediaItems(): List<MediaItem> {
-        val mediaItems = mutableListOf<MediaItem>()
+        val items = mutableListOf<MediaItem>()
         if (!audioItemLibrary.areAnyStoragesAvail()) {
             logger.debug(TAG, "Showing pseudo MediaItem 'no entries available'")
-            mediaItems += createPseudoNoEntriesItem()
-            return mediaItems
+            items += createPseudoNoEntriesItem()
+            return items
         }
         if (audioItemLibrary.isBuildingLibray) {
-            mediaItems += createPseudoFoundXItems()
-            return mediaItems
+            items += createPseudoFoundXItems()
+            return items
         }
-        val audioItems = getAudioItems()
-        if (audioItems.isNotEmpty()) {
-            mediaItems += createPseudoShuffleAllItem()
-        }
-        if (audioItems.size <= CONTENT_HIERARCHY_NUM_ITEMS_PER_GROUP) {
+        val numTracks = getNumTracks()
+        if (!hasTooManyItems(numTracks)) {
+            val audioItems = getAudioItems()
+            if (audioItems.isNotEmpty()) {
+                items += createPseudoShuffleAllItem()
+            }
             for (track in audioItems) {
                 val description = audioItemLibrary.createAudioItemDescription(track)
-                mediaItems += MediaItem(description, track.browsPlayableFlags)
+                items += MediaItem(description, track.browsPlayableFlags)
             }
         } else {
-            // TODO: handle the case where we go above this number of groups times number of items (right now > 160000
-            //  tracks)
-            mediaItems += createGroups(audioItems, AudioItemType.GROUP_TRACKS)
+            items += createPseudoShuffleAllItem()
+            val groupContentHierarchyID = id
+            groupContentHierarchyID.type = ContentHierarchyType.TRACK_GROUP
+            // TODO: low prio: also handle case where groups of 400 tracks are not sufficient (~ 400 x 400 items)
+            items += createGroups(groupContentHierarchyID, numTracks)
         }
-        return mediaItems
+        return items
     }
 
     private fun createPseudoFoundXItems(): MediaItem {
@@ -62,7 +67,7 @@ class ContentHierarchyAllTracks(
             audioItemLibrary.numFilesSeenWhenBuildingLibrary
         )
         val description = MediaDescriptionCompat.Builder().apply {
-            setMediaId(CONTENT_HIERARCHY_NONE)
+            setMediaId(serialize(ContentHierarchyID(ContentHierarchyType.NONE)))
             setTitle(context.getString(R.string.notif_indexing_text_in_progress))
             setSubtitle(numItemsFoundText)
             setIconUri(
@@ -77,7 +82,7 @@ class ContentHierarchyAllTracks(
      */
     private fun createPseudoShuffleAllItem(): MediaItem {
         val description = MediaDescriptionCompat.Builder().apply {
-            setMediaId(CONTENT_HIERARCHY_SHUFFLE_ALL)
+            setMediaId(serialize(ContentHierarchyID(ContentHierarchyType.SHUFFLE_ALL_TRACKS)))
             setTitle(context.getString(R.string.browse_tree_pseudo_track_shuffle_all))
             setIconUri(
                 Uri.parse(RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.baseline_shuffle_24))
@@ -99,24 +104,30 @@ class ContentHierarchyAllTracks(
             }
         }
         val description = MediaDescriptionCompat.Builder().apply {
-            setMediaId(CONTENT_HIERARCHY_NONE)
+            setMediaId(serialize(ContentHierarchyID(ContentHierarchyType.NONE)))
             setTitle(title)
             setSubtitle(subtitle)
             setIconUri(
                 Uri.parse(RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.baseline_report_problem_24))
             )
         }.build()
-        // this should do nothing. We use BROWSABLE flag here, when clicked an empty subfolder will open. This is the
-        // better alternative than flag PLAYABLE which will open the playback view in front of the browser
+        // Tapping this should do nothing. We use BROWSABLE flag here, when clicked an empty subfolder will open.
+        // This is the better alternative than flag PLAYABLE which will open the playback view in front of the browser
         return MediaItem(description, MediaItem.FLAG_BROWSABLE)
     }
 
     override suspend fun getAudioItems(): List<AudioItem> {
         val items: MutableList<AudioItem> = mutableListOf()
-        for (repo in audioItemLibrary.storageToRepoMap.values) {
-            items += repo.getAllTracks()
-        }
+        val repo = audioItemLibrary.getPrimaryRepo() ?: return emptyList()
+        items += repo.getAllTracks()
         return items.sortedBy { it.title.lowercase() }
+    }
+
+    private suspend fun getNumTracks(): Int {
+        var numTracks = 0
+        val repo = audioItemLibrary.getPrimaryRepo() ?: return 0
+        numTracks += repo.getNumTracks()
+        return numTracks
     }
 
 }

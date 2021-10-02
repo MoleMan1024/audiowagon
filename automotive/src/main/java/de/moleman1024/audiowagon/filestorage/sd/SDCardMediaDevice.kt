@@ -21,7 +21,7 @@ private val logger = Logger
  * NOTE: SD card support is only enabled in debug builds used in the Android emulator
  */
 class SDCardMediaDevice(val id: String) : MediaDevice {
-    private val rootDirectory = File("/storage/${id}/Music")
+    private val rootDirectory = File("/storage/${id}")
     var isClosed: Boolean = false
 
     init {

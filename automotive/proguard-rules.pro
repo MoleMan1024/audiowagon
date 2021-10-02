@@ -7,7 +7,8 @@
 
 # Uncomment this to preserve the line number information for
 # debugging stack traces.
--keepattributes SourceFile,LineNumberTable
+# kotlinx.serialization
+-keepattributes SourceFile,LineNumberTable,*Annotation*,InnerClasses
 
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
@@ -16,3 +17,6 @@
 # do not obfuscate, project is open source anyway
 -dontobfuscate
 -optimizations !code/simplification/arithmetic,!field/*,!class/merging/*,!code/allocation/variable
+
+# kotlinx.serialization
+-dontnote kotlinx.serialization.AnnotationsKt

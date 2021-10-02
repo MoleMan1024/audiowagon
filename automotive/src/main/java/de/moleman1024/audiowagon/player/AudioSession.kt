@@ -29,7 +29,9 @@ import de.moleman1024.audiowagon.filestorage.AudioFileStorage
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
-import de.moleman1024.audiowagon.medialibrary.CONTENT_HIERARCHY_SHUFFLE_ALL
+import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyElement
+import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyID
+import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyType
 import de.moleman1024.audiowagon.medialibrary.descriptionForLog
 import de.moleman1024.audiowagon.persistence.PersistentPlaybackState
 import de.moleman1024.audiowagon.persistence.PersistentStorage
@@ -366,11 +368,12 @@ class AudioSession(
         audioPlayer.clearPlaybackQueueObservers()
         audioPlayer.addPlaybackQueueObserver { queueChange ->
             logger.debug(TAG, "queueChange=$queueChange")
-            val contentHierarchyID: String? = queueChange.currentItem?.description?.mediaId
-            logger.debug(TAG, "Current track content hierarchy ID: $contentHierarchyID")
+            val contentHierarchyIDStr: String? = queueChange.currentItem?.description?.mediaId
+            logger.debug(TAG, "Current track content hierarchy ID: $contentHierarchyIDStr")
             logger.flushToUSB()
             launchInScopeSafely {
-                if (contentHierarchyID != null) {
+                if (contentHierarchyIDStr != null) {
+                    val contentHierarchyID = ContentHierarchyElement.deserialize(contentHierarchyIDStr)
                     val audioItem: AudioItem = audioItemLibrary.getAudioItemForTrack(contentHierarchyID)
                     val metadata: MediaMetadataCompat = audioItemLibrary.createMetadataForItem(audioItem)
                     currentQueueItem = MediaSessionCompat.QueueItem(
@@ -409,6 +412,21 @@ class AudioSession(
             audioFocusChangeListener.cancelAudioFocusLossJob()
             audioPlayer.shutdown()
             releaseMediaSession()
+        }
+    }
+
+    fun suspend() {
+        logger.debug(TAG, "suspend()")
+        runBlocking(dispatcher) {
+            audioFocusChangeListener.cancelAudioFocusLossJob()
+        }
+        currentQueueItem = null
+        val notifBuilder = NotificationCompat.Builder(context, AUDIO_SESS_NOTIF_CHANNEL)
+        sendNotification(notifBuilder)
+        clearPlaybackState()
+        runBlocking(dispatcher) {
+            setMediaSessionQueue(listOf())
+            setMediaSessionPlaybackState(playbackState)
         }
     }
 
@@ -594,7 +612,7 @@ class AudioSession(
                         gui.showErrorToastMsg(context.getString(R.string.toast_error_not_enough_space_for_log))
                     }
                     else -> {
-                        // ignore
+                        // no special exception handling
                     }
                 }
             }
@@ -638,7 +656,8 @@ class AudioSession(
             audioItems = audioItemLibrary.searchTracks(track)
         } else {
             // user spoke sth like "play music"
-            audioItemLibrary.getAudioItemsStartingFrom(CONTENT_HIERARCHY_SHUFFLE_ALL)
+            val contentHierarchyIDShuffleAll = ContentHierarchyID(ContentHierarchyType.SHUFFLE_ALL_TRACKS)
+            audioItemLibrary.getAudioItemsStartingFrom(contentHierarchyIDShuffleAll)
         }
         createQueueAndPlay(audioItems)
     }
@@ -649,14 +668,21 @@ class AudioSession(
         createQueueAndPlay(audioItems)
     }
 
-    private suspend fun playFromContentHierarchyID(contentHierarchyID: String) {
+    private suspend fun playFromContentHierarchyID(contentHierarchyIDStr: String) {
+        val contentHierarchyID = ContentHierarchyElement.deserialize(contentHierarchyIDStr)
         logger.debug(TAG, "playFromContentHierarchyID($contentHierarchyID)")
         val audioItems: List<AudioItem> = audioItemLibrary.getAudioItemsStartingFrom(contentHierarchyID)
-        lastContentHierarchyIDPlayed = contentHierarchyID
-        createQueueAndPlay(audioItems)
+        lastContentHierarchyIDPlayed = contentHierarchyIDStr
+        var startIndex = 0
+        if (contentHierarchyID.type == ContentHierarchyType.TRACK) {
+            startIndex = audioItems.indexOfFirst {
+                ContentHierarchyElement.deserialize(it.id).trackID == contentHierarchyID.trackID
+            }
+        }
+        createQueueAndPlay(audioItems, startIndex)
     }
 
-    private suspend fun createQueueAndPlay(audioItems: List<AudioItem>) {
+    private suspend fun createQueueAndPlay(audioItems: List<AudioItem>, startIndex: Int = 0) {
         // see https://developer.android.com/reference/android/media/session/MediaSession#setQueue(java.util.List%3Candroid.media.session.MediaSession.QueueItem%3E)
         // TODO: check how many is too many tracks and use sliding window instead
         val queue: MutableList<MediaSessionCompat.QueueItem> = mutableListOf()
@@ -665,7 +691,7 @@ class AudioSession(
             val queueItem = MediaSessionCompat.QueueItem(description, queueID.toLong())
             queue.add(queueItem)
         }
-        audioPlayer.setPlayQueueAndNotify(queue)
+        audioPlayer.setPlayQueueAndNotify(queue, startIndex)
         audioPlayer.maybeShuffleQueue()
         setMediaSessionQueue(queue)
         try {
@@ -678,15 +704,16 @@ class AudioSession(
     suspend fun prepareFromPersistent(state: PersistentPlaybackState) {
         logger.debug(TAG, "prepareFromPersistent($state)")
         val queue: MutableList<MediaSessionCompat.QueueItem> = mutableListOf()
-        for ((index, contentHierarchyID) in state.queueIDs.withIndex()) {
+        for ((index, contentHierarchyIDStr) in state.queueIDs.withIndex()) {
             try {
                 scope.ensureActive()
+                val contentHierarchyID = ContentHierarchyElement.deserialize(contentHierarchyIDStr)
                 val trackAudioItem = audioItemLibrary.getAudioItemForTrack(contentHierarchyID)
                 val description = audioItemLibrary.createAudioItemDescription(trackAudioItem)
                 val queueItem = MediaSessionCompat.QueueItem(description, index.toLong())
                 queue.add(queueItem)
             } catch (exc: IllegalArgumentException) {
-                logger.warning(TAG, "Issue with persistent content hierarchy ID: $contentHierarchyID: $exc")
+                logger.warning(TAG, "Issue with persistent content hierarchy ID: $contentHierarchyIDStr: $exc")
             } catch (exc: CancellationException) {
                 logger.warning(TAG, "Preparation from persistent has been cancelled")
                 return
@@ -697,10 +724,11 @@ class AudioSession(
         if (queue.size <= 0) {
             return
         }
-        if (state.lastContentHierarchyID == CONTENT_HIERARCHY_SHUFFLE_ALL) {
+        val lastContentHierarchyID = ContentHierarchyElement.deserialize(state.lastContentHierarchyID)
+        if (lastContentHierarchyID.type == ContentHierarchyType.SHUFFLE_ALL_TRACKS) {
             // In this case we restored only the last playing track from persistent storage above. Now we create a new
             // shuffled playback queue for all remaining items
-            val shuffledTracks = audioItemLibrary.getAudioItemsStartingFrom(state.lastContentHierarchyID)
+            val shuffledTracks = audioItemLibrary.getAudioItemsStartingFrom(lastContentHierarchyID)
             for ((queueID, audioItem) in shuffledTracks.withIndex()) {
                 if (audioItem.id == queue[0].description.mediaId) {
                     continue
@@ -802,7 +830,8 @@ class AudioSession(
         playbackStateToPersist.isShuffling = isShuffling()
         playbackStateToPersist.isRepeating = isRepeating()
         playbackStateToPersist.lastContentHierarchyID = lastContentHierarchyIDPlayed
-        if (lastContentHierarchyIDPlayed == CONTENT_HIERARCHY_SHUFFLE_ALL) {
+        val lastContentHierarchyID = ContentHierarchyElement.deserialize(lastContentHierarchyIDPlayed)
+        if (lastContentHierarchyID.type == ContentHierarchyType.SHUFFLE_ALL_TRACKS) {
             // When the user is shuffling all tracks, we don't store the queue, we will recreate a new shuffled queue
             // when restoring from persistent state instead (to save storage space)
             playbackStateToPersist.queueIDs = queueIDs.subList(queueIndex, queueIndex+1)

@@ -13,7 +13,6 @@ import de.moleman1024.audiowagon.mocks.MockUSBDevice
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.After
 import org.junit.Assert.assertTrue
-import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 

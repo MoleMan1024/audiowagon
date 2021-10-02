@@ -126,7 +126,15 @@ class AudioPlayer(
                 playbackQueue.incrementIndex()
                 currentMediaPlayer = getNextPlayer()
                 notifyPlayerStatusChange()
-                setupNextPlayer()
+                try {
+                    setupNextPlayer()
+                } catch (exc: IOException) {
+                    logger.exception(TAG, exc.message.toString(), exc)
+                    playerStatus.errorCode = PlaybackStateCompat.ERROR_CODE_APP_ERROR
+                    playerStatus.errorMsg = "Could not set next player"
+                    playerStatus.playbackState = PlaybackStateCompat.STATE_ERROR
+                    notifyPlayerStatusChange()
+                }
             }
         }
     }
@@ -665,9 +673,15 @@ class AudioPlayer(
         }
     }
 
-    suspend fun setPlayQueueAndNotify(items: List<MediaSessionCompat.QueueItem>) {
+    suspend fun setPlayQueueAndNotify(items: List<MediaSessionCompat.QueueItem>, startIndex: Int = 0) {
         withContext(dispatcher) {
             setPlayQueue(items)
+            val queueIndex: Int = when {
+                startIndex < 0 -> 0
+                startIndex > items.size - 1 -> items.size - 1
+                else -> startIndex
+            }
+            playbackQueue.setIndex(queueIndex)
             playbackQueue.notifyQueueChanged()
         }
     }
@@ -880,7 +894,10 @@ class AudioPlayer(
     }
 
     private fun launchInScopeSafely(func: suspend () -> Unit) {
-        scope.launch(dispatcher) {
+        val exceptionHandler = CoroutineExceptionHandler { coroutineContext, exc ->
+            logger.exception(TAG, coroutineContext.toString() + " threw " + exc.message.toString(), exc)
+        }
+        scope.launch(exceptionHandler + dispatcher) {
             try {
                 func()
             } catch (exc: Exception) {

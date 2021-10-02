@@ -15,6 +15,8 @@
 - [org.jetbrains.kotlin:kotlin-stdlib](https://kotlinlang.org/api/latest/jvm/stdlib/): Apache 2.0
 - [androidx.lifecycle:lifecycle-runtime-ktx](https://developer.android.com/jetpack/androidx/releases/lifecycle): Apache
   2.0
+- [org.jetbrains.kotlinx:kotlinx-serialization](https://github.com/Kotlin/kotlinx.serialization): Apache
+  2.0
 - [libaums](https://github.com/magnusja/libaums): Apache 2.0
 
 

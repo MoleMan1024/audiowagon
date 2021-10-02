@@ -13,6 +13,7 @@ import android.support.v4.media.session.MediaSessionCompat
 import de.moleman1024.audiowagon.*
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -234,7 +235,10 @@ class AudioSessionCallback(
     }
 
     private fun launchInScopeSafely(func: suspend () -> Unit) {
-        scope.launch(dispatcher) {
+        val exceptionHandler = CoroutineExceptionHandler { coroutineContext, exc ->
+            logger.exception(TAG, coroutineContext.toString() + " threw " + exc.message.toString(), exc)
+        }
+        scope.launch(exceptionHandler + dispatcher) {
             try {
                 func()
             } catch (exc: Exception) {

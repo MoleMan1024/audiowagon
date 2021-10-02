@@ -41,6 +41,9 @@ private const val INTERFACE_PROTOCOL = 80
 
 private const val DEFAULT_FILESYSTEM_CHUNK_SIZE = 32768
 
+// used in a hash map during indexing to improve speed
+private const val MAX_NUM_FILEPATHS_TO_CACHE = 20
+
 class USBMediaDevice(private val context: Context, private val usbDevice: USBDevice): MediaDevice {
     private var fileSystem: FileSystem? = null
     private var serialNum: String = ""
@@ -48,7 +51,14 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
     private var logFile: UsbFile? = null
     private var volumeLabel: String = ""
     private var logDirectoryNum: Int = 0
+    private val recentFilepathToFileMap: FilePathToFileMapCache = FilePathToFileMapCache()
     val directoriesWithIssues = mutableListOf<String>()
+
+    private class FilePathToFileMapCache : LinkedHashMap<String, UsbFile>() {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, UsbFile>?): Boolean {
+            return size > MAX_NUM_FILEPATHS_TO_CACHE
+        }
+    }
 
     fun requestPermission(intentBroadcast: PendingIntent) {
         usbDevice.requestPermission(intentBroadcast)
@@ -300,6 +310,7 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
         directoriesWithIssues.clear()
         val stack = ArrayDeque<Iterator<UsbFile>>()
         val allFilesDirs = mutableMapOf<String, Unit>()
+        recentFilepathToFileMap.clear()
         stack.add(rootDirectory.listFiles().iterator())
         while (stack.isNotEmpty()) {
             if (stack.last().hasNext()) {
@@ -308,9 +319,13 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
                     allFilesDirs[fileOrDirectory.absolutePath] = Unit
                     if (!fileOrDirectory.isDirectory) {
                         logger.verbose(TAG, "Found file: ${fileOrDirectory.absolutePath}")
+                        recentFilepathToFileMap[fileOrDirectory.absolutePath] = fileOrDirectory
                         yield(fileOrDirectory)
                     } else {
-                        if (!areTooManyFilesInDir(fileOrDirectory)) {
+                        if (fileOrDirectory.name.contains("(LOST\\.DIR|$LOG_DIRECTORY)".toRegex())) {
+                            logger.debug(TAG, "Ignoring directory: ${fileOrDirectory.name}")
+                        }
+                        else if (!areTooManyFilesInDir(fileOrDirectory)) {
                             stack.add(fileOrDirectory.listFiles().iterator())
                         } else {
                             // libaums has a bug where using listFiles() with more than 128 files in a directory will
@@ -325,6 +340,7 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
                 stack.removeLast()
             }
         }
+        recentFilepathToFileMap.clear()
     }
 
     override fun getShortName(): String {
@@ -386,6 +402,10 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
     private fun getUSBFileFromURI(uri: Uri): UsbFile {
         val audioFile = AudioFile(uri)
         val filePath = audioFile.getFilePath()
+        val usbFileFromCache: UsbFile? = recentFilepathToFileMap[filePath]
+        if (usbFileFromCache != null) {
+            return usbFileFromCache
+        }
         return getRoot().search(filePath) ?: throw IOException("USB file not found: $uri")
     }
 

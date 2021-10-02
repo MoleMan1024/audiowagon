@@ -12,8 +12,7 @@ import de.moleman1024.audiowagon.filestorage.AudioFile
 import de.moleman1024.audiowagon.filestorage.AudioFileStorageLocation
 import de.moleman1024.audiowagon.filestorage.IndexingStatus
 import de.moleman1024.audiowagon.log.Logger
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.produce
 import java.net.URLConnection
@@ -30,6 +29,7 @@ class USBDeviceStorageLocation(override val device: USBMediaDevice) : AudioFileS
         get() = device.getID()
     override var indexingStatus: IndexingStatus = IndexingStatus.NOT_INDEXED
     override var isDetached: Boolean = false
+    private var isIndexingCancelled: Boolean = false
 
     @ExperimentalCoroutinesApi
     override fun indexAudioFiles(scope: CoroutineScope): ReceiveChannel<AudioFile> {
@@ -37,6 +37,10 @@ class USBDeviceStorageLocation(override val device: USBMediaDevice) : AudioFileS
         return scope.produce {
             try {
                 for (usbFile in device.walkTopDown(device.getRoot())) {
+                    if (isIndexingCancelled) {
+                        logger.debug(TAG, "Cancel indexAudioFiles()")
+                        break
+                    }
                     if (!isPlayableAudioFile(usbFile)) {
                         logger.debug(TAG, "Skipping unsupported file: $usbFile")
                         continue
@@ -49,10 +53,19 @@ class USBDeviceStorageLocation(override val device: USBMediaDevice) : AudioFileS
                     audioFile.lastModifiedDate = Date(usbFile.lastModified())
                     send(audioFile)
                 }
+            } catch (exc: CancellationException) {
+                logger.warning(TAG, "Coroutine for indexAudioFiles() was cancelled")
             } catch (exc: RuntimeException) {
                 logger.exception(TAG, exc.message.toString(), exc)
+            } finally {
+                isIndexingCancelled = false
             }
         }
+    }
+
+    override fun cancelIndexAudioFiles() {
+        logger.debug(TAG, "Cancelling audio file indexing")
+        isIndexingCancelled = true
     }
 
     override fun getDataSourceForURI(uri: Uri): MediaDataSource {

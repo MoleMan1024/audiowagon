@@ -36,3 +36,6 @@ local.properties
 obj/
 output.json
 release/
+venv/
+tools/generate_files/.idea
+

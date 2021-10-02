@@ -51,7 +51,7 @@ class ServiceFixture {
         targetContext.startService(intent)
     }
 
-    private fun createMediaBrowser(): MediaBrowserCompat {
+    fun createMediaBrowser(): MediaBrowserCompat {
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
             mediaBrowser = MediaBrowserCompat(
                 targetContext,
@@ -76,7 +76,7 @@ class ServiceFixture {
         return mediaBrowser
     }
 
-    private fun waitForAudioBrowserService(): AudioBrowserService {
+    fun waitForAudioBrowserService(): AudioBrowserService {
         TestUtils.waitForTrueOrFail({ this::audioBrowserService.isInitialized }, 1000)
         audioBrowserService.logger.setStoreLogs(true)
         return audioBrowserService

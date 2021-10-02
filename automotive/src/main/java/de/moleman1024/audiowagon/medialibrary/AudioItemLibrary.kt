@@ -19,20 +19,17 @@ import de.moleman1024.audiowagon.exceptions.CannotRecoverUSBException
 import de.moleman1024.audiowagon.filestorage.AudioFile
 import de.moleman1024.audiowagon.filestorage.AudioFileStorage
 import de.moleman1024.audiowagon.log.Logger
+import de.moleman1024.audiowagon.medialibrary.contenthierarchy.*
 import de.moleman1024.audiowagon.repository.AudioItemRepository
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.consumeEach
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
 import java.io.IOException
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.coroutineContext
 
-const val CONTENT_HIERARCHY_ID_ROOT: String = "/"
-const val CONTENT_HIERARCHY_TRACKS_ROOT: String = "__TRACKS__"
-const val CONTENT_HIERARCHY_ALBUMS_ROOT: String = "__ALBUMS__"
-const val CONTENT_HIERARCHY_ARTISTS_ROOT: String = "__ARTISTS__"
-const val CONTENT_HIERARCHY_SHUFFLE_ALL: String = "__SHUFFLE_ALL__"
-const val CONTENT_HIERARCHY_NONE: String = "__NONE__"
 // could add one more category shown in header, maybe use for playlists
 
 /*
@@ -44,7 +41,7 @@ const val CONTENT_STYLE_SUPPORTED = "android.media.browse.CONTENT_STYLE_SUPPORTE
 const val CONTENT_STYLE_PLAYABLE_HINT = "android.media.browse.CONTENT_STYLE_PLAYABLE_HINT"
 const val CONTENT_STYLE_BROWSABLE_HINT = "android.media.browse.CONTENT_STYLE_BROWSABLE_HINT"
 const val CONTENT_STYLE_LIST_ITEM_HINT_VALUE = 1
-
+private const val UPDATE_INDEX_NOTIF_FOR_EACH_NUM_ITEMS = 100
 private const val TAG = "AudioItemLibr"
 private val logger = Logger
 
@@ -60,6 +57,7 @@ class AudioItemLibrary(
     var isBuildingLibray = false
     var numFilesSeenWhenBuildingLibrary = 0
     var libraryExceptionObservers = mutableListOf<(Exception) -> Unit>()
+    private var isBuildLibraryCancelled: Boolean = false
 
     fun initRepository(storageID: String) {
         if (storageToRepoMap.containsKey(storageID)) {
@@ -93,36 +91,42 @@ class AudioItemLibrary(
     @ExperimentalCoroutinesApi
     suspend fun buildLibrary(channel: ReceiveChannel<AudioFile>, callback: () -> Unit) {
         isBuildingLibray = true
+        isBuildLibraryCancelled = false
         numFilesSeenWhenBuildingLibrary = 0
         // indicate indexing has started via callback function
         callback()
         channel.consumeEach { audioFile ->
             logger.verbose(TAG, "buildLibrary() received: $audioFile")
-            val repo: AudioItemRepository = storageToRepoMap[audioFile.getStorageID()]
-                ?: throw RuntimeException("No repository for file: $audioFile")
-            val trackIDInDatabase: Long? = repo.getDatabaseIDForTrack(audioFile)
-            if (trackIDInDatabase == null) {
-                extractMetadataAndPopulateDB(audioFile, repo, coroutineContext)
-            } else {
-                try {
-                    val audioFileHasChanged = repo.hasAudioFileChangedForTrack(audioFile, trackIDInDatabase)
-                    if (!audioFileHasChanged) {
-                        repo.trackIDsToKeep.add(trackIDInDatabase)
-                    } else {
-                        repo.removeTrack(trackIDInDatabase)
-                        extractMetadataAndPopulateDB(audioFile, repo, coroutineContext)
+            if (!isBuildLibraryCancelled) {
+                val repo: AudioItemRepository = storageToRepoMap[audioFile.getStorageID()]
+                    ?: throw RuntimeException("No repository for file: $audioFile")
+                val trackIDInDatabase: Long? = repo.getDatabaseIDForTrack(audioFile)
+                if (trackIDInDatabase == null) {
+                    extractMetadataAndPopulateDB(audioFile, repo, coroutineContext)
+                } else {
+                    try {
+                        val audioFileHasChanged = repo.hasAudioFileChangedForTrack(audioFile, trackIDInDatabase)
+                        if (!audioFileHasChanged) {
+                            repo.trackIDsToKeep.add(trackIDInDatabase)
+                        } else {
+                            repo.removeTrack(trackIDInDatabase)
+                            extractMetadataAndPopulateDB(audioFile, repo, coroutineContext)
+                        }
+                    } catch (exc: RuntimeException) {
+                        logger.exception(TAG, exc.message.toString(), exc)
                     }
-                } catch (exc: RuntimeException) {
-                    logger.exception(TAG, exc.message.toString(), exc)
                 }
-            }
-            numFilesSeenWhenBuildingLibrary++
-            // We limit the number of indexing notification updates sent here. It seems Android will throttle
-            // if too many notifications are posted and the last important notification indicating "finished" might be
-            // ignored if too many are sent
-            if (numFilesSeenWhenBuildingLibrary % 50 == 0) {
-                gui.updateIndexingNotification(numFilesSeenWhenBuildingLibrary)
-                callback()
+                numFilesSeenWhenBuildingLibrary++
+                // We limit the number of indexing notification updates sent here. It seems Android will throttle
+                // if too many notifications are posted and the last important notification indicating "finished" might be
+                // ignored if too many are sent
+                if (numFilesSeenWhenBuildingLibrary % UPDATE_INDEX_NOTIF_FOR_EACH_NUM_ITEMS == 0) {
+                    gui.updateIndexingNotification(numFilesSeenWhenBuildingLibrary)
+                    logger.flushToUSB()
+                    callback()
+                }
+            } else {
+                logger.debug(TAG, "Library build has been cancelled")
             }
         }
         logger.debug(TAG, "Channel drained in buildLibrary()")
@@ -130,6 +134,7 @@ class AudioItemLibrary(
             repo.clean()
         }
         isBuildingLibray = false
+        isBuildLibraryCancelled = false
     }
 
     private fun extractMetadataAndPopulateDB(
@@ -139,6 +144,9 @@ class AudioItemLibrary(
     ) {
         try {
             val metadata: AudioItem = metadataMaker.extractMetadataFrom(audioFile)
+            if (isBuildLibraryCancelled) {
+                return
+            }
             repo.populateDatabaseFrom(audioFile, metadata)
         } catch (exc: IOException) {
             // this can happen for example for files with strange filenames, the file will be ignored
@@ -158,64 +166,52 @@ class AudioItemLibrary(
      * Due to the size limitations in onLoadChildren() in browser service, the content is split into groups of some
      * hundred items each in case of large media libraries.
      */
-    suspend fun getMediaItemsStartingFrom(contentHierarchyID: String): List<MediaItem> {
+    suspend fun getMediaItemsStartingFrom(contentHierarchyID: ContentHierarchyID): List<MediaItem> {
         logger.debug(TAG, "Requested MediaItem content hierarchy from library: $contentHierarchyID")
-        assertContentHierarchyIDNotEmpty(contentHierarchyID)
         val contentHierarchyElement = createContentHierarchyElementForID(contentHierarchyID)
         return contentHierarchyElement.getMediaItems()
     }
 
-    suspend fun getAudioItemsStartingFrom(contentHierarchyID: String): List<AudioItem> {
+    suspend fun getAudioItemsStartingFrom(contentHierarchyID: ContentHierarchyID): List<AudioItem> {
         logger.debug(TAG, "Requested AudioItem content hierarchy from library: $contentHierarchyID")
-        assertContentHierarchyIDNotEmpty(contentHierarchyID)
         val contentHierarchyElement = createContentHierarchyElementForID(contentHierarchyID)
         return contentHierarchyElement.getAudioItems()
     }
 
-    private fun createContentHierarchyElementForID(contentHierarchyID: String): ContentHierarchyElement {
-        assertContentHierarchyIDNotEmpty(contentHierarchyID)
-        return when (contentHierarchyID) {
-            CONTENT_HIERARCHY_ID_ROOT -> ContentHierarchyRoot(context, this)
-            CONTENT_HIERARCHY_TRACKS_ROOT -> ContentHierarchyAllTracks(context, this, audioFileStorage)
-            CONTENT_HIERARCHY_ALBUMS_ROOT -> ContentHierarchyAllAlbums(context, this)
-            CONTENT_HIERARCHY_ARTISTS_ROOT -> ContentHierarchyAllArtists(context, this)
-            CONTENT_HIERARCHY_SHUFFLE_ALL -> ContentHierarchyShuffleAll(context, this)
-            CONTENT_HIERARCHY_NONE -> ContentHierarchyNone(context, this)
-            else -> {
-                when (ContentHierarchyElement.getType(contentHierarchyID)) {
-                    AudioItemType.ARTIST -> ContentHierarchyArtist(contentHierarchyID, context, this)
-                    AudioItemType.ALBUM,
-                    AudioItemType.TRACKS_FOR_ALBUM -> ContentHierarchyAlbum(contentHierarchyID, context, this)
-                    AudioItemType.UNKNOWN_ALBUM,
-                    AudioItemType.TRACKS_FOR_UNKN_ALBUM -> ContentHierarchyUnknAlbum(
-                        contentHierarchyID, context, this
-                    )
-                    AudioItemType.TRACKS_FOR_ARTIST -> ContentHierarchyTracksForArtist(
-                        contentHierarchyID, context, this
-                    )
-                    AudioItemType.TRACK -> ContentHierarchyTrack(contentHierarchyID, context, this)
-                    AudioItemType.COMPILATION,
-                    AudioItemType.TRACKS_FOR_COMPILATION -> ContentHierarchyCompilation(
-                        contentHierarchyID, context, this
-                    )
-                    AudioItemType.GROUP_TRACKS -> ContentHierarchyGroupTracks(contentHierarchyID, context, this)
-                    AudioItemType.GROUP_ALBUMS -> ContentHierarchyGroupAlbums(contentHierarchyID, context, this)
-                    AudioItemType.GROUP_ARTISTS -> ContentHierarchyGroupArtists(contentHierarchyID, context, this)
-                }
-            }
+    private fun createContentHierarchyElementForID(contentHierarchyID: ContentHierarchyID): ContentHierarchyElement {
+        return when (contentHierarchyID.type) {
+            ContentHierarchyType.NONE -> ContentHierarchyNone(context, this)
+            ContentHierarchyType.ROOT -> ContentHierarchyRoot(context, this)
+            ContentHierarchyType.SHUFFLE_ALL_TRACKS -> ContentHierarchyShuffleAllTracks(context, this)
+            ContentHierarchyType.ROOT_TRACKS -> ContentHierarchyRootTracks(context, this, audioFileStorage)
+            ContentHierarchyType.ROOT_ALBUMS -> ContentHierarchyRootAlbums(context, this)
+            ContentHierarchyType.ROOT_ARTISTS -> ContentHierarchyRootArtists(context, this)
+            ContentHierarchyType.TRACK -> ContentHierarchyTrack(contentHierarchyID, context, this)
+            ContentHierarchyType.ALBUM -> ContentHierarchyAlbum(contentHierarchyID, context, this)
+            ContentHierarchyType.COMPILATION -> ContentHierarchyCompilation(contentHierarchyID, context, this)
+            ContentHierarchyType.UNKNOWN_ALBUM -> ContentHierarchyUnknAlbum(contentHierarchyID, context, this)
+            ContentHierarchyType.ARTIST -> ContentHierarchyArtist(contentHierarchyID, context, this)
+            ContentHierarchyType.TRACK_GROUP -> ContentHierarchyGroupTracks(contentHierarchyID, context, this)
+            ContentHierarchyType.ALBUM_GROUP -> ContentHierarchyGroupAlbums(contentHierarchyID, context, this)
+            ContentHierarchyType.ARTIST_GROUP -> ContentHierarchyGroupArtists(contentHierarchyID, context, this)
+            ContentHierarchyType.ALL_TRACKS_FOR_ARTIST -> ContentHierarchyAllTracksForArtist(
+                contentHierarchyID, context, this
+            )
+            ContentHierarchyType.ALL_TRACKS_FOR_ALBUM -> ContentHierarchyAllTracksForAlbum(
+                contentHierarchyID, context, this
+            )
+            ContentHierarchyType.ALL_TRACKS_FOR_COMPILATION -> ContentHierarchyAllTracksForCompilation(
+                contentHierarchyID, context, this
+            )
+            ContentHierarchyType.ALL_TRACKS_FOR_UNKN_ALBUM -> ContentHierarchyAllTracksForUnknAlbum(
+                contentHierarchyID, context, this
+            )
         }
     }
 
-    private fun assertContentHierarchyIDNotEmpty(contentHierarchyID: String) {
-        if (contentHierarchyID.isBlank()) {
-            throw IllegalArgumentException("Given content hierarchy ID is empty: $contentHierarchyID")
-        }
-    }
-
-    suspend fun getAudioItemForTrack(contentHierarchyID: String): AudioItem {
+    suspend fun getAudioItemForTrack(contentHierarchyID: ContentHierarchyID): AudioItem {
         logger.debug(TAG, "getAudioItemForTrack($contentHierarchyID)")
-        assertContentHierarchyIDNotEmpty(contentHierarchyID)
-        if (ContentHierarchyElement.getType(contentHierarchyID) != AudioItemType.TRACK) {
+        if (contentHierarchyID.type != ContentHierarchyType.TRACK) {
             throw IllegalArgumentException("Given content hierarchy ID is not for a track: $contentHierarchyID")
         }
         val trackContentHierarchy = ContentHierarchyTrack(contentHierarchyID, context, this)
@@ -223,25 +219,32 @@ class AudioItemLibrary(
         if (audioItems.isEmpty()) {
             throw RuntimeException("No track for content hierarchy ID: $contentHierarchyID")
         }
-        if (audioItems.size != 1) {
-            logger.warning(TAG, "Multiple tracks for content hierarchy ID: $contentHierarchyID")
+        var startIndex: Int
+        startIndex = audioItems.indexOfFirst {
+            ContentHierarchyElement.deserialize(it.id).trackID == contentHierarchyID.trackID
         }
-        return audioItems[0]
+        if (startIndex < 0) {
+            startIndex = 0
+        }
+        return audioItems[startIndex]
     }
 
     /**
      * This will determine what items in the browse tree will look like in the GUI
      */
-    suspend fun createAudioItemDescription(audioItem: AudioItem, extras: Bundle? = null): MediaDescriptionCompat {
-        val type: AudioItemType = ContentHierarchyElement.getType(audioItem.id)
+    suspend fun createAudioItemDescription(
+        audioItem: AudioItem,
+        extras: Bundle? = null,
+        paramContentHierarchyID: ContentHierarchyID? = null
+    ): MediaDescriptionCompat {
+        val contentHierarchyID = paramContentHierarchyID ?: ContentHierarchyElement.deserialize(audioItem.id)
         val builder = MediaDescriptionCompat.Builder().apply {
-            when (type) {
-                AudioItemType.ARTIST -> {
+            when (contentHierarchyID.type) {
+                ContentHierarchyType.ARTIST -> {
                     if (audioItem.artist.isNotBlank()) {
                         setTitle(audioItem.artist)
-                        val databaseID = ContentHierarchyElement.getDatabaseID(audioItem.id)
-                        val numTracks = getNumTracksForArtist(databaseID)
-                        val numAlbums = getNumAlbumsForArtist(databaseID)
+                        val numTracks = getNumTracksForArtist(contentHierarchyID.artistID)
+                        val numAlbums = getNumAlbumsForArtist(contentHierarchyID.artistID)
                         val subTitle = context.getString(
                             R.string.browse_tree_num_albums_num_tracks, numAlbums, numTracks
                         )
@@ -252,8 +255,9 @@ class AudioItemLibrary(
                     setIconUri(Uri.parse(RESOURCE_ROOT_URI
                             + context.resources.getResourceEntryName(R.drawable.baseline_person_24)))
                 }
-                AudioItemType.ALBUM,
-                AudioItemType.UNKNOWN_ALBUM -> {
+                ContentHierarchyType.ALBUM,
+                ContentHierarchyType.UNKNOWN_ALBUM,
+                ContentHierarchyType.COMPILATION -> {
                     if (audioItem.album.isNotBlank()) {
                         setTitle(audioItem.album)
                     } else {
@@ -267,11 +271,7 @@ class AudioItemLibrary(
                     setIconUri(Uri.parse(RESOURCE_ROOT_URI
                             + context.resources.getResourceEntryName(R.drawable.baseline_album_24)))
                 }
-                AudioItemType.TRACK,
-                AudioItemType.TRACKS_FOR_ALBUM,
-                AudioItemType.TRACKS_FOR_ARTIST,
-                AudioItemType.TRACKS_FOR_UNKN_ALBUM,
-                AudioItemType.TRACKS_FOR_COMPILATION -> {
+                ContentHierarchyType.TRACK -> {
                     setTitle(audioItem.title)
                     if (audioItem.artist.isNotBlank()) {
                         setSubtitle(audioItem.artist)
@@ -281,17 +281,11 @@ class AudioItemLibrary(
                     setIconUri(Uri.parse(RESOURCE_ROOT_URI
                             + context.resources.getResourceEntryName(R.drawable.baseline_music_note_24)))
                 }
-                AudioItemType.COMPILATION -> {
-                    setTitle(audioItem.album)
-                    setSubtitle(audioItem.artist)
-                    setIconUri(Uri.parse(RESOURCE_ROOT_URI
-                            + context.resources.getResourceEntryName(R.drawable.baseline_album_24)))
-                }
-                AudioItemType.GROUP_TRACKS, AudioItemType.GROUP_ALBUMS, AudioItemType.GROUP_ARTISTS -> {
-                    throw AssertionError("createAudioItemDescription() is not supported for groups")
+                else -> {
+                    throw AssertionError("Cannot create audio item description for type: ${contentHierarchyID.type}")
                 }
             }
-            setMediaId(audioItem.id)
+            setMediaId(ContentHierarchyElement.serialize(contentHierarchyID))
             setMediaUri(audioItem.uri)
         }
         extras?.let { builder.setExtras(it) }
@@ -308,9 +302,9 @@ class AudioItemLibrary(
 
     private suspend fun getNumAlbumsForArtist(artistID: Long): Int {
         var numAlbums = 0
-        storageToRepoMap.values.forEach { repo ->
-            numAlbums += repo.getNumAlbumsForArtist(artistID)
-        }
+        val repo = getPrimaryRepo() ?: return 0
+        numAlbums += repo.getNumAlbumsForArtist(artistID)
+        numAlbums += if (repo.getNumTracksWithUnknAlbumForArtist(artistID) > 0) 1 else 0
         return numAlbums
     }
 
@@ -407,8 +401,8 @@ class AudioItemLibrary(
         return metadataMaker.createMetadataForItem(audioItem)
     }
 
-    fun getRepoForBrowserID(browserID: String): AudioItemRepository? {
-        val storageID = ContentHierarchyElement.getStorageID(browserID)
+    fun getRepoForContentHierarchyID(contentHierarchyID: ContentHierarchyID): AudioItemRepository? {
+        val storageID = contentHierarchyID.storageID
         return storageToRepoMap[storageID]
     }
 
@@ -426,6 +420,12 @@ class AudioItemLibrary(
         storageToRepoMap.clear()
     }
 
+    fun suspend() {
+        logger.debug(TAG, "suspend()")
+        storageToRepoMap.values.forEach { it.close() }
+        storageToRepoMap.clear()
+    }
+
     private fun notifyObservers(exc: Exception) {
         libraryExceptionObservers.forEach { it(exc) }
     }
@@ -433,6 +433,19 @@ class AudioItemLibrary(
     @VisibleForTesting(otherwise = VisibleForTesting.NONE)
     fun extractMetadataFrom(audioFile: AudioFile): AudioItem {
         return metadataMaker.extractMetadataFrom(audioFile)
+    }
+
+    fun cancelBuildLibrary() {
+        logger.debug(TAG, "cancelBuildLibrary()")
+        isBuildLibraryCancelled = true
+    }
+
+    // TODO: we do not support multiple repositories right now
+    fun getPrimaryRepo(): AudioItemRepository? {
+        if (storageToRepoMap.isEmpty()) {
+            return null
+        }
+        return storageToRepoMap.values.toTypedArray()[0]
     }
 
 }

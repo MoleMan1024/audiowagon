@@ -11,6 +11,7 @@ import androidx.room.Query
 import de.moleman1024.audiowagon.repository.MAX_DATABASE_SEARCH_ROWS
 import de.moleman1024.audiowagon.repository.entities.Artist
 import de.moleman1024.audiowagon.repository.entities.ArtistFTS
+import de.moleman1024.audiowagon.repository.entities.Track
 
 @Dao
 interface ArtistDAO {
@@ -18,7 +19,7 @@ interface ArtistDAO {
     @Insert
     fun insert(artist: Artist): Long
 
-    @Query("SELECT * FROM artist ORDER BY name ASC")
+    @Query("SELECT * FROM artist ORDER BY name COLLATE NOCASE ASC")
     fun queryAll(): List<Artist>
 
     @Query("SELECT * FROM artist WHERE artistId = :artistId")
@@ -26,6 +27,12 @@ interface ArtistDAO {
 
     @Query("SELECT * FROM artist WHERE name = :name")
     fun queryByName(name: String): Artist?
+
+    @Query("SELECT * FROM artist ORDER BY name COLLATE NOCASE ASC LIMIT :maxNumRows OFFSET :offsetRows")
+    fun queryArtistsLimitOffset(maxNumRows: Int, offsetRows: Int): List<Artist>
+
+    @Query("SELECT COUNT(*) FROM artist")
+    fun queryNumArtists(): Int
 
     @Query("SELECT * FROM artist JOIN artistfts ON artist.name = artistfts.name WHERE artistfts MATCH :query " +
             "LIMIT $MAX_DATABASE_SEARCH_ROWS")

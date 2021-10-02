@@ -15,5 +15,5 @@ import org.junit.runners.Suite
 
 @ExperimentalCoroutinesApi
 @RunWith(Suite::class)
-@Suite.SuiteClasses(MediaDataSourceTest::class, AudioItemLibraryTest::class)
+@Suite.SuiteClasses(MediaDataSourceTest::class, AudioItemLibraryTest::class, UtilTest::class)
 class UnitTestSuite

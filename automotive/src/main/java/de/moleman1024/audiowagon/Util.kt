@@ -54,10 +54,15 @@ class Util {
             return "aw-" + URLEncoder.encode(volumeLabel.trim(), "UTF-8").replace("+", "_")
         }
 
-        fun createAudioItemID(storageID: String, id: Long, type: AudioItemType, extraID: Long? = null): String {
-            var audioItemID = "${storageID}/${type.name}/${id}"
-            extraID?.let { audioItemID += "+${extraID}" }
-            return audioItemID
+        fun sanitizeYear(yearString: String): String {
+            var yearSanitized = yearString
+            // fix formats such as "2008 / 2014"
+            yearSanitized = yearSanitized.replace("/.*".toRegex(), "").trim()
+            // fix formats such as "2014-06-20T07:00:00Z"
+            if (yearSanitized.matches(Regex("\\d{4}-\\d{2}-\\d{2}T.*"))) {
+                yearSanitized = yearSanitized.replace("-.*".toRegex(), "").trim()
+            }
+            return yearSanitized
         }
 
     }

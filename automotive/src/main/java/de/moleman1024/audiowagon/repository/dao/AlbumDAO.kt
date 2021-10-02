@@ -18,7 +18,7 @@ interface AlbumDAO {
     @Insert
     fun insert(album: Album): Long
 
-    @Query("SELECT * FROM album ORDER BY name ASC")
+    @Query("SELECT * FROM album ORDER BY name COLLATE NOCASE ASC")
     fun queryAll(): List<Album>
 
     @Query("SELECT * FROM album WHERE albumId = :albumId")
@@ -36,8 +36,18 @@ interface AlbumDAO {
     @Query("SELECT * FROM album WHERE parentArtistId = :artistId")
     fun queryAlbumsByArtist(artistId: Long): List<Album>
 
+    @Query("SELECT * FROM album ORDER BY name COLLATE NOCASE ASC LIMIT :maxNumRows OFFSET :offsetRows")
+    fun queryAlbumsLimitOffset(maxNumRows: Int, offsetRows: Int): List<Album>
+
+    @Query("SELECT * FROM album WHERE parentArtistId = :artistId ORDER BY name COLLATE NOCASE ASC LIMIT :maxNumRows " +
+            "OFFSET :offsetRows")
+    fun queryAlbumsForArtistLimitOffset(maxNumRows: Int, offsetRows: Int, artistId: Long): List<Album>
+
     @Query("SELECT COUNT(*) FROM album WHERE parentArtistId = :artistId")
     fun queryNumAlbumsByArtist(artistId: Long): Int
+
+    @Query("SELECT COUNT(*) FROM album")
+    fun queryNumAlbums(): Int
 
     @Query("SELECT * FROM album JOIN albumfts ON album.name = albumfts.name WHERE albumfts MATCH :query " +
             "LIMIT $MAX_DATABASE_SEARCH_ROWS")

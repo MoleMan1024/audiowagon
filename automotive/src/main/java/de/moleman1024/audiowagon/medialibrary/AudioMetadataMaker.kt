@@ -15,6 +15,8 @@ import de.moleman1024.audiowagon.filestorage.AudioFile
 import de.moleman1024.audiowagon.filestorage.AudioFileStorage
 import de.moleman1024.audiowagon.filestorage.usb.USBAudioDataSource
 import de.moleman1024.audiowagon.log.Logger
+import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyElement
+import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyType
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 
@@ -32,6 +34,7 @@ const val METADATA_KEY_BITS_PER_SAMPLE = 39
 class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
 
     fun extractMetadataFrom(audioFile: AudioFile): AudioItem {
+        val startTime = System.nanoTime()
         logger.debug(TAG, "Extracting metadata for: $audioFile")
         val metadataRetriever = MediaMetadataRetriever()
         val dataSource = audioFileStorage.getDataSourceForAudioFile(audioFile)
@@ -73,7 +76,9 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
         year?.let { audioItemForMetadata.year = it }
         durationMS?.let { audioItemForMetadata.durationMS = it }
         audioItemForMetadata.isInCompilation = isInCompilation
-        logger.debug(TAG, "Extracted metadata: $audioItemForMetadata")
+        val endTime = System.nanoTime()
+        val timeTakenMS = (endTime - startTime) / 1000000L
+        logger.debug(TAG, "Extracted metadata in ${timeTakenMS}ms: $audioItemForMetadata")
         return audioItemForMetadata
     }
 
@@ -109,8 +114,7 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
         var yearAsString: String =
             metadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_YEAR) ?: return null
         try {
-            // sometimes this is returned as "2008 / 2014", remove that
-            yearAsString = yearAsString.replace("/.*".toRegex(), "").trim()
+            yearAsString = Util.sanitizeYear(yearAsString)
             year = Util.convertStringToShort(yearAsString)
         } catch(exc: java.lang.NumberFormatException) {
             logger.error(TAG, "$exc for year: $yearAsString")
@@ -119,8 +123,7 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
     }
 
     fun createMetadataForItem(audioItem: AudioItem): MediaMetadataCompat {
-        val type: AudioItemType = ContentHierarchyElement.getType(audioItem.id)
-        val databaseID: Long = ContentHierarchyElement.getDatabaseID(audioItem.id)
+        val contentHierarchyID = ContentHierarchyElement.deserialize(audioItem.id)
         val albumArtBytes = getArtForAudioItem(audioItem)
         if (albumArtBytes != null) {
             logger.debug(TAG, "Got album art with size: ${albumArtBytes.size}")
@@ -151,33 +154,33 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
                 putLong(MediaMetadataCompat.METADATA_KEY_YEAR, audioItem.year.toLong())
             }
             putLong(MediaMetadataCompat.METADATA_KEY_DURATION, audioItem.durationMS.toLong())
-            when (type) {
-                AudioItemType.ARTIST -> {
+            when (contentHierarchyID.type) {
+                ContentHierarchyType.ARTIST -> {
                     putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, audioItem.artist)
                 }
-                AudioItemType.ALBUM,
-                AudioItemType.UNKNOWN_ALBUM,
-                AudioItemType.COMPILATION -> {
+                ContentHierarchyType.ALBUM,
+                ContentHierarchyType.UNKNOWN_ALBUM,
+                ContentHierarchyType.COMPILATION -> {
                     putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, audioItem.album)
                     putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, audioItem.artist)
                 }
-                AudioItemType.TRACK,
-                AudioItemType.TRACKS_FOR_ARTIST,
-                AudioItemType.TRACKS_FOR_UNKN_ALBUM,
-                AudioItemType.TRACKS_FOR_ALBUM,
-                AudioItemType.TRACKS_FOR_COMPILATION -> {
+                ContentHierarchyType.TRACK,
+                ContentHierarchyType.ALL_TRACKS_FOR_ARTIST,
+                ContentHierarchyType.ALL_TRACKS_FOR_UNKN_ALBUM,
+                ContentHierarchyType.ALL_TRACKS_FOR_ALBUM,
+                ContentHierarchyType.ALL_TRACKS_FOR_COMPILATION -> {
                     putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, audioItem.title)
                     putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, audioItem.artist)
                 }
-                AudioItemType.GROUP_ALBUMS, AudioItemType.GROUP_ARTISTS, AudioItemType.GROUP_TRACKS -> {
-                    throw AssertionError("createMetadataForItem() not supported for groups")
+                else -> {
+                    throw AssertionError("createMetadataForItem() not supported for: $contentHierarchyID")
                 }
             }
             // This icon will be shown in the "Now Playing" widget
             // We need to always adapt the ID of the album art to produce different content URIs even though we only
             // store the album art for a single track (i.e. the current track). If we don't do this the media
             // browser GUI client will cache the album art becuase of the same URI and re-use it always
-            val albumArtContentUri = Uri.parse("content://$AUTHORITY/$TRACK_ART_PATH/${databaseID}")
+            val albumArtContentUri = Uri.parse("content://$AUTHORITY/$TRACK_ART_PATH/${contentHierarchyID.trackID}")
             putString(MediaMetadataCompat.METADATA_KEY_ART_URI, albumArtContentUri.toString())
             putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON_URI, albumArtContentUri.toString())
         }.build()

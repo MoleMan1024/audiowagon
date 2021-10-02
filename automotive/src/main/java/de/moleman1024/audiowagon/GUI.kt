@@ -128,4 +128,8 @@ open class GUI(private val scope: CoroutineScope, private val context: Context) 
         deleteNotificationChannel()
     }
 
+    fun suspend() {
+        removeIndexingNotification()
+    }
+
 }

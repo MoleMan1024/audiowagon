@@ -11,6 +11,7 @@ plugins {
 	id "kotlin-android"
 	id "kotlin-kapt"
 	id "jacoco"
+	id "org.jetbrains.kotlin.plugin.serialization" version "1.5.31"
 }
 
 android {
@@ -21,8 +22,8 @@ android {
 		applicationId "de.moleman1024.audiowagon"
 		minSdkVersion rootProject.minSdkVersion
 		targetSdkVersion rootProject.targetSdkVersion
-		versionCode 35
-		versionName "0.3.5"
+		versionCode 38
+		versionName "0.3.8"
 		resValue "string", "VERSION_NAME", versionName
 		testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 		manifestPlaceholders["requestLegacyExternalStorage"] = "false"
@@ -67,19 +68,22 @@ dependencies {
 	def mockito_version = "3.11.1"
 	def espresso_version = "3.4.0"
 	def androidx_test_version = "1.4.0"
+	def kotlinx_serialization_version = "1.3.0"
 
 	implementation "com.google.android.material:material:1.4.0"
 	implementation "androidx.preference:preference-ktx:1.1.1"
 	implementation "androidx.media:media:$androidx_media_version"
 	implementation "androidx.appcompat:appcompat:$androidx_app_compat_version"
 	implementation "androidx.room:room-runtime:$room_version"
-	implementation "androidx.constraintlayout:constraintlayout:2.1.0"
+	implementation "androidx.constraintlayout:constraintlayout:2.1.1"
 	kapt "androidx.room:room-compiler:$room_version"
 	implementation "androidx.room:room-ktx:$room_version"
 	implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.0"
 	implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
 	implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 	implementation "androidx.lifecycle:lifecycle-runtime-ktx:$androidx_lifecycle_version"
+	implementation "org.jetbrains.kotlinx:kotlinx-serialization-core:$kotlinx_serialization_version"
+	implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinx_serialization_version"
 	implementation files("libs/libaums-0.8.0.aar")
 
 	// junit4 for local unit tests

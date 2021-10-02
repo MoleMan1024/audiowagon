@@ -8,6 +8,7 @@ package de.moleman1024.audiowagon.filestorage
 import android.content.Context
 import android.media.MediaDataSource
 import android.net.Uri
+import androidx.annotation.VisibleForTesting
 import de.moleman1024.audiowagon.GUI
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.Util
@@ -27,6 +28,9 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.channels.produce
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 
 private const val TAG = "AudioFileStor"
@@ -50,6 +54,7 @@ open class AudioFileStorage(
         context, scope, dispatcher, usbDevicePermissions, gui
     )
     private var dataSources = mutableListOf<MediaDataSource>()
+    private val dataSourcesMutex = Mutex()
     val storageObservers = mutableListOf<(StorageChange) -> Unit>()
     val mediaDevicesForTest = mutableListOf<MediaDevice>()
 
@@ -82,7 +87,8 @@ open class AudioFileStorage(
     private fun initSDCardForDebugBuild() {
         if (Util.isDebugBuild(context)) {
             try {
-                val sdCardMediaDevice = SDCardMediaDevice("A749-5ABA")
+                // TOD: take this name from /storage
+                val sdCardMediaDevice = SDCardMediaDevice("E812-A0DC")
                 mediaDevicesForTest.add(sdCardMediaDevice)
             } catch (exc: RuntimeException) {
                 logger.warning(TAG, exc.message.toString())
@@ -201,6 +207,12 @@ open class AudioFileStorage(
         }
     }
 
+    fun cancelIndexing() {
+        audioFileStorageLocations.forEach {
+            it.cancelIndexAudioFiles()
+        }
+    }
+
     private fun isStorageIDKnown(storageID: String): Boolean {
         return audioFileStorageLocations.any { it.storageID == storageID }
     }
@@ -215,45 +227,63 @@ open class AudioFileStorage(
     fun getDataSourceForAudioFile(audioFile: AudioFile): MediaDataSource {
         cleanClosedDataSources()
         val dataSource = getStorageLocationForID(audioFile.getStorageID()).getDataSourceForURI(audioFile.uri)
-        dataSources.add(dataSource)
+        runBlocking(dispatcher) {
+            dataSourcesMutex.withLock {
+                dataSources.add(dataSource)
+            }
+        }
         return dataSource
     }
 
     fun getDataSourceForURI(uri: Uri): MediaDataSource {
         cleanClosedDataSources()
         val dataSource = getStorageLocationForURI(uri).getDataSourceForURI(uri)
-        dataSources.add(dataSource)
+        runBlocking(dispatcher) {
+            dataSourcesMutex.withLock {
+                dataSources.add(dataSource)
+            }
+        }
         return dataSource
     }
 
     fun getBufferedDataSourceForURI(uri: Uri): MediaDataSource {
         cleanClosedDataSources()
         val dataSource = getStorageLocationForURI(uri).getBufferedDataSourceForURI(uri)
-        dataSources.add(dataSource)
+        runBlocking(dispatcher) {
+            dataSourcesMutex.withLock {
+                dataSources.add(dataSource)
+            }
+        }
         return dataSource
     }
 
-    @Synchronized
     private fun cleanClosedDataSources() {
-        dataSources = dataSources.filterNot {
-            when (it) {
-                is USBAudioDataSource -> it.isClosed
-                is SDCardAudioDataSource -> it.isClosed
-                else -> true
-            }
-        }.toMutableList()
-    }
-
-    @Synchronized
-    private fun setAllDataSourcesClosed() {
-        dataSources.forEach {
-            when (it) {
-                is USBAudioDataSource -> it.isClosed = true
-                is SDCardAudioDataSource -> it.isClosed = true
-                else -> throw NotImplementedError()
+        runBlocking(dispatcher) {
+            dataSourcesMutex.withLock {
+                dataSources = dataSources.filterNot {
+                    when (it) {
+                        is USBAudioDataSource -> it.isClosed
+                        is SDCardAudioDataSource -> it.isClosed
+                        else -> true
+                    }
+                }.toMutableList()
             }
         }
-        dataSources = mutableListOf()
+    }
+
+    private fun setAllDataSourcesClosed() {
+        runBlocking(dispatcher) {
+            dataSourcesMutex.withLock {
+                dataSources.forEach {
+                    when (it) {
+                        is USBAudioDataSource -> it.isClosed = true
+                        is SDCardAudioDataSource -> it.isClosed = true
+                        else -> throw NotImplementedError()
+                    }
+                }
+                dataSources = mutableListOf()
+            }
+        }
     }
 
     private fun getStorageLocationForURI(uri: Uri): AudioFileStorageLocation {
@@ -292,6 +322,16 @@ open class AudioFileStorage(
         usbDeviceConnections.unregisterForUSBIntents()
         closeDataSources()
         audioFileStorageLocations.forEach {
+            it.cancelIndexAudioFiles()
+            it.close()
+        }
+    }
+
+    fun suspend() {
+        logger.debug(TAG, "suspend()")
+        closeDataSources()
+        audioFileStorageLocations.forEach {
+            it.cancelIndexAudioFiles()
             it.close()
         }
     }
@@ -310,12 +350,24 @@ open class AudioFileStorage(
         }
     }
 
-    @Synchronized
     private fun closeDataSources() {
-        dataSources.forEach {
-            it.close()
+        runBlocking(dispatcher) {
+            dataSourcesMutex.withLock {
+                dataSources.forEach {
+                    it.close()
+                }
+                dataSources.clear()
+            }
         }
-        dataSources.clear()
+    }
+
+    @VisibleForTesting(otherwise = VisibleForTesting.NONE)
+    fun getIndexingStatus(): List<IndexingStatus> {
+        val indexingStatusList = mutableListOf<IndexingStatus>()
+        audioFileStorageLocations.forEach {
+            indexingStatusList.add(it.indexingStatus)
+        }
+        return indexingStatusList
     }
 
 }

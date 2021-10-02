@@ -11,11 +11,13 @@ import android.media.browse.MediaBrowser.MediaItem.FLAG_PLAYABLE
 import android.net.Uri
 import androidx.room.Room
 import de.moleman1024.audiowagon.R
-import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.filestorage.AudioFile
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.AudioItem
-import de.moleman1024.audiowagon.medialibrary.AudioItemType
+import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyElement
+import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyID
+import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyType
+import de.moleman1024.audiowagon.medialibrary.contenthierarchy.DATABASE_ID_UNKNOWN
 import de.moleman1024.audiowagon.repository.entities.Album
 import de.moleman1024.audiowagon.repository.entities.Artist
 import de.moleman1024.audiowagon.repository.entities.Track
@@ -30,7 +32,7 @@ private val logger = Logger
  * See https://developer.android.com/training/data-storage/room
  */
 class AudioItemRepository(
-    val storageID: String,
+    private val storageID: String,
     val context: Context,
     private val dispatcher: CoroutineDispatcher
 ) {
@@ -63,7 +65,7 @@ class AudioItemRepository(
             database.albumDAO().queryAlbumsByArtist(artistID)
         }
         for (album in albums) {
-            val audioItemAlbum: AudioItem = createAudioItemForAlbum(album)
+            val audioItemAlbum: AudioItem = createAudioItemForAlbum(album, artistID)
             items += audioItemAlbum
         }
         val numTracksWithoutAlbum: Int = withContext(dispatcher) {
@@ -76,9 +78,13 @@ class AudioItemRepository(
         }
         val compilationAlbums: List<Album> = getCompilationAlbumsForArtist(artistID)
         for (album in compilationAlbums) {
-            val audioItemAlbum: AudioItem = createAudioItemForAlbum(album)
+            val audioItemAlbum: AudioItem = createAudioItemForAlbum(album, artistID)
             audioItemAlbum.isInCompilation = true
-            audioItemAlbum.id = createAudioItemID(album.albumId, AudioItemType.COMPILATION, artistID)
+            val contentHierarchyCompilation = ContentHierarchyID(ContentHierarchyType.COMPILATION)
+            contentHierarchyCompilation.storageID = storageID
+            contentHierarchyCompilation.albumID = album.albumId
+            contentHierarchyCompilation.artistID = artistID
+            audioItemAlbum.id = ContentHierarchyElement.serialize(contentHierarchyCompilation)
             items += audioItemAlbum
         }
         logger.debug(TAG, "Returning ${items.size} albums for artist $artistID")
@@ -89,7 +95,7 @@ class AudioItemRepository(
         val items: MutableList<AudioItem> = mutableListOf()
         val tracks: List<Track> = database.trackDAO().queryTracksByAlbum(albumID)
         for (track in tracks) {
-            val audioItemTrack: AudioItem = createAudioItemForTrack(track)
+            val audioItemTrack: AudioItem = createAudioItemForTrack(track, albumID = albumID)
             items += audioItemTrack
         }
         logger.debug(TAG, "Returning ${items.size} tracks for album $albumID")
@@ -100,7 +106,7 @@ class AudioItemRepository(
         val items: MutableList<AudioItem> = mutableListOf()
         val tracks: List<Track> = database.trackDAO().queryTracksByArtist(artistID)
         for (track in tracks) {
-            val audioItemTrack: AudioItem = createAudioItemForTrack(track)
+            val audioItemTrack: AudioItem = createAudioItemForTrack(track, artistID = artistID)
             items += audioItemTrack
         }
         logger.debug(TAG, "Returning ${items.size} tracks for artist $artistID")
@@ -111,11 +117,19 @@ class AudioItemRepository(
         val items: MutableList<AudioItem> = mutableListOf()
         val tracks: List<Track> = database.trackDAO().queryTracksByArtistAndAlbum(artistID, albumID)
         for (track in tracks) {
-            val audioItemTrack: AudioItem = createAudioItemForTrack(track)
+            val audioItemTrack: AudioItem = createAudioItemForTrack(track, artistID, albumID)
             items += audioItemTrack
         }
         logger.debug(TAG, "Returning ${items.size} tracks for album $albumID and artist $artistID")
-        return items
+        return if (albumID != DATABASE_ID_UNKNOWN) {
+            items.sortedBy { it.trackNum }
+        } else {
+            items.sortedBy { it.title.lowercase() }
+        }
+    }
+
+    suspend fun getNumTracksForAlbumAndArtist(albumID: Long, artistID: Long) = withContext(dispatcher) {
+        database.trackDAO().queryNumTracksByArtistAndAlbum(artistID, albumID)
     }
 
     @Suppress("RedundantSuspendModifier")
@@ -132,11 +146,15 @@ class AudioItemRepository(
         val items: MutableList<AudioItem> = mutableListOf()
         val tracks: List<Track> = database.trackDAO().queryTracksByArtistWhereAlbumUnknown(artistID)
         for (track in tracks) {
-            val audioItemTrack: AudioItem = createAudioItemForTrack(track)
+            val audioItemTrack: AudioItem = createAudioItemForTrack(track, artistID, DATABASE_ID_UNKNOWN)
             items += audioItemTrack
         }
         logger.debug(TAG, "Returning ${items.size} tracks for unknown album for artist $artistID")
         return items
+    }
+
+    suspend fun getNumTracksWithUnknAlbumForArtist(artistID: Long) = withContext(dispatcher) {
+        database.trackDAO().queryNumTracksByArtistAndAlbum(artistID, DATABASE_ID_UNKNOWN)
     }
 
     fun getDatabaseIDForTrack(audioFile: AudioFile): Long? {
@@ -284,12 +302,80 @@ class AudioItemRepository(
 
     suspend fun getAllTracks(): List<AudioItem> {
         val items: MutableList<AudioItem> = mutableListOf()
-        val allTracks: List<Track> = database.trackDAO().queryAll()
+        val allTracks: List<Track> = withContext(dispatcher) {
+             database.trackDAO().queryAll()
+        }
         for (track in allTracks) {
             val audioItemTrack: AudioItem = createAudioItemForTrack(track)
             items += audioItemTrack
         }
         logger.debug(TAG, "Returning ${items.size} tracks")
+        return items
+    }
+
+    suspend fun getNumTracks(): Int = withContext(dispatcher) {
+        database.trackDAO().queryNumTracks()
+    }
+
+    suspend fun getNumTracksForAlbum(albumID: Long): Int = withContext(dispatcher) {
+        database.trackDAO().queryNumTracksForAlbum(albumID)
+    }
+
+    // TODO: many similar functions in here
+    suspend fun getTracksLimitOffset(maxNumRows: Int, offsetRows: Int): List<AudioItem> {
+        val items: MutableList<AudioItem> = mutableListOf()
+        val tracksAtOffset: List<Track> = withContext(dispatcher) {
+            database.trackDAO().queryTracksLimitOffset(maxNumRows, offsetRows)
+        }
+        for (track in tracksAtOffset) {
+            val audioItemTrack: AudioItem = createAudioItemForTrack(track)
+            items += audioItemTrack
+        }
+        logger.debug(TAG, "Returning ${items.size} tracks for offset: $offsetRows (limit $maxNumRows)")
+        return items
+    }
+
+    suspend fun getTracksForArtistAlbumLimitOffset(
+        maxNumRows: Int, offsetRows: Int, artistID: Long, albumID: Long
+    ): List<AudioItem> {
+        val items: MutableList<AudioItem> = mutableListOf()
+        val tracksAtOffset: List<Track> = withContext(dispatcher) {
+            database.trackDAO().queryTracksForArtistAlbumLimitOffset(maxNumRows, offsetRows, artistID, albumID)
+        }
+        for (track in tracksAtOffset) {
+            val audioItemTrack: AudioItem = createAudioItemForTrack(track, artistID, albumID)
+            items += audioItemTrack
+        }
+        logger.debug(TAG, "Returning ${items.size} tracks for artist $artistID, album $albumID offset: $offsetRows " +
+                "(limit $maxNumRows)")
+        return items
+    }
+
+    suspend fun getTracksForAlbumLimitOffset(maxNumRows: Int, offsetRows: Int, albumID: Long): List<AudioItem> {
+        val items: MutableList<AudioItem> = mutableListOf()
+        val tracksAtOffset: List<Track> = withContext(dispatcher) {
+            database.trackDAO().queryTracksForAlbumLimitOffset(maxNumRows, offsetRows, albumID)
+        }
+        for (track in tracksAtOffset) {
+            val audioItemTrack: AudioItem = createAudioItemForTrack(track, albumID = albumID)
+            items += audioItemTrack
+        }
+        logger.debug(TAG, "Returning ${items.size} tracks for album $albumID offset: $offsetRows " +
+                "(limit $maxNumRows)")
+        return items
+    }
+
+    suspend fun getTracksForArtistLimitOffset(maxNumRows: Int, offsetRows: Int, artistID: Long): List<AudioItem> {
+        val items: MutableList<AudioItem> = mutableListOf()
+        val tracksAtOffset: List<Track> = withContext(dispatcher) {
+            database.trackDAO().queryTracksForArtistLimitOffset(maxNumRows, offsetRows, artistID)
+        }
+        for (track in tracksAtOffset) {
+            val audioItemTrack: AudioItem = createAudioItemForTrack(track, artistID = artistID)
+            items += audioItemTrack
+        }
+        logger.debug(TAG, "Returning ${items.size} tracks for artist $artistID, offset: $offsetRows " +
+                "(limit $maxNumRows)")
         return items
     }
 
@@ -307,9 +393,20 @@ class AudioItemRepository(
         return items
     }
 
-    private suspend fun createAudioItemForTrack(track: Track): AudioItem {
+    private suspend fun createAudioItemForTrack(
+        track: Track, artistID: Long? = null, albumID: Long? = null
+    ): AudioItem {
         val audioItemTrack = AudioItem()
-        audioItemTrack.id = createAudioItemID(track.trackId, AudioItemType.TRACK)
+        val contentHierarchyID = ContentHierarchyID(ContentHierarchyType.TRACK)
+        contentHierarchyID.trackID = track.trackId
+        if (artistID != null) {
+            contentHierarchyID.artistID = artistID
+        }
+        if (albumID != null) {
+            contentHierarchyID.albumID = albumID
+        }
+        contentHierarchyID.storageID = storageID
+        audioItemTrack.id = ContentHierarchyElement.serialize(contentHierarchyID)
         audioItemTrack.uri = Uri.parse(track.uriString)
         if (track.parentArtistId >= 0) {
             val artistForTrack: Artist? = withContext(dispatcher) {
@@ -340,17 +437,61 @@ class AudioItemRepository(
             val audioItemAlbum = createAudioItemForAlbum(album)
             items += audioItemAlbum
         }
-        val numTracksAlbumUnknown = database.trackDAO().queryNumTracksAlbumUnknown()
-        if (numTracksAlbumUnknown > 0) {
-            items += createUnknownAlbumAudioItem()
+        val audioItemUnknAlbum = getAudioItemForUnknownAlbum()
+        if (audioItemUnknAlbum != null) {
+            items += audioItemUnknAlbum
         }
         logger.debug(TAG, "Returning ${items.size} albums")
         return items
     }
 
-    private suspend fun createAudioItemForAlbum(album: Album): AudioItem {
+    suspend fun getAudioItemForUnknownAlbum(): AudioItem? = withContext(dispatcher) {
+        val numTracksUnknownAlbum = database.trackDAO().queryNumTracksAlbumUnknown()
+        if (numTracksUnknownAlbum > 0) {
+            return@withContext createUnknownAlbumAudioItem()
+        }
+        return@withContext null
+    }
+
+    suspend fun getNumAlbums(): Int = withContext(dispatcher) {
+        database.albumDAO().queryNumAlbums()
+    }
+
+    suspend fun getAlbumsLimitOffset(maxNumRows: Int, offsetRows: Int): List<AudioItem> {
+        val items: MutableList<AudioItem> = mutableListOf()
+        val albumsAtOffset: List<Album> = withContext(dispatcher) {
+            database.albumDAO().queryAlbumsLimitOffset(maxNumRows, offsetRows)
+        }
+        for (album in albumsAtOffset) {
+            val audioItemTrack: AudioItem = createAudioItemForAlbum(album)
+            items += audioItemTrack
+        }
+        logger.debug(TAG, "Returning ${items.size} albums for offset: $offsetRows (limit $maxNumRows)")
+        return items
+    }
+
+    suspend fun getAlbumsForArtistLimitOffset(maxNumRows: Int, offsetRows: Int, artistID: Long): List<AudioItem> {
+        val items: MutableList<AudioItem> = mutableListOf()
+        val albumsAtOffset: List<Album> = withContext(dispatcher) {
+            database.albumDAO().queryAlbumsForArtistLimitOffset(maxNumRows, offsetRows, artistID)
+        }
+        for (album in albumsAtOffset) {
+            val audioItemTrack: AudioItem = createAudioItemForAlbum(album, artistID)
+            items += audioItemTrack
+        }
+        logger.debug(TAG, "Returning ${items.size} albums for artist $artistID offset: $offsetRows (limit $maxNumRows)")
+        return items
+    }
+
+    private suspend fun createAudioItemForAlbum(album: Album, artistID: Long? = null): AudioItem {
         val audioItemAlbum = AudioItem()
-        audioItemAlbum.id = createAudioItemID(album.albumId, AudioItemType.ALBUM)
+        val contentHierarchyID = ContentHierarchyID(ContentHierarchyType.ALBUM)
+        contentHierarchyID.storageID = storageID
+        contentHierarchyID.albumID = album.albumId
+        if (artistID != null) {
+            contentHierarchyID.artistID = artistID
+        }
+        audioItemAlbum.id = ContentHierarchyElement.serialize(contentHierarchyID)
         audioItemAlbum.album = album.name
         val artistForAlbum: Artist? = withContext(dispatcher) {
             database.artistDAO().queryByID(album.parentArtistId)
@@ -365,7 +506,10 @@ class AudioItemRepository(
     @Suppress("RedundantSuspendModifier")
     private suspend fun createAudioItemForArtist(artist: Artist): AudioItem {
         val audioItemArtist = AudioItem()
-        audioItemArtist.id = createAudioItemID(artist.artistId, AudioItemType.ARTIST)
+        val contentHierarchyID = ContentHierarchyID(ContentHierarchyType.ARTIST)
+        contentHierarchyID.storageID = storageID
+        contentHierarchyID.artistID = artist.artistId
+        audioItemArtist.id = ContentHierarchyElement.serialize(contentHierarchyID)
         audioItemArtist.artist = artist.name
         audioItemArtist.browsPlayableFlags = audioItemArtist.browsPlayableFlags.or(FLAG_BROWSABLE)
         return audioItemArtist
@@ -373,7 +517,10 @@ class AudioItemRepository(
 
     private fun createUnknownAlbumAudioItem(): AudioItem {
         val unknownAlbum = AudioItem()
-        unknownAlbum.id = createAudioItemID(-1, AudioItemType.ALBUM)
+        val contentHierarchyID = ContentHierarchyID(ContentHierarchyType.UNKNOWN_ALBUM)
+        contentHierarchyID.storageID = storageID
+        contentHierarchyID.albumID = DATABASE_ID_UNKNOWN
+        unknownAlbum.id = ContentHierarchyElement.serialize(contentHierarchyID)
         unknownAlbum.album = context.getString(R.string.browse_tree_unknown_album)
         unknownAlbum.browsPlayableFlags = unknownAlbum.browsPlayableFlags.or(FLAG_BROWSABLE)
         return unknownAlbum
@@ -381,7 +528,11 @@ class AudioItemRepository(
 
     private suspend fun createUnknAlbumAudioItemForArtist(artistID: Long): AudioItem {
         val unknownAlbum = createUnknownAlbumAudioItem()
-        unknownAlbum.id = createAudioItemID(artistID, AudioItemType.UNKNOWN_ALBUM)
+        val contentHierarchyID = ContentHierarchyID(ContentHierarchyType.UNKNOWN_ALBUM)
+        contentHierarchyID.storageID = storageID
+        contentHierarchyID.albumID = DATABASE_ID_UNKNOWN
+        contentHierarchyID.artistID = artistID
+        unknownAlbum.id = ContentHierarchyElement.serialize(contentHierarchyID)
         val artistForAlbum: Artist? = withContext(dispatcher) {
             database.artistDAO().queryByID(artistID)
         }
@@ -396,17 +547,46 @@ class AudioItemRepository(
             val audioItemArtist = createAudioItemForArtist(artist)
             items += audioItemArtist
         }
+        val audioItemUnknArtist = getAudioItemForUnknownArtist()
+        if (audioItemUnknArtist != null) {
+            items += audioItemUnknArtist
+        }
+        logger.debug(TAG, "Returning ${allArtists.size} artists" + if (audioItemUnknArtist != null) " and 'unknown " +
+                "artist'" else "")
+        return items
+    }
+
+    suspend fun getNumArtists(): Int = withContext(dispatcher) {
+        database.artistDAO().queryNumArtists()
+    }
+
+    suspend fun getArtistsLimitOffset(maxNumRows: Int, offsetRows: Int): List<AudioItem> {
+        val items: MutableList<AudioItem> = mutableListOf()
+        val artistsAtOffset: List<Artist> = withContext(dispatcher) {
+            database.artistDAO().queryArtistsLimitOffset(maxNumRows, offsetRows)
+        }
+        for (artist in artistsAtOffset) {
+            val audioItemArtist = createAudioItemForArtist(artist)
+            items += audioItemArtist
+        }
+        logger.debug(TAG, "Returning ${items.size} artists for offset: $offsetRows (limit $maxNumRows)")
+        return items
+    }
+
+    suspend fun getAudioItemForUnknownArtist(): AudioItem? = withContext(dispatcher) {
         val numTracksUnknownArtist = database.trackDAO().queryNumTracksArtistUnknown()
         if (numTracksUnknownArtist > 0) {
-            items += createUnknownArtistAudioItem()
+            return@withContext createUnknownArtistAudioItem()
         }
-        logger.debug(TAG, "Returning ${items.size} artists")
-        return items
+        return@withContext null
     }
 
     private fun createUnknownArtistAudioItem(): AudioItem {
         val unknownArtist = AudioItem()
-        unknownArtist.id = createAudioItemID(-1, AudioItemType.ARTIST)
+        val contentHierarchyID = ContentHierarchyID(ContentHierarchyType.ARTIST)
+        contentHierarchyID.storageID = storageID
+        contentHierarchyID.artistID = DATABASE_ID_UNKNOWN
+        unknownArtist.id = ContentHierarchyElement.serialize(contentHierarchyID)
         unknownArtist.artist = context.getString(R.string.browse_tree_unknown_artist)
         unknownArtist.browsPlayableFlags = unknownArtist.browsPlayableFlags.or(FLAG_BROWSABLE)
         return unknownArtist
@@ -476,13 +656,6 @@ class AudioItemRepository(
         calendar.clear()
         calendar.set(year.toInt(), Calendar.JUNE, 1)
         return calendar.timeInMillis
-    }
-
-    /**
-     * Adds storageID of this repository as prefix to given database ID
-     */
-    private fun createAudioItemID(id: Long, type: AudioItemType, extraID: Long? = null): String {
-        return Util.createAudioItemID(storageID, id, type, extraID)
     }
 
 }
