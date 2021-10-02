@@ -37,10 +37,10 @@ Please see Github for a [list of changes for each version of the app](https://gi
 ## Limitations
 
 - You can only put up to 128 *files* into any directory. You can use as many *directories* as you want though. I advise a
-  directory structure like this: `D:/Music/<Artist>/<Album>/<Song1..n>.mp3`. If you don't follow this rule AudioWagon
-  version 0.2.5 will corrupt your USB drive and you will lose your files on it. The next version will prevent the data loss,
-  however the limitation will still exist until the underlying issue can be fixed (in upcoming version directories with
-  more than 128 files in them will be ignored).
+  directory structure like this: `D:/Music/<Artist>/<Album>/<Song1..n>.mp3`. If you use more than 128 files in a
+  directory then AudioWagon version 0.2.5 will corrupt your USB drive and you will lose your files on it. Version 0.3.4
+  and higher will prevent the data loss, however the limitation will still exist until the underlying issue can be fixed
+  (directories with more than 128 files in them are ignored).
 - In AudioWagon version 0.2.5 you can only use about a couple hundred to a few thousand tracks maximum, above that you
   might see the app hang when looking at browsing tracks. This has been improved in version 0.3.4.
 - The app can *not* play back .wma files
@@ -129,7 +129,7 @@ Partially. The following utterances work with Google Assistant (at least in Engl
 However playing a song/artist/album by name (e.g. "play artist &lt;artistname&gt; on AudioWagon") does *not* work (if
 you find out why, please let me know).
 
-### Does the app support video?
+### Does the app support video? Will you add support for videos?
 
 No.
 
@@ -149,13 +149,14 @@ OPEN BETA:
 I advise all beta testers to keep logging to USB *activated* in the settings at all times. If possible provide all of
 the following info to me at my email (or you can use [GitHub](https://github.com/MoleMan1024/audiowagon/issues)):
 
-- What happened? Describe all steps that you did exactly
+- What happened? Describe ALL steps that you did EXACTLY. Please mention even minor details (e.g. did you leave/enter
+  the car before you saw the issue occur?)
 - What did you expect to happen?
 - At what date/time did the issue happen? (so I can align with the timestamps in the log files)
-- Which version of AudioWagon were you using? (see Settings)
+- Which version of AudioWagon were you using? (version number can be found in the settings screen)
 - Which version is your car's software? (e.g. P2124 on a Polestar2)
-- Log files are being created continously on your USB drive (if this is enabled in the settings). Please attach these 
-logfiles from around the date/time when this happened (also provide previous logfile). They have filenames like 
+- Log files are being created continously on your USB drive (if this is enabled in the settings). Please attach these
+logfiles from around the date/time when this happened (also provide previous logfile). They have filenames like
 `aw_logs_<num>/audiowagon_<date_and_time>.log`.
 
 ### How to contribute?
@@ -168,8 +169,8 @@ beta version. If you are interested, please contact me.
 #### Native speakers
 
 I am currently looking for **volunteer native speakers to translate** the GUI texts in the app to all languages
-(except German, English, Dutch, Swedish, Norwegian). You can get the 
-[English strings to translate here](https://github.com/MoleMan1024/audiowagon/blob/master/automotive/src/main/res/values/strings.xml). 
+(except German, English, Dutch, Swedish, Norwegian). You can get the
+[English strings to translate here](https://github.com/MoleMan1024/audiowagon/blob/master/automotive/src/main/res/values/strings.xml).
 
 
 ## Contact
