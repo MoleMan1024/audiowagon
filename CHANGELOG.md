@@ -11,6 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- enabling shuffle mode will now move the current item in the playback queue to the beginning of the playback queue
+
+
+## [0.4.0] - 2021-10-04
+
 ### Fixed
 
 - for cars like Polestar 2 version P2127 or higher when entering the car the audio will resume playing if it was playing

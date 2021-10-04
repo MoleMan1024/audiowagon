@@ -10,13 +10,26 @@
 # kotlinx.serialization
 -keepattributes SourceFile,LineNumberTable,*Annotation*,InnerClasses
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
-
 # do not obfuscate, project is open source anyway
 -dontobfuscate
 -optimizations !code/simplification/arithmetic,!field/*,!class/merging/*,!code/allocation/variable
 
 # kotlinx.serialization
 -dontnote kotlinx.serialization.AnnotationsKt
+
+# Setup ProGuard for use with kotlinx.serialization and JSON
+# https://github.com/Kotlin/kotlinx.serialization/issues/1129
+
+# Kotlin serialization looks up the generated serializer classes through a function on companion
+# objects. The companions are looked up reflectively so we need to explicitly keep these functions.
+-keepclasseswithmembers class **.*$Companion {
+    kotlinx.serialization.KSerializer serializer(...);
+}
+# If a companion has the serializer function, keep the companion field on the original type so that
+# the reflective lookup succeeds.
+-if class **.*$Companion {
+  kotlinx.serialization.KSerializer serializer(...);
+}
+-keepclassmembers class <1>.<2> {
+  <1>.<2>$Companion Companion;
+}
