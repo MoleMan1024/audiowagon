@@ -32,7 +32,7 @@ class ContentHierarchyRootArtists(
             val groupContentHierarchyID = id
             groupContentHierarchyID.type = ContentHierarchyType.ARTIST_GROUP
             items = createGroups(groupContentHierarchyID, numArtists)
-            val repo = audioItemLibrary.getPrimaryRepo() ?: return items
+            val repo = audioItemLibrary.getPrimaryRepository() ?: return items
             val audioItemUnknownArtist = repo.getAudioItemForUnknownArtist()
             if (audioItemUnknownArtist != null) {
                 val description = audioItemLibrary.createAudioItemDescription(audioItemUnknownArtist)
@@ -44,14 +44,14 @@ class ContentHierarchyRootArtists(
 
     override suspend fun getAudioItems(): List<AudioItem> {
         val items: MutableList<AudioItem> = mutableListOf()
-        val repo = audioItemLibrary.getPrimaryRepo() ?: return emptyList()
+        val repo = audioItemLibrary.getPrimaryRepository() ?: return emptyList()
         items += repo.getAllArtists()
         return items.sortedBy { it.artist.lowercase() }
     }
 
     suspend fun getNumArtists(): Int {
         var numArtists = 0
-        val repo = audioItemLibrary.getPrimaryRepo() ?: return 0
+        val repo = audioItemLibrary.getPrimaryRepository() ?: return 0
         numArtists += repo.getNumArtists()
         return numArtists
     }

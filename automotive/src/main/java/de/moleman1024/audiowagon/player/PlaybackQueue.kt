@@ -16,7 +16,7 @@ private val logger = Logger
 class PlaybackQueue(private val dispatcher: CoroutineDispatcher) {
     private var playbackQueue = mutableListOf<MediaSessionCompat.QueueItem>()
     private var originalQueueOrder: Map<Long, Int> = mapOf()
-    private var queueIndex: Int = -1
+    private var currentIndex: Int = -1
     val observers = mutableListOf<(PlaybackQueueChange) -> Unit>()
     var isRepeating: Boolean = false
 
@@ -26,13 +26,13 @@ class PlaybackQueue(private val dispatcher: CoroutineDispatcher) {
             playbackQueue.clear()
             playbackQueue.addAll(items)
             originalQueueOrder = playbackQueue.withIndex().associate { it.value.queueId to it.index }
-            queueIndex = 0
+            currentIndex = 0
         }
     }
 
     suspend fun incrementIndex() {
         withContext(dispatcher) {
-            queueIndex = getNextIndex()
+            currentIndex = getNextIndex()
             notifyQueueChanged()
         }
     }
@@ -45,19 +45,23 @@ class PlaybackQueue(private val dispatcher: CoroutineDispatcher) {
             if (playbackQueue.size <= 0 || playbackQueue.size <= 0) {
                 return@withContext -1
             }
-            return@withContext (queueIndex + 1) % playbackQueue.size
+            return@withContext (currentIndex + 1) % playbackQueue.size
         }
     }
 
     suspend fun setIndex(index: Int) {
         return withContext(dispatcher) {
-            queueIndex = index
+            if (index < 0) {
+                currentIndex = 0
+                return@withContext
+            }
+            currentIndex = index
         }
     }
 
     suspend fun getPrevIndex(): Int {
         return withContext(dispatcher) {
-            var prevIndex = queueIndex - 1
+            var prevIndex = currentIndex - 1
             if (prevIndex < 0) {
                 prevIndex = if (isRepeating) {
                     playbackQueue.size - 1
@@ -71,7 +75,7 @@ class PlaybackQueue(private val dispatcher: CoroutineDispatcher) {
 
     suspend fun isLastTrack(): Boolean {
         return withContext(dispatcher) {
-            if (queueIndex == playbackQueue.size - 1) {
+            if (currentIndex == playbackQueue.size - 1) {
                 return@withContext true
             }
             return@withContext false
@@ -92,7 +96,7 @@ class PlaybackQueue(private val dispatcher: CoroutineDispatcher) {
 
     suspend fun getIndex(): Int {
         return withContext(dispatcher) {
-            return@withContext queueIndex
+            return@withContext currentIndex
         }
     }
 
@@ -102,10 +106,10 @@ class PlaybackQueue(private val dispatcher: CoroutineDispatcher) {
 
     suspend fun getCurrentItem(): MediaSessionCompat.QueueItem? {
         return withContext(dispatcher) {
-            if (queueIndex <= -1 || playbackQueue.size <= 0) {
+            if (currentIndex <= -1 || playbackQueue.size <= 0) {
                 return@withContext null
             }
-            return@withContext playbackQueue[queueIndex]
+            return@withContext playbackQueue[currentIndex]
         }
     }
 
@@ -131,9 +135,10 @@ class PlaybackQueue(private val dispatcher: CoroutineDispatcher) {
     suspend fun setShuffleOn() {
         withContext(dispatcher) {
             val currentItem = getCurrentItem() ?: return@withContext
-            playbackQueue.removeAt(queueIndex)
+            playbackQueue.removeAt(currentIndex)
             playbackQueue.shuffle()
-            playbackQueue.add(queueIndex, currentItem)
+            currentIndex = 0
+            playbackQueue.add(currentIndex, currentItem)
             notifyQueueChanged()
         }
     }
@@ -144,7 +149,7 @@ class PlaybackQueue(private val dispatcher: CoroutineDispatcher) {
             playbackQueue =
                 playbackQueue.sortedBy { originalQueueOrder[it.queueId] }.toMutableList()
             val newIndex = originalQueueOrder[currentItem.queueId]
-            newIndex?.let { queueIndex = it }
+            newIndex?.let { currentIndex = it }
             notifyQueueChanged()
         }
     }
@@ -165,7 +170,7 @@ class PlaybackQueue(private val dispatcher: CoroutineDispatcher) {
         withContext(dispatcher) {
             playbackQueue.clear()
             originalQueueOrder = mapOf()
-            queueIndex = -1
+            currentIndex = -1
             notifyQueueChanged()
         }
     }

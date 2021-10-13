@@ -78,7 +78,7 @@ class ContentHierarchyArtist(
 
     private suspend fun getNumAlbums(): Int {
         var numAlbums = 0
-        val repo = audioItemLibrary.getPrimaryRepo() ?: return 0
+        val repo = audioItemLibrary.getPrimaryRepository() ?: return 0
         numAlbums += repo.getNumAlbumsForArtist(id.artistID)
         return numAlbums
     }

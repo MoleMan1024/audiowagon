@@ -16,6 +16,7 @@ import java.io.BufferedOutputStream
 import java.io.IOException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.*
 import java.util.concurrent.Executors
 
 /**
@@ -34,7 +35,7 @@ object Logger : LoggerInterface {
     private val buffer = mutableListOf<String>()
     private val dispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
     @VisibleForTesting(otherwise = VisibleForTesting.NONE)
-    private val storedLogs = mutableListOf<String>()
+    private val storedLogs = Collections.synchronizedList<String>(mutableListOf())
 
     override fun setUSBFile(usbFileForLogging: UsbFile, chunkSize: Int) {
         usbFileHasError = false
@@ -209,27 +210,28 @@ object Logger : LoggerInterface {
         return "%s [%-8s][%-5d][%-20s] %s\n".format(timestamp, level.name, threadID, tag, msg)
     }
 
-    @Synchronized
     @VisibleForTesting(otherwise = VisibleForTesting.NONE)
     override fun setStoreLogs(isStoreLogs: Boolean) {
-        this.isStoreLogs = isStoreLogs
-        if (!isStoreLogs) {
-            storedLogs.clear()
+        runBlocking(dispatcher) {
+            this@Logger.isStoreLogs = isStoreLogs
+            if (!isStoreLogs) {
+                storedLogs.clear()
+            }
         }
     }
 
-    @Synchronized
     @VisibleForTesting(otherwise = VisibleForTesting.NONE)
-    override fun getStoredLogs(): List<String> {
-        return storedLogs
+    override fun getStoredLogs(): List<String> = runBlocking(dispatcher) {
+        return@runBlocking storedLogs
     }
 
-    @Synchronized
     private fun storeLogLine(line: String) {
         if (!isStoreLogs) {
             return
         }
-        storedLogs.add(line)
+        runBlocking(dispatcher) {
+            storedLogs.add(line)
+        }
     }
 
 }

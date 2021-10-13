@@ -82,7 +82,7 @@ class ContentHierarchyUnknAlbum(
 
     private suspend fun getNumTracks(): Int {
         val numTracks: Int
-        val repo = audioItemLibrary.getPrimaryRepo() ?: return 0
+        val repo = audioItemLibrary.getPrimaryRepository() ?: return 0
         numTracks = if (id.artistID > DATABASE_ID_UNKNOWN) {
             repo.getNumTracksWithUnknAlbumForArtist(id.artistID)
         } else {

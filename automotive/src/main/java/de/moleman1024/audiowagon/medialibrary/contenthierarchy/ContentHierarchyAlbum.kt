@@ -89,7 +89,7 @@ class ContentHierarchyAlbum(
 
     private suspend fun getNumTracks(): Int {
         var numTracks = 0
-        val repo = audioItemLibrary.getPrimaryRepo() ?: return 0
+        val repo = audioItemLibrary.getPrimaryRepository() ?: return 0
         numTracks += repo.getNumTracksForAlbum(id.albumID)
         return numTracks
     }

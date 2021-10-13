@@ -36,7 +36,7 @@ class SDCardStorageLocation(override val device: SDCardMediaDevice) : AudioFileS
 
     @ExperimentalCoroutinesApi
     override fun indexAudioFiles(scope: CoroutineScope): ReceiveChannel<AudioFile> {
-        logger.debug(TAG, "indexAudioFiles(${device.getShortName()})")
+        logger.debug(TAG, "indexAudioFiles(${device.getName()})")
         return scope.produce {
             try {
                 for (file in device.walkTopDown(device.getRoot())) {

@@ -23,6 +23,17 @@ def generate2kFiles(outDir: Path):
                 shutil.copyfile(_TEMPLATE_MP3_FILE, track)
             logging.debug(f"Created album: {albumDir}")
 
+def generate20kFiles(outDir: Path):
+    for artistNum in range(130):
+        for albumNum in range(10):
+            albumDir = Path(outDir, f"ARTIST_{artistNum}/ALBUM_{albumNum}")
+            for trackNum in range(20):
+                if not albumDir.exists():
+                    albumDir.mkdir(parents=True)
+                track = Path(albumDir, f"TRACK_{trackNum}_FOR_ART_{artistNum}_IN_ALB_{albumNum}.mp3")
+                shutil.copyfile(_TEMPLATE_MP3_FILE, track)
+            logging.debug(f"Created album: {albumDir}")
+
 
 def genDirWithMoreThan128Files(outDir: Path):
     """
@@ -50,6 +61,8 @@ if __name__ == "__main__":
         sys.exit(1)
     if args.scenario == "2k":
         generate2kFiles(outDirPath)
+    elif args.scenario == "20k":
+        generate20kFiles(outDirPath)
     elif args.scenario == "dir128":
         genDirWithMoreThan128Files(outDirPath)
     elif args.scenario == "mixed":

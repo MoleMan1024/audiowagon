@@ -60,7 +60,10 @@ open class USBAudioDataSource(
         if (buffer == null || isClosed) {
             return 0
         }
-        val fileLength = usbFile?.length ?: return 0
+        val fileLength = getSize()
+        if (fileLength <= 0) {
+            return 0
+        }
         val numBytesToRead = min(size.toLong(), fileLength - position).toInt()
         val outBuffer = ByteBuffer.wrap(buffer)
         outBuffer.position(offset)
@@ -93,16 +96,22 @@ open class USBAudioDataSource(
         return numBytesToRead
     }
 
+    @Synchronized
     override fun getSize(): Long {
         return usbFile?.length ?: 0
     }
 
     private fun readFromUSBFileSystem(position: Long, outBuffer: ByteBuffer): Int {
         val outBufPosBeforeRead = outBuffer.position()
-        usbFile?.read(position, outBuffer)
+        read(position, outBuffer)
         val numBytesRead = outBuffer.position() - outBufPosBeforeRead
         outBuffer.flip()
         return numBytesRead
+    }
+
+    @Synchronized
+    fun read(position: Long, outBuffer: ByteBuffer) {
+        usbFile?.read(position, outBuffer)
     }
 
 }

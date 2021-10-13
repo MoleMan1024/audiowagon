@@ -106,6 +106,12 @@ class USBDeviceProxy(
         } else {
             logger.warning(TAG, "massStorageDevice already initialized: $massStorageDevice")
         }
+        try {
+            logger.debug(TAG, "Found partitions: ${massStorageDevice?.partitions}")
+        } catch (exc: UninitializedPropertyAccessException) {
+            logger.exception(TAG, "Partitions not yet initialized but massStorageDevice exists", exc)
+            massStorageDevice?.init()
+        }
         if (massStorageDevice?.partitions?.isEmpty() == true) {
             throw NoPartitionsException()
         }

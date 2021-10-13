@@ -84,9 +84,11 @@ class AudioSession(
     private var storePersistentJob: Job? = null
     private var isFirstOnPlayEventAfterReset: Boolean = true
     private var onPlayCalledBeforeUSBReady: Boolean = false
+    private var isShuttingDown: Boolean = false
 
     init {
         logger.debug(TAG, "Init AudioSession()")
+        isShuttingDown = false
         audioFocus.audioFocusChangeListener = audioFocusChangeListener
         val mediaButtonIntent = Intent(Intent.ACTION_MEDIA_BUTTON)
         mediaButtonIntent.setClass(context, MediaButtonReceiver::class.java)
@@ -372,7 +374,7 @@ class AudioSession(
             logger.debug(TAG, "Current track content hierarchy ID: $contentHierarchyIDStr")
             logger.flushToUSB()
             launchInScopeSafely {
-                if (contentHierarchyIDStr != null) {
+                if (contentHierarchyIDStr != null && contentHierarchyIDStr.isNotBlank()) {
                     val contentHierarchyID = ContentHierarchyElement.deserialize(contentHierarchyIDStr)
                     val audioItem: AudioItem = audioItemLibrary.getAudioItemForTrack(contentHierarchyID)
                     val metadata: MediaMetadataCompat = audioItemLibrary.createMetadataForItem(audioItem)
@@ -406,6 +408,10 @@ class AudioSession(
 
     fun shutdown() {
         logger.debug(TAG, "shutdown()")
+        if (isShuttingDown) {
+            return
+        }
+        isShuttingDown = true
         clearSession()
         deleteNotificationChannel()
         runBlocking(dispatcher) {
@@ -705,6 +711,10 @@ class AudioSession(
         logger.debug(TAG, "prepareFromPersistent($state)")
         val queue: MutableList<MediaSessionCompat.QueueItem> = mutableListOf()
         for ((index, contentHierarchyIDStr) in state.queueIDs.withIndex()) {
+            if (isShuttingDown) {
+                logger.debug(TAG, "Stopping prepareFromPersistent() because of shutdown")
+                return
+            }
             try {
                 scope.ensureActive()
                 val contentHierarchyID = ContentHierarchyElement.deserialize(contentHierarchyIDStr)
@@ -724,18 +734,20 @@ class AudioSession(
         if (queue.size <= 0) {
             return
         }
-        val lastContentHierarchyID = ContentHierarchyElement.deserialize(state.lastContentHierarchyID)
-        if (lastContentHierarchyID.type == ContentHierarchyType.SHUFFLE_ALL_TRACKS) {
-            // In this case we restored only the last playing track from persistent storage above. Now we create a new
-            // shuffled playback queue for all remaining items
-            val shuffledTracks = audioItemLibrary.getAudioItemsStartingFrom(lastContentHierarchyID)
-            for ((queueID, audioItem) in shuffledTracks.withIndex()) {
-                if (audioItem.id == queue[0].description.mediaId) {
-                    continue
+        if (state.lastContentHierarchyID.isNotBlank()) {
+            val lastContentHierarchyID = ContentHierarchyElement.deserialize(state.lastContentHierarchyID)
+            if (lastContentHierarchyID.type == ContentHierarchyType.SHUFFLE_ALL_TRACKS) {
+                // In this case we restored only the last playing track from persistent storage above. Now we create a new
+                // shuffled playback queue for all remaining items
+                val shuffledTracks = audioItemLibrary.getAudioItemsStartingFrom(lastContentHierarchyID)
+                for ((queueID, audioItem) in shuffledTracks.withIndex()) {
+                    if (audioItem.id == queue[0].description.mediaId) {
+                        continue
+                    }
+                    val description = audioItemLibrary.createAudioItemDescription(audioItem)
+                    val queueItem = MediaSessionCompat.QueueItem(description, queueID.toLong() + 1L)
+                    queue.add(queueItem)
                 }
-                val description = audioItemLibrary.createAudioItemDescription(audioItem)
-                val queueItem = MediaSessionCompat.QueueItem(description, queueID.toLong() + 1L)
-                queue.add(queueItem)
             }
         }
         audioPlayer.setShuffle(state.isShuffling)
@@ -823,18 +835,23 @@ class AudioSession(
         val playbackStateToPersist = PersistentPlaybackState(currentTrackID)
         playbackStateToPersist.trackPositionMS = currentTrackPosMS
         val queueIDs = getQueueIDs()
-        val queueIndex = getQueueIndex()
+        var queueIndex = getQueueIndex()
+        if (queueIndex < 0) {
+            queueIndex = 0
+        }
         // We only store playback queue items that are upcoming. Previous items are discarded to save some storage space
         playbackStateToPersist.queueIDs = queueIDs.subList(queueIndex, queueIDs.size)
         playbackStateToPersist.queueIndex = 0
         playbackStateToPersist.isShuffling = isShuffling()
         playbackStateToPersist.isRepeating = isRepeating()
         playbackStateToPersist.lastContentHierarchyID = lastContentHierarchyIDPlayed
-        val lastContentHierarchyID = ContentHierarchyElement.deserialize(lastContentHierarchyIDPlayed)
-        if (lastContentHierarchyID.type == ContentHierarchyType.SHUFFLE_ALL_TRACKS) {
-            // When the user is shuffling all tracks, we don't store the queue, we will recreate a new shuffled queue
-            // when restoring from persistent state instead (to save storage space)
-            playbackStateToPersist.queueIDs = queueIDs.subList(queueIndex, queueIndex+1)
+        if (lastContentHierarchyIDPlayed.isNotBlank()) {
+            val lastContentHierarchyID = ContentHierarchyElement.deserialize(lastContentHierarchyIDPlayed)
+            if (lastContentHierarchyID.type == ContentHierarchyType.SHUFFLE_ALL_TRACKS) {
+                // When the user is shuffling all tracks, we don't store the queue, we will recreate a new shuffled queue
+                // when restoring from persistent state instead (to save storage space)
+                playbackStateToPersist.queueIDs = queueIDs.subList(queueIndex, queueIndex + 1)
+            }
         }
         runBlocking(dispatcher) {
             if (storePersistentJob != null) {

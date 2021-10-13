@@ -4,10 +4,6 @@ SPDX-License-Identifier: GPL-3.0-or-later
 */
 plugins {
 	id "com.android.application"
-	// switch this to com.android.library to load it into non-automotive app for regular Android
-/*
-	id "com.android.library"
-*/
 	id "kotlin-android"
 	id "kotlin-kapt"
 	id "jacoco"
@@ -22,8 +18,8 @@ android {
 		applicationId "de.moleman1024.audiowagon"
 		minSdkVersion rootProject.minSdkVersion
 		targetSdkVersion rootProject.targetSdkVersion
-		versionCode 40
-		versionName "0.4.0"
+		versionCode 41
+		versionName "0.4.1"
 		resValue "string", "VERSION_NAME", versionName
 		testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 		manifestPlaceholders["requestLegacyExternalStorage"] = "false"

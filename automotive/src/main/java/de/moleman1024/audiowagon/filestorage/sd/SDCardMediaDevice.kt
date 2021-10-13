@@ -86,12 +86,8 @@ class SDCardMediaDevice(val id: String) : MediaDevice {
         return id
     }
 
-    override fun getShortName(): String {
+    override fun getName(): String {
         return "SDCardMediaDevice{id=$id}"
-    }
-
-    override fun getLongName(): String {
-        return getShortName()
     }
 
     fun close() {

@@ -29,7 +29,7 @@ class USBDevicePermissions(private val context: Context) {
         val permissionGranted: Boolean = intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)
         val permission = if (permissionGranted) USBPermission.GRANTED else USBPermission.DENIED
         setPermissionForDevice(device, permission)
-        logger.debug(TAG, "USB device permission updated to $permission for: ${device.getLongName()}")
+        logger.debug(TAG, "USB device permission updated to $permission for: ${device.getName()}")
     }
 
     /**
@@ -54,7 +54,7 @@ class USBDevicePermissions(private val context: Context) {
         if (permission == USBPermission.UNKNOWN) {
             permission = if (device.hasPermission()) USBPermission.GRANTED else USBPermission.UNKNOWN
         }
-        logger.debug(TAG, "USB device ${device.getShortName()} has permission: $permission")
+        logger.debug(TAG, "USB device ${device.getName()} has permission: $permission")
         return permission
     }
 

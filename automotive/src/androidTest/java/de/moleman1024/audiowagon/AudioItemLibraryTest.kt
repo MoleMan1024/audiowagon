@@ -41,7 +41,7 @@ class AudioItemLibraryTest {
 
     private fun attachUSBDevice() {
         // UsbDevice class in Android is almost untestable, so we introduced lots of interfaces and wrote our own
-        // mock device class
+        // mock USB device class
         val mockUSBDevice = MockUSBDevice()
         val deviceAttachedIntent = Intent(ACTION_USB_ATTACHED)
         deviceAttachedIntent.putExtra(UsbManager.EXTRA_DEVICE, mockUSBDevice)

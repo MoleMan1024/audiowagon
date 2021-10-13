@@ -8,7 +8,6 @@ package de.moleman1024.audiowagon.broadcast
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.os.PowerManager
 import de.moleman1024.audiowagon.AudioBrowserService
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.ExperimentalCoroutinesApi

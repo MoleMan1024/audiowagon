@@ -45,6 +45,7 @@ class AudioBrowserServiceTest {
     @Test
     fun onCreate_default_createsService() {
         val audioBrowserService = serviceFixture.createAudioBrowserService()
+        // TODO: this will fail right now when I use SD card images because during indexing I start the service
         assertEquals(Lifecycle.State.CREATED, audioBrowserService.lifecycle.currentState)
     }
 

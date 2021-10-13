@@ -54,7 +54,7 @@ abstract class ContentHierarchyElement(
         logger.debug(TAG, "Too many items ($numItems), creating groups ($groupContentHierarchyID)")
         val groups = mutableListOf<MediaItem>()
         var offset = 0
-        val repo = audioItemLibrary.getPrimaryRepo() ?: return groups
+        val repo = audioItemLibrary.getPrimaryRepository() ?: return groups
         val lastGroupIndex = numItems / CONTENT_HIERARCHY_MAX_NUM_ITEMS
         for (groupIndex in 0 .. lastGroupIndex) {
             val offsetRows = if (groupIndex < lastGroupIndex) {

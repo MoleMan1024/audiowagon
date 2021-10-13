@@ -24,8 +24,6 @@ import de.moleman1024.audiowagon.repository.AudioItemRepository
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.consumeEach
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.json.Json
 import java.io.IOException
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.coroutineContext
@@ -214,7 +212,7 @@ class AudioItemLibrary(
         if (contentHierarchyID.type != ContentHierarchyType.TRACK) {
             throw IllegalArgumentException("Given content hierarchy ID is not for a track: $contentHierarchyID")
         }
-        val trackContentHierarchy = ContentHierarchyTrack(contentHierarchyID, context, this)
+        val trackContentHierarchy = ContentHierarchySingleTrack(contentHierarchyID, context, this)
         val audioItems: List<AudioItem> = trackContentHierarchy.getAudioItems()
         if (audioItems.isEmpty()) {
             throw RuntimeException("No track for content hierarchy ID: $contentHierarchyID")
@@ -302,7 +300,7 @@ class AudioItemLibrary(
 
     private suspend fun getNumAlbumsForArtist(artistID: Long): Int {
         var numAlbums = 0
-        val repo = getPrimaryRepo() ?: return 0
+        val repo = getPrimaryRepository() ?: return 0
         numAlbums += repo.getNumAlbumsForArtist(artistID)
         numAlbums += if (repo.getNumTracksWithUnknAlbumForArtist(artistID) > 0) 1 else 0
         return numAlbums
@@ -441,7 +439,7 @@ class AudioItemLibrary(
     }
 
     // TODO: we do not support multiple repositories right now
-    fun getPrimaryRepo(): AudioItemRepository? {
+    fun getPrimaryRepository(): AudioItemRepository? {
         if (storageToRepoMap.isEmpty()) {
             return null
         }

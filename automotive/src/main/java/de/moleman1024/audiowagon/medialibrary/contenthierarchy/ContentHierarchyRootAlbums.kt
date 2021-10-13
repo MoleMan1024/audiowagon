@@ -32,7 +32,7 @@ class ContentHierarchyRootAlbums(
             val groupContentHierarchyID = id
             groupContentHierarchyID.type = ContentHierarchyType.ALBUM_GROUP
             items = createGroups(groupContentHierarchyID, numAlbums)
-            val repo = audioItemLibrary.getPrimaryRepo() ?: return items
+            val repo = audioItemLibrary.getPrimaryRepository() ?: return items
             val audioItemUnknownAlbum = repo.getAudioItemForUnknownAlbum()
             if (audioItemUnknownAlbum != null) {
                 val description = audioItemLibrary.createAudioItemDescription(audioItemUnknownAlbum)
@@ -44,7 +44,7 @@ class ContentHierarchyRootAlbums(
 
     override suspend fun getAudioItems(): List<AudioItem> {
         val items: MutableList<AudioItem> = mutableListOf()
-        val repo = audioItemLibrary.getPrimaryRepo() ?: return emptyList()
+        val repo = audioItemLibrary.getPrimaryRepository() ?: return emptyList()
         // TODO: this will need improvements if we ever have multiple repositories in parallel,
         //  albums/artists might overlap across storage locations
         items += repo.getAllAlbums()
@@ -53,7 +53,7 @@ class ContentHierarchyRootAlbums(
 
     private suspend fun getNumAlbums(): Int {
         var numAlbums = 0
-        val repo = audioItemLibrary.getPrimaryRepo() ?: return 0
+        val repo = audioItemLibrary.getPrimaryRepository() ?: return 0
         numAlbums += repo.getNumAlbums()
         return numAlbums
     }

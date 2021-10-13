@@ -118,14 +118,14 @@ class ContentHierarchyRootTracks(
 
     override suspend fun getAudioItems(): List<AudioItem> {
         val items: MutableList<AudioItem> = mutableListOf()
-        val repo = audioItemLibrary.getPrimaryRepo() ?: return emptyList()
+        val repo = audioItemLibrary.getPrimaryRepository() ?: return emptyList()
         items += repo.getAllTracks()
         return items.sortedBy { it.title.lowercase() }
     }
 
     private suspend fun getNumTracks(): Int {
         var numTracks = 0
-        val repo = audioItemLibrary.getPrimaryRepo() ?: return 0
+        val repo = audioItemLibrary.getPrimaryRepository() ?: return 0
         numTracks += repo.getNumTracks()
         return numTracks
     }

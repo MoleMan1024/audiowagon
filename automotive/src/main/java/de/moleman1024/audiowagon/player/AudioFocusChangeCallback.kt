@@ -35,7 +35,7 @@ class AudioFocusChangeCallback(
                     }
                     audioPlayer.pause()
                     logger.debug(TAG, "Stopping player in 30 seconds")
-                    delay(1000 * 30)
+                    delay(1000L * 30L)
                     audioPlayer.stop()
                     audioFocusLossJob = null
                 }

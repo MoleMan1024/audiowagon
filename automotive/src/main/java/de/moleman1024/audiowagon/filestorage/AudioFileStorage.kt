@@ -49,12 +49,14 @@ open class AudioFileStorage(
     usbDevicePermissions: USBDevicePermissions,
     private val gui: GUI
 ) {
+    // TODO: this was originally intended to support multiple storage locations, but we only allow a single one now
     private val audioFileStorageLocations: MutableList<AudioFileStorageLocation> = mutableListOf()
     private var usbDeviceConnections: USBDeviceConnections = USBDeviceConnections(
         context, scope, dispatcher, usbDevicePermissions, gui
     )
     private var dataSources = mutableListOf<MediaDataSource>()
     private val dataSourcesMutex = Mutex()
+    private var isSuspended = false
     val storageObservers = mutableListOf<(StorageChange) -> Unit>()
     val mediaDevicesForTest = mutableListOf<MediaDevice>()
 
@@ -101,13 +103,13 @@ open class AudioFileStorage(
     }
 
     private fun addDevice(device: MediaDevice) {
-        logger.debug(TAG, "Adding device to storage: ${device.getLongName()}")
+        logger.debug(TAG, "Adding device to storage: ${device.getName()}")
         try {
             val storageLocation = createStorageLocationForDevice(device)
             logger.debug(TAG, "Created storage location: $storageLocation")
-            if (audioFileStorageLocations.contains(storageLocation)) {
-                logger.debug(TAG, "Device is already in storage: ${device.getLongName()}")
-                return
+            if (audioFileStorageLocations.size > 0) {
+                logger.warning(TAG, "Already a device in storage, clearing: ${audioFileStorageLocations}}")
+                audioFileStorageLocations.clear()
             }
             audioFileStorageLocations.add(storageLocation)
             val storageChange = StorageChange(storageLocation.storageID, StorageAction.ADD)
@@ -132,7 +134,7 @@ open class AudioFileStorage(
     }
 
     private fun removeDevice(device: MediaDevice) {
-        logger.debug(TAG, "Removing device from storage: ${device.getLongName()}")
+        logger.debug(TAG, "Removing device from storage: ${device.getName()}")
         val storageLocations: List<AudioFileStorageLocation> = audioFileStorageLocations.filter { it.device == device }
         logger.debug(TAG, "audioFileStorageLocations at start of removeDevice(): $audioFileStorageLocations")
         if (storageLocations.isEmpty()) {
@@ -153,7 +155,7 @@ open class AudioFileStorage(
     }
 
     private fun detachStorageForDevice(device: MediaDevice) {
-        logger.debug(TAG, "Setting storage location for device as already detached: ${device.getLongName()}")
+        logger.debug(TAG, "Setting storage location for device as already detached: ${device.getName()}")
         val storageLocations: List<AudioFileStorageLocation> = audioFileStorageLocations.filter { it.device == device }
         if (storageLocations.isEmpty()) {
             return
@@ -334,9 +336,17 @@ open class AudioFileStorage(
             it.cancelIndexAudioFiles()
             it.close()
         }
+        isSuspended = true
+    }
+
+    fun wakeup() {
+        isSuspended = false
     }
 
     fun notifyIndexingIssues() {
+        if (isSuspended) {
+            return
+        }
         val directoriesWithIndexingIssues = mutableListOf<String>()
         audioFileStorageLocations.forEach {
             directoriesWithIndexingIssues += it.getDirectoriesWithIndexingIssues()

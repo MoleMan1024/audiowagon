@@ -6,14 +6,10 @@ SPDX-License-Identifier: GPL-3.0-or-later
 package de.moleman1024.audiowagon.medialibrary.contenthierarchy
 
 import android.content.Context
-import android.net.Uri
 import android.support.v4.media.MediaBrowserCompat.MediaItem
-import android.support.v4.media.MediaDescriptionCompat
-import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
-import de.moleman1024.audiowagon.medialibrary.RESOURCE_ROOT_URI
 import kotlin.math.ceil
 
 private const val TAG = "CHGroupTracks"
@@ -39,7 +35,7 @@ class ContentHierarchyGroupTracks(id: ContentHierarchyID, context: Context, audi
     }
 
     override suspend fun getAudioItems(): List<AudioItem> {
-        val repo = audioItemLibrary.getPrimaryRepo() ?: return emptyList()
+        val repo = audioItemLibrary.getPrimaryRepository() ?: return emptyList()
         val numTracks = if (id.artistID >= 0 && id.albumID >= 0) {
             repo.getNumTracksForAlbumAndArtist(id.albumID, id.artistID)
         } else if (id.albumID >= 0) {

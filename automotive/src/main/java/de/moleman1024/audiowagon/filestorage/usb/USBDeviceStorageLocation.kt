@@ -33,7 +33,7 @@ class USBDeviceStorageLocation(override val device: USBMediaDevice) : AudioFileS
 
     @ExperimentalCoroutinesApi
     override fun indexAudioFiles(scope: CoroutineScope): ReceiveChannel<AudioFile> {
-        logger.debug(TAG, "indexAudioFiles(${device.getShortName()})")
+        logger.debug(TAG, "indexAudioFiles(${device.getName()})")
         return scope.produce {
             try {
                 for (usbFile in device.walkTopDown(device.getRoot())) {

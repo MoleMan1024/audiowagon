@@ -177,7 +177,7 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
         }
         fileSystem = usbDevice.initFilesystem(context)
         if (fileSystem == null) {
-            logger.error(TAG, "No filesystem in $this")
+            logger.error(TAG, "No filesystem after initFilesystem() for: $this")
             return
         }
         volumeLabel = fileSystem?.volumeLabel?.trim() ?: ""
@@ -192,13 +192,17 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
      * filesystems and notify user (see https://github.com/MoleMan1024/audiowagon_beta/issues/14)
      */
     private fun areTooManyFilesInDir(directory: UsbFile): Boolean {
+        assertFileSystemAvailable()
         var numFiles = 0
+        // TODO: this will not work if no file extensions are used
+        logger.debug(TAG, "Listing directory: ${directory.absolutePath}")
         directory.list().forEach {
             if (it.trim().matches(Regex(".*\\.\\w\\w\\w\\w?$"))) {
                 numFiles++
             }
+            logger.debug(TAG, "${directory.absolutePath}/$it")
         }
-        logger.verbose(TAG, "Found $numFiles files in ${directory.absolutePath}")
+        logger.debug(TAG, "Found $numFiles files in ${directory.absolutePath}")
         return numFiles >= 128
     }
 
@@ -282,7 +286,7 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
     }
 
     fun close() {
-        logger.debug(TAG, "Closing: ${getLongName()}")
+        logger.debug(TAG, "Closing: ${getName()}")
         try {
             disableLogging()
         } catch (exc: IOException) {
@@ -297,8 +301,8 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
     }
 
     fun getRoot(): UsbFile {
-        if (fileSystem == null) {
-            throw RuntimeException("No filesystem")
+        if (!hasFileSystem()) {
+            throw RuntimeException("No filesystem in getRoot() for: $this")
         }
         return fileSystem!!.rootDirectory
     }
@@ -317,11 +321,14 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
                 val fileOrDirectory = stack.last().next()
                 if (!allFilesDirs.containsKey(fileOrDirectory.absolutePath)) {
                     allFilesDirs[fileOrDirectory.absolutePath] = Unit
+                    assertFileSystemAvailable()
                     if (!fileOrDirectory.isDirectory) {
                         logger.verbose(TAG, "Found file: ${fileOrDirectory.absolutePath}")
                         recentFilepathToFileMap[fileOrDirectory.absolutePath] = fileOrDirectory
+                        assertFileSystemAvailable()
                         yield(fileOrDirectory)
                     } else {
+                        assertFileSystemAvailable()
                         if (fileOrDirectory.name.contains("(LOST\\.DIR|$LOG_DIRECTORY)".toRegex())) {
                             logger.debug(TAG, "Ignoring directory: ${fileOrDirectory.name}")
                         }
@@ -343,19 +350,15 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
         recentFilepathToFileMap.clear()
     }
 
-    override fun getShortName(): String {
-        val stringBuilder: StringBuilder = StringBuilder()
-        stringBuilder.append("USBMediaDevice{")
-        if (usbDevice.productName?.isBlank() == false) {
-            stringBuilder.append(usbDevice.productName)
+    private fun assertFileSystemAvailable() {
+        if (!hasFileSystem()) {
+            throw NoFileSystemException()
         }
-        stringBuilder.append("}")
-        return stringBuilder.toString()
     }
 
-    override fun getLongName(): String {
+    override fun getName(): String {
         val stringBuilder: StringBuilder = StringBuilder()
-        stringBuilder.append("USBMediaDevice{")
+        stringBuilder.append("${USBMediaDevice::class}{")
         if (usbDevice.manufacturerName?.isBlank() == false) {
             stringBuilder.append(usbDevice.manufacturerName)
         }
@@ -376,12 +379,13 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
         if (volumeLabel.isNotBlank()) {
             stringBuilder.append(";${volumeLabel}")
         }
+        stringBuilder.append(";${hashCode()}")
         stringBuilder.append(")}")
         return stringBuilder.toString()
     }
 
     override fun toString(): String {
-        return "${USBMediaDevice::class}{${usbDevice}}"
+        return "${USBMediaDevice::class}{${usbDevice};${hashCode()}}"
     }
 
     override fun getDataSourceForURI(uri: Uri): MediaDataSource {
@@ -459,12 +463,12 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
             return serialNum
         }
         if (!hasPermission()) {
-            logger.warning(TAG, "Missing permission to access serial number of: ${getLongName()}")
+            logger.warning(TAG, "Missing permission to access serial number of: ${getName()}")
             return ""
         }
         if (usbDevice.serialNumber.isNullOrBlank()) {
             // we don't have sufficient priviliges to access the serial number, or the USB drive did not provide one
-            logger.warning(TAG, "Serial number is not available for: ${getLongName()}")
+            logger.warning(TAG, "Serial number is not available for: ${getName()}")
             isSerialNumAvail = false
             return ""
         }
@@ -502,6 +506,8 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
 
     override fun hashCode(): Int {
         var result = usbDevice.hashCode()
+        result = 31 * result + (if (this.hasPermission()) 1 else 0)
+        result = 31 * result + (if (this.hasFileSystem()) 1 else 0)
         if (this.hasPermission() && this.hasFileSystem()) {
             result = 31 * result + serialNum.hashCode()
             result = 31 * result + volumeLabel.hashCode()

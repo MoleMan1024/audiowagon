@@ -35,7 +35,7 @@ class ContentHierarchyGroupAlbums(id: ContentHierarchyID, context: Context, audi
     }
 
     override suspend fun getAudioItems(): List<AudioItem> {
-        val repo = audioItemLibrary.getPrimaryRepo() ?: return emptyList()
+        val repo = audioItemLibrary.getPrimaryRepository() ?: return emptyList()
         val numAlbumGroups: Int = if (id.artistID < 0) {
             ceil(repo.getNumAlbums().toDouble() / CONTENT_HIERARCHY_MAX_NUM_ITEMS).toInt()
         } else {

@@ -5,4 +5,4 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 package de.moleman1024.audiowagon.exceptions
 
-class NoFileSystemException: RuntimeException()
+class NoFileSystemException: RuntimeException("No USB filesystem")

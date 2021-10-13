@@ -209,7 +209,7 @@ class AudioSessionCallback(
      */
     override fun onStop() {
         logger.debug(TAG, "onStop()")
-        // super.onStop() will release audio focus
+        // the call to super.onStop() will release audio focus
         super.onStop()
         launchInScopeSafely {
             audioPlayer.stop()

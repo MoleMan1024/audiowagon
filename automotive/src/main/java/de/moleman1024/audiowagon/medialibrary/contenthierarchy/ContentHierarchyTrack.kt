@@ -45,7 +45,7 @@ class ContentHierarchyTrack(
             } else if (id.albumID > DATABASE_ID_UNKNOWN) {
                 tracks += repo.getTracksForAlbum(id.albumID)
             } else {
-                // play a single track only, fill up playback queue with random tracks
+                // selected a single track in tracks browse view, fill up playback queue with random tracks
                 tracks += repo.getTrack(id.trackID)
                 tracks += repo.getRandomTracks(NUM_ITEMS_FOR_SHUFFLE_ALL-1)
             }

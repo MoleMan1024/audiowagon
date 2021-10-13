@@ -53,7 +53,10 @@ class USBAudioCachedDataSource(
         if (buffer == null || isClosed) {
             return 0
         }
-        val fileLength = usbFile?.length ?: return -1
+        val fileLength = getSize()
+        if (fileLength <= 0) {
+            return -1
+        }
         if (position >= fileLength) {
             return -1
         }
@@ -99,13 +102,16 @@ class USBAudioCachedDataSource(
 
     private fun createCachesAround(position: Long, numBytesToRead: Int): Long {
         var cacheKey = -1L
-        val fileLength = usbFile?.length ?: return cacheKey
+        val fileLength = this.size
+        if (fileLength <= 0) {
+            return cacheKey
+        }
         val cacheBeforeStartPos: Long = position - (position % bufSize)
         val cacheBefore: AgingCache
         if (cacheBeforeStartPos < fileLength) {
             if (cacheBeforeStartPos !in cacheMap) {
                 cacheBefore = AgingCache()
-                usbFile?.read(cacheBeforeStartPos, cacheBefore.buffer)
+                read(cacheBeforeStartPos, cacheBefore.buffer)
                 cacheBefore.buffer.flip()
                 cacheMap[cacheBeforeStartPos] = cacheBefore
             } else {
@@ -120,7 +126,7 @@ class USBAudioCachedDataSource(
         if (cacheAfterStartPos < fileLength) {
             if (cacheAfterStartPos !in cacheMap) {
                 cacheAfter = AgingCache()
-                usbFile?.read(cacheAfterStartPos, cacheAfter.buffer)
+                read(cacheAfterStartPos, cacheAfter.buffer)
                 cacheAfter.buffer.flip()
                 cacheMap[cacheAfterStartPos] = cacheAfter
             } else {

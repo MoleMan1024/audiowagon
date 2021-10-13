@@ -35,7 +35,7 @@ class ContentHierarchyShuffleAllTracks(
         if (audioItemLibrary.storageToRepoMap.isEmpty()) {
             throw AssertionError("Trying to shuffle all audio items with no storages")
         }
-        val repo = audioItemLibrary.getPrimaryRepo() ?: return emptyList()
+        val repo = audioItemLibrary.getPrimaryRepository() ?: return emptyList()
         items += repo.getRandomTracks(NUM_ITEMS_FOR_SHUFFLE_ALL)
         return items
     }

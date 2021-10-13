@@ -12,6 +12,5 @@ interface MediaDevice {
    fun getDataSourceForURI(uri: Uri): MediaDataSource
    fun getBufferedDataSourceForURI(uri: Uri): MediaDataSource
    fun getID(): String
-   fun getShortName(): String
-   fun getLongName(): String
+   fun getName(): String
 }

@@ -290,7 +290,7 @@ class USBDeviceConnections(
 
     private fun removeConnectedUSBDevice(device: USBMediaDevice) {
         if (!isDeviceInConnectedList(device)) {
-            logger.warning(TAG, "Device not in list of connected devices: ${device.getLongName()}")
+            logger.warning(TAG, "Device not in list of connected devices: ${device.getName()}")
             return
         }
         connectedDevices.remove(device)
@@ -333,10 +333,10 @@ class USBDeviceConnections(
         val permission: USBPermission = usbDevicePermissions.getCurrentPermissionForDevice(device)
         usbDevicePermissions.setPermissionForDevice(device, permission)
         if (permission == USBPermission.DENIED) {
-            logger.info(TAG, "User has denied access to: ${device.getLongName()}")
+            logger.info(TAG, "User has denied access to: ${device.getName()}")
             return
         } else if (permission == USBPermission.UNKNOWN) {
-            logger.error(TAG, "Permission has not been updated for: ${device.getLongName()}")
+            logger.error(TAG, "Permission has not been updated for: ${device.getName()}")
             return
         }
         onUSBDeviceWithPermissionAttached(device)
@@ -370,7 +370,7 @@ class USBDeviceConnections(
 
     private fun appendConnectedUSBDevice(device: USBMediaDevice) {
         if (isDeviceInConnectedList(device)) {
-            logger.warning(TAG, "USB device already in list of connected devices: ${device.getLongName()}")
+            logger.warning(TAG, "USB device already in list of connected devices: ${device.getName()}")
             return
         }
         connectedDevices.add(device)

@@ -2,14 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
-Listed here are only software version that have been made public. A jump in the version number (e.g. from 0.2.5 to 
-0.3.4) without any inbetween version means that multiple internal releases were made that were not made available to the 
+Listed here are only software version that have been made public. A jump in the version number (e.g. from 0.2.5 to
+0.3.4) without any inbetween version means that multiple internal releases were made that were not made available to the
 public. This is required for in-car-testing due to the way the Google Play Store works.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
 ## [Unreleased]
+
+### Fixed
+
+- latency decreased when selecting a single track for playback
+- prevent that USB indexing process is stopped when switching to another audio app
+- avoid some errors for empty content hierarchy IDs
+- prevent that multiple audio file storage location objects are used, this could maybe help with 
+  [#33](https://github.com/MoleMan1024/audiowagon/issues/33)
 
 ### Changed
 
@@ -36,7 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - some users did not understand that selecting a single track e.g. in an album would only play that track and nothing
   else, they expected the next/previous track buttons to work also. This design was changed, selecting a track inside an
-  artist/album view will now play all items in the shown list starting from the selected item 
+  artist/album view will now play all items in the shown list starting from the selected item
   [#18](https://github.com/MoleMan1024/audiowagon/issues/18)
 - initial indexing speed is slightly improved
 
@@ -65,10 +74,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   work fine with up to approx. 150000 tracks [#6](https://github.com/MoleMan1024/audiowagon/issues/6)
 - notify user if USB drive is full but logging to file on USB drive is enabled
   [#7](https://github.com/MoleMan1024/audiowagon/issues/7)
-- fix issues with files that contain a percent sign in the filename 
+- fix issues with files that contain a percent sign in the filename
   [#11](https://github.com/MoleMan1024/audiowagon/issues/11)
 - avoid issue where USB filesystem is corrupted when more than 128 files are put in root directory. Users are notified
-  about this and asked to add subdirectories on their USB drive. A real fix will require a change in libaums. 
+  about this and asked to add subdirectories on their USB drive. A real fix will require a change in libaums.
   [#13](https://github.com/MoleMan1024/audiowagon/issues/13)
 - avoid issue where indexing slows down on files which are not supported. Previously the app tried to index .wma files
   as well which caused a 5 second delay on each of those files as .wma is not supported. Such files are now ignored
