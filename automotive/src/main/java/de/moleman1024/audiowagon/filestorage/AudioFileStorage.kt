@@ -8,6 +8,7 @@ package de.moleman1024.audiowagon.filestorage
 import android.content.Context
 import android.media.MediaDataSource
 import android.net.Uri
+import android.support.v4.media.MediaDescriptionCompat
 import androidx.annotation.VisibleForTesting
 import de.moleman1024.audiowagon.GUI
 import de.moleman1024.audiowagon.R
@@ -22,6 +23,10 @@ import de.moleman1024.audiowagon.filestorage.usb.USBDeviceConnections
 import de.moleman1024.audiowagon.filestorage.usb.USBDeviceStorageLocation
 import de.moleman1024.audiowagon.filestorage.usb.USBMediaDevice
 import de.moleman1024.audiowagon.log.Logger
+import de.moleman1024.audiowagon.medialibrary.RESOURCE_ROOT_URI
+import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyElement
+import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyID
+import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyType
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -189,7 +194,8 @@ open class AudioFileStorage(
         storageIDs.forEach {
             logger.debug(TAG, "Creating audio file producer channel for storage: $it")
             val storageLoc = getStorageLocationForID(it)
-            val audioFileChannel = storageLoc.indexAudioFiles(scope)
+            val rootDirectory = Directory(storageLoc.getRootURI())
+            val audioFileChannel = storageLoc.indexAudioFiles(rootDirectory, scope)
             storageLoc.indexingStatus = IndexingStatus.INDEXING
             audioFileProducerChannels.add(audioFileChannel)
         }
@@ -226,9 +232,16 @@ open class AudioFileStorage(
         return audioFileStorageLocations.first { it.storageID == storageID }
     }
 
+    fun getPrimaryStorageLocation(): AudioFileStorageLocation {
+        if (audioFileStorageLocations.isEmpty()) {
+            throw NoSuchElementException("No storage locations")
+        }
+        return audioFileStorageLocations.first()
+    }
+
     fun getDataSourceForAudioFile(audioFile: AudioFile): MediaDataSource {
         cleanClosedDataSources()
-        val dataSource = getStorageLocationForID(audioFile.getStorageID()).getDataSourceForURI(audioFile.uri)
+        val dataSource = getStorageLocationForID(audioFile.storageID).getDataSourceForURI(audioFile.uri)
         runBlocking(dispatcher) {
             dataSourcesMutex.withLock {
                 dataSources.add(dataSource)
@@ -290,7 +303,7 @@ open class AudioFileStorage(
 
     private fun getStorageLocationForURI(uri: Uri): AudioFileStorageLocation {
         val audioFile = AudioFile(uri)
-        return getStorageLocationForID(audioFile.getStorageID())
+        return getStorageLocationForID(audioFile.storageID)
     }
 
     fun removeAllDevicesFromStorage() {
@@ -378,6 +391,46 @@ open class AudioFileStorage(
             indexingStatusList.add(it.indexingStatus)
         }
         return indexingStatusList
+    }
+
+    /**
+     * This will determine what files in the browse tree will look like in the GUI
+     */
+    fun createFileDescription(file: AudioFile): MediaDescriptionCompat {
+        val contentHierarchyID = ContentHierarchyID(ContentHierarchyType.FILE)
+        contentHierarchyID.path = file.uri.path.toString()
+        val builder = MediaDescriptionCompat.Builder().apply {
+            setTitle(file.name)
+            // TODO: filesize in subtitle?
+            setIconUri(Uri.parse(
+                RESOURCE_ROOT_URI
+                    + context.resources.getResourceEntryName(R.drawable.baseline_insert_drive_file_24)))
+            setMediaId(ContentHierarchyElement.serialize(contentHierarchyID))
+            setMediaUri(file.uri)
+        }
+        return builder.build()
+    }
+
+    /**
+     * This will determine what directories in the browse tree will look like in the GUI
+     */
+    fun createDirectoryDescription(directory: Directory): MediaDescriptionCompat {
+        val contentHierarchyID = ContentHierarchyID(ContentHierarchyType.DIRECTORY)
+        contentHierarchyID.path = directory.uri.path.toString()
+        val builder = MediaDescriptionCompat.Builder().apply {
+            setTitle(directory.name)
+            // TODO: num entries in subtitle?
+            setIconUri(Uri.parse(
+                RESOURCE_ROOT_URI
+                        + context.resources.getResourceEntryName(R.drawable.baseline_folder_24)))
+            setMediaId(ContentHierarchyElement.serialize(contentHierarchyID))
+            setMediaUri(directory.uri)
+        }
+        return builder.build()
+    }
+
+    fun areAnyStoragesAvail(): Boolean {
+        return audioFileStorageLocations.isNotEmpty()
     }
 
 }

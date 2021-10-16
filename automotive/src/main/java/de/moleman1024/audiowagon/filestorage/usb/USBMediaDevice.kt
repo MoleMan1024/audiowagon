@@ -25,13 +25,14 @@ import de.moleman1024.audiowagon.filestorage.MediaDevice
 import de.moleman1024.audiowagon.log.Logger
 import java.io.IOException
 import java.io.UnsupportedEncodingException
+import java.lang.IllegalArgumentException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 private const val TAG = "USBMediaDevice"
 private val logger = Logger
 private const val MINIMUM_FREE_SPACE_FOR_LOGGING_MB = 10
-private const val LOG_DIRECTORY = "aw_logs"
+const val LOG_DIRECTORY = "aw_logs"
 
 // subclass 6 means that the usb mass storage device implements the SCSI transparent command set
 private const val INTERFACE_SUBCLASS = 6
@@ -195,7 +196,7 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
         assertFileSystemAvailable()
         var numFiles = 0
         // TODO: this will not work if no file extensions are used
-        logger.debug(TAG, "Listing directory: ${directory.absolutePath}")
+        logger.debug(TAG, "areTooManyFilesInDir(${directory.absolutePath})")
         directory.list().forEach {
             if (it.trim().matches(Regex(".*\\.\\w\\w\\w\\w?$"))) {
                 numFiles++
@@ -276,7 +277,6 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
 
     private fun logVersionToUSBLogfile() {
         try {
-            logger.debug(TAG, "Getting package info for version")
             val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
             logger.info(TAG, "Version: ${packageInfo.versionName} (code: ${packageInfo.longVersionCode})")
             logger.flushToUSB()
@@ -356,6 +356,17 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
         }
     }
 
+    fun getDirectoryContents(directoryURI: Uri): List<UsbFile> {
+        val directory = getUSBFileFromURI(directoryURI)
+        if (!directory.isDirectory) {
+            throw IllegalArgumentException("Is not a directory: $directory")
+        }
+        if (areTooManyFilesInDir(directory)) {
+            throw TooManyFilesInDirException()
+        }
+        return directory.listFiles().toList()
+    }
+
     override fun getName(): String {
         val stringBuilder: StringBuilder = StringBuilder()
         stringBuilder.append("${USBMediaDevice::class}{")
@@ -403,9 +414,9 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
     }
 
     @Synchronized
-    private fun getUSBFileFromURI(uri: Uri): UsbFile {
+    fun getUSBFileFromURI(uri: Uri): UsbFile {
         val audioFile = AudioFile(uri)
-        val filePath = audioFile.getFilePath()
+        val filePath = audioFile.path
         val usbFileFromCache: UsbFile? = recentFilepathToFileMap[filePath]
         if (usbFileFromCache != null) {
             return usbFileFromCache

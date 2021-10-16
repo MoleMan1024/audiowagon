@@ -25,6 +25,7 @@ import de.moleman1024.audiowagon.*
 import de.moleman1024.audiowagon.broadcast.*
 import de.moleman1024.audiowagon.exceptions.DriveAlmostFullException
 import de.moleman1024.audiowagon.exceptions.NoItemsInQueueException
+import de.moleman1024.audiowagon.filestorage.AudioFile
 import de.moleman1024.audiowagon.filestorage.AudioFileStorage
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.AudioItem
@@ -71,7 +72,7 @@ class AudioSession(
     private lateinit var isPlayingNotificationBuilder: NotificationCompat.Builder
     private lateinit var isPausedNotificationBuilder: NotificationCompat.Builder
     private var currentQueueItem: MediaSessionCompat.QueueItem? = null
-    private val playerObservers = mutableListOf<(AudioPlayerStateChange) -> Unit>()
+    private val observers = mutableListOf<(Any) -> Unit>()
     private var isShowingNotification: Boolean = false
     // media session must be accessed from same thread always
     private val mediaSessionDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
@@ -82,6 +83,7 @@ class AudioSession(
         AudioFocusChangeCallback(audioPlayer, scope, dispatcher)
     private val notificationReceiver: NotificationReceiver = NotificationReceiver(audioPlayer, scope, dispatcher)
     private var storePersistentJob: Job? = null
+    private var onPlayFromMediaIDJob: Job? = null
     private var isFirstOnPlayEventAfterReset: Boolean = true
     private var onPlayCalledBeforeUSBReady: Boolean = false
     private var isShuttingDown: Boolean = false
@@ -306,7 +308,7 @@ class AudioSession(
                 newPlaybackState =
                     playbackStateBuilder.setErrorMessage(PlaybackStateCompat.ERROR_CODE_UNKNOWN_ERROR, "").build()
                 if (audioPlayerStatus.playbackState == PlaybackStateCompat.STATE_PLAYING) {
-                    launchInScopeSafely {
+                    launchInScopeSafely("cancelAudioFocusLossJob()") {
                         audioFocusChangeListener.cancelAudioFocusLossJob()
                     }
                 }
@@ -315,32 +317,32 @@ class AudioSession(
                 newPlaybackState = playbackStateBuilder.setErrorMessage(
                     audioPlayerStatus.errorCode, audioPlayerStatus.errorMsg
                 ).build()
-                val playerStateChange = AudioPlayerStateChange(AudioPlayerState.ERROR)
+                val playerStateChange = AudioPlayerEvent(AudioPlayerState.ERROR)
                 playerStateChange.errorMsg = audioPlayerStatus.errorMsg
                 playerStateChange.errorCode = audioPlayerStatus.errorCode
-                notifyPlayerObservers(playerStateChange)
+                notifyObservers(playerStateChange)
                 handlePlayerError(audioPlayerStatus.errorCode)
             }
             playbackState = newPlaybackState
             audioFocusChangeListener.playbackState = newPlaybackState.state
             logger.debug(TAG, "newPlaybackState=$newPlaybackState")
             sendNotificationBasedOnPlaybackState()
-            launchInScopeSafely {
+            launchInScopeSafely("setMediaSessionPlaybackState()")  {
                 setMediaSessionPlaybackState(playbackState)
             }
         }
     }
 
     private fun notifyStartPauseStop(playbackState: Int) {
-        val playerStateChange: AudioPlayerStateChange = when (playbackState) {
-            PlaybackStateCompat.STATE_PLAYING -> AudioPlayerStateChange(AudioPlayerState.STARTED)
-            PlaybackStateCompat.STATE_PAUSED -> AudioPlayerStateChange(AudioPlayerState.PAUSED)
-            PlaybackStateCompat.STATE_STOPPED -> AudioPlayerStateChange(AudioPlayerState.STOPPED)
+        val playerEvent: AudioPlayerEvent = when (playbackState) {
+            PlaybackStateCompat.STATE_PLAYING -> AudioPlayerEvent(AudioPlayerState.STARTED)
+            PlaybackStateCompat.STATE_PAUSED -> AudioPlayerEvent(AudioPlayerState.PAUSED)
+            PlaybackStateCompat.STATE_STOPPED -> AudioPlayerEvent(AudioPlayerState.STOPPED)
             else -> {
                 return
             }
         }
-        notifyPlayerObservers(playerStateChange)
+        notifyObservers(playerEvent)
     }
 
     private fun handlePlayerError(errorCode: Int) {
@@ -361,7 +363,7 @@ class AudioSession(
         // I/O errors or device unplugged
         logger.warning(TAG, "I/O error or USB device unplugged, recovering")
         initPlaybackState()
-        launchInScopeSafely {
+        launchInScopeSafely("reInitAfterError()") {
             audioPlayer.reInitAfterError()
         }
     }
@@ -373,10 +375,32 @@ class AudioSession(
             val contentHierarchyIDStr: String? = queueChange.currentItem?.description?.mediaId
             logger.debug(TAG, "Current track content hierarchy ID: $contentHierarchyIDStr")
             logger.flushToUSB()
-            launchInScopeSafely {
+            launchInScopeSafely("observePlaybackQueue()") {
                 if (contentHierarchyIDStr != null && contentHierarchyIDStr.isNotBlank()) {
                     val contentHierarchyID = ContentHierarchyElement.deserialize(contentHierarchyIDStr)
-                    val audioItem: AudioItem = audioItemLibrary.getAudioItemForTrack(contentHierarchyID)
+                    val audioItem: AudioItem
+                    when (contentHierarchyID.type) {
+                        ContentHierarchyType.TRACK -> {
+                            audioItem = audioItemLibrary.getAudioItemForTrack(contentHierarchyID)
+                        }
+                        ContentHierarchyType.FILE -> {
+                            var storageID = contentHierarchyID.storageID
+                            if (storageID.isBlank()) {
+                                storageID = audioFileStorage.getPrimaryStorageLocation().storageID
+                            }
+                            contentHierarchyID.storageID = storageID
+                            val audioFile = AudioFile(Util.createURIForPath(storageID, contentHierarchyID.path))
+                            // If we are playing files directly, extract the metadata here. This will slow down the
+                            // start of playback but without it we will not be able to show the duration of file,
+                            // album art etc.
+                            audioItem = audioItemLibrary.extractMetadataFrom(audioFile)
+                            audioItem.id = ContentHierarchyElement.serialize(contentHierarchyID)
+                            audioItem.uri = audioFile.uri
+                        }
+                        else ->  {
+                            throw IllegalArgumentException("Invalid content hierarchy: $contentHierarchyID")
+                        }
+                    }
                     val metadata: MediaMetadataCompat = audioItemLibrary.createMetadataForItem(audioItem)
                     currentQueueItem = MediaSessionCompat.QueueItem(
                         metadata.description, queueChange.currentItem.queueId
@@ -415,6 +439,7 @@ class AudioSession(
         clearSession()
         deleteNotificationChannel()
         runBlocking(dispatcher) {
+            onPlayFromMediaIDJob?.cancelAndJoin()
             audioFocusChangeListener.cancelAudioFocusLossJob()
             audioPlayer.shutdown()
             releaseMediaSession()
@@ -424,6 +449,7 @@ class AudioSession(
     fun suspend() {
         logger.debug(TAG, "suspend()")
         runBlocking(dispatcher) {
+            onPlayFromMediaIDJob?.cancelAndJoin()
             audioFocusChangeListener.cancelAudioFocusLossJob()
         }
         currentQueueItem = null
@@ -461,7 +487,7 @@ class AudioSession(
         removeNotification()
     }
 
-    // FIXME: called multiple times
+    // TODO: check why called multiple times
     private fun removeNotification() {
         logger.debug(TAG, "removeNotification()")
         if (!isShowingNotification) {
@@ -494,89 +520,84 @@ class AudioSession(
                 }
                 AudioSessionChangeType.ON_PLAY_FROM_MEDIA_ID -> {
                     audioFocusChangeListener.lastUserRequestedStateChange = AudioSessionChangeType.ON_PLAY
-                    scope.launch(dispatcher) {
-                        callSafelyAndShowErrorsOnGUI(audioSessionChange.type.name) {
-                            playFromContentHierarchyID(audioSessionChange.contentHierarchyID)
-                        }
+                    runBlocking(dispatcher) {
+                        onPlayFromMediaIDJob?.cancelAndJoin()
+                    }
+                    onPlayFromMediaIDJob = launchInScopeSafely(audioSessionChange.type.name) {
+                        playFromContentHierarchyID(audioSessionChange.contentHierarchyID)
+                        onPlayFromMediaIDJob = null
                     }
                 }
                 AudioSessionChangeType.ON_SKIP_TO_QUEUE_ITEM -> {
-                    scope.launch(dispatcher) {
-                        callSafelyAndShowErrorsOnGUI(audioSessionChange.type.name) {
-                            playFromQueueId(audioSessionChange.queueID)
-                        }
+                    launchInScopeSafely(audioSessionChange.type.name) {
+                        playFromQueueId(audioSessionChange.queueID)
                     }
                 }
                 AudioSessionChangeType.ON_STOP -> {
                     audioFocusChangeListener.lastUserRequestedStateChange = audioSessionChange.type
-                    scope.launch(dispatcher) {
-                        callSafelyAndShowErrorsOnGUI(audioSessionChange.type.name) {
-                            storePlaybackState()
-                            // TODO: release some more things in audiosession/player, e.g. queue/index in queue?
-                        }
+                    launchInScopeSafely(audioSessionChange.type.name) {
+                        storePlaybackState()
+                        // TODO: release some more things in audiosession/player, e.g. queue/index in queue?
                     }
                 }
                 AudioSessionChangeType.ON_ENABLE_LOG_TO_USB -> {
-                    scope.launch(dispatcher) {
-                        callSafelyAndShowErrorsOnGUI(audioSessionChange.type.name) {
-                            audioFileStorage.enableLogToUSB()
-                        }
+                    launchInScopeSafely(audioSessionChange.type.name) {
+                        audioFileStorage.enableLogToUSB()
                     }
                 }
                 AudioSessionChangeType.ON_DISABLE_LOG_TO_USB -> {
-                    scope.launch(dispatcher) {
-                        callSafelyAndShowErrorsOnGUI(audioSessionChange.type.name) {
-                            audioFileStorage.disableLogToUSB()
-                        }
+                    launchInScopeSafely(audioSessionChange.type.name) {
+                        audioFileStorage.disableLogToUSB()
                     }
                 }
                 AudioSessionChangeType.ON_ENABLE_EQUALIZER -> {
-                    scope.launch(dispatcher) {
-                        callSafelyAndShowErrorsOnGUI(audioSessionChange.type.name) {
-                            audioPlayer.enableEqualizer()
-                        }
+                    launchInScopeSafely(audioSessionChange.type.name) {
+                        audioPlayer.enableEqualizer()
                     }
                 }
                 AudioSessionChangeType.ON_DISABLE_EQUALIZER -> {
-                    scope.launch(dispatcher) {
-                        callSafelyAndShowErrorsOnGUI(audioSessionChange.type.name) {
-                            audioPlayer.disableEqualizer()
-                        }
+                    launchInScopeSafely(audioSessionChange.type.name) {
+                        audioPlayer.disableEqualizer()
                     }
                 }
                 AudioSessionChangeType.ON_SET_EQUALIZER_PRESET -> {
-                    scope.launch(dispatcher) {
-                        callSafelyAndShowErrorsOnGUI(audioSessionChange.type.name) {
-                            val equalizerPreset = EqualizerPreset.valueOf(audioSessionChange.equalizerPreset)
-                            audioPlayer.setEqualizerPreset(equalizerPreset)
-                        }
+                    launchInScopeSafely(audioSessionChange.type.name) {
+                        val equalizerPreset = EqualizerPreset.valueOf(audioSessionChange.equalizerPreset)
+                        audioPlayer.setEqualizerPreset(equalizerPreset)
+                    }
+                }
+                AudioSessionChangeType.ON_ENABLE_READ_METADATA -> {
+                    launchInScopeSafely(audioSessionChange.type.name) {
+                        notifyObservers(SettingChangeEvent(SettingState.ENABLE_READ_METADATA))
+                    }
+                }
+                AudioSessionChangeType.ON_DISABLE_READ_METADATA -> {
+                    launchInScopeSafely(audioSessionChange.type.name) {
+                        notifyObservers(SettingChangeEvent(SettingState.DISABLE_READ_METADATA))
                     }
                 }
                 AudioSessionChangeType.ON_EJECT -> {
                     audioFocusChangeListener.lastUserRequestedStateChange = AudioSessionChangeType.ON_STOP
-                    scope.launch(dispatcher) {
-                        callSafelyAndShowErrorsOnGUI(audioSessionChange.type.name) {
-                            storePlaybackState()
-                            audioPlayer.prepareForEject()
-                            audioFileStorage.disableLogToUSB()
-                            audioFileStorage.removeAllDevicesFromStorage()
-                            gui.showToastMsg(context.getString(R.string.toast_eject_completed))
-                        }
+                    launchInScopeSafely(audioSessionChange.type.name) {
+                        notifyObservers(CustomActionEvent(CustomAction.EJECT))
+                        storePlaybackState()
+                        audioPlayer.prepareForEject()
+                        audioFileStorage.disableLogToUSB()
+                        audioFileStorage.removeAllDevicesFromStorage()
+                        gui.showToastMsg(context.getString(R.string.toast_eject_completed))
                     }
                 }
                 AudioSessionChangeType.ON_PLAY_FROM_SEARCH -> {
                     audioFocusChangeListener.lastUserRequestedStateChange = AudioSessionChangeType.ON_PLAY
-                    scope.launch(dispatcher) {
-                        callSafelyAndShowErrorsOnGUI(audioSessionChange.type.name) {
-                            if (audioSessionChange.unspecificToPlay.isBlank()) {
-                                playFromSearch(
-                                    audioSessionChange.trackToPlay,
-                                    audioSessionChange.albumToPlay,
-                                    audioSessionChange.artistToPlay
-                                )
-                            } else {
-                                playUnspecificFromSearch(audioSessionChange.unspecificToPlay)
-                            }
+                    launchInScopeSafely(audioSessionChange.type.name) {
+                        if (audioSessionChange.unspecificToPlay.isBlank()) {
+                            playFromSearch(
+                                audioSessionChange.trackToPlay,
+                                audioSessionChange.albumToPlay,
+                                audioSessionChange.artistToPlay
+                            )
+                        } else {
+                            playUnspecificFromSearch(audioSessionChange.unspecificToPlay)
                         }
                     }
                 }
@@ -588,7 +609,7 @@ class AudioSession(
     }
 
     private fun handleOnPlay() {
-        scope.launch(dispatcher) {
+        launchInScopeSafely("handleOnPlay()") {
             if (isFirstOnPlayEventAfterReset) {
                 isFirstOnPlayEventAfterReset = false
                 if (audioPlayer.isIdle() || audioPlayer.isPlaybackQueueEmpty()) {
@@ -600,7 +621,7 @@ class AudioSession(
                     // empty and the media player should be prepared already as well.
                     onPlayCalledBeforeUSBReady = true
                     logger.debug(TAG, "Storing onPlay() call for later")
-                    return@launch
+                    return@launchInScopeSafely
                 }
             }
             try {
@@ -625,27 +646,9 @@ class AudioSession(
         }
     }
 
-    private inline fun <T> callSafelyAndShowErrorsOnGUI(exceptionMsg: String, call: () -> T) {
-        try {
-            call()
-        } catch (exc: Exception) {
-            logger.exception(TAG, "Exception in $exceptionMsg", exc)
-            when (exc) {
-                is NoItemsInQueueException -> gui.showErrorToastMsg(context.getString(R.string.toast_error_no_tracks))
-                is DriveAlmostFullException -> {
-                    logger.exceptionLogcatOnly(TAG, "Drive is almost full, cannot log to USB", exc)
-                    gui.showErrorToastMsg(context.getString(R.string.toast_error_not_enough_space_for_log))
-                }
-                else -> {
-                    // ignore
-                }
-            }
-        }
-    }
-
     private fun recoverFromError() {
         logger.debug(TAG, "recoverFromError()")
-        launchInScopeSafely {
+        launchInScopeSafely("recoverFromError()") {
             // TODO: naming
             audioPlayer.prepareForEject()
         }
@@ -680,21 +683,34 @@ class AudioSession(
         val audioItems: List<AudioItem> = audioItemLibrary.getAudioItemsStartingFrom(contentHierarchyID)
         lastContentHierarchyIDPlayed = contentHierarchyIDStr
         var startIndex = 0
-        if (contentHierarchyID.type == ContentHierarchyType.TRACK) {
-            startIndex = audioItems.indexOfFirst {
-                ContentHierarchyElement.deserialize(it.id).trackID == contentHierarchyID.trackID
+        when (contentHierarchyID.type) {
+            ContentHierarchyType.TRACK -> {
+                startIndex = audioItems.indexOfFirst {
+                    ContentHierarchyElement.deserialize(it.id).trackID == contentHierarchyID.trackID
+                }
             }
+            ContentHierarchyType.FILE -> {
+                startIndex = audioItems.indexOfFirst {
+                    ContentHierarchyElement.deserialize(it.id).path == contentHierarchyID.path
+                }
+            }
+            else -> {
+                // ignore
+            }
+        }
+        if (startIndex < 0) {
+            startIndex = 0
         }
         createQueueAndPlay(audioItems, startIndex)
     }
 
     private suspend fun createQueueAndPlay(audioItems: List<AudioItem>, startIndex: Int = 0) {
         // see https://developer.android.com/reference/android/media/session/MediaSession#setQueue(java.util.List%3Candroid.media.session.MediaSession.QueueItem%3E)
-        // TODO: check how many is too many tracks and use sliding window instead
+        // TODO: check how many is "too many" tracks and use sliding window instead
         val queue: MutableList<MediaSessionCompat.QueueItem> = mutableListOf()
-        for ((queueID, audioItem) in audioItems.withIndex()) {
+        for ((queueIndex, audioItem) in audioItems.withIndex()) {
             val description = audioItemLibrary.createAudioItemDescription(audioItem)
-            val queueItem = MediaSessionCompat.QueueItem(description, queueID.toLong())
+            val queueItem = MediaSessionCompat.QueueItem(description, queueIndex.toLong())
             queue.add(queueItem)
         }
         audioPlayer.setPlayQueueAndNotify(queue, startIndex)
@@ -718,8 +734,18 @@ class AudioSession(
             try {
                 scope.ensureActive()
                 val contentHierarchyID = ContentHierarchyElement.deserialize(contentHierarchyIDStr)
-                val trackAudioItem = audioItemLibrary.getAudioItemForTrack(contentHierarchyID)
-                val description = audioItemLibrary.createAudioItemDescription(trackAudioItem)
+                val audioItem = when (contentHierarchyID.type) {
+                    ContentHierarchyType.TRACK -> {
+                        audioItemLibrary.getAudioItemForTrack(contentHierarchyID)
+                    }
+                    ContentHierarchyType.FILE -> {
+                        audioItemLibrary.getAudioItemForFile(contentHierarchyID)
+                    }
+                    else -> {
+                        throw IllegalArgumentException("Unhandled content hiearchy type: $contentHierarchyID")
+                    }
+                }
+                val description = audioItemLibrary.createAudioItemDescription(audioItem)
                 val queueItem = MediaSessionCompat.QueueItem(description, index.toLong())
                 queue.add(queueItem)
             } catch (exc: IllegalArgumentException) {
@@ -736,16 +762,18 @@ class AudioSession(
         }
         if (state.lastContentHierarchyID.isNotBlank()) {
             val lastContentHierarchyID = ContentHierarchyElement.deserialize(state.lastContentHierarchyID)
-            if (lastContentHierarchyID.type == ContentHierarchyType.SHUFFLE_ALL_TRACKS) {
-                // In this case we restored only the last playing track from persistent storage above. Now we create a new
-                // shuffled playback queue for all remaining items
-                val shuffledTracks = audioItemLibrary.getAudioItemsStartingFrom(lastContentHierarchyID)
-                for ((queueID, audioItem) in shuffledTracks.withIndex()) {
+            if (lastContentHierarchyID.type == ContentHierarchyType.SHUFFLE_ALL_TRACKS
+                || lastContentHierarchyID.type == ContentHierarchyType.SHUFFLE_ALL_FILES
+            ) {
+                // In this case we restored only the last playing track/file from persistent storage above. Now we create a
+                // new shuffled playback queue for all remaining items
+                val shuffledItems = audioItemLibrary.getAudioItemsStartingFrom(lastContentHierarchyID)
+                for ((queueIndex, audioItem) in shuffledItems.withIndex()) {
                     if (audioItem.id == queue[0].description.mediaId) {
                         continue
                     }
                     val description = audioItemLibrary.createAudioItemDescription(audioItem)
-                    val queueItem = MediaSessionCompat.QueueItem(description, queueID.toLong() + 1L)
+                    val queueItem = MediaSessionCompat.QueueItem(description, queueIndex.toLong() + 1L)
                     queue.add(queueItem)
                 }
             }
@@ -772,12 +800,12 @@ class AudioSession(
         audioPlayer.playFromQueueID(queueId)
     }
 
-    private fun notifyPlayerObservers(playerStateChange: AudioPlayerStateChange) {
-        playerObservers.forEach { it(playerStateChange) }
+    private fun notifyObservers(event: Any) {
+        observers.forEach { it(event) }
     }
 
-    fun observePlayer(func: (AudioPlayerStateChange) -> Unit) {
-        playerObservers.add(func)
+    fun observe(func: (Any) -> Unit) {
+        observers.add(func)
     }
 
     private suspend fun setMediaSessionQueue(queue: List<MediaSessionCompat.QueueItem>) {
@@ -847,18 +875,18 @@ class AudioSession(
         playbackStateToPersist.lastContentHierarchyID = lastContentHierarchyIDPlayed
         if (lastContentHierarchyIDPlayed.isNotBlank()) {
             val lastContentHierarchyID = ContentHierarchyElement.deserialize(lastContentHierarchyIDPlayed)
-            if (lastContentHierarchyID.type == ContentHierarchyType.SHUFFLE_ALL_TRACKS) {
+            if (lastContentHierarchyID.type == ContentHierarchyType.SHUFFLE_ALL_TRACKS
+                || lastContentHierarchyID.type == ContentHierarchyType.SHUFFLE_ALL_FILES
+            ) {
                 // When the user is shuffling all tracks, we don't store the queue, we will recreate a new shuffled queue
                 // when restoring from persistent state instead (to save storage space)
                 playbackStateToPersist.queueIDs = queueIDs.subList(queueIndex, queueIndex + 1)
             }
         }
         runBlocking(dispatcher) {
-            if (storePersistentJob != null) {
-                storePersistentJob?.cancelAndJoin()
-            }
+            storePersistentJob?.cancelAndJoin()
         }
-        storePersistentJob = launchInScopeSafely {
+        storePersistentJob = launchInScopeSafely("storePlaybackState()") {
             persistentStorage.store(playbackStateToPersist)
             storePersistentJob = null
         }
@@ -900,12 +928,29 @@ class AudioSession(
         return queueIndex
     }
 
-    private fun launchInScopeSafely(func: suspend () -> Unit): Job {
-        return scope.launch(dispatcher) {
+    private fun launchInScopeSafely(message: String, func: suspend () -> Unit): Job {
+        val exceptionHandler = CoroutineExceptionHandler { coroutineContext, exc ->
+            handleException("$message ($coroutineContext threw ${exc.message})", exc)
+        }
+        return scope.launch(exceptionHandler + dispatcher) {
             try {
                 func()
             } catch (exc: Exception) {
-                logger.exception(TAG, exc.message.toString(), exc)
+                handleException("$message (${exc.message})", exc)
+            }
+        }
+    }
+
+    private fun handleException(msg: String, exc: Throwable) {
+        logger.exception(TAG, msg, exc)
+        when (exc) {
+            is NoItemsInQueueException -> gui.showErrorToastMsg(context.getString(R.string.toast_error_no_tracks))
+            is DriveAlmostFullException -> {
+                logger.exceptionLogcatOnly(TAG, "Drive is almost full, cannot log to USB", exc)
+                gui.showErrorToastMsg(context.getString(R.string.toast_error_not_enough_space_for_log))
+            }
+            else -> {
+                // ignore
             }
         }
     }

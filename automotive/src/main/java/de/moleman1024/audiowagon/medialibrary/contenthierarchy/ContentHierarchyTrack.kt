@@ -47,7 +47,7 @@ class ContentHierarchyTrack(
             } else {
                 // selected a single track in tracks browse view, fill up playback queue with random tracks
                 tracks += repo.getTrack(id.trackID)
-                tracks += repo.getRandomTracks(NUM_ITEMS_FOR_SHUFFLE_ALL-1)
+                tracks += repo.getRandomTracks(NUM_ITEMS_MAX_FOR_PLAY_SHUFFLE_ALL-1)
             }
         } catch (exc: RuntimeException) {
             logger.exception(TAG, exc.message.toString(), exc)

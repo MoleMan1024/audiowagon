@@ -18,7 +18,7 @@ class AudioItemLibraryTest {
         val audioItemLibrary = AudioItemLibraryFixture().audioItemLibrary
         val storageID = "FOOBAR"
         audioItemLibrary.initRepository(storageID)
-        assertTrue(audioItemLibrary.areAnyStoragesAvail())
+        assertTrue(audioItemLibrary.areAnyReposAvail())
     }
 
     @Test
@@ -27,7 +27,7 @@ class AudioItemLibraryTest {
         val storageID = "FOOBAR"
         audioItemLibrary.initRepository(storageID)
         audioItemLibrary.removeRepository(storageID)
-        assertFalse(audioItemLibrary.areAnyStoragesAvail())
+        assertFalse(audioItemLibrary.areAnyReposAvail())
     }
 
 }

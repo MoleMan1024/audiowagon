@@ -7,10 +7,10 @@ package de.moleman1024.audiowagon.filestorage.sd
 
 import android.media.MediaDataSource
 import android.net.Uri
-import de.moleman1024.audiowagon.filestorage.AudioFile
-import de.moleman1024.audiowagon.filestorage.AudioFileStorageLocation
-import de.moleman1024.audiowagon.filestorage.IndexingStatus
+import de.moleman1024.audiowagon.Util
+import de.moleman1024.audiowagon.filestorage.*
 import de.moleman1024.audiowagon.log.Logger
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.ReceiveChannel
@@ -35,11 +35,12 @@ class SDCardStorageLocation(override val device: SDCardMediaDevice) : AudioFileS
     private var isIndexingCancelled: Boolean = false
 
     @ExperimentalCoroutinesApi
-    override fun indexAudioFiles(scope: CoroutineScope): ReceiveChannel<AudioFile> {
-        logger.debug(TAG, "indexAudioFiles(${device.getName()})")
+    override fun indexAudioFiles(directory: Directory, scope: CoroutineScope): ReceiveChannel<AudioFile> {
+        logger.debug(TAG, "indexAudioFiles(directory=$directory, ${device.getName()})")
+        val startDirectory = device.getFileFromURI(directory.uri)
         return scope.produce {
             try {
-                for (file in device.walkTopDown(device.getRoot())) {
+                for (file in device.walkTopDown(startDirectory)) {
                     if (isIndexingCancelled) {
                         logger.debug(TAG, "Cancel indexAudioFiles()")
                         break
@@ -48,20 +49,40 @@ class SDCardStorageLocation(override val device: SDCardMediaDevice) : AudioFileS
                         logger.debug(TAG, "Skipping non-audio file: $file")
                         continue
                     }
-                    val builder: Uri.Builder = Uri.Builder()
-                    builder.scheme(URI_SCHEME).authority(storageID).appendEncodedPath(
-                        Uri.encode(file.absolutePath.removePrefix("/"), StandardCharsets.UTF_8.toString())
-                    )
-                    val audioFile = AudioFile(builder.build())
-                    audioFile.lastModifiedDate = Date(file.lastModified())
+                    val audioFile = createAudioFileFromFile(file)
                     send(audioFile)
                 }
+            } catch (exc: CancellationException) {
+                logger.warning(TAG, "Coroutine for indexAudioFiles() was cancelled")
             } catch (exc: RuntimeException) {
                 logger.exception(TAG, exc.message.toString(), exc)
             } finally {
                 isIndexingCancelled = false
             }
         }
+    }
+
+    private fun createAudioFileFromFile(file: File): AudioFile {
+        val uri = Util.createURIForPath(storageID, file.absolutePath)
+        val audioFile = AudioFile(uri)
+        audioFile.lastModifiedDate = Date(file.lastModified())
+        return audioFile
+    }
+
+    override fun getDirectoryContents(directory: Directory): List<FileLike> {
+        val itemsInDir = mutableListOf<FileLike>()
+        device.getDirectoryContents(directory.uri).forEach { file ->
+            if (file.isDirectory) {
+                val uri = Util.createURIForPath(storageID, file.absolutePath)
+                itemsInDir.add(Directory(uri))
+            } else {
+                if (isPlayableAudioFile(file)) {
+                    val audioFile = createAudioFileFromFile(file)
+                    itemsInDir.add(audioFile)
+                }
+            }
+        }
+        return itemsInDir
     }
 
     override fun getDataSourceForURI(uri: Uri): MediaDataSource {
@@ -119,6 +140,10 @@ class SDCardStorageLocation(override val device: SDCardMediaDevice) : AudioFileS
     override fun cancelIndexAudioFiles() {
         logger.debug(TAG, "Cancelling audio file indexing")
         isIndexingCancelled = true
+    }
+
+    override fun getRootURI(): Uri {
+        return Util.createURIForPath(storageID, device.getRoot().absolutePath)
     }
 
 }

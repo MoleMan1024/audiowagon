@@ -5,7 +5,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 package de.moleman1024.audiowagon.player
 
-data class AudioPlayerStateChange(val state: AudioPlayerState) {
+data class AudioPlayerEvent(val state: AudioPlayerState) {
     var errorMsg: String = ""
     var errorCode: Int = -1
 }

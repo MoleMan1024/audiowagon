@@ -8,6 +8,7 @@ package de.moleman1024.audiowagon.filestorage.usb
 import com.github.mjdev.libaums.fs.UsbFile
 import de.moleman1024.audiowagon.log.Logger
 import android.media.MediaDataSource
+import java.io.IOException
 import java.nio.ByteBuffer
 import java.util.*
 import kotlin.math.min
@@ -50,6 +51,9 @@ class USBAudioCachedDataSource(
     }
 
     override fun readAt(position: Long, buffer: ByteArray?, offset: Int, size: Int): Int {
+        if (hasError) {
+            return -1
+        }
         if (buffer == null || isClosed) {
             return 0
         }
@@ -70,7 +74,11 @@ class USBAudioCachedDataSource(
         dropOldCaches()
         var cacheStartPos = getCacheMapKeyFor(position, numBytesToRead)
         if (cacheStartPos <= -1) {
-            cacheStartPos = createCachesAround(position, numBytesToRead)
+            try {
+                cacheStartPos = createCachesAround(position, numBytesToRead)
+            } catch (exc: IOException) {
+                return -1
+            }
         }
         if (cacheStartPos < 0) {
             return -1

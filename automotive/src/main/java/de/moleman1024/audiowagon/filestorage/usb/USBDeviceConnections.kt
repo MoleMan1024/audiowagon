@@ -23,6 +23,7 @@ import de.moleman1024.audiowagon.filestorage.DeviceChange
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.*
 import java.io.IOException
+import java.lang.IllegalArgumentException
 
 private const val TAG = "USBDevConn"
 const val ACTION_USB_ATTACHED = "de.moleman1024.audiowagon.authorization.USB_ATTACHED"
@@ -365,7 +366,11 @@ class USBDeviceConnections(
 
     fun unregisterForUSBIntents() {
         logger.debug(TAG, "Unregistering for broadcast intents")
-        context.unregisterReceiver(usbBroadcastReceiver)
+        try {
+            context.unregisterReceiver(usbBroadcastReceiver)
+        } catch (exc: IllegalArgumentException) {
+            logger.exceptionLogcatOnly(TAG, exc.message.toString(), exc)
+        }
     }
 
     private fun appendConnectedUSBDevice(device: USBMediaDevice) {

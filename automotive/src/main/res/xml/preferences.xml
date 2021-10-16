@@ -24,6 +24,11 @@ SPDX-License-Identifier: GPL-3.0-or-later
 	<PreferenceCategory
 			app:title="@string/setting_general_category_title">
 		<SwitchPreferenceCompat
+				app:key="readMetadata"
+				app:title="@string/setting_read_metadata"
+				app:persistent="true"
+				app:defaultValue="true" />
+		<SwitchPreferenceCompat
 				app:key="logToUSB"
 				app:title="@string/setting_log_to_USB_title"
 				app:summary="@string/setting_log_to_USB_desc"
@@ -40,6 +45,10 @@ SPDX-License-Identifier: GPL-3.0-or-later
 				app:selectable="false"
 				app:title="@string/setting_USB_status_title"
 				app:summary="@string/setting_USB_status_unknown" />
+		<Preference
+				app:key="eject"
+				app:title="@string/action_eject"
+				app:persistent="false" />
 		<Preference
 				app:persistent="false"
 				app:selectable="false"

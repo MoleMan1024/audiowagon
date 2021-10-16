@@ -6,32 +6,57 @@ SPDX-License-Identifier: GPL-3.0-or-later
 package de.moleman1024.audiowagon.medialibrary.contenthierarchy
 
 import android.content.Context
+import android.net.Uri
 import android.support.v4.media.MediaBrowserCompat.MediaItem
 import android.support.v4.media.MediaDescriptionCompat
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.medialibrary.*
 
 /**
- * The root of the browse tree. Shows max 4 categories (tracks, albums, artists)
+ * The root of the browse tree. Shows max 4 categories (tracks, albums, artists, files)
  */
 class ContentHierarchyRoot(
     context: Context, audioItemLibrary: AudioItemLibrary
 ) :
     ContentHierarchyElement(ContentHierarchyID(ContentHierarchyType.ROOT), context, audioItemLibrary) {
+    data class CategoryData(val contentHierarchyID: ContentHierarchyID) {
+        var titleID: Int = -1
+        var iconID: Int = -1
+    }
 
     override suspend fun getMediaItems(): List<MediaItem> {
         val items: MutableList<MediaItem> = mutableListOf()
-        val categoriesMap = mutableMapOf<ContentHierarchyID, Int>()
-        // we show the "tracks" even when no USB connected as a container for the "indexing" pseudo-items
-        categoriesMap[ContentHierarchyID(ContentHierarchyType.ROOT_TRACKS)] = R.string.browse_tree_category_tracks
-        if (audioItemLibrary.areAnyStoragesAvail() && !audioItemLibrary.isBuildingLibray) {
-            categoriesMap[ContentHierarchyID(ContentHierarchyType.ROOT_ALBUMS)] = R.string.browse_tree_category_albums
-            categoriesMap[ContentHierarchyID(ContentHierarchyType.ROOT_ARTISTS)] = R.string.browse_tree_category_artists
+        val categories = mutableListOf<CategoryData>()
+        if (audioItemLibrary.areAnyReposAvail()) {
+            val tracksCategory = CategoryData(ContentHierarchyID(ContentHierarchyType.ROOT_TRACKS))
+            tracksCategory.titleID = R.string.browse_tree_category_tracks
+            // we use a copy of the music note icon here, because of a bug in the GUI where the highlight color is
+            // copied to each item with the same icon ID when selected
+            tracksCategory.iconID = R.drawable.category_track
+            categories += tracksCategory
+            if (!audioItemLibrary.isBuildingLibray) {
+                val albumsCategory = CategoryData(ContentHierarchyID(ContentHierarchyType.ROOT_ALBUMS))
+                albumsCategory.titleID = R.string.browse_tree_category_albums
+                albumsCategory.iconID = R.drawable.category_album
+                categories += albumsCategory
+                val artistsCategory = CategoryData(ContentHierarchyID(ContentHierarchyType.ROOT_ARTISTS))
+                artistsCategory.titleID = R.string.browse_tree_category_artists
+                artistsCategory.iconID = R.drawable.category_artist
+                categories += artistsCategory
+            }
         }
-        for ((category, titleID) in categoriesMap) {
+        // we show the "files" even when no USB connected as a container for the "indexing" pseudo-items
+        val filesCategory = CategoryData(ContentHierarchyID(ContentHierarchyType.ROOT_FILES))
+        filesCategory.titleID = R.string.browse_tree_category_files
+        filesCategory.iconID = R.drawable.category_folder
+        categories += filesCategory
+        categories.forEach {
             val description = MediaDescriptionCompat.Builder().apply {
-                setMediaId(serialize(category))
-                setTitle(context.getString(titleID))
+                setMediaId(serialize(it.contentHierarchyID))
+                setTitle(context.getString(it.titleID))
+                setIconUri(
+                    Uri.parse(RESOURCE_ROOT_URI + context.resources.getResourceEntryName(it.iconID))
+                )
             }.build()
             items += MediaItem(description, MediaItem.FLAG_BROWSABLE)
         }

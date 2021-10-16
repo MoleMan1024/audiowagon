@@ -31,7 +31,7 @@ object Logger : LoggerInterface {
     private var chunkSize: Int = 32768
     private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")
     private var isStoreLogs = false
-    private const val maxBufferLines: Int = 1000
+    private const val maxBufferLines: Int = 5000
     private val buffer = mutableListOf<String>()
     private val dispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
     @VisibleForTesting(otherwise = VisibleForTesting.NONE)

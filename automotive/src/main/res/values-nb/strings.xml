@@ -107,4 +107,6 @@ Google\n\nLisenstekster:\nwww.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/licen
 	<string name="toast_error_no_tracks">Ingen spor</string>
 	<string name="toast_error_not_enough_space_for_log">Utilstrekkelig plass til å skrive loggfil</string>
 	<string name="setting_USB_status_too_many_files_in_dir">For mange filer i en mappe, bruk undermapper</string>
+	<string name="setting_read_metadata">Lese metadata</string>
+	<string name="browse_tree_category_files">Filer</string>
 </resources>

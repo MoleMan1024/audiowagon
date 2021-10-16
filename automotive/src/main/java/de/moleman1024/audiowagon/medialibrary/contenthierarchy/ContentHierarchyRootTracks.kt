@@ -31,7 +31,7 @@ class ContentHierarchyRootTracks(
 
     override suspend fun getMediaItems(): List<MediaItem> {
         val items = mutableListOf<MediaItem>()
-        if (!audioItemLibrary.areAnyStoragesAvail()) {
+        if (!audioItemLibrary.areAnyReposAvail()) {
             logger.debug(TAG, "Showing pseudo MediaItem 'no entries available'")
             items += createPseudoNoEntriesItem()
             return items
@@ -58,23 +58,6 @@ class ContentHierarchyRootTracks(
             items += createGroups(groupContentHierarchyID, numTracks)
         }
         return items
-    }
-
-    private fun createPseudoFoundXItems(): MediaItem {
-        logger.debug(TAG, "Showing pseudo MediaItem 'Found <num> items ...'")
-        val numItemsFoundText = context.getString(
-            R.string.notif_indexing_text_in_progress_num_items,
-            audioItemLibrary.numFilesSeenWhenBuildingLibrary
-        )
-        val description = MediaDescriptionCompat.Builder().apply {
-            setMediaId(serialize(ContentHierarchyID(ContentHierarchyType.NONE)))
-            setTitle(context.getString(R.string.notif_indexing_text_in_progress))
-            setSubtitle(numItemsFoundText)
-            setIconUri(
-                Uri.parse(RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.baseline_sync_24))
-            )
-        }.build()
-        return MediaItem(description, MediaItem.FLAG_BROWSABLE)
     }
 
     /**
@@ -113,6 +96,23 @@ class ContentHierarchyRootTracks(
         }.build()
         // Tapping this should do nothing. We use BROWSABLE flag here, when clicked an empty subfolder will open.
         // This is the better alternative than flag PLAYABLE which will open the playback view in front of the browser
+        return MediaItem(description, MediaItem.FLAG_BROWSABLE)
+    }
+
+    private fun createPseudoFoundXItems(): MediaItem {
+        logger.debug(TAG, "Showing pseudo MediaItem 'Found <num> items ...'")
+        val numItemsFoundText = context.getString(
+            R.string.notif_indexing_text_in_progress_num_items,
+            audioItemLibrary.numFilesSeenWhenBuildingLibrary
+        )
+        val description = MediaDescriptionCompat.Builder().apply {
+            setMediaId(serialize(ContentHierarchyID(ContentHierarchyType.NONE)))
+            setTitle(context.getString(R.string.notif_indexing_text_in_progress))
+            setSubtitle(numItemsFoundText)
+            setIconUri(
+                Uri.parse(RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.baseline_sync_24))
+            )
+        }.build()
         return MediaItem(description, MediaItem.FLAG_BROWSABLE)
     }
 

@@ -10,7 +10,7 @@ import android.support.v4.media.MediaBrowserCompat.MediaItem
 import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
 
-const val NUM_ITEMS_FOR_SHUFFLE_ALL = 500
+const val NUM_ITEMS_MAX_FOR_PLAY_SHUFFLE_ALL = 500
 
 /**
  * A pseudo browse view entry to play all tracks on the device in shuffled order. Shown as first entry in "tracks"
@@ -33,10 +33,10 @@ class ContentHierarchyShuffleAllTracks(
     override suspend fun getAudioItems(): List<AudioItem> {
         val items: MutableList<AudioItem> = mutableListOf()
         if (audioItemLibrary.storageToRepoMap.isEmpty()) {
-            throw AssertionError("Trying to shuffle all audio items with no storages")
+            throw AssertionError("Trying to shuffle all audio items with no repositories")
         }
         val repo = audioItemLibrary.getPrimaryRepository() ?: return emptyList()
-        items += repo.getRandomTracks(NUM_ITEMS_FOR_SHUFFLE_ALL)
+        items += repo.getRandomTracks(NUM_ITEMS_MAX_FOR_PLAY_SHUFFLE_ALL)
         return items
     }
 

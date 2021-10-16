@@ -18,11 +18,21 @@ interface AudioFileStorageLocation {
     var isDetached: Boolean
 
     @ExperimentalCoroutinesApi
-    fun indexAudioFiles(scope: CoroutineScope): ReceiveChannel<AudioFile>
+    fun indexAudioFiles(directory: Directory, scope: CoroutineScope): ReceiveChannel<AudioFile>
     fun getDataSourceForURI(uri: Uri): MediaDataSource
     fun getBufferedDataSourceForURI(uri: Uri): MediaDataSource
     fun close()
     fun setDetached()
     fun getDirectoriesWithIndexingIssues(): List<String>
     fun cancelIndexAudioFiles()
+
+    /**
+     * Returns the contents (files/directories) of the given directory. Non-recursive
+     */
+    fun getDirectoryContents(directory: Directory): List<FileLike>
+
+    /**
+     * Returns the URI of the root directory of the storage location
+     */
+    fun getRootURI(): Uri
 }

@@ -76,6 +76,16 @@ class SettingsActivity : AppCompatActivity() {
         mediaController.sendCommand(CMD_DISABLE_LOG_TO_USB, null, null)
     }
 
+    fun enableReadMetadata() {
+        assertMediaControllerInitialized()
+        mediaController.sendCommand(CMD_ENABLE_READ_METADATA, null, null)
+    }
+
+    fun disableReadMetadata() {
+        assertMediaControllerInitialized()
+        mediaController.sendCommand(CMD_DISABLE_READ_METADTA, null, null)
+    }
+
     fun enableEqualizer() {
         assertMediaControllerInitialized()
         mediaController.sendCommand(CMD_ENABLE_EQUALIZER, null, null)
@@ -93,7 +103,12 @@ class SettingsActivity : AppCompatActivity() {
         mediaController.sendCommand(CMD_SET_EQUALIZER_PRESET, bundle, null)
     }
 
-    fun assertMediaControllerInitialized() {
+    fun eject() {
+        assertMediaControllerInitialized()
+        mediaController.sendCommand(CMD_EJECT, null, null)
+    }
+
+    private fun assertMediaControllerInitialized() {
         if (!this::mediaController.isInitialized) {
             throw RuntimeException("MediaController was not initialized")
         }

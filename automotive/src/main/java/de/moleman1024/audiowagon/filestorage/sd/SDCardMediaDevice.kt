@@ -7,12 +7,15 @@ package de.moleman1024.audiowagon.filestorage.sd
 
 import android.media.MediaDataSource
 import android.net.Uri
+import com.github.mjdev.libaums.fs.UsbFile
 import de.moleman1024.audiowagon.exceptions.NoSuchDeviceException
+import de.moleman1024.audiowagon.exceptions.TooManyFilesInDirException
 import de.moleman1024.audiowagon.filestorage.AudioFile
 import de.moleman1024.audiowagon.filestorage.MediaDevice
 import de.moleman1024.audiowagon.log.Logger
 import java.io.File
 import java.io.IOException
+import java.lang.IllegalArgumentException
 
 private const val TAG = "SDCardMediaDevice"
 private val logger = Logger
@@ -61,6 +64,15 @@ class SDCardMediaDevice(val id: String) : MediaDevice {
         }
     }
 
+
+    fun getDirectoryContents(directoryURI: Uri): List<File> {
+        val directory = getFileFromURI(directoryURI)
+        if (!directory.isDirectory) {
+            throw IllegalArgumentException("Is not a directory: $directory")
+        }
+        return directory.listFiles()!!.toList()
+    }
+
     override fun getDataSourceForURI(uri: Uri): MediaDataSource {
         return SDCardAudioDataSource(getFileFromURI(uri))
     }
@@ -70,10 +82,10 @@ class SDCardMediaDevice(val id: String) : MediaDevice {
     }
 
     @Synchronized
-    private fun getFileFromURI(uri: Uri): File {
+    fun getFileFromURI(uri: Uri): File {
         val audioFile = AudioFile(uri)
         logger.debug(TAG, "audioFile=$audioFile")
-        val filePath = audioFile.getFilePath()
+        val filePath = audioFile.path
         val file = File(filePath)
         logger.debug(TAG, "file=$file")
         if (!file.exists()) {
@@ -93,4 +105,5 @@ class SDCardMediaDevice(val id: String) : MediaDevice {
     fun close() {
         isClosed = true
     }
+
 }

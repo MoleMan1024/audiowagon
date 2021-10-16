@@ -57,6 +57,6 @@ class AudioItemLibraryTest {
         // TODO: make sure that SD card is not used for android instrumented tests
         attachUSBDevice()
         val audioItemLibrary = audioBrowserService.getAudioItemLibrary()
-        assertTrue(audioItemLibrary.areAnyStoragesAvail())
+        assertTrue(audioItemLibrary.areAnyReposAvail())
     }
 }

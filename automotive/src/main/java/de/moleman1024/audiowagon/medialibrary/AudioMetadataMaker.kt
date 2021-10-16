@@ -42,6 +42,9 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
         //  java.lang.RuntimeException: setDataSourceCallback failed: status = 0x80000000
         //  that sometimes happens for some files
         metadataRetriever.setDataSource(dataSource)
+        if (dataSource is USBAudioDataSource && dataSource.hasError) {
+            throw IOException("DataSource error")
+        }
         if (dataSource is USBAudioDataSource && dataSource.isClosed) {
             throw IOException("Data source was closed while extracting metadata")
         }
@@ -57,7 +60,13 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
             metadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
         val isInCompilation: Boolean = extractIsCompilation(metadataRetriever)
         metadataRetriever.release()
+        if (dataSource is USBAudioDataSource && dataSource.hasError) {
+            throw IOException("DataSource error")
+        }
         metadataRetriever.close()
+        if (dataSource is USBAudioDataSource && dataSource.hasError) {
+            throw IOException("DataSource error")
+        }
         try {
             durationMS = durationMSAsString?.let { Util.convertStringToInt(it) }
         } catch (exc: NumberFormatException) {
@@ -69,7 +78,7 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
         if (title?.isNotBlank() == true) {
             audioItemForMetadata.title = title.trim()
         } else {
-            audioItemForMetadata.title = audioFile.getFileName().trim()
+            audioItemForMetadata.title = audioFile.name.trim()
         }
         genre?.let { audioItemForMetadata.genre = it.trim() }
         trackNum?.let { audioItemForMetadata.trackNum = it }
@@ -122,6 +131,10 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
         return year
     }
 
+    /**
+     * Takes metadata from a given [AudioItem] and converts it to a [MediaMetadataCompat] so that the media
+     * controller GUI will display it (e.g. to to display duration, title, subtitle in the "now playing" view)
+     */
     fun createMetadataForItem(audioItem: AudioItem): MediaMetadataCompat {
         val contentHierarchyID = ContentHierarchyElement.deserialize(audioItem.id)
         val albumArtBytes = getArtForAudioItem(audioItem)
@@ -172,15 +185,21 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
                     putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, audioItem.title)
                     putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, audioItem.artist)
                 }
+                ContentHierarchyType.FILE -> {
+                    putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, audioItem.title)
+                }
                 else -> {
                     throw AssertionError("createMetadataForItem() not supported for: $contentHierarchyID")
                 }
             }
             // This icon will be shown in the "Now Playing" widget
             // We need to always adapt the ID of the album art to produce different content URIs even though we only
-            // store the album art for a single track (i.e. the current track). If we don't do this the media
-            // browser GUI client will cache the album art becuase of the same URI and re-use it always
-            val albumArtContentUri = Uri.parse("content://$AUTHORITY/$TRACK_ART_PATH/${contentHierarchyID.trackID}")
+            // store the album art for a single track (i.e. the current track). If we re-use the same ID always the
+            // media browser GUI client will cache the first album art and never change it
+            val idForAlbumArt =
+                if (contentHierarchyID.type == ContentHierarchyType.FILE) contentHierarchyID.path.hashCode()
+                else contentHierarchyID.trackID
+            val albumArtContentUri = Uri.parse("content://$AUTHORITY/$TRACK_ART_PATH/${idForAlbumArt}")
             putString(MediaMetadataCompat.METADATA_KEY_ART_URI, albumArtContentUri.toString())
             putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON_URI, albumArtContentUri.toString())
         }.build()

@@ -16,7 +16,7 @@ private const val TAG = "CHSingleTrack"
 private val logger = Logger
 
 /**
- * A single track is requested
+ * A single track is requested (used when preparing playback queue from persistent data)
  */
 class ContentHierarchySingleTrack(
     id: ContentHierarchyID,

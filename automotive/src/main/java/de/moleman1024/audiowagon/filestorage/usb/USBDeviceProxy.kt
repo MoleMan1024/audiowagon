@@ -96,7 +96,6 @@ class USBDeviceProxy(
     override fun initFilesystem(context: Context): FileSystem? {
         logger.debug(TAG, "Initializing filesystem")
         if (massStorageDevice == null) {
-            // TODO: support for multiple devices
             try {
                 massStorageDevice = androidUSBDevice.getMassStorageDevices(context).first()
             } catch (exc: NoSuchElementException) {

@@ -26,6 +26,7 @@ open class USBAudioDataSource(
     private val chunkSize: Int,
 ) : MediaDataSource() {
     var isClosed = false
+    var hasError = false
 
     init {
         logger.debug(
@@ -36,11 +37,11 @@ open class USBAudioDataSource(
     @Synchronized
     override fun close() {
         logger.debug(TAG, "close(usbFile=$usbFile)")
-        if (isClosed) {
+        if (isClosed || hasError) {
+            usbFile = null
             return
         }
         try {
-            // this can take up to 800ms when logging to USB at the same time
             usbFile?.close()
             isClosed = true
             logger.debug(TAG, "closed usbFile=$usbFile")
@@ -48,15 +49,18 @@ open class USBAudioDataSource(
         } catch (exc: IOException) {
             // If we rethrow this, it will trigger a fatal SIGABRT and the app will be restarted.
             logger.exceptionLogcatOnly(TAG, "Error while closing USB file, did you unplug the device?", exc)
+            hasError = true
         }
     }
 
     /**
      * Retrieve data from USB file starting from [position] with length [size]. Put this data into [buffer] at position
      * [offset]. Returns 0 if no bytes were read. Returns -1 to indicate end of stream was reached
-     * (TODO: is this last statement still true?).
      */
     override fun readAt(position: Long, buffer: ByteArray?, offset: Int, size: Int): Int {
+        if (hasError) {
+            return -1
+        }
         if (buffer == null || isClosed) {
             return 0
         }
@@ -76,7 +80,11 @@ open class USBAudioDataSource(
         var outBufPosBeforeRead: Int
         var numBytesToReadFromChunk: Int
         while (numBytesToReadRemain > 0) {
-            numBytesInChunk = readFromUSBFileSystem(startPos, tempBuffer)
+            try {
+                numBytesInChunk = readFromUSBFileSystem(startPos, tempBuffer)
+            } catch (exc: IOException) {
+                return -1
+            }
             numBytesToReadFromChunk = min(numBytesToReadRemain, numBytesInChunk)
             outBufPosBeforeRead = outBuffer.position()
             if (offsetIntoChunk > 0) {
@@ -111,7 +119,13 @@ open class USBAudioDataSource(
 
     @Synchronized
     fun read(position: Long, outBuffer: ByteBuffer) {
-        usbFile?.read(position, outBuffer)
+        try {
+            usbFile?.read(position, outBuffer)
+        } catch (exc: IOException) {
+            logger.exception(TAG, exc.message.toString(), exc)
+            hasError = true
+            throw exc
+        }
     }
 
 }

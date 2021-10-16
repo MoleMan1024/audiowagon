@@ -13,13 +13,9 @@ import androidx.preference.ListPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreferenceCompat
-import de.moleman1024.audiowagon.GUI
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.log.Logger
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.runBlocking
 
 private const val TAG = "SettingsFragm"
 private val logger = Logger
@@ -27,9 +23,11 @@ private val logger = Logger
 const val PREF_LOG_TO_USB_KEY = "logToUSB"
 const val PREF_USB_STATUS ="usbStatusResID"
 const val PREF_LEGAL_DISCLAIMER = "legalDisclaimer"
+const val PREF_READ_METADATA = "readMetadata"
 const val PREF_ENABLE_EQUALIZER = "enableEqualizer"
 const val PREF_EQUALIZER_PRESET = "equalizerPreset"
 const val PREF_EQUALIZER_PRESET_DEFAULT = "LESS_BASS"
+const val PREF_EJECT = "eject"
 
 @ExperimentalCoroutinesApi
 class SettingsFragment : PreferenceFragmentCompat() {
@@ -38,7 +36,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
             logger.debug(TAG, "sharedPrefChanged()")
             when (key) {
                 PREF_USB_STATUS -> {
-                    updateUSBStatus(sharedPreferences)
+                    updateUSBAndEjectStatus(sharedPreferences)
                 }
                 PREF_EQUALIZER_PRESET -> {
                     updateEqualizerPreset(sharedPreferences)
@@ -58,7 +56,8 @@ class SettingsFragment : PreferenceFragmentCompat() {
         val sharedPreferences = preferenceManager.sharedPreferences
         updateEqualizerSwitch(sharedPreferences)
         updateEqualizerPreset(sharedPreferences)
-        updateUSBStatus(sharedPreferences)
+        updateReadMetadataSwitch(sharedPreferences)
+        updateUSBAndEjectStatus(sharedPreferences)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -67,7 +66,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         preferenceManager.sharedPreferences.registerOnSharedPreferenceChangeListener(listener)
     }
 
-    private fun updateUSBStatus(sharedPreferences: SharedPreferences) {
+    private fun updateUSBAndEjectStatus(sharedPreferences: SharedPreferences) {
         val value = sharedPreferences.getInt(PREF_USB_STATUS, R.string.setting_USB_status_unknown)
         var text = context?.getString(R.string.setting_USB_status_unknown)
         try {
@@ -82,6 +81,21 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
         val pref = findPreference<Preference>(PREF_USB_STATUS)
         pref?.summary = text
+        if (value in listOf(R.string.setting_USB_status_ejected, R.string.setting_USB_status_not_connected)) {
+            disableEject()
+        } else {
+            enableEject()
+        }
+    }
+
+    private fun enableEject() {
+        val pref = findPreference<Preference>(PREF_EJECT)
+        pref?.isEnabled = true
+    }
+
+    private fun disableEject() {
+        val pref = findPreference<Preference>(PREF_EJECT)
+        pref?.isEnabled = false
     }
 
     private fun updateEqualizerSwitch(sharedPreferences: SharedPreferences) {
@@ -98,6 +112,11 @@ class SettingsFragment : PreferenceFragmentCompat() {
     private fun getEqualizerPresetFromPreferences(sharedPreferences: SharedPreferences): String {
         return sharedPreferences.getString(PREF_EQUALIZER_PRESET, PREF_EQUALIZER_PRESET_DEFAULT)
             ?: PREF_EQUALIZER_PRESET_DEFAULT
+    }
+
+    private fun updateReadMetadataSwitch(sharedPreferences: SharedPreferences) {
+        val value = sharedPreferences.getBoolean(PREF_READ_METADATA, true)
+        findPreference<SwitchPreferenceCompat>(PREF_READ_METADATA)?.isChecked = value
     }
 
     override fun onResume() {
@@ -134,6 +153,9 @@ class SettingsFragment : PreferenceFragmentCompat() {
                     val showLegalDisclaimerIntent = Intent(context, LegalDisclaimerActivity::class.java)
                     startActivity(showLegalDisclaimerIntent)
                 }
+                PREF_EJECT -> {
+                    (activity as SettingsActivity).eject()
+                }
                 PREF_ENABLE_EQUALIZER -> {
                     if ((preference as SwitchPreferenceCompat).isChecked) {
                         findPreference<ListPreference>(PREF_EQUALIZER_PRESET)?.isEnabled = true
@@ -141,6 +163,13 @@ class SettingsFragment : PreferenceFragmentCompat() {
                     } else {
                         findPreference<ListPreference>(PREF_EQUALIZER_PRESET)?.isEnabled = false
                         (activity as SettingsActivity).disableEqualizer()
+                    }
+                }
+                PREF_READ_METADATA -> {
+                    if ((preference as SwitchPreferenceCompat).isChecked) {
+                        (activity as SettingsActivity).enableReadMetadata()
+                    } else {
+                        (activity as SettingsActivity).disableReadMetadata()
                     }
                 }
             }
@@ -160,7 +189,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
     private fun revertSwitch(preference: Preference) {
         when (preference.key) {
-            PREF_LOG_TO_USB_KEY, PREF_ENABLE_EQUALIZER -> {
+            PREF_LOG_TO_USB_KEY, PREF_ENABLE_EQUALIZER, PREF_READ_METADATA -> {
                 val switch = (preference as SwitchPreferenceCompat)
                 switch.isChecked = !switch.isChecked
             }

@@ -52,6 +52,15 @@ class AudioSessionCallback(
                     args?.getString(EQUALIZER_PRESET_KEY, EqualizerPreset.LESS_BASS.name).toString()
                 notifyObservers(audioSessionChange)
             }
+            CMD_ENABLE_READ_METADATA -> {
+                notifyObservers(AudioSessionChange(AudioSessionChangeType.ON_ENABLE_READ_METADATA))
+            }
+            CMD_DISABLE_READ_METADTA -> {
+                notifyObservers(AudioSessionChange(AudioSessionChangeType.ON_DISABLE_READ_METADATA))
+            }
+            CMD_EJECT -> {
+                notifyObservers(AudioSessionChange(AudioSessionChangeType.ON_EJECT))
+            }
             else -> {
                 logger.warning(TAG, "Unhandled command: $command")
             }

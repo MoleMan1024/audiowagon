@@ -8,19 +8,16 @@ package de.moleman1024.audiowagon.filestorage.usb
 import android.media.MediaDataSource
 import android.net.Uri
 import com.github.mjdev.libaums.fs.UsbFile
-import de.moleman1024.audiowagon.filestorage.AudioFile
-import de.moleman1024.audiowagon.filestorage.AudioFileStorageLocation
-import de.moleman1024.audiowagon.filestorage.IndexingStatus
+import de.moleman1024.audiowagon.Util
+import de.moleman1024.audiowagon.filestorage.*
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.produce
 import java.net.URLConnection
-import java.nio.charset.StandardCharsets
 import java.util.*
 import kotlin.RuntimeException
 
-private const val URI_SCHEME = "usbAudio"
 private const val TAG = "USBDevStorLoc"
 private val logger = Logger
 
@@ -32,11 +29,12 @@ class USBDeviceStorageLocation(override val device: USBMediaDevice) : AudioFileS
     private var isIndexingCancelled: Boolean = false
 
     @ExperimentalCoroutinesApi
-    override fun indexAudioFiles(scope: CoroutineScope): ReceiveChannel<AudioFile> {
-        logger.debug(TAG, "indexAudioFiles(${device.getName()})")
+    override fun indexAudioFiles(directory: Directory, scope: CoroutineScope): ReceiveChannel<AudioFile> {
+        logger.debug(TAG, "indexAudioFiles(directory=$directory, ${device.getName()})")
+        val startDirectory = device.getUSBFileFromURI(directory.uri)
         return scope.produce {
             try {
-                for (usbFile in device.walkTopDown(device.getRoot())) {
+                for (usbFile in device.walkTopDown(startDirectory)) {
                     if (isIndexingCancelled) {
                         logger.debug(TAG, "Cancel indexAudioFiles()")
                         break
@@ -45,12 +43,7 @@ class USBDeviceStorageLocation(override val device: USBMediaDevice) : AudioFileS
                         logger.debug(TAG, "Skipping unsupported file: $usbFile")
                         continue
                     }
-                    val builder: Uri.Builder = Uri.Builder()
-                    builder.scheme(URI_SCHEME).authority(storageID).appendEncodedPath(
-                        Uri.encode(usbFile.absolutePath.removePrefix("/"), StandardCharsets.UTF_8.toString())
-                    )
-                    val audioFile = AudioFile(builder.build())
-                    audioFile.lastModifiedDate = Date(usbFile.lastModified())
+                    val audioFile = createAudioFileFromUSBFile(usbFile)
                     send(audioFile)
                 }
             } catch (exc: CancellationException) {
@@ -63,9 +56,36 @@ class USBDeviceStorageLocation(override val device: USBMediaDevice) : AudioFileS
         }
     }
 
+    private fun createAudioFileFromUSBFile(usbFile: UsbFile): AudioFile {
+        val uri = Util.createURIForPath(storageID, usbFile.absolutePath)
+        val audioFile = AudioFile(uri)
+        audioFile.lastModifiedDate = Date(usbFile.lastModified())
+        return audioFile
+    }
+
     override fun cancelIndexAudioFiles() {
         logger.debug(TAG, "Cancelling audio file indexing")
         isIndexingCancelled = true
+    }
+
+    override fun getDirectoryContents(directory: Directory): List<FileLike> {
+        val itemsInDir = mutableListOf<FileLike>()
+        device.getDirectoryContents(directory.uri).forEach { usbFile ->
+            if (usbFile.isDirectory) {
+                val uri = Util.createURIForPath(storageID, usbFile.absolutePath)
+                itemsInDir.add(Directory(uri))
+            } else {
+                if (isPlayableAudioFile(usbFile)) {
+                    val audioFile = createAudioFileFromUSBFile(usbFile)
+                    itemsInDir.add(audioFile)
+                }
+            }
+        }
+        return itemsInDir
+    }
+
+    override fun getRootURI(): Uri {
+        return Util.createURIForPath(storageID, device.getRoot().absolutePath)
     }
 
     override fun getDataSourceForURI(uri: Uri): MediaDataSource {

@@ -28,5 +28,7 @@ data class ContentHierarchyID(
     var artistGroupIndex: Int = -1
     @SerialName("albGrp")
     var albumGroupIndex: Int = -1
+    var path: String = ""
+    @SerialName("dirGrp")
+    var directoryGroupIndex: Int = -1
 }
-

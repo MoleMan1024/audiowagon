@@ -105,11 +105,29 @@ class MediaBrowserTest {
         val traversal = MediaBrowserTraversal(browser)
         val tracksRoot = "{\"type\":\"ROOT_TRACKS\"}"
         traversal.start(tracksRoot)
-        Logger.debug(TAG, traversal.hierarchy.toString())
         Assert.assertEquals("{\"type\":\"SHUFFLE_ALL_TRACKS\"}", traversal.hierarchy[tracksRoot]?.get(0))
         Assert.assertEquals(7, traversal.hierarchy[tracksRoot]?.size)
         Assert.assertEquals(400, traversal.hierarchy["{\"type\":\"TRACK_GROUP\",\"trkGrp\":4}"]?.size)
         Assert.assertEquals(140, traversal.hierarchy["{\"type\":\"TRACK_GROUP\",\"trkGrp\":5}"]?.size)
+    }
+
+    @Test
+    fun onLoadChildren_manyFilesSDCardImage_createsFilesHierarchy() {
+        val traversal = MediaBrowserTraversal(browser)
+        val filesRoot = "{\"type\":\"ROOT_FILES\"}"
+        traversal.start(filesRoot)
+        Assert.assertEquals(21, traversal.hierarchy[filesRoot]?.size)
+        Assert.assertEquals(
+            "{\"type\":\"DIRECTORY\",\"path\":\"/storage/$ID/ARTIST_0\"}", traversal.hierarchy[filesRoot]?.get(2)
+        )
+    }
+
+    @Test
+    fun onLoadChildren_manyFilesSDCardImage_createsDirectoryHierarchy() {
+        val traversal = MediaBrowserTraversal(browser)
+        val directoryRoot = "{\"type\":\"DIRECTORY\",\"path\":\"/storage/E812-A0DC/ARTIST_0\"}"
+        traversal.start(directoryRoot)
+        Assert.assertEquals(10, traversal.hierarchy[directoryRoot]?.size)
     }
 
 }

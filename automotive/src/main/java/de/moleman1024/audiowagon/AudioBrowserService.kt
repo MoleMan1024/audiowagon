@@ -55,8 +55,7 @@ import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyI
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyType
 import de.moleman1024.audiowagon.persistence.PersistentPlaybackState
 import de.moleman1024.audiowagon.persistence.PersistentStorage
-import de.moleman1024.audiowagon.player.AudioPlayerState
-import de.moleman1024.audiowagon.player.AudioSession
+import de.moleman1024.audiowagon.player.*
 import kotlinx.coroutines.*
 import java.io.IOException
 import java.util.*
@@ -73,6 +72,10 @@ const val CMD_ENABLE_EQUALIZER = "de.moleman1024.audiowagon.CMD_ENABLE_EQUALIZER
 const val CMD_DISABLE_EQUALIZER = "de.moleman1024.audiowagon.CMD_DISABLE_EQUALIZER"
 const val CMD_SET_EQUALIZER_PRESET = "de.moleman1024.audiowagon.CMD_SET_EQUALIZER_PRESET"
 const val EQUALIZER_PRESET_KEY = "preset"
+const val CMD_ENABLE_READ_METADATA = "de.moleman1024.audiowagon.CMD_ENABLE_READ_METADATA"
+const val CMD_DISABLE_READ_METADTA = "de.moleman1024.audiowagon.CMD_DISABLE_READ_METADTA"
+const val CMD_EJECT = "de.moleman1024.audiowagon.CMD_EJECT"
+
 
 @ExperimentalCoroutinesApi
 /**
@@ -107,6 +110,9 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     private var lastAudioPlayerState: AudioPlayerState = AudioPlayerState.IDLE
     private var isShuttingDown: Boolean = false
     private var isSuspended: Boolean = false
+    private var isLibraryCreationCancelled: Boolean = false
+    private val contentHierarchyFilesRoot =
+        ContentHierarchyElement.serialize(ContentHierarchyID(ContentHierarchyType.ROOT_FILES))
     private val contentHierarchyTracksRoot =
         ContentHierarchyElement.serialize(ContentHierarchyID(ContentHierarchyType.ROOT_TRACKS))
     private val contentHierarchyAlbumsRoot =
@@ -132,12 +138,19 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         val shutdownFilter = IntentFilter().apply {
             addAction(ACTION_QUICKBOOT_POWEROFF)
             addAction(Intent.ACTION_DREAMING_STARTED)
+            addAction(Intent.ACTION_DREAMING_STOPPED)
             addAction(Intent.ACTION_POWER_DISCONNECTED)
             addAction(Intent.ACTION_POWER_CONNECTED)
             addAction(Intent.ACTION_REBOOT)
             addAction(Intent.ACTION_SCREEN_OFF)
             addAction(Intent.ACTION_SCREEN_ON)
             addAction(Intent.ACTION_SHUTDOWN)
+            addAction(Intent.ACTION_MEDIA_BAD_REMOVAL)
+            addAction(Intent.ACTION_MEDIA_EJECT)
+            addAction(Intent.ACTION_MEDIA_MOUNTED)
+            addAction(Intent.ACTION_MEDIA_NOFS)
+            addAction(Intent.ACTION_MEDIA_REMOVED)
+            addAction(Intent.ACTION_MEDIA_UNMOUNTED)
             addAction(Intent.ACTION_MY_PACKAGE_REPLACED)
             addAction(Intent.ACTION_MY_PACKAGE_SUSPENDED)
             addAction(Intent.ACTION_MY_PACKAGE_UNSUSPENDED)
@@ -159,6 +172,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         audioItemLibrary.libraryExceptionObservers.add { exc ->
             when (exc) {
                 is CannotRecoverUSBException -> {
+                    cancelAllJobs()
                     notifyLibraryCreationFailure()
                 }
             }
@@ -180,7 +194,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         packageValidation = PackageValidation(this, R.xml.allowed_media_browser_callers)
         lifecycleRegistry.currentState = Lifecycle.State.CREATED
         observeAudioFileStorage()
-        observePlayerStateChanges()
+        observeAudioSessionStateChanges()
         updateConnectedDevices()
     }
 
@@ -220,34 +234,58 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         }
     }
 
-    private fun observePlayerStateChanges() {
+    private fun observeAudioSessionStateChanges() {
         // TODO: clean up the notification handling
         // https://developer.android.com/guide/topics/media-apps/audio-app/building-a-mediabrowserservice#service-lifecycle
-        audioSession.observePlayer { stateChange ->
-            logger.debug(TAG, "stateChange=$stateChange")
-            lastAudioPlayerState = stateChange.state
-            when (stateChange.state) {
-                AudioPlayerState.STARTED -> {
-                    restoreFromPersistentJob?.let {
-                        runBlocking(dispatcher) {
-                            cancelRestoreFromPersistent()
+        audioSession.observe { event ->
+            logger.debug(TAG, "stateChange=$event")
+            // TODO: too nested
+            when (event) {
+                is AudioPlayerEvent -> {
+                    lastAudioPlayerState = event.state
+                    when (event.state) {
+                        AudioPlayerState.STARTED -> {
+                            restoreFromPersistentJob?.let {
+                                runBlocking(dispatcher) {
+                                    cancelRestoreFromPersistent()
+                                }
+                            }
+                            startServiceInForeground()
+                        }
+                        AudioPlayerState.PAUSED -> moveServiceToBackground()
+                        AudioPlayerState.STOPPED -> stopService()
+                        AudioPlayerState.ERROR -> {
+                            if (event.errorCode == PlaybackStateCompat.ERROR_CODE_END_OF_QUEUE) {
+                                // Android Automotive media browser client will show a notification to user by itself in
+                                // case of skipping beyond end of queue, no need for us to send a toast message
+                                return@observe
+                            }
+                            logger.warning(TAG, "Player an error")
+                            gui.showErrorToastMsg(event.errorMsg)
+                        }
+                        else -> {
+                            // ignore
                         }
                     }
-                    startServiceInForeground()
                 }
-                AudioPlayerState.PAUSED -> moveServiceToBackground()
-                AudioPlayerState.STOPPED -> stopService()
-                AudioPlayerState.ERROR -> {
-                    if (stateChange.errorCode == PlaybackStateCompat.ERROR_CODE_END_OF_QUEUE) {
-                        // Android Automotive media browser client will show a notification to user by itself in
-                        // case of skipping beyond end of queue, no need for us to send a toast message
-                        return@observePlayer
+                is SettingChangeEvent -> {
+                    when (event.changeTo) {
+                        SettingState.ENABLE_READ_METADATA -> {
+                            updateConnectedDevices()
+                        }
+                        SettingState.DISABLE_READ_METADATA -> {
+                            audioFileStorage.cancelIndexing()
+                            audioItemLibrary.cancelBuildLibrary()
+                            cancelLibraryCreation()
+                        }
                     }
-                    logger.warning(TAG, "Player an error")
-                    gui.showErrorToastMsg(stateChange.errorMsg)
                 }
-                else -> {
-                    // ignore
+                is CustomActionEvent -> {
+                    when (event.action) {
+                        CustomAction.EJECT -> {
+                            cancelAllJobs()
+                        }
+                    }
                 }
             }
         }
@@ -291,6 +329,12 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             notifyBrowserChildrenChangedAllLevels()
             return
         }
+        if (!Util.isMetadataReadingEnabled(this)) {
+            logger.info(TAG, "Metadata extraction is disabled in settings")
+            launchRestoreFromPersistentJob()
+            notifyBrowserChildrenChangedAllLevels()
+            return
+        }
         gui.showIndexingNotification()
         // We start the service in foreground while indexing the USB device, a notification is shown to the user.
         // This is done so the user can use other apps while the indexing keeps running in the service
@@ -310,6 +354,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                 }
             }
         }
+        isLibraryCreationCancelled = false
         libraryCreationJob = lifecycleScope.launch(libraryCreationExceptionHandler + dispatcher) {
             createLibraryFromStorages(listOf(storageID))
             libraryCreationJob = null
@@ -324,22 +369,30 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                     stopService()
                 }
             }
+            if (isLibraryCreationCancelled) {
+                isLibraryCreationCancelled = false
+                return@launch
+            }
             if (lastAudioPlayerState in listOf(
                     AudioPlayerState.IDLE, AudioPlayerState.PAUSED, AudioPlayerState.STOPPED
                 )
             ) {
-                restoreFromPersistentJob = lifecycleScope.launch(dispatcher) {
-                    val persistentPlaybackState = persistentStorage.retrieve()
-                    try {
-                        restoreFromPersistent(persistentPlaybackState)
-                    } catch (exc: RuntimeException) {
-                        logger.exception(TAG, "Restoring from persistent failed", exc)
-                    }
-                    restoreFromPersistentJob = null
-                }
+                launchRestoreFromPersistentJob()
             } else {
                 logger.debug(TAG, "Not restoring from persistent state, user has already requested new item")
             }
+        }
+    }
+
+    private fun launchRestoreFromPersistentJob() {
+        restoreFromPersistentJob = lifecycleScope.launch(dispatcher) {
+            val persistentPlaybackState = persistentStorage.retrieve()
+            try {
+                restoreFromPersistent(persistentPlaybackState)
+            } catch (exc: RuntimeException) {
+                logger.exception(TAG, "Restoring from persistent failed", exc)
+            }
+            restoreFromPersistentJob = null
         }
     }
 
@@ -363,13 +416,27 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
 
     private suspend fun restoreFromPersistent(state: PersistentPlaybackState) {
         if (state.trackID.isBlank()) {
-            logger.debug(TAG, "No recent track ID to restore")
+            logger.debug(TAG, "No recent content hierarchy ID to restore from")
             return
         }
-        val contentHierarchyIDTrack = ContentHierarchyElement.deserialize(state.trackID)
-        if (audioItemLibrary.getRepoForContentHierarchyID(contentHierarchyIDTrack) == null) {
-            logger.warning(TAG, "Cannot restore recent track, storage repository mismatch")
-            return
+        val contentHierarchyID = ContentHierarchyElement.deserialize(state.trackID)
+        when (contentHierarchyID.type) {
+            ContentHierarchyType.TRACK -> {
+                if (audioItemLibrary.getRepoForContentHierarchyID(contentHierarchyID) == null) {
+                    logger.warning(TAG, "Cannot restore recent track, storage repository mismatch")
+                    return
+                }
+            }
+            ContentHierarchyType.FILE -> {
+                if (audioFileStorage.getPrimaryStorageLocation().storageID != contentHierarchyID.storageID) {
+                    logger.warning(TAG, "Cannot restore recent file, storage id mismatch")
+                    return
+                }
+            }
+            else -> {
+                logger.error(TAG, "Not supported to restore from type: $contentHierarchyID")
+                return
+            }
         }
         if (state.queueIDs.isEmpty()) {
             logger.warning(TAG, "Found persistent recent track, but no queue items")
@@ -402,12 +469,14 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     }
 
     private fun notifyBrowserChildrenChangedAllLevels() {
+        notifyChildrenChanged(contentHierarchyFilesRoot)
         notifyChildrenChanged(contentHierarchyTracksRoot)
         notifyChildrenChanged(contentHierarchyAlbumsRoot)
         notifyChildrenChanged(contentHierarchyArtistsRoot)
         notifyChildrenChanged(contentHierarchyRoot)
         if (latestContentHierarchyIDRequested.isNotBlank()
             && latestContentHierarchyIDRequested !in listOf(
+                contentHierarchyFilesRoot,
                 contentHierarchyTracksRoot,
                 contentHierarchyAlbumsRoot,
                 contentHierarchyArtistsRoot,
@@ -467,7 +536,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     }
 
     override fun onDestroy() {
-        // FIXME: this will not close the mediabrowser client GUI, make sure it will still work when service destroyed
+        // TODO: this will not close the mediabrowser client GUI, make sure it will still work when service destroyed
         // TODO: check "Stopping service due to app idle", happens sometimes but does not call any method of service?
         logger.debug(TAG, "onDestroy()")
         shutdownAndDestroy()
@@ -485,11 +554,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         if (lifecycleRegistry.currentState == Lifecycle.State.DESTROYED) {
             return
         }
-        audioFileStorage.cancelIndexing()
-        audioItemLibrary.cancelBuildLibrary()
-        cancelRestoreFromPersistent()
-        cancelLibraryCreation()
-        cancelLoadChildren()
+        cancelAllJobs()
         audioSession.storePlaybackState()
         gui.shutdown()
         audioSession.shutdown()
@@ -497,6 +562,14 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         audioItemLibrary.shutdown()
         stopService()
         isShuttingDown = false
+    }
+
+    private fun cancelAllJobs() {
+        audioFileStorage.cancelIndexing()
+        audioItemLibrary.cancelBuildLibrary()
+        cancelRestoreFromPersistent()
+        cancelLibraryCreation()
+        cancelLoadChildren()
     }
 
     private fun shutdownAndDestroy() {
@@ -508,11 +581,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     fun suspend() {
         logger.info(TAG, "suspend()")
         isSuspended = true
-        audioFileStorage.cancelIndexing()
-        audioItemLibrary.cancelBuildLibrary()
-        cancelRestoreFromPersistent()
-        cancelLibraryCreation()
-        cancelLoadChildren()
+        cancelAllJobs()
         audioSession.storePlaybackState()
         gui.suspend()
         audioSession.suspend()
@@ -542,6 +611,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     private fun cancelLibraryCreation() {
         logger.debug(TAG, "Cancelling audio library creation")
         libraryCreationJob?.cancelChildren()
+        isLibraryCreationCancelled = true
         logger.debug(TAG, "Cancelled audio library creation")
     }
 
@@ -589,7 +659,8 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
 
     /**
      * Returns list of [MediaItem] depending on the given content hierarchy ID
-     * Returning null as result will show no results.
+     * Returning empty list will show a message "no media availabl here".
+     * Returning null will show "something went wrong" error message.
      *
      * The result is sent via Binder RPC to the media browser client process and its GUI, that means it
      * must be limited in size (maximum size of the parcel is 512 kB it seems).
@@ -608,7 +679,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             } catch (exc: RuntimeException) {
                 logger.exception(TAG, exc.message.toString(), exc)
                 gui.showErrorToastMsg(getString(R.string.toast_error_unknown))
-                result.sendResult(mutableListOf())
+                result.sendResult(null)
             } finally {
                 loadChildrenJobs.remove(jobID)
             }
@@ -639,9 +710,17 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             } else {
                 logger.exception(TAG, "Uncaught exception (USB is OK)", throwable)
                 logger.flushToUSB()
-                audioFileStorage.shutdown()
+                try {
+                    audioFileStorage.shutdown()
+                } catch (exc: Exception) {
+                    logger.exceptionLogcatOnly(TAG, exc.message.toString(), exc)
+                }
             }
-            stopService()
+            try {
+                stopService()
+            } catch (exc: Exception) {
+                logger.exceptionLogcatOnly(TAG, exc.message.toString(), exc)
+            }
             oldHandler?.uncaughtException(thread, throwable)
             killProcess()
         }

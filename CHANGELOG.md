@@ -14,15 +14,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- latency decreased when selecting a single track for playback
-- prevent that USB indexing process is stopped when switching to another audio app
-- avoid some errors for empty content hierarchy IDs
-- prevent that multiple audio file storage location objects are used, this could maybe help with 
+- prevent that multiple audio file storage location objects are used, this could maybe help with filesystem corruption
   [#33](https://github.com/MoleMan1024/audiowagon/issues/33)
+- avoid some errors with empty content hierarchy IDs
+- abort indexing when USB file reading methods throw unrecoverable I/O exceptions
 
 ### Changed
 
+- prevent that USB indexing process is stopped when switching to another media app. This will allow a user to
+  e.g. listen to the radio or use other media apps while an USB drive is being indexed. Previously the indexing process
+  could be interrupted in that case [#19](https://github.com/MoleMan1024/audiowagon/issues/19)
 - enabling shuffle mode will now move the current item in the playback queue to the beginning of the playback queue
+- latency decreased when selecting a single track for playback
+
+### Added
+
+- added directory/file browsing [#26](https://github.com/MoleMan1024/audiowagon/issues/26)
+- added a switch in the settings to turn off reading of audio file metadata. In case users want to use only the
+  directory/file browsing, they can turn this off so the USB drive is not indexed anymore
+- added an eject button to settings screen so users have the option to eject the USB drive to abort indexing
+- added icons for main categories in browse view
 
 
 ## [0.4.0] - 2021-10-04
