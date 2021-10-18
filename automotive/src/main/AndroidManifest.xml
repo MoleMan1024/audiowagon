@@ -8,7 +8,6 @@ SPDX-License-Identifier: GPL-3.0-or-later
 		xmlns:tools="http://schemas.android.com/tools"
 		package="de.moleman1024.audiowagon">
 
-	<uses-permission android:name="android.permission.WAKE_LOCK" />
 	<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
 	<uses-feature

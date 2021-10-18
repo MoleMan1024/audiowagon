@@ -12,6 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Danish translations
+
+
+## [0.5.0] - 2021-10-18
+
 ### Fixed
 
 - prevent that multiple audio file storage location objects are used, this could maybe help with filesystem corruption
