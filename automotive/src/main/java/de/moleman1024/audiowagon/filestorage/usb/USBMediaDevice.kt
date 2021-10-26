@@ -23,6 +23,7 @@ import de.moleman1024.audiowagon.exceptions.TooManyFilesInDirException
 import de.moleman1024.audiowagon.filestorage.AudioFile
 import de.moleman1024.audiowagon.filestorage.MediaDevice
 import de.moleman1024.audiowagon.log.Logger
+import java.io.FileNotFoundException
 import java.io.IOException
 import java.io.UnsupportedEncodingException
 import java.lang.IllegalArgumentException
@@ -196,12 +197,10 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
         assertFileSystemAvailable()
         var numFiles = 0
         // TODO: this will not work if no file extensions are used
-        logger.debug(TAG, "areTooManyFilesInDir(${directory.absolutePath})")
         directory.list().forEach {
             if (it.trim().matches(Regex(".*\\.\\w\\w\\w\\w?$"))) {
                 numFiles++
             }
-            logger.debug(TAG, "${directory.absolutePath}/$it")
         }
         logger.debug(TAG, "Found $numFiles files in ${directory.absolutePath}")
         return numFiles >= 128
@@ -329,7 +328,7 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
                         yield(fileOrDirectory)
                     } else {
                         assertFileSystemAvailable()
-                        if (fileOrDirectory.name.contains("(LOST\\.DIR|$LOG_DIRECTORY)".toRegex())) {
+                        if (fileOrDirectory.name.contains("(FOUND\\.000|LOST\\.DIR|$LOG_DIRECTORY)".toRegex())) {
                             logger.debug(TAG, "Ignoring directory: ${fileOrDirectory.name}")
                         }
                         else if (!areTooManyFilesInDir(fileOrDirectory)) {
@@ -421,7 +420,7 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
         if (usbFileFromCache != null) {
             return usbFileFromCache
         }
-        return getRoot().search(filePath) ?: throw IOException("USB file not found: $uri")
+        return getRoot().search(filePath) ?: throw FileNotFoundException("USB file not found: $uri")
     }
 
     /**

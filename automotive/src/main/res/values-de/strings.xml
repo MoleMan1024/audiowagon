@@ -108,6 +108,10 @@ Vektorgrafiken, entwickelt von Google\n\nLizenzvereinbarungen:\nwww.apache.org/l
 	<string name="toast_error_not_enough_space_for_log">Zu wenig freier Speicherplatz für Logdatei</string>
 	<string name="setting_USB_status_too_many_files_in_dir">Zu viele Dateien in einem Verzeichnis, bitte verwenden
 Sie Unterverzeichnisse.</string>
-	<string name="setting_read_metadata">Metadaten auslesen</string>
 	<string name="browse_tree_category_files">Dateien</string>
+	<string name="setting_library_category_title">Medien</string>
+	<string name="setting_read_metadata">Metadaten auslesen</string>
+	<string name="setting_delete_databases">Datenbanken löschen</string>
+	<string name="setting_database_status_title">Datenbank</string>
+	<string name="setting_enable_replaygain">ReplayGain</string>
 </resources>

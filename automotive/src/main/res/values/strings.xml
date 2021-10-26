@@ -152,6 +152,10 @@ Project\n&#x2013; the libaums library created by Magnus Jahnen\n&#x2013; Materia
 	<string name="toast_error_not_enough_space_for_log">Not enough space to write log file</string>
 	<string name="setting_USB_status_too_many_files_in_dir">Too many files in a directory, please use
 subdirectories</string>
-	<string name="setting_read_metadata">Read metadata</string>
 	<string name="browse_tree_category_files">Files</string>
+	<string name="setting_library_category_title">Media</string>
+	<string name="setting_read_metadata">Read metadata</string>
+	<string name="setting_delete_databases">Delete databases</string>
+	<string name="setting_database_status_title">Database</string>
+	<string name="setting_enable_replaygain">ReplayGain</string>
 </resources>

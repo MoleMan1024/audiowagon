@@ -9,7 +9,6 @@ enum class ContentHierarchyType {
     NONE,
     ROOT,
     SHUFFLE_ALL_TRACKS,
-    SHUFFLE_ALL_FILES,
     ROOT_TRACKS,
     ROOT_ALBUMS,
     ROOT_ARTISTS,

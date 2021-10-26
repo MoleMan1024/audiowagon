@@ -40,6 +40,8 @@ import kotlinx.coroutines.sync.withLock
 
 private const val TAG = "AudioFileStor"
 private val logger = Logger
+private const val REPLAYGAIN_NOT_FOUND: Float = -99.0f
+private const val NUM_BYTES_METADATA = 1024
 
 /**
  * This class manages storage locations and provides functions to index them for audio files
@@ -62,6 +64,7 @@ open class AudioFileStorage(
     private var dataSources = mutableListOf<MediaDataSource>()
     private val dataSourcesMutex = Mutex()
     private var isSuspended = false
+    private val replayGainRegex = "replaygain_track_gain.*?([-0-9][^ ]+?) ?dB".toRegex(RegexOption.IGNORE_CASE)
     val storageObservers = mutableListOf<(StorageChange) -> Unit>()
     val mediaDevicesForTest = mutableListOf<MediaDevice>()
 
@@ -324,7 +327,7 @@ open class AudioFileStorage(
     }
 
     fun getNumConnectedDevices(): Int {
-        return usbDeviceConnections.getNumConnectedDevices()
+        return usbDeviceConnections.getNumConnectedDevices() + mediaDevicesForTest.size
     }
 
     fun setIndexingStatus(storageID: String, indexingStatus: IndexingStatus) {
@@ -431,6 +434,44 @@ open class AudioFileStorage(
 
     fun areAnyStoragesAvail(): Boolean {
         return audioFileStorageLocations.isNotEmpty()
+    }
+
+    fun extractReplayGain(uri: Uri): Float {
+        logger.debug(TAG, "extractReplayGain($uri)")
+        var replayGain: Float
+        val dataSource = getDataSourceForURI(uri)
+        val dataFront = ByteArray(NUM_BYTES_METADATA)
+        // IDv3 tags are at the beginning of the file
+        dataSource.readAt(0L, dataFront, 0, dataFront.size)
+        replayGain = findReplayGainInBytes(dataFront)
+        if (replayGain != REPLAYGAIN_NOT_FOUND) {
+            dataSource.close()
+            return replayGain
+        }
+        val dataBack = ByteArray(NUM_BYTES_METADATA)
+        // APE tags are at the end of the file
+        dataSource.readAt(dataSource.size - dataBack.size, dataBack, 0, dataBack.size)
+        replayGain = findReplayGainInBytes(dataBack)
+        if (replayGain == REPLAYGAIN_NOT_FOUND) {
+            replayGain = 0f
+        }
+        dataSource.close()
+        return replayGain
+    }
+
+    private fun findReplayGainInBytes(bytes: ByteArray): Float {
+        val bytesStr = String(bytes)
+        var replayGain = REPLAYGAIN_NOT_FOUND
+        val replayGainMatch = replayGainRegex.find(bytesStr)
+        if (replayGainMatch?.groupValues?.size == 2) {
+            val replayGainStr = replayGainMatch.groupValues[1].trim()
+            try {
+                replayGain = replayGainStr.toFloat()
+            } catch (exc: NumberFormatException) {
+                return REPLAYGAIN_NOT_FOUND
+            }
+        }
+        return replayGain
     }
 
 }

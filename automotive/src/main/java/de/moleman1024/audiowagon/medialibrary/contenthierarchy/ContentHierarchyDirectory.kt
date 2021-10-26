@@ -21,7 +21,7 @@ import de.moleman1024.audiowagon.medialibrary.RESOURCE_ROOT_URI
 private const val TAG = "CHDirectory"
 private val logger = Logger
 
-val DIRECTORIES_TO_IGNORE_REGEX = "($LOG_DIRECTORY.*|System Volume Information|LOST.DIR|^\\..*)".toRegex()
+val DIRECTORIES_TO_IGNORE_REGEX = "($LOG_DIRECTORY.*|System Volume Information|LOST\\.DIR|FOUND\\.000|^\\..*)".toRegex()
 
 /**
  * The browse view showing a directory on the device (or showing groups of files)
@@ -35,28 +35,12 @@ class ContentHierarchyDirectory(
     ContentHierarchyElement(id, context, audioItemLibrary) {
 
     override suspend fun getMediaItems(): List<MediaItem> {
-        val items = mutableListOf<MediaItem>()
         val directoryContents = getDirectoryContents()
-        if (!hasTooManyItems(directoryContents.size)) {
-            for (fileOrDir in directoryContents) {
-                items += when (fileOrDir) {
-                    is Directory -> {
-                        val description = audioFileStorage.createDirectoryDescription(fileOrDir)
-                        MediaItem(description, MediaItem.FLAG_BROWSABLE)
-                    }
-                    is AudioFile -> {
-                        val description = audioFileStorage.createFileDescription(fileOrDir)
-                        MediaItem(description, MediaItem.FLAG_PLAYABLE)
-                    }
-                    else -> {
-                        throw AssertionError("Invalid type: $fileOrDir")
-                    }
-                }
-            }
+        return if (!hasTooManyItems(directoryContents.size)) {
+            createFileLikeMediaItemsForDir(directoryContents, audioFileStorage)
         } else {
-            items += createGroups(directoryContents)
+            createGroups(directoryContents)
         }
-        return items
     }
 
     fun createGroups(directoryContents: List<FileLike>): MutableList<MediaItem> {

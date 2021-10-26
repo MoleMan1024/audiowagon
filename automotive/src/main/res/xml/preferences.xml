@@ -5,7 +5,8 @@ SPDX-License-Identifier: GPL-3.0-or-later
 -->
 <androidx.preference.PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
 	<PreferenceCategory
-			app:title="@string/setting_sound_category_title">
+			app:title="@string/setting_sound_category_title"
+			app:icon="@drawable/baseline_speaker_24">
 		<SwitchPreferenceCompat
 				app:key="enableEqualizer"
 				app:title="@string/setting_enable_equalizer_title"
@@ -20,24 +21,28 @@ SPDX-License-Identifier: GPL-3.0-or-later
 				app:useSimpleSummaryProvider="true"
 				app:entries="@array/equalizer_presets"
 				app:entryValues="@array/equalizer_preset_values"/>
+		<SwitchPreferenceCompat
+				app:key="enableReplayGain"
+				app:title="@string/setting_enable_replaygain"
+				app:persistent="true"
+				app:defaultValue="false" />
 	</PreferenceCategory>
 	<PreferenceCategory
-			app:title="@string/setting_general_category_title">
+			app:title="@string/setting_library_category_title"
+			app:icon="@drawable/baseline_library_music_24">
 		<SwitchPreferenceCompat
 				app:key="readMetadata"
 				app:title="@string/setting_read_metadata"
 				app:persistent="true"
 				app:defaultValue="true" />
-		<SwitchPreferenceCompat
-				app:key="logToUSB"
-				app:title="@string/setting_log_to_USB_title"
-				app:summary="@string/setting_log_to_USB_desc"
-				app:persistent="true"
-				app:defaultValue="false" />
 		<Preference
-				app:key="legalDisclaimer"
-				app:title="@string/setting_show_legal_disclaimer_title"
-				app:summary="@string/setting_show_legal_disclaimer_desc"
+				app:key="databaseStatus"
+				app:persistent="false"
+				app:selectable="false"
+				app:title="@string/setting_database_status_title" />
+		<MultiSelectListPreference
+				app:key="deleteDatabases"
+				app:title="@string/setting_delete_databases"
 				app:persistent="false" />
 		<Preference
 				app:key="usbStatusResID"
@@ -48,6 +53,21 @@ SPDX-License-Identifier: GPL-3.0-or-later
 		<Preference
 				app:key="eject"
 				app:title="@string/action_eject"
+				app:persistent="false" />
+	</PreferenceCategory>
+	<PreferenceCategory
+			app:title="@string/setting_general_category_title"
+			app:icon="@drawable/baseline_handyman_24">
+		<SwitchPreferenceCompat
+				app:key="logToUSB"
+				app:title="@string/setting_log_to_USB_title"
+				app:summary="@string/setting_log_to_USB_desc"
+				app:persistent="true"
+				app:defaultValue="false" />
+		<Preference
+				app:key="legalDisclaimer"
+				app:title="@string/setting_show_legal_disclaimer_title"
+				app:summary="@string/setting_show_legal_disclaimer_desc"
 				app:persistent="false" />
 		<Preference
 				app:persistent="false"

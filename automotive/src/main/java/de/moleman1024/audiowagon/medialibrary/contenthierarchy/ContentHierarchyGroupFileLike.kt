@@ -7,9 +7,7 @@ package de.moleman1024.audiowagon.medialibrary.contenthierarchy
 
 import android.content.Context
 import android.support.v4.media.MediaBrowserCompat.MediaItem
-import de.moleman1024.audiowagon.filestorage.AudioFile
 import de.moleman1024.audiowagon.filestorage.AudioFileStorage
-import de.moleman1024.audiowagon.filestorage.Directory
 import de.moleman1024.audiowagon.filestorage.FileLike
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.AudioItem
@@ -30,24 +28,8 @@ class ContentHierarchyGroupFileLike(
     ContentHierarchyElement(id, context, audioItemLibrary) {
 
     override suspend fun getMediaItems(): List<MediaItem> {
-        val items = mutableListOf<MediaItem>()
         val directoryContents = getDirectoryContents()
-        for (fileOrDir in directoryContents) {
-            items += when (fileOrDir) {
-                is Directory -> {
-                    val description = audioFileStorage.createDirectoryDescription(fileOrDir)
-                    MediaItem(description, MediaItem.FLAG_BROWSABLE)
-                }
-                is AudioFile -> {
-                    val description = audioFileStorage.createFileDescription(fileOrDir)
-                    MediaItem(description, MediaItem.FLAG_PLAYABLE)
-                }
-                else -> {
-                    throw AssertionError("Invalid type: $fileOrDir")
-                }
-            }
-        }
-        return items
+        return createFileLikeMediaItemsForDir(directoryContents, audioFileStorage)
     }
 
     override suspend fun getAudioItems(): List<AudioItem> {

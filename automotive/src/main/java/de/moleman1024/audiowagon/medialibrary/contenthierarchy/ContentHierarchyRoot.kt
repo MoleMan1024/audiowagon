@@ -10,7 +10,12 @@ import android.net.Uri
 import android.support.v4.media.MediaBrowserCompat.MediaItem
 import android.support.v4.media.MediaDescriptionCompat
 import de.moleman1024.audiowagon.R
+import de.moleman1024.audiowagon.Util
+import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.*
+
+private const val TAG = "CHRoot"
+private val logger = Logger
 
 /**
  * The root of the browse tree. Shows max 4 categories (tracks, albums, artists, files)
@@ -27,14 +32,14 @@ class ContentHierarchyRoot(
     override suspend fun getMediaItems(): List<MediaItem> {
         val items: MutableList<MediaItem> = mutableListOf()
         val categories = mutableListOf<CategoryData>()
-        if (audioItemLibrary.areAnyReposAvail()) {
+        if (Util.isMetadataReadingEnabled(context)) {
             val tracksCategory = CategoryData(ContentHierarchyID(ContentHierarchyType.ROOT_TRACKS))
             tracksCategory.titleID = R.string.browse_tree_category_tracks
             // we use a copy of the music note icon here, because of a bug in the GUI where the highlight color is
             // copied to each item with the same icon ID when selected
             tracksCategory.iconID = R.drawable.category_track
             categories += tracksCategory
-            if (!audioItemLibrary.isBuildingLibray) {
+            if (audioItemLibrary.areAnyReposAvail() && !audioItemLibrary.isBuildingLibray) {
                 val albumsCategory = CategoryData(ContentHierarchyID(ContentHierarchyType.ROOT_ALBUMS))
                 albumsCategory.titleID = R.string.browse_tree_category_albums
                 albumsCategory.iconID = R.drawable.category_album
@@ -44,6 +49,8 @@ class ContentHierarchyRoot(
                 artistsCategory.iconID = R.drawable.category_artist
                 categories += artistsCategory
             }
+        } else {
+            logger.debug(TAG, "No repositories found")
         }
         // we show the "files" even when no USB connected as a container for the "indexing" pseudo-items
         val filesCategory = CategoryData(ContentHierarchyID(ContentHierarchyType.ROOT_FILES))

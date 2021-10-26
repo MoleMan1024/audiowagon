@@ -11,7 +11,6 @@ import android.support.v4.media.MediaBrowserCompat.MediaItem
 import android.support.v4.media.MediaDescriptionCompat
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.Util
-import de.moleman1024.audiowagon.exceptions.TooManyFilesInDirException
 import de.moleman1024.audiowagon.filestorage.*
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.*
@@ -32,29 +31,14 @@ class ContentHierarchyRootFiles(
 
     override suspend fun getMediaItems(): List<MediaItem> {
         val items = mutableListOf<MediaItem>()
-        if (!audioFileStorage.areAnyStoragesAvail()) {
+        if (!Util.isLegalDisclaimerAgreed(context) || !audioFileStorage.areAnyStoragesAvail()) {
             logger.debug(TAG, "Showing pseudo MediaItem 'no entries available'")
             items += createPseudoNoEntriesItem()
             return items
         }
         val directoryContents = getDirectoryContents()
         if (!hasTooManyItems(directoryContents.size)) {
-            // TODO: duplicate code
-            for (fileOrDir in directoryContents) {
-                items += when (fileOrDir) {
-                    is Directory -> {
-                        val description = audioFileStorage.createDirectoryDescription(fileOrDir)
-                        MediaItem(description, MediaItem.FLAG_BROWSABLE)
-                    }
-                    is AudioFile -> {
-                        val description = audioFileStorage.createFileDescription(fileOrDir)
-                        MediaItem(description, MediaItem.FLAG_PLAYABLE)
-                    }
-                    else -> {
-                        throw AssertionError("Invalid type: $fileOrDir")
-                    }
-                }
-            }
+            items += createFileLikeMediaItemsForDir(directoryContents, audioFileStorage)
         } else {
             val contentHierarchyID = id
             contentHierarchyID.path = "/"
@@ -67,13 +51,14 @@ class ContentHierarchyRootFiles(
     }
 
     private fun createPseudoNoEntriesItem(): MediaItem {
-        val numConnectedUSBDevices = audioFileStorage.getNumConnectedDevices()
+        val numConnectedDevices = audioFileStorage.getNumConnectedDevices()
         var title = context.getString(R.string.browse_tree_no_entries_title)
         var subtitle = context.getString(R.string.browse_tree_no_usb_drive)
-        if (numConnectedUSBDevices > 0) {
+        if (numConnectedDevices > 0) {
             if (Util.isLegalDisclaimerAgreed(context)) {
                 subtitle = context.getString(R.string.browse_tree_usb_drive_ejected)
             } else {
+                logger.debug(TAG, "Legal disclaimer was not yet agreed")
                 title = context.getString(R.string.browse_tree_need_to_agree_legal_title)
                 subtitle = context.getString(R.string.browse_tree_need_to_agree_legal_desc)
             }

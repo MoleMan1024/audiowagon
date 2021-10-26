@@ -40,3 +40,4 @@ venv/
 tools/generate_files/.idea
 
 .idea/misc.xml
+docs/Gemfile.lock

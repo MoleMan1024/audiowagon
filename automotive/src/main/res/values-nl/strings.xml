@@ -106,6 +106,10 @@ zijn gemaakt door Google\n\nLicentie teksten:\nwww.apache.org/licenses/LICENSE-2
 	<string name="toast_error_no_tracks">Geen nummers</string>
 	<string name="toast_error_not_enough_space_for_log">Onvoldoende opslagruimte om log-bestand op te slaan</string>
 	<string name="setting_USB_status_too_many_files_in_dir">Teveel bestanden in een map, creëer sub-mappen</string>
-	<string name="setting_read_metadata">Lees metadata</string>
 	<string name="browse_tree_category_files">Bestanden</string>
+	<string name="setting_library_category_title">Media</string>
+	<string name="setting_read_metadata">Lees metadata</string>
+	<string name="setting_delete_databases">Verzamelingen verwijderen</string>
+	<string name="setting_database_status_title">Database</string>
+	<string name="setting_enable_replaygain">ReplayGain</string>
 </resources>

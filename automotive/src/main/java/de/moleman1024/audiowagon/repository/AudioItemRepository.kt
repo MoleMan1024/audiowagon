@@ -25,6 +25,7 @@ import kotlinx.coroutines.*
 import java.util.*
 
 const val MAX_DATABASE_SEARCH_ROWS = 10
+const val AUDIOITEM_REPO_DB_PREFIX = "audioItemRepo_"
 private const val TAG = "AudioItemRepo"
 private val logger = Logger
 
@@ -37,10 +38,11 @@ class AudioItemRepository(
     private val dispatcher: CoroutineDispatcher
 ) {
     // The database file is created in internal storage only after the first row has been added to it
-    private val databaseName = "audioItemRepo_${storageID}.sqlite"
+    private val databaseName = "$AUDIOITEM_REPO_DB_PREFIX${storageID}.sqlite"
     // TODO: this is not ideal, I would rather like to store the database on the USB flash drive to reduce wear on
     //  the internal flash memory, but found no easy way to do that
     // SQL query logging can be added via setQueryCallback()
+    // TODO: https://developer.android.com/training/data-storage/app-specific#query-free-space
     private var database: AudioItemDatabase = Room.databaseBuilder(
         context,
         AudioItemDatabase::class.java,

@@ -12,9 +12,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+## [0.6.0] - 2021-10-26
+
+### Fixed
+
+- avoid a crash when a file can not be found for some reason
+- fix issue where files could be played without agreeing to legal disclaimer
+
+### Changed
+
+- remove not needed wake lock permission
+
 ### Added
 
-- Danish translations
+- Danish and French translation
+- you can now delete internal databases of USB drives that were previously indexed via the settings screen to save space.
+  The database of the currently in-use USB drive can not be deleted while it is in use, you have to eject the drive first.
+  Previously it was only possible to delete the data of the whole app including all settings via the Android system
+  settings [#2](https://github.com/MoleMan1024/audiowagon/issues/2)
+- ReplayGain on track level is now supported to normalize volume across many different tracks
+  [#9](https://github.com/MoleMan1024/audiowagon/issues/9)
+- some more icons in settings screen
 
 
 ## [0.5.0] - 2021-10-18

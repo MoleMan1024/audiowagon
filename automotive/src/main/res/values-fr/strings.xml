@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+SPDX-FileCopyrightText: 2021 MoleMan1024 <moleman1024dev@gmail.com>
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
+<!-- initial translation by: Eric L.G. -->
+<resources>
+	<string name="app_name">AudioWagon</string>
+	<string name="queue_title">Écouter la file d\'attente</string>
+	<string name="search_group_tracks">Titres</string>
+	<string name="search_group_artists">Artistes</string>
+	<string name="search_group_albums">Albums</string>
+	<string name="browse_tree_category_tracks">Titres</string>
+	<string name="browse_tree_category_artists">Artistes</string>
+	<string name="browse_tree_category_albums">Albums</string>
+	<string name="browse_tree_pseudo_track_shuffle_all">Écoute aléatoire</string>
+	<string name="browse_tree_pseudo_play_all">Tout écouter</string>
+	<string name="browse_tree_unknown_album">Album inconnu</string>
+	<string name="browse_tree_unknown_artist">Artiste inconnu</string>
+	<string name="browse_tree_various_artists">Artistes variés</string>
+	<string name="browse_tree_no_entries_title">Aucun fichier audio</string>
+	<string name="browse_tree_no_usb_drive">Branchez une clé USB</string>
+	<string name="browse_tree_usb_drive_ejected">La clé USB a été éjectée ou n\'a pas pu être lue</string>
+	<string name="browse_tree_need_to_agree_legal_title">Vous n\'avez pas accepté les mentions légales</string>
+	<string name="browse_tree_need_to_agree_legal_desc">Voir les réglages</string>
+	<string name="toast_indexing_started">Indexation USB en cours …</string>
+	<string name="toast_indexing_completed">Indexation USB terminée</string>
+	<string name="toast_no_next_track">Aucun titre suivant</string>
+	<string name="toast_no_prev_track">Aucun titre précédent</string>
+	<string name="toast_eject_completed">Clé USB éjectée, vous pouvez la débrancher en toute sécurité.</string>
+	<string name="toast_error">ERREUR: %1$s</string>
+	<string name="toast_error_audio_focus_denied">Impossible d\'accéder au focus audio</string>
+	<string name="toast_error_USB_init">Erreur de connexion USB</string>
+	<string name="toast_error_no_filesystem">Aucun système de fichiers pris en charge</string>
+	<string name="toast_error_library_creation_fail">Erreur de création de la bibliothèque</string>
+	<string name="toast_error_invalid_state">État invalide</string>
+	<string name="toast_error_IO">E/S</string>
+	<string name="toast_error_malformed_data">Données au mauvais format</string>
+	<string name="toast_error_timeout">Délai dépassé</string>
+	<string name="toast_error_not_supported">Non pris en charge</string>
+	<string name="toast_error_no_USB_device">Aucune clé USB</string>
+	<string name="toast_error_unknown">Inconnue</string>
+	<string name="notif_action_play">Écouter</string>
+	<string name="notif_action_pause">Pause</string>
+	<string name="notif_action_stop">Arrêter</string>
+	<string name="notif_action_next">Suivant</string>
+	<string name="notif_action_prev">Précédent</string>
+	<string name="notif_channel_name">Notifications AudioWagon</string>
+	<string name="notif_channel_desc">Canal de notifications AudioWagon</string>
+	<string name="notif_channel_name_indexing">Notifications d\'indexation AudioWagon</string>
+	<string name="notif_channel_desc_indexing">Canal de notifications d\'indexation AudioWagon</string>
+	<string name="notif_indexing_title">État de l\'indexation USB</string>
+	<string name="notif_indexing_text_in_progress">En cours …</string>
+	<string name="notif_indexing_text_in_progress_num_items">Items trouvés: %1$d …</string>
+	<string name="notif_indexing_text_completed">Terminée</string>
+	<string name="action_shuffle_turn_on">Lecture aléatoire activée</string>
+	<string name="action_shuffle_turn_off">Lecture aléatoire désactivée</string>
+	<string name="action_repeat_turn_on">Mode répétition activé</string>
+	<string name="action_repeat_turn_off">Mode répétition désactivé</string>
+	<string name="action_eject">Éjecter</string>
+	<string name="settings_title">Réglages</string>
+	<string name="setting_enable_equalizer_title">Égaliseur</string>
+	<string name="setting_sound_category_title">Son</string>
+	<string name="setting_equalizer_preset_title">Préréglage de l\'égaliseur</string>
+	<string name="equalizer_preset_less_bass">Moins de graves</string>
+	<string name="equalizer_preset_more_bass">Plus de graves</string>
+	<string name="equalizer_preset_less_treble">Moins d\'aigus</string>
+	<string name="equalizer_preset_more_treble">Plus d\'aigus</string>
+	<string name="equalizer_preset_P2">P2</string>
+	<string name="equalizer_preset_P2_plus">P2+</string>
+	<string name="equalizer_preset_V_shape">En forme de V</string>
+	<string name="setting_general_category_title">Général</string>
+	<string name="setting_log_to_USB_title">Écrire le journal sur la clé USB.</string>
+	<string name="setting_log_to_USB_desc">Fournissez ces fichiers journaux au développeur lorsque vous signalez un
+bogue.</string>
+	<string name="setting_USB_status_title">État USB</string>
+	<string name="setting_USB_status_ok">OK</string>
+	<string name="setting_USB_status_not_connected">Non connecté</string>
+	<string name="setting_USB_status_unknown">Inconnu. Essayez de rebrancher la clé USB ou redémarrez Android.</string>
+	<string name="setting_USB_status_connected_no_permission">Connecté. Aucune permission</string>
+	<string name="setting_USB_status_error">Erreur de lecture/écriture. Essayez de rebrancher la clé USB ou réparez ou
+reformatez le système de fichier (FAT32) si cela échoue.</string>
+	<string name="setting_USB_status_ejected">Clé USB éjectée, vous pouvez la débrancher en toute sécurité.</string>
+	<string name="setting_USB_status_not_compatible">Non compatible. Veuillez formater votre clé USB en utilisant le
+système de fichiers FAT32.</string>
+	<string name="setting_show_legal_disclaimer_title">Afficher les mentions légales.</string>
+	<string name="setting_show_legal_disclaimer_desc">Vous devez accepter les mentions légales avant d\'utiliser
+l\'application.</string>
+	<string name="setting_version">Version</string>
+	<string name="legal_disclaimer_title">AudioWagon: Mentions légales</string>
+	<string name="legal_disclaimer_distraction_heading">Distraction du conducteur</string>
+	<string name="legal_disclaimer_distraction_text">Vous acceptez de vous soumettre à toutes les lois fédérales,
+nationales et locales concernant la distraction du conducteur et le fonctionnement des systèmes d\'infodivertissement
+lors de l\'utilisation de ce logiciel.\nUtilisez ce logiciel uniquement lorsque les conditions de conduite le
+permettent en toute sécurité.</string>
+	<string name="legal_disclaimer_liability_heading">Garantie / Responsabilité</string>
+	<string name="legal_disclaimer_liability_text">Ce logiciel est fourni "tel quel", sans aucune garantie expresse ou
+implicite. En aucun cas, les auteurs ne pourront être tenus responsables des dommages résultant de l\'utilisation de
+ce logiciel.</string>
+	<string name="legal_disclaimer_license_heading">Licence</string>
+	<string name="legal_disclaimer_license_text">Ce logiciel est sous licence GPLv3.\nCréé par MoleMan1024</string>
+	<string name="legal_disclaimer_third_party_licenses_heading">Licences tierces</string>
+	<string name="legal_disclaimer_third_party_licenses_text">Cette application utilise le contenu des autres créateurs
+suivants, tous sous licence Apache 2.0:\n\n&#x2013; diverses bibliothèques créées par Android Open Source
+Project\n&#x2013; la bibliothèque libaums créée par Magnus Jahnen\n&#x2013; les icônes vectorielles Material Design
+sont créées par Google\n\nTextes de licence:\nwww.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/licenses/gpl-3.0.html</string>
+	<string name="legal_disclaimer_confirm_btn">Accepter</string>
+	<string name="legal_disclaimer_cancel_btn">Annuler</string>
+	<string name="toast_error_no_tracks">Aucun titre</string>
+	<string name="toast_error_not_enough_space_for_log">Pas assez d\'espace pour écrire le fichier journal.</string>
+	<string name="setting_USB_status_too_many_files_in_dir">Trop de fichiers dans un répertoire, veuillez
+utiliser des sous-répertoires.</string>
+	<string name="setting_read_metadata">Lire les métadonnées</string>
+	<string name="browse_tree_category_files">Fichiers</string>
+	<string name="setting_library_category_title">Médias</string>
+	<string name="setting_delete_databases">Supprimer des bibliothèques</string>
+	<string name="setting_database_status_title">Bibliothèque</string>
+	<string name="setting_enable_replaygain">ReplayGain</string>
+</resources>

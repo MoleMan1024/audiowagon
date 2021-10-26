@@ -34,8 +34,6 @@ class SDCardMediaDevice(val id: String) : MediaDevice {
     }
 
     fun getRoot(): File {
-        logger.debug(TAG, rootDirectory.isDirectory.toString())
-        logger.debug(TAG, rootDirectory.canRead().toString())
         return rootDirectory
     }
 
@@ -84,10 +82,8 @@ class SDCardMediaDevice(val id: String) : MediaDevice {
     @Synchronized
     fun getFileFromURI(uri: Uri): File {
         val audioFile = AudioFile(uri)
-        logger.debug(TAG, "audioFile=$audioFile")
         val filePath = audioFile.path
         val file = File(filePath)
-        logger.debug(TAG, "file=$file")
         if (!file.exists()) {
             throw IOException("File not found: $uri")
         }

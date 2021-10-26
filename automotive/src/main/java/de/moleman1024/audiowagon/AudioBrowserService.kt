@@ -70,6 +70,8 @@ const val CMD_ENABLE_LOG_TO_USB = "de.moleman1024.audiowagon.CMD_ENABLE_LOG_TO_U
 const val CMD_DISABLE_LOG_TO_USB = "de.moleman1024.audiowagon.CMD_DISABLE_LOG_TO_USB"
 const val CMD_ENABLE_EQUALIZER = "de.moleman1024.audiowagon.CMD_ENABLE_EQUALIZER"
 const val CMD_DISABLE_EQUALIZER = "de.moleman1024.audiowagon.CMD_DISABLE_EQUALIZER"
+const val CMD_ENABLE_REPLAYGAIN = "de.moleman1024.audiowagon.CMD_ENABLE_REPLAYGAIN"
+const val CMD_DISABLE_REPLAYGAIN = "de.moleman1024.audiowagon.CMD_DISABLE_REPLAYGAIN"
 const val CMD_SET_EQUALIZER_PRESET = "de.moleman1024.audiowagon.CMD_SET_EQUALIZER_PRESET"
 const val EQUALIZER_PRESET_KEY = "preset"
 const val CMD_ENABLE_READ_METADATA = "de.moleman1024.audiowagon.CMD_ENABLE_READ_METADATA"
@@ -385,7 +387,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     }
 
     private fun launchRestoreFromPersistentJob() {
-        restoreFromPersistentJob = lifecycleScope.launch(dispatcher) {
+        restoreFromPersistentJob = launchInScopeSafely {
             val persistentPlaybackState = persistentStorage.retrieve()
             try {
                 restoreFromPersistent(persistentPlaybackState)
@@ -557,10 +559,10 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         cancelAllJobs()
         audioSession.storePlaybackState()
         gui.shutdown()
+        stopService()
         audioSession.shutdown()
         audioFileStorage.shutdown()
         audioItemLibrary.shutdown()
-        stopService()
         isShuttingDown = false
     }
 
@@ -670,12 +672,15 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         latestContentHierarchyIDRequested = parentId
         result.detach()
         val jobID = Util.generateUUID()
-        val loadChildrenJob = lifecycleScope.launch(dispatcher) {
+        val loadChildrenJob = launchInScopeSafely {
             try {
                 val contentHierarchyID = ContentHierarchyElement.deserialize(parentId)
                 val mediaItems: List<MediaItem> = audioItemLibrary.getMediaItemsStartingFrom(contentHierarchyID)
                 logger.debug(TAG, "Got ${mediaItems.size} mediaItems in onLoadChildren(parentId=$parentId)")
                 result.sendResult(mediaItems.toMutableList())
+            } catch (exc: IOException) {
+                logger.exception(TAG, exc.message.toString(), exc)
+                result.sendResult(null)
             } catch (exc: RuntimeException) {
                 logger.exception(TAG, exc.message.toString(), exc)
                 gui.showErrorToastMsg(getString(R.string.toast_error_unknown))
@@ -690,7 +695,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     override fun onSearch(query: String, extras: Bundle?, result: Result<MutableList<MediaItem>>) {
         logger.debug(TAG, "onSearch(query='$query', extras=$extras)")
         result.detach()
-        searchJob = lifecycleScope.launch(dispatcher) {
+        searchJob = launchInScopeSafely {
             val mediaItems: MutableList<MediaItem> = audioItemLibrary.searchMediaItems(query)
             logger.debug(TAG, "Got ${mediaItems.size} mediaItems in onSearch()")
             result.sendResult(mediaItems)
@@ -739,6 +744,20 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         gui.removeIndexingNotification()
         if (!isSuspended) {
             gui.showErrorToastMsg(getString(R.string.toast_error_library_creation_fail))
+        }
+    }
+
+    // TODO: duplicate code
+    private fun launchInScopeSafely(func: suspend () -> Unit): Job {
+        val exceptionHandler = CoroutineExceptionHandler { coroutineContext, exc ->
+            logger.exception(TAG, coroutineContext.toString() + " threw " + exc.message.toString(), exc)
+        }
+        return lifecycleScope.launch(exceptionHandler + dispatcher) {
+            try {
+                func()
+            } catch (exc: Exception) {
+                logger.exception(TAG, exc.message.toString(), exc)
+            }
         }
     }
 

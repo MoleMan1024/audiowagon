@@ -6,22 +6,19 @@ SPDX-License-Identifier: GPL-3.0-or-later
 package de.moleman1024.audiowagon.player
 
 import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.media.MediaPlayer
 import android.os.Handler
 import android.os.Looper
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
-import androidx.core.app.NotificationCompat
-import androidx.core.graphics.drawable.IconCompat
 import androidx.media.session.MediaButtonReceiver
+import androidx.preference.PreferenceManager
 import de.moleman1024.audiowagon.*
+import de.moleman1024.audiowagon.activities.PREF_ENABLE_REPLAYGAIN
 import de.moleman1024.audiowagon.broadcast.*
 import de.moleman1024.audiowagon.exceptions.DriveAlmostFullException
 import de.moleman1024.audiowagon.exceptions.NoItemsInQueueException
@@ -67,26 +64,22 @@ class AudioSession(
     var sessionToken: MediaSessionCompat.Token
     // See https://developer.android.com/reference/android/support/v4/media/session/PlaybackStateCompat
     private lateinit var playbackState: PlaybackStateCompat
-    private var notificationManager: NotificationManager =
-        context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-    private lateinit var isPlayingNotificationBuilder: NotificationCompat.Builder
-    private lateinit var isPausedNotificationBuilder: NotificationCompat.Builder
     private var currentQueueItem: MediaSessionCompat.QueueItem? = null
     private val observers = mutableListOf<(Any) -> Unit>()
-    private var isShowingNotification: Boolean = false
     // media session must be accessed from same thread always
     private val mediaSessionDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
     private var lastContentHierarchyIDPlayed: String = ""
     private val audioFocus: AudioFocus = AudioFocus(context)
     private val audioPlayer: AudioPlayer = AudioPlayer(audioFileStorage, audioFocus, scope, context)
+    private val audioSessionNotifications = AudioSessionNotifications(context, scope, dispatcher, audioPlayer)
     private val audioFocusChangeListener: AudioFocusChangeCallback =
         AudioFocusChangeCallback(audioPlayer, scope, dispatcher)
-    private val notificationReceiver: NotificationReceiver = NotificationReceiver(audioPlayer, scope, dispatcher)
     private var storePersistentJob: Job? = null
     private var onPlayFromMediaIDJob: Job? = null
     private var isFirstOnPlayEventAfterReset: Boolean = true
     private var onPlayCalledBeforeUSBReady: Boolean = false
     private var isShuttingDown: Boolean = false
+    private var extractReplayGain: Boolean = false
 
     init {
         logger.debug(TAG, "Init AudioSession()")
@@ -108,109 +101,12 @@ class AudioSession(
         }
         sessionToken = mediaSession.sessionToken
         initPlaybackState()
-        deleteNotificationChannel()
-        createNotificationChannel()
-        prepareMediaNotifications()
+        audioSessionNotifications.init(mediaSession)
+        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
+        extractReplayGain = sharedPreferences.getBoolean(PREF_ENABLE_REPLAYGAIN, false)
         observePlaybackStatus()
         observePlaybackQueue()
         observeSessionCallbacks()
-    }
-
-    // TODO: move notification stuff to its own class
-    private fun createNotificationChannel() {
-        if (notificationManager.getNotificationChannel(AUDIO_SESS_NOTIF_CHANNEL) != null) {
-            logger.debug(TAG, "Notification channel already exists")
-            notificationManager.cancelAll()
-            return
-        }
-        logger.debug(TAG, "Creating notification channel")
-        val importance = NotificationManager.IMPORTANCE_LOW
-        val notifChannelName = context.getString(R.string.notif_channel_name)
-        val notifChannelDesc = context.getString(R.string.notif_channel_desc)
-        val channel = NotificationChannel(AUDIO_SESS_NOTIF_CHANNEL, notifChannelName, importance).apply {
-            description = notifChannelDesc
-            setShowBadge(false)
-        }
-        notificationManager.createNotificationChannel(channel)
-    }
-
-    private fun prepareMediaNotifications() {
-        // TODO: this seems to have no effect in Android Automotive
-        val playIcon = IconCompat.createWithResource(context, R.drawable.baseline_play_arrow_24)
-        val playAction = createNotificationAction(ACTION_PLAY, playIcon, R.string.notif_action_play)
-        val pauseIcon = IconCompat.createWithResource(context, R.drawable.baseline_pause_24)
-        val pauseAction = createNotificationAction(ACTION_PAUSE, pauseIcon, R.string.notif_action_pause)
-        val nextIcon = IconCompat.createWithResource(context, R.drawable.baseline_skip_next_24)
-        val nextAction = createNotificationAction(ACTION_NEXT, nextIcon, R.string.notif_action_next)
-        val prevIcon = IconCompat.createWithResource(context, R.drawable.baseline_skip_previous_24)
-        val prevAction = createNotificationAction(ACTION_PREV, prevIcon, R.string.notif_action_prev)
-        isPlayingNotificationBuilder = NotificationCompat.Builder(context, AUDIO_SESS_NOTIF_CHANNEL).apply {
-            addAction(prevAction)
-            addAction(pauseAction)
-            addAction(nextAction)
-        }
-        isPausedNotificationBuilder = NotificationCompat.Builder(context, AUDIO_SESS_NOTIF_CHANNEL).apply {
-            addAction(prevAction)
-            addAction(playAction)
-            addAction(nextAction)
-        }
-    }
-
-    private fun createNotificationAction(action: String, icon: IconCompat, stringID: Int): NotificationCompat.Action {
-        val intent =
-            PendingIntent.getBroadcast(context, REQUEST_CODE, Intent(action), PendingIntent.FLAG_UPDATE_CURRENT)
-        return NotificationCompat.Action.Builder(icon, context.getString(stringID), intent).build()
-    }
-
-    /**
-     * A notification to appear at the top of the screen (Android) or at the bottom of the screen (Android
-     * Automotive in Polestar 2) showing player action icons, timestamp, seekbar etc.
-     *
-     * See https://developers.google.com/cars/design/automotive-os/apps/media/interaction-model/playing-media
-     */
-    private fun sendNotification(notifBuilder: NotificationCompat.Builder) {
-        val notification = prepareNotification(notifBuilder)
-        logger.debug(TAG, "Sending notification: $notification")
-        notificationManager.notify(NOTIFICATION_ID, notification)
-        if (!isShowingNotification) {
-            registerNotifRecv()
-        }
-        isShowingNotification = true
-    }
-
-    private fun prepareNotification(notifBuilder: NotificationCompat.Builder): Notification {
-        val style = androidx.media.app.NotificationCompat.MediaStyle()
-        style.setMediaSession(sessionToken)
-        return notifBuilder.apply {
-            setStyle(style)
-            setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            setContentTitle(currentQueueItem?.description?.title)
-            setContentText(currentQueueItem?.description?.subtitle)
-            setSubText(currentQueueItem?.description?.description)
-            setSmallIcon(R.drawable.ic_notif)
-            setContentIntent(mediaSession.controller.sessionActivity)
-            // TODO: can "clear all" even be used for media notification in AAOS?
-            setDeleteIntent(MediaButtonReceiver.buildMediaButtonPendingIntent(context, PlaybackStateCompat.ACTION_STOP))
-        }.build()
-    }
-
-    fun getNotification(): Notification {
-        return prepareNotification(isPlayingNotificationBuilder)
-    }
-
-    private fun registerNotifRecv() {
-        logger.debug(TAG, "registerNotifRecv()")
-        val filter = IntentFilter()
-        filter.addAction(ACTION_PREV)
-        filter.addAction(ACTION_PLAY)
-        filter.addAction(ACTION_PAUSE)
-        filter.addAction(ACTION_NEXT)
-        context.registerReceiver(notificationReceiver, filter)
-    }
-
-    private fun unregisterNotifRecv() {
-        logger.debug(TAG, "unregisterNotifRecv()")
-        context.unregisterReceiver(notificationReceiver)
     }
 
     /**
@@ -402,12 +298,15 @@ class AudioSession(
                         }
                     }
                     val metadata: MediaMetadataCompat = audioItemLibrary.createMetadataForItem(audioItem)
-                    currentQueueItem = MediaSessionCompat.QueueItem(
-                        metadata.description, queueChange.currentItem.queueId
+                    extractAndSetReplayGain(audioItem)
+                    setCurrentQueueItem(
+                        MediaSessionCompat.QueueItem(
+                            metadata.description, queueChange.currentItem.queueId
+                        )
                     )
                     setMediaSessionMetadata(metadata)
                 } else {
-                    currentQueueItem = null
+                    setCurrentQueueItem(null)
                     setMediaSessionMetadata(null)
                 }
                 setMediaSessionQueue(queueChange.items)
@@ -416,10 +315,24 @@ class AudioSession(
         }
     }
 
+    private suspend fun extractAndSetReplayGain(audioItem: AudioItem) {
+        if (!extractReplayGain) {
+            return
+        }
+        var replayGain = 0f
+        try {
+            replayGain = audioFileStorage.extractReplayGain(audioItem.uri)
+        } catch (exc: Exception) {
+            logger.exception(TAG, exc.message.toString(), exc)
+        }
+        logger.debug(TAG, "Setting ReplayGain: $replayGain dB")
+        audioPlayer.setReplayGain(replayGain)
+    }
+
     private fun sendNotificationBasedOnPlaybackState() {
         when {
-            playbackState.isPlaying -> sendNotification(isPlayingNotificationBuilder)
-            playbackState.isPaused -> sendNotification(isPausedNotificationBuilder)
+            playbackState.isPlaying -> audioSessionNotifications.sendIsPlayingNotification()
+            playbackState.isPaused -> audioSessionNotifications.sendIsPausedNotification()
         }
     }
 
@@ -437,7 +350,7 @@ class AudioSession(
         }
         isShuttingDown = true
         clearSession()
-        deleteNotificationChannel()
+        audioSessionNotifications.shutdown()
         runBlocking(dispatcher) {
             onPlayFromMediaIDJob?.cancelAndJoin()
             audioFocusChangeListener.cancelAudioFocusLossJob()
@@ -452,9 +365,8 @@ class AudioSession(
             onPlayFromMediaIDJob?.cancelAndJoin()
             audioFocusChangeListener.cancelAudioFocusLossJob()
         }
-        currentQueueItem = null
-        val notifBuilder = NotificationCompat.Builder(context, AUDIO_SESS_NOTIF_CHANNEL)
-        sendNotification(notifBuilder)
+        setCurrentQueueItem(null)
+        audioSessionNotifications.sendEmptyNotification()
         clearPlaybackState()
         runBlocking(dispatcher) {
             setMediaSessionQueue(listOf())
@@ -476,37 +388,13 @@ class AudioSession(
         runBlocking(dispatcher) {
             audioFocusChangeListener.cancelAudioFocusLossJob()
         }
-        currentQueueItem = null
-        // default notification without any content
-        val notifBuilder = NotificationCompat.Builder(context, AUDIO_SESS_NOTIF_CHANNEL)
-        sendNotification(notifBuilder)
+        setCurrentQueueItem(null)
+        audioSessionNotifications.sendEmptyNotification()
         clearPlaybackState()
         runBlocking(dispatcher) {
             clearMediaSession()
         }
-        removeNotification()
-    }
-
-    // TODO: check why called multiple times
-    private fun removeNotification() {
-        logger.debug(TAG, "removeNotification()")
-        if (!isShowingNotification) {
-            logger.debug("TAG", "No notification is currently shown")
-            return
-        }
-        // TODO: to actually remove the notification, the mediaSession needs to be released. However when that is
-        //  done it should not be used again unless the media browser client is restarted
-        notificationManager.cancel(NOTIFICATION_ID)
-        unregisterNotifRecv()
-        isShowingNotification = false
-    }
-
-    private fun deleteNotificationChannel() {
-        if (notificationManager.getNotificationChannel(AUDIO_SESS_NOTIF_CHANNEL) == null) {
-            return
-        }
-        logger.debug(TAG, "Deleting notification channel")
-        notificationManager.deleteNotificationChannel(AUDIO_SESS_NOTIF_CHANNEL)
+        audioSessionNotifications.removeNotification()
     }
 
     private fun observeSessionCallbacks() {
@@ -558,6 +446,32 @@ class AudioSession(
                 AudioSessionChangeType.ON_DISABLE_EQUALIZER -> {
                     launchInScopeSafely(audioSessionChange.type.name) {
                         audioPlayer.disableEqualizer()
+                    }
+                }
+                AudioSessionChangeType.ON_ENABLE_REPLAYGAIN -> {
+                    extractReplayGain = true
+                    launchInScopeSafely(audioSessionChange.type.name) {
+                        val contentHierarchyID = ContentHierarchyElement.deserialize(getCurrentTrackID())
+                        val audioItem = when (contentHierarchyID.type) {
+                            ContentHierarchyType.TRACK -> {
+                                audioItemLibrary.getAudioItemForTrack(contentHierarchyID)
+                            }
+                            ContentHierarchyType.FILE -> {
+                                audioItemLibrary.getAudioItemForFile(contentHierarchyID)
+                            }
+                            else -> {
+                                logger.error(TAG, "Cannot handle type: $contentHierarchyID")
+                                return@launchInScopeSafely
+                            }
+                        }
+                        extractAndSetReplayGain(audioItem)
+                        audioPlayer.enableReplayGain()
+                    }
+                }
+                AudioSessionChangeType.ON_DISABLE_REPLAYGAIN -> {
+                    extractReplayGain = false
+                    launchInScopeSafely(audioSessionChange.type.name) {
+                        audioPlayer.disableReplayGain()
                     }
                 }
                 AudioSessionChangeType.ON_SET_EQUALIZER_PRESET -> {
@@ -762,9 +676,7 @@ class AudioSession(
         }
         if (state.lastContentHierarchyID.isNotBlank()) {
             val lastContentHierarchyID = ContentHierarchyElement.deserialize(state.lastContentHierarchyID)
-            if (lastContentHierarchyID.type == ContentHierarchyType.SHUFFLE_ALL_TRACKS
-                || lastContentHierarchyID.type == ContentHierarchyType.SHUFFLE_ALL_FILES
-            ) {
+            if (lastContentHierarchyID.type == ContentHierarchyType.SHUFFLE_ALL_TRACKS) {
                 // In this case we restored only the last playing track/file from persistent storage above. Now we create a
                 // new shuffled playback queue for all remaining items
                 val shuffledItems = audioItemLibrary.getAudioItemsStartingFrom(lastContentHierarchyID)
@@ -875,9 +787,7 @@ class AudioSession(
         playbackStateToPersist.lastContentHierarchyID = lastContentHierarchyIDPlayed
         if (lastContentHierarchyIDPlayed.isNotBlank()) {
             val lastContentHierarchyID = ContentHierarchyElement.deserialize(lastContentHierarchyIDPlayed)
-            if (lastContentHierarchyID.type == ContentHierarchyType.SHUFFLE_ALL_TRACKS
-                || lastContentHierarchyID.type == ContentHierarchyType.SHUFFLE_ALL_FILES
-            ) {
+            if (lastContentHierarchyID.type == ContentHierarchyType.SHUFFLE_ALL_TRACKS) {
                 // When the user is shuffling all tracks, we don't store the queue, we will recreate a new shuffled queue
                 // when restoring from persistent state instead (to save storage space)
                 playbackStateToPersist.queueIDs = queueIDs.subList(queueIndex, queueIndex + 1)
@@ -928,6 +838,12 @@ class AudioSession(
         return queueIndex
     }
 
+    private fun setCurrentQueueItem(item: MediaSessionCompat.QueueItem?) {
+        currentQueueItem = item
+        audioSessionNotifications.currentQueueItem = item
+    }
+
+    // TODO: similar code
     private fun launchInScopeSafely(message: String, func: suspend () -> Unit): Job {
         val exceptionHandler = CoroutineExceptionHandler { coroutineContext, exc ->
             handleException("$message ($coroutineContext threw ${exc.message})", exc)
@@ -953,6 +869,10 @@ class AudioSession(
                 // ignore
             }
         }
+    }
+
+    fun getNotification(): Notification {
+        return audioSessionNotifications.getNotification()
     }
 
     // TODO: split file, too long

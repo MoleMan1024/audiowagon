@@ -10,6 +10,10 @@ import android.net.Uri
 import android.support.v4.media.MediaBrowserCompat.MediaItem
 import android.support.v4.media.MediaDescriptionCompat
 import de.moleman1024.audiowagon.R
+import de.moleman1024.audiowagon.filestorage.AudioFile
+import de.moleman1024.audiowagon.filestorage.AudioFileStorage
+import de.moleman1024.audiowagon.filestorage.Directory
+import de.moleman1024.audiowagon.filestorage.FileLike
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
@@ -148,5 +152,28 @@ abstract class ContentHierarchyElement(
             offset += CONTENT_HIERARCHY_MAX_NUM_ITEMS
         }
         return groups
+    }
+
+    fun createFileLikeMediaItemsForDir(
+        directoryContents: List<FileLike>,
+        audioFileStorage: AudioFileStorage
+    ): MutableList<MediaItem> {
+        val items = mutableListOf<MediaItem>()
+        for (fileOrDir in directoryContents) {
+            items += when (fileOrDir) {
+                is Directory -> {
+                    val description = audioFileStorage.createDirectoryDescription(fileOrDir)
+                    MediaItem(description, MediaItem.FLAG_BROWSABLE)
+                }
+                is AudioFile -> {
+                    val description = audioFileStorage.createFileDescription(fileOrDir)
+                    MediaItem(description, MediaItem.FLAG_PLAYABLE)
+                }
+                else -> {
+                    throw AssertionError("Invalid type: $fileOrDir")
+                }
+            }
+        }
+        return items
     }
 }

@@ -17,10 +17,8 @@ import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.produce
 import java.io.File
 import java.net.URLConnection
-import java.nio.charset.StandardCharsets
 import java.util.*
 
-private const val URI_SCHEME = "sdAudio"
 private const val TAG = "SDCardStorLoc"
 private val logger = Logger
 
@@ -115,21 +113,10 @@ class SDCardStorageLocation(override val device: SDCardMediaDevice) : AudioFileS
             logger.exception(TAG, "Error when guessing content type of: ${file.name}", exc)
             return false
         }
-        if (!guessedContentType.startsWith("audio")) {
-            return false
-        }
-        if (isPlaylistFile(guessedContentType)) {
+        if (!isSupportedContentType(guessedContentType)) {
             return false
         }
         return true
-    }
-
-    private fun makeFileNameSafeForContentTypeGuessing(fileName: String): String {
-        return fileName.replace("#", "")
-    }
-
-    private fun isPlaylistFile(contentType: String): Boolean {
-        return listOf("mpequrl", "mpegurl").any { it in contentType }
     }
 
     override fun getDirectoriesWithIndexingIssues(): List<String> {

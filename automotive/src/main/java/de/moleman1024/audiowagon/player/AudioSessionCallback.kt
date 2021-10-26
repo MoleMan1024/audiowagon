@@ -58,6 +58,12 @@ class AudioSessionCallback(
             CMD_DISABLE_READ_METADTA -> {
                 notifyObservers(AudioSessionChange(AudioSessionChangeType.ON_DISABLE_READ_METADATA))
             }
+            CMD_ENABLE_REPLAYGAIN -> {
+                notifyObservers(AudioSessionChange(AudioSessionChangeType.ON_ENABLE_REPLAYGAIN))
+            }
+            CMD_DISABLE_REPLAYGAIN -> {
+                notifyObservers(AudioSessionChange(AudioSessionChangeType.ON_DISABLE_REPLAYGAIN))
+            }
             CMD_EJECT -> {
                 notifyObservers(AudioSessionChange(AudioSessionChangeType.ON_EJECT))
             }
@@ -243,6 +249,7 @@ class AudioSessionCallback(
         super.onPrepareFromUri(uri, extras)
     }
 
+    // TODO: duplicate code
     private fun launchInScopeSafely(func: suspend () -> Unit) {
         val exceptionHandler = CoroutineExceptionHandler { coroutineContext, exc ->
             logger.exception(TAG, coroutineContext.toString() + " threw " + exc.message.toString(), exc)

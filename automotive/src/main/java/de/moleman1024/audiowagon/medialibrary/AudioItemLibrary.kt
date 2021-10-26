@@ -25,6 +25,7 @@ import de.moleman1024.audiowagon.repository.AudioItemRepository
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.consumeEach
+import java.io.FileNotFoundException
 import java.io.IOException
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.coroutineContext
@@ -195,7 +196,6 @@ class AudioItemLibrary(
             ContentHierarchyType.NONE -> ContentHierarchyNone(context, this)
             ContentHierarchyType.ROOT -> ContentHierarchyRoot(context, this)
             ContentHierarchyType.SHUFFLE_ALL_TRACKS -> ContentHierarchyShuffleAllTracks(context, this)
-            ContentHierarchyType.SHUFFLE_ALL_FILES -> ContentHierarchyShuffleAllFiles(context, this, audioFileStorage)
             ContentHierarchyType.ROOT_TRACKS -> ContentHierarchyRootTracks(context, this, audioFileStorage)
             ContentHierarchyType.ROOT_FILES -> ContentHierarchyRootFiles(context, this, audioFileStorage)
             ContentHierarchyType.ROOT_ALBUMS -> ContentHierarchyRootAlbums(context, this)

@@ -8,35 +8,52 @@ package de.moleman1024.audiowagon.activities
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.text.format.Formatter.formatShortFileSize
 import android.widget.Toast
-import androidx.preference.ListPreference
-import androidx.preference.Preference
-import androidx.preference.PreferenceFragmentCompat
-import androidx.preference.SwitchPreferenceCompat
+import androidx.lifecycle.lifecycleScope
+import androidx.preference.*
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.log.Logger
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import de.moleman1024.audiowagon.repository.AUDIOITEM_REPO_DB_PREFIX
+import kotlinx.coroutines.*
+import java.io.File
+import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.*
+import kotlin.collections.HashSet
 
 private const val TAG = "SettingsFragm"
 private val logger = Logger
 // TODO: add testcase for backward compatibility of old settings files
 const val PREF_LOG_TO_USB_KEY = "logToUSB"
-const val PREF_USB_STATUS ="usbStatusResID"
+const val PREF_USB_STATUS = "usbStatusResID"
 const val PREF_LEGAL_DISCLAIMER = "legalDisclaimer"
 const val PREF_READ_METADATA = "readMetadata"
+const val PREF_DELETE_DATABASES = "deleteDatabases"
+const val PREF_DATABASE_STATUS = "databaseStatus"
 const val PREF_ENABLE_EQUALIZER = "enableEqualizer"
 const val PREF_EQUALIZER_PRESET = "equalizerPreset"
 const val PREF_EQUALIZER_PRESET_DEFAULT = "LESS_BASS"
+const val PREF_ENABLE_REPLAYGAIN = "enableReplayGain"
 const val PREF_EJECT = "eject"
 
 @ExperimentalCoroutinesApi
 class SettingsFragment : PreferenceFragmentCompat() {
+    private var updateDatabaseStatusJob: Job? = null
+    private val dispatcher: CoroutineDispatcher = Dispatchers.Main
     private val listener = SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
         run {
             logger.debug(TAG, "sharedPrefChanged()")
             when (key) {
                 PREF_USB_STATUS -> {
                     updateUSBAndEjectStatus(sharedPreferences)
+                    updateDatabaseStatusJob?.cancelChildren()
+                    updateDatabaseStatusJob = lifecycleScope.launch(dispatcher) {
+                        // the database is marked as in-use a bit later
+                        delay(100)
+                        updateDatabaseStatus()
+                        updateDatabaseStatusJob = null
+                    }
                 }
                 PREF_EQUALIZER_PRESET -> {
                     updateEqualizerPreset(sharedPreferences)
@@ -49,6 +66,21 @@ class SettingsFragment : PreferenceFragmentCompat() {
             }
         }
     }
+    private val databaseDeleteListener = Preference.OnPreferenceChangeListener { _, newValue ->
+        val entriesToDelete = newValue as HashSet<*>
+        logger.debug(TAG, entriesToDelete.toString())
+        entriesToDelete.forEach {
+            logger.debug(TAG, "User marked database file for deletion: $it")
+            val databaseFile = File(it as String)
+            try {
+                deleteFile(databaseFile)
+            } catch (exc: IOException) {
+                logger.exception(TAG, exc.message.toString(), exc)
+            }
+        }
+        // do not store the checked entries
+        false
+    }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         logger.debug(TAG, "onCreatePreferences(rootKey=${rootKey})")
@@ -56,14 +88,19 @@ class SettingsFragment : PreferenceFragmentCompat() {
         val sharedPreferences = preferenceManager.sharedPreferences
         updateEqualizerSwitch(sharedPreferences)
         updateEqualizerPreset(sharedPreferences)
+        updateReplayGainSwitch(sharedPreferences)
         updateReadMetadataSwitch(sharedPreferences)
         updateUSBAndEjectStatus(sharedPreferences)
+        updateDatabaseStatus()
+        updateDatabaseFiles()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         logger.debug(TAG, "onCreate()")
         super.onCreate(savedInstanceState)
         preferenceManager.sharedPreferences.registerOnSharedPreferenceChangeListener(listener)
+        val multiListPref = findPreference<MultiSelectListPreference>(PREF_DELETE_DATABASES)
+        multiListPref?.onPreferenceChangeListener = databaseDeleteListener
     }
 
     private fun updateUSBAndEjectStatus(sharedPreferences: SharedPreferences) {
@@ -114,9 +151,109 @@ class SettingsFragment : PreferenceFragmentCompat() {
             ?: PREF_EQUALIZER_PRESET_DEFAULT
     }
 
+    private fun updateReplayGainSwitch(sharedPreferences: SharedPreferences) {
+        val value = sharedPreferences.getBoolean(PREF_ENABLE_REPLAYGAIN, false)
+        findPreference<SwitchPreferenceCompat>(PREF_ENABLE_REPLAYGAIN)?.isChecked = value
+    }
+
     private fun updateReadMetadataSwitch(sharedPreferences: SharedPreferences) {
         val value = sharedPreferences.getBoolean(PREF_READ_METADATA, true)
         findPreference<SwitchPreferenceCompat>(PREF_READ_METADATA)?.isChecked = value
+    }
+
+    private fun updateDatabaseFiles() {
+        logger.debug(TAG, "updateDatabaseFiles()")
+        val multiListPref = findPreference<MultiSelectListPreference>(PREF_DELETE_DATABASES)
+        val entries = mutableListOf<Pair<String, String>>()
+        var databaseFiles: List<File> = listOf()
+        try {
+            databaseFiles = getDatabaseFilesNotInUse()
+        } catch (exc: RuntimeException) {
+            logger.exception(TAG, exc.message.toString(), exc)
+        }
+        databaseFiles.forEach {
+            entries.add(Pair(it.absolutePath, createGUIListEntryFromFile(it)))
+        }
+        multiListPref?.entryValues = entries.map { it.first }.toTypedArray()
+        multiListPref?.entries = entries.map { it.second }.toTypedArray()
+    }
+
+    private fun deleteFile(file: File) {
+        logger.debug(TAG, "Deleting file: $file")
+        if (!file.exists()) {
+            throw IOException("Database file does not exist: $file")
+        }
+        if (!file.isFile) {
+            throw IOException("Not a database file: $file")
+        }
+        val success = file.delete()
+        if (!success) {
+            throw IOException("Could not delete database file: $file")
+        }
+    }
+
+    private fun getDatabaseFilesNotInUse(): List<File> {
+        val databaseFiles = getDatabasesFiles()
+        return databaseFiles.filterNot { isDatabaseFileInUse(it) }
+    }
+
+    private fun getDatabaseNameInUse(): String {
+        val databaseFiles = getDatabasesFiles()
+        val databasesInUse = databaseFiles.filter { isDatabaseFileInUse(it) }
+        if (databasesInUse.isEmpty()) {
+            return context?.getString(R.string.setting_USB_status_not_connected) ?: ""
+        }
+        return shortenDatabaseName(databasesInUse.first().name)
+    }
+
+    private fun getDatabasesFiles(): List<File> {
+        val databasesDir = File(context?.dataDir.toString() + "/databases")
+        return databasesDir.listFiles { _, name -> name.endsWith(".sqlite") }?.toList()?.sorted()
+            ?: throw RuntimeException("Could not get database files")
+    }
+
+    private fun isDatabaseFileInUse(file: File): Boolean {
+        val writeHeadLogFilePath = file.absolutePath + "-wal"
+        return File(writeHeadLogFilePath).exists()
+    }
+
+    private fun createGUIListEntryFromFile(file: File): String {
+        var fileName = file.name
+        try {
+            fileName = shortenDatabaseName(fileName)
+        } catch (exc: Exception) {
+            logger.exception(TAG, exc.message.toString(), exc)
+        }
+        var fileSizeStr = "???"
+        var lastModifiedDateStr = "???"
+        try {
+            val sizeBytes = file.length()
+            fileSizeStr = formatShortFileSize(context, sizeBytes)
+        } catch (exc: Exception) {
+            logger.exception(TAG, exc.message.toString(), exc)
+        }
+        try {
+            val lastModifiedMS = file.lastModified()
+            val lastModifiedDate = Date(lastModifiedMS)
+            lastModifiedDateStr = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(lastModifiedDate)
+        } catch (exc: Exception) {
+            logger.exception(TAG, exc.message.toString(), exc)
+        }
+        return "\u26C3 ${fileName}\n     $fileSizeStr \u2014 $lastModifiedDateStr"
+    }
+
+    private fun shortenDatabaseName(fileName: String): String {
+        val shortName = fileName.replace("^${AUDIOITEM_REPO_DB_PREFIX}(aw-)?".toRegex(), "")
+        return shortName.replace("\\.sqlite.*$".toRegex(), "")
+    }
+
+    private fun updateDatabaseStatus() {
+        val pref = findPreference<Preference>(PREF_DATABASE_STATUS)
+        try {
+            pref?.summary = getDatabaseNameInUse()
+        } catch (exc: RuntimeException) {
+            logger.exception(TAG, exc.message.toString(), exc)
+        }
     }
 
     override fun onResume() {
@@ -171,6 +308,16 @@ class SettingsFragment : PreferenceFragmentCompat() {
                     } else {
                         (activity as SettingsActivity).disableReadMetadata()
                     }
+                }
+                PREF_ENABLE_REPLAYGAIN -> {
+                    if ((preference as SwitchPreferenceCompat).isChecked) {
+                        (activity as SettingsActivity).enableReplayGain()
+                    } else {
+                        (activity as SettingsActivity).disableReplayGain()
+                    }
+                }
+                PREF_DELETE_DATABASES -> {
+                    updateDatabaseFiles()
                 }
             }
         } catch (exc: RuntimeException) {

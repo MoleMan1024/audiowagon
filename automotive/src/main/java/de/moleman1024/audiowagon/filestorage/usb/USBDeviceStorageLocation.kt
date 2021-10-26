@@ -124,47 +124,6 @@ class USBDeviceStorageLocation(override val device: USBMediaDevice) : AudioFileS
         return true
     }
 
-    /**
-     * The method guessContentTypeFromName() throws errors when certain characters appear in the name, remove those
-     */
-    private fun makeFileNameSafeForContentTypeGuessing(fileName: String): String {
-        return fileName.replace("#", "")
-    }
-
-    /**
-     * Check if Android MediaPlayer supports the given content type.
-     * See https://source.android.com/compatibility/10/android-10-cdd#5_1_3_audio_codecs_details
-     * For example .wma is not supported.
-     */
-    private fun isSupportedContentType(contentType: String): Boolean {
-        if (!contentType.startsWith("audio")) {
-            return false
-        }
-        if (isPlaylistFile(contentType)) {
-            return false
-        }
-        if (listOf(
-                "3gp", "aac", "amr", "flac", "m4a", "matroska", "mid", "mp3", "mp4", "mpeg", "mpg", "ogg", "opus",
-                "vorbis", "wav", "xmf"
-            ).any {
-                it in contentType
-            }
-        ) {
-            return true
-        }
-        return false
-    }
-
-    /**
-     * Checks if the given audio content/MIME type string represents a playlist (e.g. "mpegurl" is for .m3u
-     * playlists)
-     *
-     * @param contentType the content/MIME type string
-     */
-    private fun isPlaylistFile(contentType: String): Boolean {
-        return listOf("mpequrl", "mpegurl").any { it in contentType }
-    }
-
     override fun toString(): String {
         return "USBDeviceStorageLocation{${device.getID()}}"
     }

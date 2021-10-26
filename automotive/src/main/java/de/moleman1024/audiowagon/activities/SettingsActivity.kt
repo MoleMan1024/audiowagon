@@ -96,6 +96,16 @@ class SettingsActivity : AppCompatActivity() {
         mediaController.sendCommand(CMD_DISABLE_EQUALIZER, null, null)
     }
 
+    fun enableReplayGain() {
+        assertMediaControllerInitialized()
+        mediaController.sendCommand(CMD_ENABLE_REPLAYGAIN, null, null)
+    }
+
+    fun disableReplayGain() {
+        assertMediaControllerInitialized()
+        mediaController.sendCommand(CMD_DISABLE_REPLAYGAIN, null, null)
+    }
+
     fun updateEqualizerPreset(presetValue: String) {
         assertMediaControllerInitialized()
         val bundle = Bundle()

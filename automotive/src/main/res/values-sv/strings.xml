@@ -109,6 +109,10 @@ Google\n\nLicenstexter:\nwww.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/licens
 	<string name="toast_error_not_enough_space_for_log">Inte tillräckligt utrymme att skriva logg-fil</string>
 	<string name="setting_USB_status_too_many_files_in_dir">För många filer i en katalog. Vänligen använd
 underkataloger</string>
-	<string name="setting_read_metadata">Läs metadata</string>
 	<string name="browse_tree_category_files">Filer</string>
+	<string name="setting_library_category_title">Media</string>
+	<string name="setting_read_metadata">Läs metadata</string>
+	<string name="setting_delete_databases">Ta bort databaser</string>
+	<string name="setting_database_status_title">Databas</string>
+	<string name="setting_enable_replaygain">ReplayGain</string>
 </resources>

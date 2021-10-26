@@ -32,7 +32,8 @@ private val logger = Logger
  * See
  * https://www.sdgsystems.com/post/android-usb-permissions
  * https://stackoverflow.com/questions/12388914/usb-device-access-pop-up-suppression
- * FIXME: does not work on AAOS in Polestar 2, works fine on Pixel 3 XL with AAOS
+ *
+ * This does not work on AAOS in Polestar 2, works fine on Pixel 3 XL with AAOS.
  */
 @ExperimentalCoroutinesApi
 class USBDummyActivity : AppCompatActivity() {
