@@ -47,7 +47,7 @@ Please see Github for a [list of changes for each version of the app](https://gi
 
 ## How to use
 
-- Install the app via the [Google Play Store](https://play.google.com/store/apps/details?id=de.moleman1024.audiowagon) 
+- Install the app via the [Google Play Store](https://play.google.com/store/apps/details?id=de.moleman1024.audiowagon)
   (BETA TEST: you need an invite to see the app, [see below](#how-to-contribute))
 
 - Format a USB flash drive using **FAT32** filesystem
@@ -100,7 +100,7 @@ beta version. If you are interested, please contact me.
 ### Native speakers
 
 I am currently looking for **volunteer native speakers to translate** the GUI texts in the app to all languages
-(except German, English, Dutch, Swedish, Norwegian, Danish). You can get the
+(except German, English, Dutch, Swedish, Norwegian, Danish, French). You can get the
 [English strings to translate here](https://github.com/MoleMan1024/audiowagon/blob/master/automotive/src/main/res/values/strings.xml).
 
 
