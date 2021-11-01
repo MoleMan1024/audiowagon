@@ -17,6 +17,7 @@ import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.repository.AUDIOITEM_REPO_DB_PREFIX
 import kotlinx.coroutines.*
 import java.io.File
+import java.io.FileNotFoundException
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
@@ -168,6 +169,8 @@ class SettingsFragment : PreferenceFragmentCompat() {
         var databaseFiles: List<File> = listOf()
         try {
             databaseFiles = getDatabaseFilesNotInUse()
+        } catch (exc: IOException) {
+            logger.exception(TAG, exc.message.toString(), exc)
         } catch (exc: RuntimeException) {
             logger.exception(TAG, exc.message.toString(), exc)
         }
@@ -208,6 +211,9 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
     private fun getDatabasesFiles(): List<File> {
         val databasesDir = File(context?.dataDir.toString() + "/databases")
+        if (!databasesDir.exists()) {
+            throw FileNotFoundException("No databases directory")
+        }
         return databasesDir.listFiles { _, name -> name.endsWith(".sqlite") }?.toList()?.sorted()
             ?: throw RuntimeException("Could not get database files")
     }

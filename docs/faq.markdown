@@ -32,8 +32,9 @@ on your USB drive might be damaged.
 
 ![Too many files in a directory](/img/too_many_files.jpg)
 
-There is a limitation that you can only have up to 128 files in directory. Directories with more files than that are
-ignored. See [the section on limitations]({{ site.baseurl }}{% link index.markdown %}#limitations).
+There is a limitation that you can only have up to 128 files in directory in versions 0.6.0 and lower. Directories with
+more files than that are ignored. See [the section on limitations]({{ site.baseurl }}{% link index.markdown
+%}#limitations). This has been fixed in version 0.6.1.
 
 ### Why is my USB drive not recognized?
 
@@ -53,7 +54,7 @@ with a white outline). The other USB ports are for *charging your phone only*.
 This usually indicates some error has happened somewhere. Please switch to a different audio app (e.g. radio or
 Bluetooth™) and then back to AudioWagon, that should fix it.
 
-If not, go to Settings &#8594; Apps and notifications &#8594; Show all
+If not, go to General Android Settings &#8594; Apps and notifications &#8594; Show all
 apps &#8594; Show system &#8594; Media Center and tap "Force Stop", then try the app again.
 
 ### What happens during indexing?
@@ -68,14 +69,14 @@ When connecting the same USB drive again, the app will again go through all dire
 last file modification date. If the file has been modified, it will re-read the metadata of that file. If not, it will
 take the information from the database. Thus this process should be much quicker than the first time.
 
-In version 0.5.0 and higher you turn off this indexing of the metadata in the settings screen. Afterwards you will not
-be able to navigate by track/artist/album anymore, only by file/directory.
+In version 0.5.0 and higher you can turn off this indexing of the metadata in the settings screen. Afterwards you will
+not be able to navigate by track/artist/album anymore, only by file/directory.
 
 ### My operating system tells me that my USB drive has problems. But all files are okay?
 
 This can happen when the USB drive is not properly ejected. A secret marker will be set on the USB drive and this
 warning will pop-up reminding you to always properly eject the USB drive. Use your operating system to repair the USB
-drive that should remove this warning message.
+drive. That should remove this warning message.
 
 ### Files on my USB drive were deleted!
 
@@ -83,7 +84,9 @@ This usually means the FAT32 filesystem was damaged somehow. Unfortunately this 
 I am trying my best to avoid this situation but sometimes I don't know why it happens. Here are some things you can try
 if this happens to you:
 
-- First of all do not store any important data on the USB drive other than audio files
+- First of all do not store any important data on the USB drive other than audio files. Keep a copy of those files on
+  your PC
+- Update the app to version 0.6.1 or higher, there was an issue in earlier versions that could cause this corruption
 - Try using a different USB drive (flash memory can wear out after some years)
 - Try putting less data on the USB drive (this issue seems to happen more frequently to people who have gigabytes of
   music that they bring into their car)
@@ -143,9 +146,9 @@ No.
 
 No.
 
-[Android Auto](https://www.android.com/auto/) is an extension running on your mobile phone that connects to your car.
+[Android Auto](https://www.android.com/auto/) is a software running on your mobile phone and it connects to your car.
 The AudioWagon app can only run in
-[Android Automotive OS (AAOS)](https://developers.google.com/cars/design/automotive-os), which is an operating system
+[Android Automotive OS (AAOS)](https://developers.google.com/cars/design/automotive-os) which is an operating system
 built into certain car models.
 
 

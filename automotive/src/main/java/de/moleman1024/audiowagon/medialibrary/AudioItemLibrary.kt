@@ -16,7 +16,6 @@ import androidx.media.utils.MediaConstants
 import de.moleman1024.audiowagon.GUI
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.exceptions.CannotRecoverUSBException
-import de.moleman1024.audiowagon.exceptions.TooManyFilesInDirException
 import de.moleman1024.audiowagon.filestorage.AudioFile
 import de.moleman1024.audiowagon.filestorage.AudioFileStorage
 import de.moleman1024.audiowagon.log.Logger
@@ -25,7 +24,6 @@ import de.moleman1024.audiowagon.repository.AudioItemRepository
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.consumeEach
-import java.io.FileNotFoundException
 import java.io.IOException
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.coroutineContext
@@ -175,14 +173,8 @@ class AudioItemLibrary(
      */
     suspend fun getMediaItemsStartingFrom(contentHierarchyID: ContentHierarchyID): List<MediaItem> {
         logger.debug(TAG, "Requested MediaItem content hierarchy from library: $contentHierarchyID")
-        return try {
-            val contentHierarchyElement = createContentHierarchyElementForID(contentHierarchyID)
-            contentHierarchyElement.getMediaItems()
-        } catch (exc: TooManyFilesInDirException) {
-            logger.exception(TAG, exc.message.toString(), exc)
-            gui.showErrorToastMsg(context.getString(R.string.setting_USB_status_too_many_files_in_dir))
-            listOf()
-        }
+        val contentHierarchyElement = createContentHierarchyElementForID(contentHierarchyID)
+        return contentHierarchyElement.getMediaItems()
     }
 
     suspend fun getAudioItemsStartingFrom(contentHierarchyID: ContentHierarchyID): List<AudioItem> {

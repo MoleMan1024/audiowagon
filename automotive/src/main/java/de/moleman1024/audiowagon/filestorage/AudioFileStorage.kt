@@ -98,7 +98,7 @@ open class AudioFileStorage(
         if (Util.isDebugBuild(context)) {
             try {
                 // TOD: take this name from /storage
-                val sdCardMediaDevice = SDCardMediaDevice("E812-A0DC")
+                val sdCardMediaDevice = SDCardMediaDevice("A749-5ABA")
                 mediaDevicesForTest.add(sdCardMediaDevice)
             } catch (exc: RuntimeException) {
                 logger.warning(TAG, exc.message.toString())

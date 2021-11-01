@@ -14,6 +14,7 @@ import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import androidx.preference.PreferenceManager
 import de.moleman1024.audiowagon.R
+import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.activities.PREF_ENABLE_EQUALIZER
 import de.moleman1024.audiowagon.activities.PREF_ENABLE_REPLAYGAIN
 import de.moleman1024.audiowagon.activities.PREF_EQUALIZER_PRESET
@@ -120,13 +121,13 @@ class AudioPlayer(
     private suspend fun setCompletionListener(mediaPlayer: MediaPlayer?) {
         mediaPlayer?.setOnCompletionListener { completedMediaPlayer ->
             logger.debug(TAG, "onCompletion($mediaPlayer)")
-            scope.launch(dispatcher) {
+            launchInScopeSafely {
                 setState(completedMediaPlayer, AudioPlayerState.PLAYBACK_COMPLETED)
                 logger.debug(TAG, "Metrics: ${getMetrics()}")
                 if (playbackQueue.hasEnded()) {
                     stop()
                     playbackQueue.clear()
-                    return@launch
+                    return@launchInScopeSafely
                 }
                 cancelSetupNextPlayerJob()
                 playbackQueue.incrementIndex()
@@ -150,7 +151,7 @@ class AudioPlayer(
             logger.debug(TAG, "onInfo($mediaPlayerWithInfo): $what $extra")
             when (what) {
                 MediaPlayer.MEDIA_INFO_STARTED_AS_NEXT -> {
-                    scope.launch(dispatcher) {
+                    launchInScopeSafely {
                         setState(mediaPlayerWithInfo, AudioPlayerState.STARTED)
                     }
                 }
@@ -165,10 +166,10 @@ class AudioPlayer(
     private suspend fun setErrorListener() {
         currentMediaPlayer?.setOnErrorListener { player, what, extra ->
             logger.debug(TAG, "onError(player=$player,what=$what,extra=$extra")
-            scope.launch(dispatcher) {
+            launchInScopeSafely {
                 if (isRecoveringFromIOError) {
                     logger.warning(TAG, "Recovery from previous error in progress")
-                    return@launch
+                    return@launchInScopeSafely
                 }
                 playerStatus.errorCode = what
                 when (what) {
@@ -275,7 +276,7 @@ class AudioPlayer(
                 return@withContext
             }
             currentMediaPlayer?.setOnSeekCompleteListener {
-                scope.launch(dispatcher) {
+                launchInScopeSafely {
                     notifyPlayerStatusChange()
                 }
             }
@@ -501,7 +502,10 @@ class AudioPlayer(
     private suspend fun notifyPlayerStatus(status: AudioPlayerStatus) {
         // this needs to run in a different dispatcher than the single thread used for this AudioPlayer to avoid
         // deadlocks
-        scope.launch(playerStatusDispatcher) {
+        val exceptionHandler = CoroutineExceptionHandler { coroutineContext, exc ->
+            logger.exception(TAG, coroutineContext.toString() + " threw " + exc.message.toString(), exc)
+        }
+        scope.launch(exceptionHandler + playerStatusDispatcher) {
             playerStatusObservers.forEach { it(status) }
         }
     }
@@ -588,13 +592,13 @@ class AudioPlayer(
     }
 
     private suspend fun setupNextPlayer() {
-        setupNextPlayerJob = scope.launch(dispatcher) {
+        setupNextPlayerJob = launchInScopeSafely {
             logger.debug(TAG, "setupNextPlayer()")
             val nextQueueItem: MediaSessionCompat.QueueItem? = playbackQueue.getNextItem()
             if (nextQueueItem == null) {
                 logger.debug(TAG, "This is the last track, not using next player")
                 removeNextPlayer()
-                return@launch
+                return@launchInScopeSafely
             }
             val nextMediaPlayer: MediaPlayer =
                 getNextPlayer() ?: throw RuntimeException("Next media player not initialized")
@@ -607,7 +611,11 @@ class AudioPlayer(
             try {
                 nextMediaDataSource = getDataSourceForURI(nextURI)
             } catch (exc: UnsupportedOperationException) {
-                return@launch
+                logger.exception(TAG, exc.message.toString(), exc)
+                return@launchInScopeSafely
+            } catch (exc: IOException) {
+                logger.exception(TAG, exc.message.toString(), exc)
+                return@launchInScopeSafely
             }
             nextMediaPlayer.setDataSource(nextMediaDataSource)
             logger.debug(TAG, "prepare() next player")
@@ -930,17 +938,8 @@ class AudioPlayer(
         }
     }
 
-    private fun launchInScopeSafely(func: suspend () -> Unit) {
-        val exceptionHandler = CoroutineExceptionHandler { coroutineContext, exc ->
-            logger.exception(TAG, coroutineContext.toString() + " threw " + exc.message.toString(), exc)
-        }
-        scope.launch(exceptionHandler + dispatcher) {
-            try {
-                func()
-            } catch (exc: Exception) {
-                logger.exception(TAG, exc.message.toString(), exc)
-            }
-        }
+    private fun launchInScopeSafely(func: suspend () -> Unit): Job {
+        return Util.launchInScopeSafely(scope, dispatcher, logger, TAG, func)
     }
 
     suspend fun isPlaybackQueueEmpty(): Boolean = withContext(dispatcher) {

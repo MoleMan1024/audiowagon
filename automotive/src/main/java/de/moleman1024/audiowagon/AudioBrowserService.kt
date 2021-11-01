@@ -66,6 +66,7 @@ private const val TAG = "AudioBrowserService"
 const val NOTIFICATION_ID: Int = 25575
 const val ACTION_RESTART_SERVICE: String = "de.moleman1024.audiowagon.ACTION_RESTART_SERVICE"
 const val ACTION_QUICKBOOT_POWEROFF: String = "android.intent.action.QUICKBOOT_POWEROFF"
+const val ACTION_PLAY_USB: String = "android.car.intent.action.PLAY_USB"
 const val CMD_ENABLE_LOG_TO_USB = "de.moleman1024.audiowagon.CMD_ENABLE_LOG_TO_USB"
 const val CMD_DISABLE_LOG_TO_USB = "de.moleman1024.audiowagon.CMD_DISABLE_LOG_TO_USB"
 const val CMD_ENABLE_EQUALIZER = "de.moleman1024.audiowagon.CMD_ENABLE_EQUALIZER"
@@ -497,6 +498,11 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         logger.debug(TAG, "onStartCommand(intent=$intent, flags=$flags, startid=$startId)")
         lifecycleRegistry.currentState = Lifecycle.State.STARTED
         isServiceStarted = true
+        if (intent?.action == ACTION_PLAY_USB) {
+            launchInScopeSafely {
+                audioSession.playAnything()
+            }
+        }
         return super.onStartCommand(intent, flags, startId)
     }
 
@@ -747,18 +753,8 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         }
     }
 
-    // TODO: duplicate code
     private fun launchInScopeSafely(func: suspend () -> Unit): Job {
-        val exceptionHandler = CoroutineExceptionHandler { coroutineContext, exc ->
-            logger.exception(TAG, coroutineContext.toString() + " threw " + exc.message.toString(), exc)
-        }
-        return lifecycleScope.launch(exceptionHandler + dispatcher) {
-            try {
-                func()
-            } catch (exc: Exception) {
-                logger.exception(TAG, exc.message.toString(), exc)
-            }
-        }
+        return Util.launchInScopeSafely(lifecycleScope, dispatcher, logger, TAG, func)
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.NONE)

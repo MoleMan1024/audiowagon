@@ -41,6 +41,8 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
         // TODO: find out reason for
         //  java.lang.RuntimeException: setDataSourceCallback failed: status = 0x80000000
         //  that sometimes happens for some files
+        // This can fail on invalid UTF-8 strings in metadata with a JNI error which will cause app to crash.
+        //  Needs to be fixed inside Android Automotive itself.
         metadataRetriever.setDataSource(dataSource)
         if (dataSource is USBAudioDataSource && dataSource.hasError) {
             throw IOException("DataSource error")

@@ -336,6 +336,17 @@ class AudioSession(
         }
     }
 
+    suspend fun playAnything() {
+        logger.debug(TAG, "playAnything()")
+        if (currentQueueItem != null) {
+            audioPlayer.start()
+        } else {
+            val contentHierarchyIDShuffleAll = ContentHierarchyID(ContentHierarchyType.SHUFFLE_ALL_TRACKS)
+            val shuffledItems = audioItemLibrary.getAudioItemsStartingFrom(contentHierarchyIDShuffleAll)
+            createQueueAndPlay(shuffledItems)
+        }
+    }
+
     fun stopPlayer() {
         logger.debug(TAG, "stopPlayer()")
         runBlocking(dispatcher) {
@@ -843,7 +854,6 @@ class AudioSession(
         audioSessionNotifications.currentQueueItem = item
     }
 
-    // TODO: similar code
     private fun launchInScopeSafely(message: String, func: suspend () -> Unit): Job {
         val exceptionHandler = CoroutineExceptionHandler { coroutineContext, exc ->
             handleException("$message ($coroutineContext threw ${exc.message})", exc)

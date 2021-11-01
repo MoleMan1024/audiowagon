@@ -36,7 +36,8 @@ interface AlbumDAO {
     @Query("SELECT * FROM album WHERE parentArtistId = :artistId")
     fun queryAlbumsByArtist(artistId: Long): List<Album>
 
-    @Query("SELECT * FROM album ORDER BY name COLLATE NOCASE ASC LIMIT :maxNumRows OFFSET :offsetRows")
+    @Query("SELECT * FROM album WHERE albumId IN (SELECT albumId FROM album ORDER BY name COLLATE NOCASE ASC LIMIT " +
+            ":maxNumRows OFFSET :offsetRows)")
     fun queryAlbumsLimitOffset(maxNumRows: Int, offsetRows: Int): List<Album>
 
     @Query("SELECT * FROM album WHERE parentArtistId = :artistId ORDER BY name COLLATE NOCASE ASC LIMIT :maxNumRows " +

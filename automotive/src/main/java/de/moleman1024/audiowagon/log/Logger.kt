@@ -174,7 +174,8 @@ object Logger : LoggerInterface {
                 }
                 buffer.add(formattedLogLine)
             } else {
-                // FIXME: sometimes loglines overlap partially, check threads?
+                // FIXME: sometimes loglines overlap partially, check threads? could also be related to
+                //  https://github.com/magnusja/libaums/issues/298
                 try {
                     bufOutStream?.write(formattedLogLine.toByteArray())
                     if (stackTrace.isBlank()) {

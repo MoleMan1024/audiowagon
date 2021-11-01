@@ -7,9 +7,7 @@ package de.moleman1024.audiowagon.filestorage.sd
 
 import android.media.MediaDataSource
 import android.net.Uri
-import com.github.mjdev.libaums.fs.UsbFile
 import de.moleman1024.audiowagon.exceptions.NoSuchDeviceException
-import de.moleman1024.audiowagon.exceptions.TooManyFilesInDirException
 import de.moleman1024.audiowagon.filestorage.AudioFile
 import de.moleman1024.audiowagon.filestorage.MediaDevice
 import de.moleman1024.audiowagon.log.Logger

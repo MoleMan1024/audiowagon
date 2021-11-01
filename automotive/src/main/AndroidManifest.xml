@@ -91,6 +91,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 			<intent-filter>
 				<action android:name="android.media.browse.MediaBrowserService" />
 				<action android:name="android.intent.action.MEDIA_BUTTON" />
+				<action android:name="android.car.intent.action.PLAY_USB" />
 			</intent-filter>
 		</service>
 		<receiver android:name="androidx.media.session.MediaButtonReceiver">

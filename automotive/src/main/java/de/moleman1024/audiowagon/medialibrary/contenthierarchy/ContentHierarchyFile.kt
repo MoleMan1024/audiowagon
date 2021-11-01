@@ -8,7 +8,6 @@ package de.moleman1024.audiowagon.medialibrary.contenthierarchy
 import android.content.Context
 import android.support.v4.media.MediaBrowserCompat.MediaItem
 import de.moleman1024.audiowagon.Util
-import de.moleman1024.audiowagon.exceptions.TooManyFilesInDirException
 import de.moleman1024.audiowagon.filestorage.AudioFile
 import de.moleman1024.audiowagon.filestorage.AudioFileStorage
 import de.moleman1024.audiowagon.filestorage.Directory
@@ -46,13 +45,8 @@ class ContentHierarchyFile(
             return listOf()
         }
         val directoryURI = Util.createURIForPath(storageLocation.storageID, parentPath.removePrefix("/"))
-        val directoryContents: List<FileLike>
-        try {
-            directoryContents =
-                storageLocation.getDirectoryContents(Directory(directoryURI)).sortedBy { it.name.lowercase() }
-        } catch (exc: TooManyFilesInDirException) {
-            return listOf()
-        }
+        val directoryContents: List<FileLike> =
+            storageLocation.getDirectoryContents(Directory(directoryURI)).sortedBy { it.name.lowercase() }
         directoryContents.filterIsInstance<AudioFile>().forEach {
             val audioFile = AudioFile(Util.createURIForPath(storageLocation.storageID, it.path))
             items += audioItemLibrary.createAudioItemForFile(audioFile)

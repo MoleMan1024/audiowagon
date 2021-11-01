@@ -51,12 +51,12 @@ interface TrackDAO {
     @Query("SELECT * FROM track WHERE parentAlbumId = -1 ORDER BY name COLLATE NOCASE ASC")
     fun queryTracksAlbumUnknown(): List<Track>
 
-    @Query("SELECT * FROM track ORDER BY name COLLATE NOCASE ASC LIMIT :maxNumRows OFFSET :offsetRows")
+    @Query("SELECT * FROM track WHERE trackId IN (SELECT trackId FROM track ORDER BY name COLLATE NOCASE ASC LIMIT " +
+            ":maxNumRows OFFSET :offsetRows)")
     fun queryTracksLimitOffset(maxNumRows: Int, offsetRows: Int): List<Track>
 
     @Query("SELECT * FROM track WHERE parentArtistId = :artistId AND parentAlbumId = :albumId ORDER BY name COLLATE " +
-            "NOCASE ASC LIMIT :maxNumRows OFFSET :offsetRows"
-    )
+            "NOCASE ASC LIMIT :maxNumRows OFFSET :offsetRows")
     fun queryTracksForArtistAlbumLimitOffset(
         maxNumRows: Int, offsetRows: Int, artistId: Long, albumId: Long
     ): List<Track>

@@ -18,8 +18,8 @@ android {
 		applicationId "de.moleman1024.audiowagon"
 		minSdkVersion rootProject.minSdkVersion
 		targetSdkVersion rootProject.targetSdkVersion
-		versionCode 60
-		versionName "0.6.0"
+		versionCode 61
+		versionName "0.6.1"
 		resValue "string", "VERSION_NAME", versionName
 		testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 		manifestPlaceholders["requestLegacyExternalStorage"] = "false"
@@ -47,17 +47,6 @@ android {
 	}
 }
 
-// using Jacoco for coverage reports due to to this bug in IntelliJ coverage runner:
-// https://youtrack.jetbrains.com/issue/KTIJ-17010
-/*jacoco {
-	toolVersion = "0.8.7"
-
-	tasks.withType(Test) {
-		jacoco.includeNoLocationClasses = true
-		jacoco.excludes = ["jdk.internal.*"]
-	}
-}*/
-
 dependencies {
 	def room_version = "2.3.0"
 	def junit_version = "4.13.2"
@@ -79,7 +68,7 @@ dependencies {
 	implementation "androidx.lifecycle:lifecycle-runtime-ktx:$androidx_lifecycle_version"
 	implementation "org.jetbrains.kotlinx:kotlinx-serialization-core:$kotlinx_serialization_version"
 	implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinx_serialization_version"
-	implementation files("libs/libaums-0.8.0.aar")
+	implementation files("libs/libaums-0.8.1.aar")
 
 	// junit4 for local unit tests
 	testImplementation "junit:junit:$junit_version"

@@ -13,9 +13,7 @@ import android.support.v4.media.session.MediaSessionCompat
 import de.moleman1024.audiowagon.*
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 
 private const val TAG = "AudioSessCB"
 private val logger = Logger
@@ -249,18 +247,8 @@ class AudioSessionCallback(
         super.onPrepareFromUri(uri, extras)
     }
 
-    // TODO: duplicate code
     private fun launchInScopeSafely(func: suspend () -> Unit) {
-        val exceptionHandler = CoroutineExceptionHandler { coroutineContext, exc ->
-            logger.exception(TAG, coroutineContext.toString() + " threw " + exc.message.toString(), exc)
-        }
-        scope.launch(exceptionHandler + dispatcher) {
-            try {
-                func()
-            } catch (exc: Exception) {
-                logger.exception(TAG, exc.message.toString(), exc)
-            }
-        }
+        Util.launchInScopeSafely(scope, dispatcher, logger, TAG, func)
     }
 
     // we don't use onSetShuffleMode and onSetRepeatMode here because AAOS does not display the GUI icons for these

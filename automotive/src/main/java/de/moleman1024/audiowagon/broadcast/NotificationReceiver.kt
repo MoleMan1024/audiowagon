@@ -8,11 +8,10 @@ package de.moleman1024.audiowagon.broadcast
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.player.AudioPlayer
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 
 private const val TAG = "NotificationReceiver"
 private val logger = Logger
@@ -34,22 +33,18 @@ class NotificationReceiver(
         }
         logger.debug(TAG, "Received notification: $intent")
         when (intent.action) {
-            ACTION_PLAY -> scope.launch(dispatcher) { callSafely { audioPlayer.start() } }
-            ACTION_PAUSE -> scope.launch(dispatcher) { callSafely { audioPlayer.pause() } }
-            ACTION_NEXT -> scope.launch(dispatcher) { callSafely { audioPlayer.skipNextTrack() } }
-            ACTION_PREV -> scope.launch(dispatcher) { callSafely { audioPlayer.skipPreviousTrack() } }
+            ACTION_PLAY -> launchInScopeSafely { audioPlayer.start() }
+            ACTION_PAUSE -> launchInScopeSafely { audioPlayer.pause() }
+            ACTION_NEXT -> launchInScopeSafely { audioPlayer.skipNextTrack() }
+            ACTION_PREV -> launchInScopeSafely { audioPlayer.skipPreviousTrack() }
             else -> {
                 logger.warning(TAG, "Ignoring unhandled action: ${intent.action}")
             }
         }
     }
 
-    private inline fun <T> callSafely(call: () -> T) {
-        try {
-            call()
-        } catch (exc: Exception) {
-            logger.exception(TAG, exc.message.toString(), exc)
-        }
+    private fun launchInScopeSafely(func: suspend () -> Unit) {
+        Util.launchInScopeSafely(scope, dispatcher, logger, TAG, func)
     }
 
 }

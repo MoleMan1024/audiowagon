@@ -108,7 +108,6 @@ class AlbumArtContentProvider : ContentProvider() {
                 }
 
                 override fun onRead(offset: Long, size: Int, data: ByteArray?): Int {
-                    logger.verbose(TAG, "onRead(offset=$offset, size=$size)")
                     val albumArtBuf = getAlbumArtByteBuffer()
                     if (albumArtBuf == null || albumArtBuf.limit() <= 0) {
                         return 0
@@ -133,7 +132,6 @@ class AlbumArtContentProvider : ContentProvider() {
 
                 override fun onRelease() {
                     albumArtBuf?.rewind()
-                    logger.verbose(TAG, "onRelease() for $albumArtBuf")
                 }
             },
             handler

@@ -29,7 +29,7 @@ private val logger = Logger
  * reads files sequentially for most of the time, older cached chunks are not required usually).
  */
 class USBAudioCachedDataSource(
-    private var usbFile: UsbFile?,
+    usbFile: UsbFile?,
     chunkSize: Int,
 ) : USBAudioDataSource(usbFile, chunkSize) {
     private val cacheMap: TreeMap<Long, AgingCache> = TreeMap<Long, AgingCache>()

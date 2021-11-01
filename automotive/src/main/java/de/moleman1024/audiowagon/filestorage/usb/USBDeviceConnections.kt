@@ -223,17 +223,7 @@ class USBDeviceConnections(
         // TODO: improve this, does not look nice with so many catch statements
         try {
             connectedDevice.initFilesystem()
-        } catch(exc: TooManyFilesInDirException) {
-            logger.exception(TAG, exc.message.toString(), exc)
-            connectedDevice.close()
-            updateUSBStatusInSettings(R.string.setting_USB_status_too_many_files_in_dir)
-            val deviceChange = exc.message?.let {
-                DeviceChange(error = context.getString(R.string.setting_USB_status_too_many_files_in_dir))
-            }
-            deviceChange?.let { notifyObservers(it) }
-            return
-        }
-        catch (exc: IOException) {
+        } catch (exc: IOException) {
             logger.exception(TAG, "I/O exception when attaching USB drive", exc)
             updateUSBStatusInSettings(R.string.setting_USB_status_error)
             val deviceChange = exc.message?.let { DeviceChange(error = it) }

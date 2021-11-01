@@ -19,7 +19,6 @@ import com.github.mjdev.libaums.fs.UsbFile
 import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.exceptions.DriveAlmostFullException
 import de.moleman1024.audiowagon.exceptions.NoFileSystemException
-import de.moleman1024.audiowagon.exceptions.TooManyFilesInDirException
 import de.moleman1024.audiowagon.filestorage.AudioFile
 import de.moleman1024.audiowagon.filestorage.MediaDevice
 import de.moleman1024.audiowagon.log.Logger
@@ -184,26 +183,6 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
         }
         volumeLabel = fileSystem?.volumeLabel?.trim() ?: ""
         logger.debug(TAG, "Initialized filesystem with volume label: $volumeLabel")
-        if (areTooManyFilesInDir(getRoot())) {
-            throw TooManyFilesInDirException()
-        }
-    }
-
-    /**
-     * libaums has a bug where more than 128 in root directory will corrupt the filesystem, avoid reading such
-     * filesystems and notify user (see https://github.com/MoleMan1024/audiowagon_beta/issues/14)
-     */
-    private fun areTooManyFilesInDir(directory: UsbFile): Boolean {
-        assertFileSystemAvailable()
-        var numFiles = 0
-        // TODO: this will not work if no file extensions are used
-        directory.list().forEach {
-            if (it.trim().matches(Regex(".*\\.\\w\\w\\w\\w?$"))) {
-                numFiles++
-            }
-        }
-        logger.debug(TAG, "Found $numFiles files in ${directory.absolutePath}")
-        return numFiles >= 128
     }
 
     fun enableLogging() {
@@ -220,27 +199,10 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
         val now = LocalDateTime.now()
         val logFileName = "audiowagon_${now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"))}.log"
         try {
-            // libaums has a bug where more than 128 files in a directory will corrupt the filesystem, so we also
-            // avoid writing too many log files in the same directory
-            // (see https://github.com/MoleMan1024/audiowagon_beta/issues/14 )
-            var logDirectory: UsbFile? = null
-            var tries = 0
-            while (tries < 100) {
-                logDirectory = getRoot().search("${LOG_DIRECTORY}_$logDirectoryNum")
-                if (logDirectory == null) {
-                    logDirectory = getRoot().createDirectory("${LOG_DIRECTORY}_$logDirectoryNum")
-                    break
-                } else {
-                    if (logDirectory.list().size >= 128) {
-                        logDirectoryNum++
-                    } else {
-                        break
-                    }
-                }
-                tries++
-            }
+            var logDirectory: UsbFile?
+            logDirectory = getRoot().search("${LOG_DIRECTORY}_$logDirectoryNum")
             if (logDirectory == null) {
-                throw TooManyFilesInDirException()
+                logDirectory = getRoot().createDirectory("${LOG_DIRECTORY}_$logDirectoryNum")
             }
             logFile = logDirectory.createFile(logFileName)
             logger.debug(TAG, "Logging to file on USB device: ${logFile!!.absolutePath}")
@@ -328,17 +290,10 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
                         yield(fileOrDirectory)
                     } else {
                         assertFileSystemAvailable()
-                        if (fileOrDirectory.name.contains("(FOUND\\.000|LOST\\.DIR|$LOG_DIRECTORY)".toRegex())) {
+                        if (fileOrDirectory.name.contains(Util.DIRECTORIES_TO_IGNORE_REGEX)) {
                             logger.debug(TAG, "Ignoring directory: ${fileOrDirectory.name}")
-                        }
-                        else if (!areTooManyFilesInDir(fileOrDirectory)) {
-                            stack.add(fileOrDirectory.listFiles().iterator())
                         } else {
-                            // libaums has a bug where using listFiles() with more than 128 files in a directory will
-                            // corrupt the filesystem, avoid reading such directories
-                            // (see https://github.com/MoleMan1024/audiowagon_beta/issues/14 )
-                            logger.warning(TAG, "Ignoring directory with more than 128 files: $fileOrDirectory")
-                            directoriesWithIssues.add(fileOrDirectory.absolutePath)
+                            stack.add(fileOrDirectory.listFiles().iterator())
                         }
                     }
                 }
@@ -359,9 +314,6 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
         val directory = getUSBFileFromURI(directoryURI)
         if (!directory.isDirectory) {
             throw IllegalArgumentException("Is not a directory: $directory")
-        }
-        if (areTooManyFilesInDir(directory)) {
-            throw TooManyFilesInDirException()
         }
         return directory.listFiles().toList()
     }

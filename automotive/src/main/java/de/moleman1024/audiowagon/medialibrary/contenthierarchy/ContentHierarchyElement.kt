@@ -87,6 +87,7 @@ abstract class ContentHierarchyElement(
                         lastItemInGroup =
                             repo.getTracksForArtistLimitOffset(1, offsetRows, groupContentHierarchyID.artistID)
                     } else {
+                        // TODO: this is quite slow: 4.5 sec for 30k tracks, maybe cache it?
                         firstItemInGroup = repo.getTracksLimitOffset(1, offset)
                         lastItemInGroup = repo.getTracksLimitOffset(1, offsetRows)
                     }

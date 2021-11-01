@@ -7,11 +7,9 @@ package de.moleman1024.audiowagon.filestorage
 
 import android.media.MediaDataSource
 import android.net.Uri
-import com.github.mjdev.libaums.fs.UsbFile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.ReceiveChannel
-import java.net.URLConnection
 
 interface AudioFileStorageLocation {
     val device: MediaDevice

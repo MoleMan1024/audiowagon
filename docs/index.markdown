@@ -38,11 +38,11 @@ Please see Github for a [list of changes for each version of the app](https://gi
 
 ## Limitations
 
-- You can only put up to 128 *files* into any directory. You can use as many *directories* as you want though. I advise a
-  directory structure like this: `D:/Music/<Artist>/<Album>/<Song1..n>.mp3`. If you use more than 128 files in a
-  directory then AudioWagon version 0.2.5 will corrupt your USB drive and you will lose your files on it. Version 0.3.4
-  and higher will prevent the data loss, however the limitation will still exist until the underlying issue can be fixed
-  (directories with more than 128 files in them are ignored).
+- In AudioWagon versions 0.6.0 and lower you can only put up to 128 *files* into any directory. You can use as many
+  *directories* as you want though. I advise a directory structure like this:
+  `D:/Music/<Artist>/<Album>/<Song1..n>.mp3`. If you use more than 128 files in a directory then AudioWagon version
+  0.2.5 will corrupt your USB drive and you will lose your files on it. Version 0.3.4 and higher will prevent the data
+  loss, however the limitation still exists. The limitation is fixed and removed in version 0.6.1.
 - The app can *not* play back **.wma** files
 
 ## How to use
@@ -81,14 +81,15 @@ I advise all beta testers to keep logging to USB *activated* in the settings at 
 the following info to me at my email (or you can use [GitHub](https://github.com/MoleMan1024/audiowagon/issues)):
 
 - What happened? Describe ALL steps that you did EXACTLY. Please mention even minor details (e.g. did you leave/enter
-  the car before you saw the issue occur?)
+  the car before you saw the issue occur?). Also be precise: saying that something "does not work"/"is broken" is not
+  helpful, rather describe what the behaviour of the app actually is.
 - What did you expect to happen?
 - At what date/time did the issue happen? (so I can align with the timestamps in the log files)
 - Which version of AudioWagon were you using? (version number can be found in the settings screen)
-- Which version is your car's software? (e.g. P2124 on a Polestar2)
+- Which version is your car's software? (e.g. P2124 on a Polestar 2)
 - Log files are being created continously on your USB drive (if this is enabled in the settings). Please attach these
-logfiles from around the date/time when this happened (also provide previous logfile). They have filenames like
-`aw_logs_<num>/audiowagon_<date_and_time>.log`.
+log files from around the date/time when this happened (also provide previous log file). They have filenames like
+`aw_logs_0/audiowagon_<date_and_time>.log`.
 
 ## How to contribute?
 

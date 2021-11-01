@@ -12,6 +12,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- improved latency of some database lookups
+- improve robustness
+
+
+## [0.6.1] - 2021-11-01
+
+### Fixed
+
+- fix filesystem corruption due to issues in *libaums* library. This will also remove the limitation 
+  of having max 128 files per directory. The issue was a combination of ignoring data when reading long FAT cluster
+  chains as well as unintended writing to USB filesystem while reading from it in multiple threads 
+  [#37](https://github.com/MoleMan1024/audiowagon/issues/37)
+
 
 ## [0.6.0] - 2021-10-26
 

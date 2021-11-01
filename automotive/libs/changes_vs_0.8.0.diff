@@ -1,0 +1,1000 @@
+diff --git a/androidtests/build.gradle b/androidtests/build.gradle
+index c1e4c65..c93d9f4 100644
+--- a/androidtests/build.gradle
++++ b/androidtests/build.gradle
+@@ -1,6 +1,5 @@
+ apply plugin: 'com.android.library'
+ apply plugin: 'kotlin-android'
+-apply plugin: 'kotlin-android-extensions'
+ 
+ android {
+     compileSdkVersion 30
+@@ -45,4 +44,4 @@ dependencies {
+     androidTestImplementation 'androidx.test:rules:1.3.0'
+     androidTestImplementation project(':javafs')
+     androidTestImplementation project(':libusbcommunication')
+-}
+\ No newline at end of file
++}
+diff --git a/app/build.gradle b/app/build.gradle
+index 744f361..4329cfe 100644
+--- a/app/build.gradle
++++ b/app/build.gradle
+@@ -1,6 +1,5 @@
+ apply plugin: 'com.android.application'
+ apply plugin: 'kotlin-android'
+-apply plugin: 'kotlin-android-extensions'
+ 
+ android {
+     compileSdkVersion 30
+diff --git a/build.gradle b/build.gradle
+index a93cb01..007a6cd 100644
+--- a/build.gradle
++++ b/build.gradle
+@@ -2,16 +2,14 @@
+ 
+ 
+ buildscript {
+-    ext.kotlin_version = '1.3.61'
++    ext.kotlin_version = '1.5.21'
+     repositories {
+         mavenCentral()
+-        maven { url "https://plugins.gradle.org/m2/" }
+         google()
+     }
+     dependencies {
+-        classpath 'com.android.tools.build:gradle:4.1.1'
++        classpath 'com.android.tools.build:gradle:7.0.2'
+ 
+-        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.4'
+         classpath 'com.github.dcendents:android-maven-gradle-plugin:2.1'
+ 
+         classpath 'org.codehaus.groovy:groovy-all:2.4.15'
+@@ -51,8 +49,6 @@ ext {
+ 
+ allprojects {
+     repositories {
+-        jcenter()
+-        maven { url 'https://dl.bintray.com/magnusja/maven' }
+         maven {
+             url 'https://maven.google.com/'
+             name 'Google'
+diff --git a/gradle/wrapper/gradle-wrapper.properties b/gradle/wrapper/gradle-wrapper.properties
+index d7ac93c..526c7dc 100644
+--- a/gradle/wrapper/gradle-wrapper.properties
++++ b/gradle/wrapper/gradle-wrapper.properties
+@@ -3,4 +3,4 @@ distributionBase=GRADLE_USER_HOME
+ distributionPath=wrapper/dists
+ zipStoreBase=GRADLE_USER_HOME
+ zipStorePath=wrapper/dists
+-distributionUrl=https\://services.gradle.org/distributions/gradle-6.7.1-all.zip
++distributionUrl=https\://services.gradle.org/distributions/gradle-7.0.2-all.zip
+diff --git a/httpserver/build.gradle b/httpserver/build.gradle
+index f5d6cd2..e5940d8 100644
+--- a/httpserver/build.gradle
++++ b/httpserver/build.gradle
+@@ -1,6 +1,5 @@
+ apply plugin: 'com.android.library'
+ apply plugin: 'kotlin-android'
+-apply plugin: 'kotlin-android-extensions'
+ apply plugin: 'org.jetbrains.dokka'
+ 
+ project.archivesBaseName = 'libaums-httpserver'
+@@ -57,4 +56,4 @@ task bintray {
+ }
+ repositories {
+     mavenCentral()
+-}
+\ No newline at end of file
++}
+diff --git a/libaums/build.gradle b/libaums/build.gradle
+index 146d98f..6bb37f6 100644
+--- a/libaums/build.gradle
++++ b/libaums/build.gradle
+@@ -1,23 +1,15 @@
+ apply plugin: 'com.android.library'
+ apply plugin: 'kotlin-android'
+-apply plugin: 'kotlin-android-extensions'
+-apply plugin: 'org.jetbrains.dokka'
+-apply plugin: "com.vanniktech.android.junit.jacoco"
+ 
+ ext {
+     artifact = 'libaums'
+-    bintrayName = 'libaums'
+-    libraryVersion = '0.8.0'
++    libraryVersion = '0.8.1'
+ }
+ 
+ configurations {
+     javadocDeps
+ }
+ 
+-junitJacoco {
+-    jacocoVersion = "0.8.6"
+-}
+-
+ android {
+     compileSdkVersion 30
+     buildToolsVersion '30.0.3'
+@@ -25,8 +17,8 @@ android {
+     defaultConfig {
+         minSdkVersion 15
+         targetSdkVersion 30
+-        versionCode 80
+-        versionName "0.8.0"
++        versionCode 81
++        versionName "0.8.1"
+ 
+         externalNativeBuild {
+             cmake {
+@@ -39,10 +31,6 @@ android {
+             minifyEnabled false
+             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+         }
+-
+-        debug {
+-            testCoverageEnabled true
+-        }
+     }
+ 
+     lintOptions {
+@@ -59,27 +47,22 @@ android {
+             path "CMakeLists.txt"
+         }
+     }
+-    ndkVersion '22.0.70260617'
++    ndkVersion '23.0.7599858'
+ }
+ 
+ dependencies {
+-    testImplementation 'junit:junit:4.13'
++    testImplementation 'junit:junit:4.13.2'
+     testImplementation 'org.apache.commons:commons-io:1.3.2'
+     testImplementation 'com.eclipsesource.minimal-json:minimal-json:0.9.4'
+     testImplementation 'org.xenei:junit-contracts:0.1.7'
+-    testImplementation 'org.mockito:mockito-core:2.28.2'
++    testImplementation 'org.mockito:mockito-core:3.11.1'
+ 
+-    api 'androidx.annotation:annotation:1.1.0'
+-    javadocDeps 'androidx.annotation:annotation:1.1.0'
+-    api 'androidx.core:core:1.5.0-alpha05'
+-    api "androidx.core:core-ktx:1.3.2"
++    api 'androidx.annotation:annotation:1.2.0'
++    javadocDeps 'androidx.annotation:annotation:1.2.0'
++    api "androidx.core:core-ktx:1.6.0"
+     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+ }
+ 
+-task bintray {
+-    apply from: '../install.gradle'
+-    apply from: '../bintray.gradle'
+-}
+ repositories {
+     mavenCentral()
+ }
+diff --git a/libaums/src/main/java/com/github/mjdev/libaums/driver/ByteBlockDevice.kt b/libaums/src/main/java/com/github/mjdev/libaums/driver/ByteBlockDevice.kt
+index d3dce5b..b12804a 100644
+--- a/libaums/src/main/java/com/github/mjdev/libaums/driver/ByteBlockDevice.kt
++++ b/libaums/src/main/java/com/github/mjdev/libaums/driver/ByteBlockDevice.kt
+@@ -22,86 +22,86 @@ open class ByteBlockDevice @JvmOverloads constructor(private val targetBlockDevi
+     }
+ 
+     @Throws(IOException::class)
+-    override fun read(byteOffset: Long, dest: ByteBuffer) {
+-        var devOffset = byteOffset / blockSize + logicalOffsetToAdd
++    override fun read(deviceOffset: Long, buffer: ByteBuffer) {
++        var devOffset = deviceOffset / blockSize + logicalOffsetToAdd
+         // TODO try to make this more efficient by for example making tmp buffer
+         // global
+-        if (byteOffset % blockSize != 0L) {
++        if (deviceOffset % blockSize != 0L) {
+             //Log.w(TAG, "device offset " + offset + " not a multiple of block size");
+             val tmp = ByteBuffer.allocate(blockSize)
+ 
+             targetBlockDevice.read(devOffset, tmp)
+             tmp.clear()
+-            tmp.position((byteOffset % blockSize).toInt())
+-            val limit = Math.min(dest.remaining(), tmp.remaining())
++            tmp.position((deviceOffset % blockSize).toInt())
++            val limit = Math.min(buffer.remaining(), tmp.remaining())
+             tmp.limit(tmp.position() + limit)
+-            dest.put(tmp)
++            buffer.put(tmp)
+ 
+             devOffset++
+         }
+ 
+-        if (dest.remaining() > 0) {
+-            val buffer: ByteBuffer
+-            if (dest.remaining() % blockSize != 0) {
++        if (buffer.remaining() > 0) {
++            val outBuffer: ByteBuffer
++            if (buffer.remaining() % blockSize != 0) {
+                 //Log.w(TAG, "we have to round up size to next block sector");
+-                val rounded = blockSize - dest.remaining() % blockSize + dest.remaining()
+-                buffer = ByteBuffer.allocate(rounded)
+-                buffer.limit(rounded)
++                val rounded = blockSize - buffer.remaining() % blockSize + buffer.remaining()
++                outBuffer = ByteBuffer.allocate(rounded)
++                outBuffer.limit(rounded)
+             } else {
+-                buffer = dest
++                outBuffer = buffer
+             }
+ 
+-            targetBlockDevice.read(devOffset, buffer)
++            targetBlockDevice.read(devOffset, outBuffer)
+ 
+-            if (dest.remaining() % blockSize != 0) {
+-                System.arraycopy(buffer.array(), 0, dest.array(), dest.position(), dest.remaining())
++            if (buffer.remaining() % blockSize != 0) {
++                System.arraycopy(outBuffer.array(), 0, buffer.array(), buffer.position(), buffer.remaining())
+             }
+ 
+-            dest.position(dest.limit())
++            buffer.position(buffer.limit())
+         }
+     }
+ 
+     @Throws(IOException::class)
+-    override fun write(byteOffset: Long, src: ByteBuffer) {
+-        var devOffset = byteOffset / blockSize + logicalOffsetToAdd
++    override fun write(deviceOffset: Long, buffer: ByteBuffer) {
++        var devOffset = deviceOffset / blockSize + logicalOffsetToAdd
+         // TODO try to make this more efficient by for example making tmp buffer
+         // global
+-        if (byteOffset % blockSize != 0L) {
++        if (deviceOffset % blockSize != 0L) {
+             //Log.w(TAG, "device offset " + offset + " not a multiple of block size");
+             val tmp = ByteBuffer.allocate(blockSize)
+ 
+             targetBlockDevice.read(devOffset, tmp)
+             tmp.clear()
+-            tmp.position((byteOffset % blockSize).toInt())
+-            val remaining = Math.min(tmp.remaining(), src.remaining())
+-            tmp.put(src.array(), src.position(), remaining)
+-            src.position(src.position() + remaining)
++            tmp.position((deviceOffset % blockSize).toInt())
++            val remaining = Math.min(tmp.remaining(), buffer.remaining())
++            tmp.put(buffer.array(), buffer.position(), remaining)
++            buffer.position(buffer.position() + remaining)
+             tmp.clear()
+             targetBlockDevice.write(devOffset, tmp)
+ 
+             devOffset++
+         }
+ 
+-        if (src.remaining() > 0) {
++        if (buffer.remaining() > 0) {
+             // TODO try to make this more efficient by for example only allocating
+             // blockSize and making it global
+-            val buffer: ByteBuffer
+-            if (src.remaining() % blockSize != 0) {
++            val outBuffer: ByteBuffer
++            if (buffer.remaining() % blockSize != 0) {
+                 //Log.w(TAG, "we have to round up size to next block sector");
+-                val rounded = blockSize - src.remaining() % blockSize + src.remaining()
+-                buffer = ByteBuffer.allocate(rounded)
+-                buffer.limit(rounded)
++                val rounded = blockSize - buffer.remaining() % blockSize + buffer.remaining()
++                outBuffer = ByteBuffer.allocate(rounded)
++                outBuffer.limit(rounded)
+ 
+                 // TODO: instead of just writing 0s at the end of the buffer do we need to read what
+                 // is currently on the disk and save that then?
+-                System.arraycopy(src.array(), src.position(), buffer.array(), 0, src.remaining())
++                System.arraycopy(buffer.array(), buffer.position(), outBuffer.array(), 0, buffer.remaining())
+ 
+-                src.position(src.limit())
++                buffer.position(buffer.limit())
+             } else {
+-                buffer = src
++                outBuffer = buffer
+             }
+ 
+-            targetBlockDevice.write(devOffset, buffer)
++            targetBlockDevice.write(devOffset, outBuffer)
+         }
+     }
+ 
+@@ -109,4 +109,4 @@ open class ByteBlockDevice @JvmOverloads constructor(private val targetBlockDevi
+ 
+         private val TAG = ByteBlockDevice::class.java.simpleName
+     }
+-} 
+\ No newline at end of file
++} 
+diff --git a/libaums/src/main/java/com/github/mjdev/libaums/driver/scsi/ScsiBlockDevice.kt b/libaums/src/main/java/com/github/mjdev/libaums/driver/scsi/ScsiBlockDevice.kt
+index 56b92be..719ffef 100644
+--- a/libaums/src/main/java/com/github/mjdev/libaums/driver/scsi/ScsiBlockDevice.kt
++++ b/libaums/src/main/java/com/github/mjdev/libaums/driver/scsi/ScsiBlockDevice.kt
+@@ -174,10 +174,8 @@ class ScsiBlockDevice(private val usbCommunication: UsbCommunication, private va
+                 // Retry
+                 Log.w(TAG, (e.message ?: "IOException") + ", retrying...")
+             }
+-
+             Thread.sleep(100)
+         }
+-
+         throw IOException("MAX_RECOVERY_ATTEMPTS Exceeded while trying to transfer command to device, please reattach device and try again")
+     }
+ 
+@@ -255,26 +253,28 @@ class ScsiBlockDevice(private val usbCommunication: UsbCommunication, private va
+         }
+ 
+         var transferLength = command.dCbwDataTransferLength
+-        inBuffer.clear()
+-        inBuffer.limit(transferLength)
+-
++        // Fix https://github.com/magnusja/libaums/issues/298#issuecomment-849216577
+         var read = 0
+         if (transferLength > 0) {
+-
+             if (command.direction == Direction.IN) {
++                val tempBuffer: ByteBuffer = ByteBuffer.allocate(transferLength)
+                 do {
+-                    read += usbCommunication.bulkInTransfer(inBuffer)
++                    read += usbCommunication.bulkInTransfer(tempBuffer)
+                     if (command.bCbwDynamicSize) {
+-                        transferLength = command.dynamicSizeFromPartialResponse(inBuffer)
+-                        inBuffer.limit(transferLength)
++                        transferLength = command.dynamicSizeFromPartialResponse(tempBuffer)
++                        tempBuffer.limit(transferLength)
+                     }
+                 } while (read < transferLength)
+-
+                 if (read != transferLength) {
+                     throw IOException("Unexpected command size (" + read + ") on response to "
+                             + command)
+                 }
++                tempBuffer.flip()
++                inBuffer.limit(inBuffer.position() + transferLength)
++                inBuffer.put(tempBuffer)
+             } else {
++                inBuffer.clear()
++                inBuffer.limit(transferLength)
+                 written = 0
+                 do {
+                     written += usbCommunication.bulkOutTransfer(inBuffer)
+@@ -286,7 +286,6 @@ class ScsiBlockDevice(private val usbCommunication: UsbCommunication, private va
+             }
+         }
+ 
+-
+         // expecting csw now
+         cswBuffer.clear()
+         read = usbCommunication.bulkInTransfer(cswBuffer)
+@@ -311,16 +310,13 @@ class ScsiBlockDevice(private val usbCommunication: UsbCommunication, private va
+     @Synchronized
+     @Throws(IOException::class)
+     override fun read(deviceOffset: Long, buffer: ByteBuffer) {
+-        //long time = System.currentTimeMillis();
+         require(buffer.remaining() % blockSize == 0) { "buffer.remaining() must be multiple of blockSize!" }
+ 
+         readCommand.init(deviceOffset.toInt(), buffer.remaining(), blockSize)
+-        //Log.d(TAG, "reading: " + read);
+ 
+         transferCommand(readCommand, buffer)
+         buffer.position(buffer.limit())
+ 
+-        //Log.d(TAG, "read time: " + (System.currentTimeMillis() - time));
+     }
+ 
+     /**
+@@ -331,20 +327,17 @@ class ScsiBlockDevice(private val usbCommunication: UsbCommunication, private va
+     @Synchronized
+     @Throws(IOException::class)
+     override fun write(deviceOffset: Long, buffer: ByteBuffer) {
+-        //long time = System.currentTimeMillis();
+         require(buffer.remaining() % blockSize == 0) { "buffer.remaining() must be multiple of blockSize!" }
+ 
+         writeCommand.init(deviceOffset.toInt(), buffer.remaining(), blockSize)
+-        //Log.d(TAG, "writing: " + write);
+ 
+         transferCommand(writeCommand, buffer)
+         buffer.position(buffer.limit())
+ 
+-        //Log.d(TAG, "write time: " + (System.currentTimeMillis() - time));
+     }
+ 
+     companion object {
+-        private const val MAX_RECOVERY_ATTEMPTS = 20
++        private const val MAX_RECOVERY_ATTEMPTS = 3
+         private val TAG = ScsiBlockDevice::class.java.simpleName
+     }
+ }
+diff --git a/libaums/src/main/java/com/github/mjdev/libaums/fs/AbstractUsbFile.kt b/libaums/src/main/java/com/github/mjdev/libaums/fs/AbstractUsbFile.kt
+index 9d5d410..46f8cb2 100644
+--- a/libaums/src/main/java/com/github/mjdev/libaums/fs/AbstractUsbFile.kt
++++ b/libaums/src/main/java/com/github/mjdev/libaums/fs/AbstractUsbFile.kt
+@@ -25,34 +25,34 @@ abstract class AbstractUsbFile : UsbFile {
+ 
+     @Throws(IOException::class)
+     override fun search(path: String): UsbFile? {
+-        var path = path
++        var pathVal = path
+ 
+         if (!isDirectory) {
+             throw UnsupportedOperationException("This is a file!")
+         }
+ 
+-        Log.d(TAG, "search file: $path")
++        Log.d(TAG, "search file: $pathVal")
+ 
+-        if (isRoot && path == UsbFile.separator) {
++        if (isRoot && pathVal == UsbFile.separator) {
+             return this
+         }
+ 
+-        if (isRoot && path.startsWith(UsbFile.separator)) {
+-            path = path.substring(1)
++        if (isRoot && pathVal.startsWith(UsbFile.separator)) {
++            pathVal = pathVal.substring(1)
+         }
+-        if (path.endsWith(UsbFile.separator)) {
+-            path = path.substring(0, path.length - 1)
++        if (pathVal.endsWith(UsbFile.separator)) {
++            pathVal = pathVal.substring(0, pathVal.length - 1)
+         }
+ 
+-        val index = path.indexOf(UsbFile.separator)
++        val index = pathVal.indexOf(UsbFile.separator)
+ 
+         if (index < 0) {
+-            Log.d(TAG, "search entry: $path")
++            Log.d(TAG, "search entry: $pathVal")
+ 
+-            return searchThis(path)
++            return searchThis(pathVal)
+         } else {
+-            val subPath = path.substring(index + 1)
+-            val dirName = path.substring(0, index)
++            val subPath = pathVal.substring(index + 1)
++            val dirName = pathVal.substring(0, index)
+             Log.d(TAG, "search recursively $subPath in $dirName")
+ 
+             val file = searchThis(dirName)
+@@ -62,7 +62,7 @@ abstract class AbstractUsbFile : UsbFile {
+             }
+         }
+ 
+-        Log.d(TAG, "not found $path")
++        Log.d(TAG, "not found $pathVal")
+ 
+         return null
+     }
+diff --git a/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/ClusterChain.kt b/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/ClusterChain.kt
+index cf71835..b231e21 100644
+--- a/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/ClusterChain.kt
++++ b/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/ClusterChain.kt
+@@ -132,7 +132,7 @@ internal constructor(startCluster: Long, private val blockDevice: BlockDeviceDri
+         if (offset % clusterSize != 0L) {
+             // offset in the cluster
+             val clusterOffset = (offset % clusterSize).toInt()
+-            val size = Math.min(length, (clusterSize - clusterOffset).toInt())
++            val size = min(length, (clusterSize - clusterOffset).toInt())
+             dest.limit(dest.position() + size)
+ 
+             blockDevice.read(getFileSystemOffset(chain[chainIndex], clusterOffset), dest)
+@@ -148,7 +148,7 @@ internal constructor(startCluster: Long, private val blockDevice: BlockDeviceDri
+         while (length > 0) {
+             // we always read one cluster at a time, or if remaining size is
+             // less than the cluster size, only "size" bytes
+-            val size = Math.min(clusterSize, length.toLong()).toInt()
++            val size = min(clusterSize, length.toLong()).toInt()
+             dest.limit(dest.position() + size)
+ 
+             blockDevice.read(getFileSystemOffset(chain[chainIndex], 0), dest)
+diff --git a/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/FAT.kt b/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/FAT.kt
+index a3fca14..e524b41 100644
+--- a/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/FAT.kt
++++ b/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/FAT.kt
+@@ -155,12 +155,12 @@ internal constructor(private val blockDevice: BlockDeviceDriver, bootSector: Fat
+      */
+     @Throws(IOException::class)
+     internal fun alloc(chain: Array<Long>, numberOfClusters: Int): Array<Long> {
+-        var numberOfClusters = numberOfClusters
++        var numberOfClustersVal = numberOfClusters
+ 
+         // save original number of clusters for fs info structure
+-        val originalNumberOfClusters = numberOfClusters
++        val originalNumberOfClusters = numberOfClustersVal
+ 
+-        val result = ArrayList<Long>(chain.size + numberOfClusters)
++        val result = ArrayList<Long>(chain.size + numberOfClustersVal)
+         result.addAll(Arrays.asList(*chain))
+         // for performance reasons we always read or write two times the block
+         // size
+@@ -189,7 +189,7 @@ internal constructor(private val blockDevice: BlockDeviceDriver, bootSector: Fat
+         var lastOffset: Long = -1
+ 
+         // first we search all needed cluster and save them
+-        while (numberOfClusters > 0) {
++        while (numberOfClustersVal > 0) {
+             currentCluster++
+             offset = (fatOffset[0] + currentCluster * 4) / bufferSize * bufferSize
+             offsetInBlock = (fatOffset[0] + currentCluster * 4) % bufferSize
+@@ -203,7 +203,7 @@ internal constructor(private val blockDevice: BlockDeviceDriver, bootSector: Fat
+ 
+             if (buffer.getInt(offsetInBlock.toInt()) == 0) {
+                 result.add(currentCluster)
+-                numberOfClusters--
++                numberOfClustersVal--
+             }
+         }
+ 
+diff --git a/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/Fat32BootSector.kt b/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/Fat32BootSector.kt
+index 01a136d..d559d6d 100644
+--- a/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/Fat32BootSector.kt
++++ b/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/Fat32BootSector.kt
+@@ -210,7 +210,7 @@ internal class Fat32BootSector private constructor() {
+                 val b = buffer.get(VOLUME_LABEL_OFF + i)
+                 if (b.toInt() == 0)
+                     break
+-                builder.append(b.toChar())
++                builder.append(b.toInt().toChar())
+             }
+ 
+             result.volumeLabel = builder.toString()
+diff --git a/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/Fat32FileSystem.kt b/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/Fat32FileSystem.kt
+index b3bc963..31d3631 100644
+--- a/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/Fat32FileSystem.kt
++++ b/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/Fat32FileSystem.kt
+@@ -115,14 +115,14 @@ private constructor(blockDevice: BlockDeviceDriver, first512Bytes: ByteBuffer) :
+             blockDevice.read(0, buffer)
+             buffer.flip()
+ 
+-            return if (buffer.get(82).toChar() != 'F' ||
+-                    buffer.get(83).toChar() != 'A' ||
+-                    buffer.get(84).toChar() != 'T' ||
+-                    buffer.get(85).toChar() != '3' ||
+-                    buffer.get(86).toChar() != '2' ||
+-                    buffer.get(87).toChar() != ' ' ||
+-                    buffer.get(88).toChar() != ' ' ||
+-                    buffer.get(89).toChar() != ' ') {
++            return if (buffer.get(82).toInt().toChar() != 'F' ||
++                buffer.get(83).toInt().toChar() != 'A' ||
++                buffer.get(84).toInt().toChar() != 'T' ||
++                buffer.get(85).toInt().toChar() != '3' ||
++                buffer.get(86).toInt().toChar() != '2' ||
++                buffer.get(87).toInt().toChar() != ' ' ||
++                buffer.get(88).toInt().toChar() != ' ' ||
++                buffer.get(89).toInt().toChar() != ' ') {
+                 null
+             } else Fat32FileSystem(blockDevice, buffer)
+ 
+diff --git a/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/FatDirectory.kt b/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/FatDirectory.kt
+index 3ff06fd..d348357 100644
+--- a/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/FatDirectory.kt
++++ b/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/FatDirectory.kt
+@@ -90,6 +90,7 @@ internal constructor(
+         private set
+ 
+     private var hasBeenInited: Boolean = false
++    var hasChangeToDisk: Boolean = false
+ 
+     /**
+      *
+@@ -143,7 +144,6 @@ internal constructor(
+         if (entries!!.size == 0 && !hasBeenInited) {
+             readEntries()
+         }
+-
+         hasBeenInited = true
+     }
+ 
+@@ -207,7 +207,7 @@ internal constructor(
+      */
+     private fun addEntry(lfnEntry: FatLfnDirectoryEntry, entry: FatDirectoryEntry) {
+         entries!!.add(lfnEntry)
+-        lfnMap[lfnEntry.name.toLowerCase(Locale.getDefault())] = lfnEntry
++        lfnMap[lfnEntry.name.lowercase(Locale.getDefault())] = lfnEntry
+         shortNameMap[entry.shortName!!] = entry
+     }
+ 
+@@ -225,7 +225,7 @@ internal constructor(
+      */
+     internal fun removeEntry(lfnEntry: FatLfnDirectoryEntry?) {
+         entries!!.remove(lfnEntry)
+-        lfnMap.remove(lfnEntry!!.name.toLowerCase(Locale.getDefault()))
++        lfnMap.remove(lfnEntry!!.name.lowercase(Locale.getDefault()))
+         shortNameMap.remove(lfnEntry.actualEntry.shortName)
+     }
+ 
+@@ -252,6 +252,7 @@ internal constructor(
+         lfnEntry.setName(newName,
+                 ShortNameGenerator.generateShortName(newName, shortNameMap.keys))
+         addEntry(lfnEntry, lfnEntry.actualEntry)
++        hasChangeToDisk = true
+         write()
+     }
+ 
+@@ -266,6 +267,13 @@ internal constructor(
+      */
+     @Throws(IOException::class)
+     internal fun write() {
++        // Fix: this will be called when calling close() which calls flush() on a file. When this
++        // happens in another thread the lfnEntries might be written to disk while the entries are
++        // being read in another thread. This variable will avoid this.
++        if (!hasChangeToDisk) {
++            Log.d(TAG, "not writing, no entry changed")
++            return
++        }
+         init()
+         val writeVolumeLabel = isRoot && volumeLabel != null
+         // first lookup the total entries needed
+@@ -297,11 +305,12 @@ internal constructor(
+ 
+         buffer.flip()
+         chain.write(0, buffer)
++        hasChangeToDisk = false
+     }
+ 
+     @Throws(IOException::class)
+     override fun createFile(name: String): FatFile {
+-        if (lfnMap.containsKey(name.toLowerCase(Locale.getDefault())))
++        if (lfnMap.containsKey(name.lowercase(Locale.getDefault())))
+             throw IOException("Item already exists!")
+ 
+         init() // initialise the directory before creating files
+@@ -316,6 +325,7 @@ internal constructor(
+         Log.d(TAG, "adding entry: $entry with short name: $shortName")
+         addEntry(entry, entry.actualEntry)
+         // write changes immediately to disk
++        hasChangeToDisk = true
+         write()
+ 
+         val file = FatFile(blockDevice, fat, bootSector, entry, this)
+@@ -325,7 +335,7 @@ internal constructor(
+ 
+     @Throws(IOException::class)
+     override fun createDirectory(name: String): FatDirectory {
+-        if (lfnMap.containsKey(name.toLowerCase(Locale.getDefault())))
++        if (lfnMap.containsKey(name.lowercase(Locale.getDefault())))
+             throw IOException("Item already exists!")
+ 
+         init() // initialise the directory before creating files
+@@ -341,6 +351,7 @@ internal constructor(
+         Log.d(TAG, "adding entry: $entry with short name: $shortName")
+         addEntry(entry, entry.actualEntry)
+         // write changes immediately to disk
++        hasChangeToDisk = true
+         write()
+ 
+         val result = FatDirectory(fs, blockDevice, fat, bootSector, entry, this)
+@@ -365,6 +376,7 @@ internal constructor(
+         result.addEntry(dotDotEntry, dotDotEntry.actualEntry)
+ 
+         // write changes immediately to disk
++        result.hasChangeToDisk = true
+         result.write()
+ 
+         fs.fileCache[result.absolutePath] = result
+@@ -424,7 +436,6 @@ internal constructor(
+             fs.fileCache[entryAbsolutePath] = file
+             list.add(file)
+         }
+-
+         return list.toTypedArray()
+     }
+ 
+@@ -457,7 +468,7 @@ internal constructor(
+         // TODO check if destination is really on the same physical device or
+         // partition!
+ 
+-        if (destination.lfnMap.containsKey(entry!!.name.toLowerCase(Locale.getDefault())))
++        if (destination.lfnMap.containsKey(entry!!.name.lowercase(Locale.getDefault())))
+             throw IOException("item already exists in destination!")
+ 
+         init()
+@@ -467,7 +478,9 @@ internal constructor(
+         parent!!.removeEntry(entry)
+         destination.addEntry(entry!!, entry!!.actualEntry)
+ 
++        parent!!.hasChangeToDisk = true
+         parent!!.write()
++        destination.hasChangeToDisk = true
+         destination.write()
+         parent = destination
+     }
+@@ -498,7 +511,7 @@ internal constructor(
+         // TODO check if destination is really on the same physical device or
+         // partition!
+ 
+-        if (destination.lfnMap.containsKey(entry.name.toLowerCase(Locale.getDefault())))
++        if (destination.lfnMap.containsKey(entry.name.lowercase(Locale.getDefault())))
+             throw IOException("item already exists in destination!")
+ 
+         init()
+@@ -507,7 +520,8 @@ internal constructor(
+         // now the actual magic happens!
+         removeEntry(entry)
+         destination.addEntry(entry, entry.actualEntry)
+-
++        hasChangeToDisk = true
++        destination.hasChangeToDisk = true
+         write()
+         destination.write()
+     }
+@@ -524,6 +538,7 @@ internal constructor(
+         }
+ 
+         parent!!.removeEntry(entry)
++        parent!!.hasChangeToDisk = true
+         parent!!.write()
+         chain.length = 0
+     }
+diff --git a/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/FatDirectoryEntry.kt b/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/FatDirectoryEntry.kt
+index bb70030..a750b12 100644
+--- a/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/FatDirectoryEntry.kt
++++ b/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/FatDirectoryEntry.kt
+@@ -253,7 +253,7 @@ internal class FatDirectoryEntry
+                 val b = data.get(i)
+                 if (b.toInt() == 0)
+                     break
+-                builder.append(b.toChar())
++                builder.append(b.toInt().toChar())
+             }
+ 
+             return builder.toString()
+@@ -384,19 +384,19 @@ internal class FatDirectoryEntry
+      */
+     fun extractLfnPart(builder: StringBuilder) {
+         val name = CharArray(13)
+-        name[0] = data.getShort(1).toChar()
+-        name[1] = data.getShort(3).toChar()
+-        name[2] = data.getShort(5).toChar()
+-        name[3] = data.getShort(7).toChar()
+-        name[4] = data.getShort(9).toChar()
+-        name[5] = data.getShort(14).toChar()
+-        name[6] = data.getShort(16).toChar()
+-        name[7] = data.getShort(18).toChar()
+-        name[8] = data.getShort(20).toChar()
+-        name[9] = data.getShort(22).toChar()
+-        name[10] = data.getShort(24).toChar()
+-        name[11] = data.getShort(28).toChar()
+-        name[12] = data.getShort(30).toChar()
++        name[0] = data.getShort(1).toInt().toChar()
++        name[1] = data.getShort(3).toInt().toChar()
++        name[2] = data.getShort(5).toInt().toChar()
++        name[3] = data.getShort(7).toInt().toChar()
++        name[4] = data.getShort(9).toInt().toChar()
++        name[5] = data.getShort(14).toInt().toChar()
++        name[6] = data.getShort(16).toInt().toChar()
++        name[7] = data.getShort(18).toInt().toChar()
++        name[8] = data.getShort(20).toInt().toChar()
++        name[9] = data.getShort(22).toInt().toChar()
++        name[10] = data.getShort(24).toInt().toChar()
++        name[11] = data.getShort(28).toInt().toChar()
++        name[12] = data.getShort(30).toInt().toChar()
+ 
+         var len = 0
+         while (len < 13 && name[len] != '\u0000')
+@@ -531,15 +531,15 @@ internal class FatDirectoryEntry
+          */
+         fun createLfnPart(unicode: String, offset: Int, checksum: Byte,
+                           index: Int, isLast: Boolean): FatDirectoryEntry {
+-            var unicode = unicode
+-            var offset = offset
++            var unicodeVal = unicode
++            var offsetVal = offset
+             val result = FatDirectoryEntry()
+ 
+             if (isLast) {
+-                val diff = unicode.length - offset
++                val diff = unicodeVal.length - offsetVal
+                 if (diff < 13) {
+                     val builder = StringBuilder(13)
+-                    builder.append(unicode, offset, unicode.length)
++                    builder.append(unicodeVal, offsetVal, unicodeVal.length)
+                     // end mark
+                     builder.append('\u0000')
+ 
+@@ -548,8 +548,8 @@ internal class FatDirectoryEntry
+                         builder.append(0xffff.toChar())
+                     }
+ 
+-                    offset = 0
+-                    unicode = builder.toString()
++                    offsetVal = 0
++                    unicodeVal = builder.toString()
+                 }
+             }
+ 
+@@ -557,26 +557,26 @@ internal class FatDirectoryEntry
+             buffer.order(ByteOrder.LITTLE_ENDIAN)
+ 
+             buffer.put(0, (if (isLast) index + (1 shl 6) else index).toByte())
+-            buffer.putShort(1, unicode[offset].toShort())
+-            buffer.putShort(3, unicode[offset + 1].toShort())
+-            buffer.putShort(5, unicode[offset + 2].toShort())
+-            buffer.putShort(7, unicode[offset + 3].toShort())
+-            buffer.putShort(9, unicode[offset + 4].toShort())
++            buffer.putShort(1, unicodeVal[offsetVal].code.toShort())
++            buffer.putShort(3, unicodeVal[offsetVal + 1].code.toShort())
++            buffer.putShort(5, unicodeVal[offsetVal + 2].code.toShort())
++            buffer.putShort(7, unicodeVal[offsetVal + 3].code.toShort())
++            buffer.putShort(9, unicodeVal[offsetVal + 4].code.toShort())
+             // Special mark for lfn entry
+             buffer.put(11, (FLAG_HIDDEN or FLAG_VOLUME_ID or FLAG_READONLY or FLAG_SYSTEM).toByte())
+             // unused
+             buffer.put(12, 0.toByte())
+             buffer.put(13, checksum)
+-            buffer.putShort(14, unicode[offset + 5].toShort())
+-            buffer.putShort(16, unicode[offset + 6].toShort())
+-            buffer.putShort(18, unicode[offset + 7].toShort())
+-            buffer.putShort(20, unicode[offset + 8].toShort())
+-            buffer.putShort(22, unicode[offset + 9].toShort())
+-            buffer.putShort(24, unicode[offset + 10].toShort())
++            buffer.putShort(14, unicodeVal[offsetVal + 5].code.toShort())
++            buffer.putShort(16, unicodeVal[offsetVal + 6].code.toShort())
++            buffer.putShort(18, unicodeVal[offsetVal + 7].code.toShort())
++            buffer.putShort(20, unicodeVal[offsetVal + 8].code.toShort())
++            buffer.putShort(22, unicodeVal[offsetVal + 9].code.toShort())
++            buffer.putShort(24, unicodeVal[offsetVal + 10].code.toShort())
+             // unused
+             buffer.putShort(26, 0.toShort())
+-            buffer.putShort(28, unicode[offset + 11].toShort())
+-            buffer.putShort(30, unicode[offset + 12].toShort())
++            buffer.putShort(28, unicodeVal[offsetVal + 11].code.toShort())
++            buffer.putShort(30, unicodeVal[offsetVal + 12].code.toShort())
+ 
+             result.data = buffer
+ 
+diff --git a/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/FatFile.kt b/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/FatFile.kt
+index 58cefde..632d718 100644
+--- a/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/FatFile.kt
++++ b/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/FatFile.kt
+@@ -149,6 +149,7 @@ internal constructor(private val blockDevice: BlockDeviceDriver, private val fat
+     override fun delete() {
+         initChain()
+         parent!!.removeEntry(entry)
++        parent!!.hasChangeToDisk = true
+         parent!!.write()
+         chain.length = 0
+     }
+diff --git a/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/FatLfnDirectoryEntry.kt b/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/FatLfnDirectoryEntry.kt
+index bb28cc5..1bded25 100644
+--- a/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/FatLfnDirectoryEntry.kt
++++ b/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/FatLfnDirectoryEntry.kt
+@@ -18,6 +18,7 @@
+ package com.github.mjdev.libaums.fs.fat32
+ 
+ import java.nio.ByteBuffer
++import java.util.*
+ 
+ /**
+  * This class represents a long file name entry. The long file name can be
+@@ -100,9 +101,9 @@ internal class FatLfnDirectoryEntry
+             }
+ 
+             if (actualEntry.isShortNameLowerCase)
+-                name = name.toLowerCase()
++                name = name.lowercase(Locale.getDefault())
+             if (actualEntry.isShortNameExtLowerCase)
+-                ext = ext.toLowerCase()
++                ext = ext.lowercase(Locale.getDefault())
+ 
+             if (ext.isNotEmpty())
+                 name = "$name.$ext"
+diff --git a/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/ShortName.kt b/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/ShortName.kt
+index ce513ce..2e2dd1a 100644
+--- a/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/ShortName.kt
++++ b/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/ShortName.kt
+@@ -52,7 +52,7 @@ internal class ShortName {
+             val extension = CharArray(3)
+ 
+             for (i in 0..7) {
+-                name[i] = (data.get(i) and 0xFF.toByte()).toChar()
++                name[i] = (data.get(i) and 0xFF.toByte()).toInt().toChar()
+             }
+ 
+             // if first byte is 0x05 it is actually 0xe5 (KANJI lead byte, see Fat32
+@@ -63,7 +63,7 @@ internal class ShortName {
+             }
+ 
+             for (i in 0..2) {
+-                extension[i] = (data.get(i + 8) and 0xFF.toByte()).toChar()
++                extension[i] = (data.get(i + 8) and 0xFF.toByte()).toInt().toChar()
+             }
+ 
+             val strName = String(name).trim { it <= ' ' }
+diff --git a/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/ShortNameGenerator.kt b/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/ShortNameGenerator.kt
+index 041b11b..b59fed0 100644
+--- a/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/ShortNameGenerator.kt
++++ b/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/ShortNameGenerator.kt
+@@ -117,33 +117,33 @@ internal object ShortNameGenerator {
+      */
+     fun generateShortName(lfnName: String,
+                                         existingShortNames: Collection<ShortName>): ShortName {
+-        var lfnName = lfnName
+-        lfnName = lfnName.toUpperCase(Locale.ROOT).trim { it <= ' ' }
++        var lfnNameVal = lfnName
++        lfnNameVal = lfnNameVal.uppercase(Locale.ROOT).trim { it <= ' ' }
+ 
+         // remove leading periods
+         var i = 0
+-        while (i < lfnName.length) {
+-            if (lfnName[i] != '.')
++        while (i < lfnNameVal.length) {
++            if (lfnNameVal[i] != '.')
+                 break
+             i++
+         }
+ 
+-        lfnName = lfnName.substring(i)
+-        lfnName = lfnName.replace(" ", "")
++        lfnNameVal = lfnNameVal.substring(i)
++        lfnNameVal = lfnNameVal.replace(" ", "")
+ 
+         var filenamePart: String
+         var extensionPart: String
+ 
+-        val indexOfDot = lfnName.lastIndexOf(".")
++        val indexOfDot = lfnNameVal.lastIndexOf(".")
+         if (indexOfDot == -1) {
+             // no extension
+-            filenamePart = lfnName
++            filenamePart = lfnNameVal
+             extensionPart = ""
+ 
+         } else {
+             // has extension
+-            filenamePart = lfnName.substring(0, indexOfDot)
+-            extensionPart = lfnName.substring(indexOfDot + 1)
++            filenamePart = lfnNameVal.substring(0, indexOfDot)
++            extensionPart = lfnNameVal.substring(indexOfDot + 1)
+             if (extensionPart.length > 3) {
+                 extensionPart = extensionPart.substring(0, 3)
+             }
+diff --git a/libusbcommunication/build.gradle b/libusbcommunication/build.gradle
+index c9fd60a..7903f74 100644
+--- a/libusbcommunication/build.gradle
++++ b/libusbcommunication/build.gradle
+@@ -1,7 +1,5 @@
+ apply plugin: 'com.android.library'
+ apply plugin: 'kotlin-android'
+-apply plugin: 'kotlin-android-extensions'
+-apply plugin: 'org.jetbrains.dokka'
+ 
+ Properties props = new Properties()
+ props.load(new FileInputStream(project.rootProject.file('local.properties')))
+@@ -49,7 +47,6 @@ android {
+ 
+ }
+ 
+-
+ dependencies {
+     implementation fileTree(dir: 'libs', include: ['*.jar'])
+     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+@@ -63,8 +60,3 @@ dependencies {
+ 
+     api project(':libaums')
+ }
+-
+-task bintray {
+-    apply from: '../install.gradle'
+-    apply from: '../bintray.gradle'
+-}
+\ No newline at end of file
+diff --git a/settings.gradle.kts b/settings.gradle.kts
+index a55ae31..f3585a5 100644
+--- a/settings.gradle.kts
++++ b/settings.gradle.kts
+@@ -1 +1 @@
+-include(":app", ":libaums", ":httpserver", ":storageprovider", ":javafs", ":libusbcommunication", ":androidtests")
++include(":libaums")
+diff --git a/storageprovider/build.gradle b/storageprovider/build.gradle
+index 8ab570e..64f4b80 100644
+--- a/storageprovider/build.gradle
++++ b/storageprovider/build.gradle
+@@ -38,9 +38,3 @@ dependencies {
+     api 'org.apache.commons:commons-io:1.3.2'
+     api project(':libaums')
+ }
+-
+-
+-task bintray {
+-    apply from: '../install.gradle'
+-    apply from: '../bintray.gradle'
+-}

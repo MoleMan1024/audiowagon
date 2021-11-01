@@ -12,7 +12,6 @@ import android.support.v4.media.MediaDescriptionCompat
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.filestorage.*
-import de.moleman1024.audiowagon.filestorage.usb.LOG_DIRECTORY
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
@@ -20,8 +19,6 @@ import de.moleman1024.audiowagon.medialibrary.RESOURCE_ROOT_URI
 
 private const val TAG = "CHDirectory"
 private val logger = Logger
-
-val DIRECTORIES_TO_IGNORE_REGEX = "($LOG_DIRECTORY.*|System Volume Information|LOST\\.DIR|FOUND\\.000|^\\..*)".toRegex()
 
 /**
  * The browse view showing a directory on the device (or showing groups of files)
@@ -100,7 +97,7 @@ class ContentHierarchyDirectory(
         }
         val directoryURI = Util.createURIForPath(storageLocation.storageID, id.path.removePrefix("/"))
         val directoryContents = storageLocation.getDirectoryContents(Directory(directoryURI))
-        return directoryContents.filter { !it.name.matches(DIRECTORIES_TO_IGNORE_REGEX) }
+        return directoryContents.filter { !it.name.matches(Util.DIRECTORIES_TO_IGNORE_REGEX) }
             .sortedBy { it.name.lowercase() }
     }
 

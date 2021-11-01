@@ -12,6 +12,9 @@ import androidx.preference.PreferenceManager
 import de.moleman1024.audiowagon.activities.PERSISTENT_STORAGE_LEGAL_DISCLAIMER_AGREED
 import de.moleman1024.audiowagon.activities.PERSISTENT_STORAGE_LEGAL_DISCLAIMER_VERSION
 import de.moleman1024.audiowagon.activities.PREF_READ_METADATA
+import de.moleman1024.audiowagon.filestorage.usb.LOG_DIRECTORY
+import de.moleman1024.audiowagon.log.Logger
+import kotlinx.coroutines.*
 import java.io.File
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -19,6 +22,12 @@ import java.util.*
 
 class Util {
     companion object {
+        val DIRECTORIES_TO_IGNORE_REGEX = ("(.RECYCLE\\.BIN" +
+                "|$LOG_DIRECTORY.*" +
+                "|System Volume Information" +
+                "|LOST\\.DIR" +
+                "|FOUND\\.[0-9][0-9][0-9]" +
+                "|^\\..*)").toRegex()
         private const val URI_SCHEME = "usbAudio"
 
         fun convertStringToShort(numberAsString: String): Short {
@@ -84,6 +93,22 @@ class Util {
                 yearSanitized = yearSanitized.replace("-.*".toRegex(), "").trim()
             }
             return yearSanitized
+        }
+
+        fun launchInScopeSafely(
+            scope: CoroutineScope, dispatcher: CoroutineDispatcher,
+            logger: Logger, tag: String, func: suspend () -> Unit
+        ): Job {
+            val exceptionHandler = CoroutineExceptionHandler { coroutineContext, exc ->
+                logger.exception(tag, "$coroutineContext + threw + ${exc.message}", exc)
+            }
+            return scope.launch(exceptionHandler + dispatcher) {
+                try {
+                    func()
+                } catch (exc: Exception) {
+                    logger.exception(tag, exc.message.toString(), exc)
+                }
+            }
         }
 
     }

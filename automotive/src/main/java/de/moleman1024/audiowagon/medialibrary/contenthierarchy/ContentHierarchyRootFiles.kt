@@ -90,7 +90,7 @@ class ContentHierarchyRootFiles(
         }
         val rootDirectory = Directory(storageLocation.getRootURI())
         val directoryContents = storageLocation.getDirectoryContents(rootDirectory)
-        return directoryContents.filter { !it.name.matches(DIRECTORIES_TO_IGNORE_REGEX) }
+        return directoryContents.filter { !it.name.matches(Util.DIRECTORIES_TO_IGNORE_REGEX) }
             .sortedBy { it.name.lowercase() }
     }
 
