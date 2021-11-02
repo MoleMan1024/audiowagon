@@ -259,6 +259,8 @@ class SettingsFragment : PreferenceFragmentCompat() {
             pref?.summary = getDatabaseNameInUse()
         } catch (exc: RuntimeException) {
             logger.exception(TAG, exc.message.toString(), exc)
+        } catch (exc: IOException) {
+            logger.exception(TAG, exc.message.toString(), exc)
         }
     }
 

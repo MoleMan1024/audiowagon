@@ -12,8 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+## [0.6.2] - 2021-11-02
+
 ### Fixed
 
+- fix an issue where app settings screen could not be opened when clearing all app-specific data or after re-installing
+  the app [#41](https://github.com/MoleMan1024/audiowagon/issues/41)
 - improved latency of some database lookups
 - improve robustness
 
