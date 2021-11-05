@@ -564,7 +564,7 @@ index b3bc963..31d3631 100644
              } else Fat32FileSystem(blockDevice, buffer)
  
 diff --git a/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/FatDirectory.kt b/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/FatDirectory.kt
-index 3ff06fd..d348357 100644
+index 3ff06fd..ffb018a 100644
 --- a/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/FatDirectory.kt
 +++ b/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/FatDirectory.kt
 @@ -90,6 +90,7 @@ internal constructor(
@@ -609,7 +609,7 @@ index 3ff06fd..d348357 100644
          write()
      }
  
-@@ -266,6 +267,13 @@ internal constructor(
+@@ -266,6 +267,12 @@ internal constructor(
       */
      @Throws(IOException::class)
      internal fun write() {
@@ -617,13 +617,12 @@ index 3ff06fd..d348357 100644
 +        // happens in another thread the lfnEntries might be written to disk while the entries are
 +        // being read in another thread. This variable will avoid this.
 +        if (!hasChangeToDisk) {
-+            Log.d(TAG, "not writing, no entry changed")
 +            return
 +        }
          init()
          val writeVolumeLabel = isRoot && volumeLabel != null
          // first lookup the total entries needed
-@@ -297,11 +305,12 @@ internal constructor(
+@@ -297,11 +304,12 @@ internal constructor(
  
          buffer.flip()
          chain.write(0, buffer)
@@ -637,7 +636,7 @@ index 3ff06fd..d348357 100644
              throw IOException("Item already exists!")
  
          init() // initialise the directory before creating files
-@@ -316,6 +325,7 @@ internal constructor(
+@@ -316,6 +324,7 @@ internal constructor(
          Log.d(TAG, "adding entry: $entry with short name: $shortName")
          addEntry(entry, entry.actualEntry)
          // write changes immediately to disk
@@ -645,7 +644,7 @@ index 3ff06fd..d348357 100644
          write()
  
          val file = FatFile(blockDevice, fat, bootSector, entry, this)
-@@ -325,7 +335,7 @@ internal constructor(
+@@ -325,7 +334,7 @@ internal constructor(
  
      @Throws(IOException::class)
      override fun createDirectory(name: String): FatDirectory {
@@ -654,7 +653,7 @@ index 3ff06fd..d348357 100644
              throw IOException("Item already exists!")
  
          init() // initialise the directory before creating files
-@@ -341,6 +351,7 @@ internal constructor(
+@@ -341,6 +350,7 @@ internal constructor(
          Log.d(TAG, "adding entry: $entry with short name: $shortName")
          addEntry(entry, entry.actualEntry)
          // write changes immediately to disk
@@ -662,7 +661,7 @@ index 3ff06fd..d348357 100644
          write()
  
          val result = FatDirectory(fs, blockDevice, fat, bootSector, entry, this)
-@@ -365,6 +376,7 @@ internal constructor(
+@@ -365,6 +375,7 @@ internal constructor(
          result.addEntry(dotDotEntry, dotDotEntry.actualEntry)
  
          // write changes immediately to disk
@@ -670,7 +669,7 @@ index 3ff06fd..d348357 100644
          result.write()
  
          fs.fileCache[result.absolutePath] = result
-@@ -424,7 +436,6 @@ internal constructor(
+@@ -424,7 +435,6 @@ internal constructor(
              fs.fileCache[entryAbsolutePath] = file
              list.add(file)
          }
@@ -678,7 +677,7 @@ index 3ff06fd..d348357 100644
          return list.toTypedArray()
      }
  
-@@ -457,7 +468,7 @@ internal constructor(
+@@ -457,7 +467,7 @@ internal constructor(
          // TODO check if destination is really on the same physical device or
          // partition!
  
@@ -687,7 +686,7 @@ index 3ff06fd..d348357 100644
              throw IOException("item already exists in destination!")
  
          init()
-@@ -467,7 +478,9 @@ internal constructor(
+@@ -467,7 +477,9 @@ internal constructor(
          parent!!.removeEntry(entry)
          destination.addEntry(entry!!, entry!!.actualEntry)
  
@@ -697,7 +696,7 @@ index 3ff06fd..d348357 100644
          destination.write()
          parent = destination
      }
-@@ -498,7 +511,7 @@ internal constructor(
+@@ -498,7 +510,7 @@ internal constructor(
          // TODO check if destination is really on the same physical device or
          // partition!
  
@@ -706,7 +705,7 @@ index 3ff06fd..d348357 100644
              throw IOException("item already exists in destination!")
  
          init()
-@@ -507,7 +520,8 @@ internal constructor(
+@@ -507,7 +519,8 @@ internal constructor(
          // now the actual magic happens!
          removeEntry(entry)
          destination.addEntry(entry, entry.actualEntry)
@@ -716,7 +715,7 @@ index 3ff06fd..d348357 100644
          write()
          destination.write()
      }
-@@ -524,6 +538,7 @@ internal constructor(
+@@ -524,6 +537,7 @@ internal constructor(
          }
  
          parent!!.removeEntry(entry)
@@ -842,10 +841,18 @@ index bb70030..a750b12 100644
              result.data = buffer
  
 diff --git a/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/FatFile.kt b/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/FatFile.kt
-index 58cefde..632d718 100644
+index 58cefde..f15751b 100644
 --- a/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/FatFile.kt
 +++ b/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/FatFile.kt
-@@ -149,6 +149,7 @@ internal constructor(private val blockDevice: BlockDeviceDriver, private val fat
+@@ -111,6 +111,7 @@ internal constructor(private val blockDevice: BlockDeviceDriver, private val fat
+             this.length = length
+         entry.setLastModifiedTimeToNow()
+         chain.write(offset, source)
++        parent!!.hasChangeToDisk = true
+     }
+ 
+     @Throws(IOException::class)
+@@ -149,6 +150,7 @@ internal constructor(private val blockDevice: BlockDeviceDriver, private val fat
      override fun delete() {
          initChain()
          parent!!.removeEntry(entry)
