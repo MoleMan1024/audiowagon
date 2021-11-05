@@ -12,6 +12,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- quotation marks in GUI texts were not showing up, this has been fixed
+
+### Added
+
+- voice commands such as "play &lt;artist name | album name | track name&gt;" should now work
+  [#43](https://github.com/MoleMan1024/audiowagon/issues/43)
+- added a GUI toast popup to show the search query after a voice input by the user. This is done to make it clear to the
+  user what is being search for so that they can adjust their voice input in case the search fails
+
+
+## [0.6.4] - 2021-11-05
+
+### Fixed
+
+- fix regression where log files were created without content [#42](https://github.com/MoleMan1024/audiowagon/issues/42)
+- fix regression where sorting order of items inside track/album/artist groups was wrong
+  [#44](https://github.com/MoleMan1024/audiowagon/issues/44)
+
 
 ## [0.6.2] - 2021-11-02
 
@@ -23,7 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - improve robustness
 
 
-## [0.6.1] - 2021-11-01
+## [0.6.1] - 2021-11-0
 
 ### Fixed
 
