@@ -616,7 +616,7 @@ class AudioItemRepository(
         val audioItems = mutableListOf<AudioItem>()
         val albums = database.albumDAO().search(sanitizeSearchQuery(query))
         albums.forEach {
-            audioItems += getTracksForArtist(it.albumId)
+            audioItems += getTracksForAlbum(it.albumId)
         }
         return audioItems
     }
@@ -635,6 +635,39 @@ class AudioItemRepository(
         val artists = database.artistDAO().search(sanitizeSearchQuery(query))
         artists.forEach {
             audioItems += getTracksForArtist(it.artistId)
+        }
+        return audioItems
+    }
+
+    suspend fun searchTrackByArtist(track: String, artist: String): List<AudioItem> {
+        val audioItems = mutableListOf<AudioItem>()
+        val tracksByArtist = database.trackDAO().searchWithArtist(
+            sanitizeSearchQuery(track), sanitizeSearchQuery(artist)
+        )
+        tracksByArtist.forEach {
+            audioItems += createAudioItemForTrack(it, it.parentArtistId)
+        }
+        return audioItems
+    }
+
+    suspend fun searchTrackByAlbum(track: String, album: String): List<AudioItem> {
+        val audioItems = mutableListOf<AudioItem>()
+        val tracksByAlbum = database.trackDAO().searchWithAlbum(
+            sanitizeSearchQuery(track), sanitizeSearchQuery(album)
+        )
+        tracksByAlbum.forEach {
+            audioItems += createAudioItemForTrack(it, it.parentArtistId)
+        }
+        return audioItems
+    }
+
+    suspend fun searchAlbumByArtist(album: String, artist: String): List<AudioItem> {
+        val audioItems = mutableListOf<AudioItem>()
+        val albumsByArtist = database.albumDAO().searchWithArtist(
+            sanitizeSearchQuery(album), sanitizeSearchQuery(artist)
+        )
+        albumsByArtist.forEach {
+            audioItems += createAudioItemForAlbum(it, it.parentArtistId)
         }
         return audioItems
     }

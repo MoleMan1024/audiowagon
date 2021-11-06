@@ -26,6 +26,7 @@ import kotlin.collections.HashSet
 private const val TAG = "SettingsFragm"
 private val logger = Logger
 // TODO: add testcase for backward compatibility of old settings files
+// TODO: add testcase to check if fragments work (e.g. filesystem issues)
 const val PREF_LOG_TO_USB_KEY = "logToUSB"
 const val PREF_USB_STATUS = "usbStatusResID"
 const val PREF_LEGAL_DISCLAIMER = "legalDisclaimer"

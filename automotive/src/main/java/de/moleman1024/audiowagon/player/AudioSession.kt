@@ -27,6 +27,7 @@ import de.moleman1024.audiowagon.filestorage.AudioFileStorage
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
+import de.moleman1024.audiowagon.medialibrary.AudioItemType
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyElement
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyID
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyType
@@ -57,7 +58,6 @@ class AudioSession(
     private val dispatcher: CoroutineDispatcher,
     private val gui: GUI,
     private val persistentStorage: PersistentStorage,
-    private val sessionActivityIntent: PendingIntent?
 ) {
     private var mediaSession: MediaSessionCompat
     private var audioSessionCallback: AudioSessionCallback
@@ -87,6 +87,8 @@ class AudioSession(
         audioFocus.audioFocusChangeListener = audioFocusChangeListener
         val mediaButtonIntent = Intent(Intent.ACTION_MEDIA_BUTTON)
         mediaButtonIntent.setClass(context, MediaButtonReceiver::class.java)
+        // TODO: unclear which is the correct mutability flag to use
+        //  https://developer.android.com/reference/android/app/PendingIntent#FLAG_MUTABLE
         val pendingMediaBtnIntent: PendingIntent = PendingIntent.getBroadcast(
             context, REQUEST_CODE, mediaButtonIntent, 0
         )
@@ -96,7 +98,8 @@ class AudioSession(
             // TODO: remove queue title? does not seem to be used in AAOS
             setQueueTitle(context.getString(R.string.queue_title))
             setMediaButtonReceiver(pendingMediaBtnIntent)
-            setSessionActivity(sessionActivityIntent)
+            // we cannot launch a UI activity in AAOS
+            setSessionActivity(null)
             isActive = true
         }
         sessionToken = mediaSession.sessionToken
@@ -515,15 +518,7 @@ class AudioSession(
                 AudioSessionChangeType.ON_PLAY_FROM_SEARCH -> {
                     audioFocusChangeListener.lastUserRequestedStateChange = AudioSessionChangeType.ON_PLAY
                     launchInScopeSafely(audioSessionChange.type.name) {
-                        if (audioSessionChange.unspecificToPlay.isBlank()) {
-                            playFromSearch(
-                                audioSessionChange.trackToPlay,
-                                audioSessionChange.albumToPlay,
-                                audioSessionChange.artistToPlay
-                            )
-                        } else {
-                            playUnspecificFromSearch(audioSessionChange.unspecificToPlay)
-                        }
+                        playFromSearch(audioSessionChange)
                     }
                 }
                 AudioSessionChangeType.ON_PAUSE -> {
@@ -579,27 +574,61 @@ class AudioSession(
         }
     }
 
-    private suspend fun playFromSearch(track: String?, album: String?, artist: String?) {
-        logger.debug(TAG, "playFromSearch(track=$track, album=$album, artist=$artist")
+    private suspend fun playFromSearch(change: AudioSessionChange) {
+        logger.debug(TAG, "playFromSearch(audioSessionChange=$change)")
         var audioItems: List<AudioItem> = listOf()
-        if (!artist.isNullOrBlank()) {
-            audioItems = audioItemLibrary.searchArtists(artist)
-        } else if (!album.isNullOrBlank()) {
-            audioItems = audioItemLibrary.searchAlbums(album)
-        } else if (!track.isNullOrBlank()) {
-            audioItems = audioItemLibrary.searchTracks(track)
-        } else {
-            // user spoke sth like "play music"
-            val contentHierarchyIDShuffleAll = ContentHierarchyID(ContentHierarchyType.SHUFFLE_ALL_TRACKS)
-            audioItemLibrary.getAudioItemsStartingFrom(contentHierarchyIDShuffleAll)
+        // We show the search query to the user so that hopefully they will adjust their voice input if something does
+        // not work
+        var searchQueryForGUI: String = change.queryToPlay
+        // "track on album by artist" is not supported
+        when (change.queryFocus) {
+            AudioItemType.TRACK -> {
+                if (change.trackToPlay.isNotBlank() && change.artistToPlay.isNotBlank()) {
+                    searchQueryForGUI = "${change.trackToPlay} + ${change.artistToPlay}"
+                    audioItems = audioItemLibrary.searchTrackByArtist(change.trackToPlay, change.artistToPlay)
+                } else if (change.trackToPlay.isNotBlank() && change.albumToPlay.isNotBlank()) {
+                    searchQueryForGUI = "${change.trackToPlay} + ${change.albumToPlay}"
+                    audioItems = audioItemLibrary.searchTrackByAlbum(change.trackToPlay, change.albumToPlay)
+                } else if (change.trackToPlay.isNotBlank()) {
+                    searchQueryForGUI = change.trackToPlay
+                    audioItems = audioItemLibrary.searchTracks(change.trackToPlay)
+                }
+            }
+            AudioItemType.ALBUM -> {
+                if (change.albumToPlay.isNotBlank() && change.artistToPlay.isNotBlank()) {
+                    searchQueryForGUI = "${change.albumToPlay} + ${change.artistToPlay}"
+                    audioItems = audioItemLibrary.searchAlbumByArtist(change.albumToPlay, change.artistToPlay)
+                } else if (change.albumToPlay.isNotBlank()) {
+                    searchQueryForGUI = change.albumToPlay
+                    audioItems = audioItemLibrary.searchAlbums(change.albumToPlay)
+                }
+            }
+            AudioItemType.ARTIST -> {
+                if (change.artistToPlay.isNotBlank()) {
+                    searchQueryForGUI = change.artistToPlay
+                    audioItems = audioItemLibrary.searchArtists(change.artistToPlay)
+                }
+            }
+            AudioItemType.UNSPECIFIC -> {
+                // handled below
+            }
         }
-        createQueueAndPlay(audioItems)
-    }
-
-    private suspend fun playUnspecificFromSearch(searchTerm: String) {
-        logger.debug(TAG, "playUnspecificFromSearch(searchTerm=$searchTerm)")
-        val audioItems: List<AudioItem> = audioItemLibrary.searchUnspecific(searchTerm)
-        createQueueAndPlay(audioItems)
+        if (audioItems.isNotEmpty()) {
+            gui.showToastMsg(context.getString(R.string.toast_searching_voice_input, searchQueryForGUI))
+            createQueueAndPlay(audioItems)
+            return
+        }
+        // if the more specific fields above did not yield any results, try searching using the raw query
+        if (change.queryToPlay.isNotBlank()) {
+            searchQueryForGUI = change.queryToPlay
+            gui.showToastMsg(context.getString(R.string.toast_searching_voice_input, searchQueryForGUI))
+            audioItems = audioItemLibrary.searchUnspecific(change.queryToPlay)
+            createQueueAndPlay(audioItems)
+        } else {
+            // User spoke sth like "play music", query text will be empty
+            // see https://developer.android.com/guide/topics/media-apps/interacting-with-assistant#empty-queries
+            playAnything()
+        }
     }
 
     private suspend fun playFromContentHierarchyID(contentHierarchyIDStr: String) {
@@ -619,8 +648,14 @@ class AudioSession(
                     ContentHierarchyElement.deserialize(it.id).path == contentHierarchyID.path
                 }
             }
+            ContentHierarchyType.ROOT -> {
+                if (currentQueueItem != null) {
+                    playAnything()
+                    return
+                }
+            }
             else -> {
-                // ignore
+                logger.warning(TAG, "Ignoring playFromContentHierarchyID($contentHierarchyID)")
             }
         }
         if (startIndex < 0) {

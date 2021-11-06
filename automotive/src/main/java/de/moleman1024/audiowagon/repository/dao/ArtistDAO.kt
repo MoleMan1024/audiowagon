@@ -28,15 +28,15 @@ interface ArtistDAO {
 
     @Query(
         "SELECT * FROM artist WHERE artistId IN (SELECT artistId FROM artist ORDER BY name COLLATE NOCASE ASC " +
-            "LIMIT :maxNumRows OFFSET :offsetRows)"
+            "LIMIT :maxNumRows OFFSET :offsetRows) ORDER BY name COLLATE NOCASE ASC"
     )
     fun queryArtistsLimitOffset(maxNumRows: Int, offsetRows: Int): List<Artist>
 
     @Query("SELECT COUNT(*) FROM artist")
     fun queryNumArtists(): Int
 
-    @Query("SELECT * FROM artist JOIN artistfts ON artist.name = artistfts.name WHERE artistfts MATCH :query " +
-            "LIMIT $MAX_DATABASE_SEARCH_ROWS")
+    @Query("SELECT artist.* FROM artist JOIN artistfts ON artist.name = artistfts.name WHERE artistfts " +
+            "MATCH :query LIMIT $MAX_DATABASE_SEARCH_ROWS")
     fun search(query: String): List<Artist>
 
     @Query("DELETE FROM artist where artistId = :artistId")

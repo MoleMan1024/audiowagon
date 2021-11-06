@@ -6,8 +6,6 @@ nav_order: 1
 
 # AudioWagon documentation
 
-This project is currently in **OPEN BETA**.
-
 This app will **play audio files** from an attached **USB flash drive** in cars equipped with **Android™ Automotive OS**
 (for example Polestar 2™, Volvo XC40 Recharge™, &hellip;)[^1].
 
@@ -30,7 +28,7 @@ This app will **play audio files** from an attached **USB flash drive** in cars 
 - **equalizer** with multiple presets
 - [**ReplayGain**](https://en.wikipedia.org/wiki/ReplayGain) for volume normalization of tracks
 - [**gapless playback**](https://en.wikipedia.org/wiki/Gapless_playback) for FLAC files
-- partial support for **voice input**
+- support for **voice input**
 
 ## Release notes
 
@@ -48,7 +46,6 @@ Please see Github for a [list of changes for each version of the app](https://gi
 ## How to use
 
 - Install the app via the [Google Play Store](https://play.google.com/store/apps/details?id=de.moleman1024.audiowagon)
-  (BETA TEST: you need an invite to see the app, [see below](#how-to-contribute))
 
 - Format a USB flash drive using **FAT32** filesystem
 
@@ -77,8 +74,8 @@ See [the FAQ section]({{ site.baseurl }}{% link faq.markdown %}).
 
 ## How do I report an issue?
 
-I advise all beta testers to keep logging to USB *activated* in the settings at all times. If possible provide all of
-the following info to me at my email (or you can use [GitHub](https://github.com/MoleMan1024/audiowagon/issues)):
+If you encounter any issues, please let me know so I can fix them. If possible provide all of the following info to me
+at my email (or you can use [GitHub](https://github.com/MoleMan1024/audiowagon/issues)):
 
 - What happened? Describe ALL steps that you did EXACTLY. Please mention even minor details (e.g. did you leave/enter
   the car before you saw the issue occur?). Also be precise: saying that something "does not work"/"is broken" is not
@@ -89,18 +86,14 @@ the following info to me at my email (or you can use [GitHub](https://github.com
 - Which version is your car's software? (e.g. P2124 on a Polestar 2)
 - Log files are being created continously on your USB drive (if this is enabled in the settings). Please attach these
 log files from around the date/time when this happened (also provide previous log file). They have filenames like
-`aw_logs_0/audiowagon_<date_and_time>.log`.
+`aw_logs_0/audiowagon_<date_and_time>.log`. Without this I only have your description of the issue to work with.
+
 
 ## How to contribute?
 
-### Open beta
-
-If you provide me with the **e-mail address that you use in your car for your Google™ account** I can invite you to the
-beta version. If you are interested, please contact me.
-
 ### Native speakers
 
-I am currently looking for **volunteer native speakers to translate** the GUI texts in the app to all languages
+I am still looking for **volunteer native speakers to translate** the GUI texts in the app to all languages
 (except German, English, Dutch, Swedish, Norwegian, Danish, French). You can get the
 [English strings to translate here](https://github.com/MoleMan1024/audiowagon/blob/master/automotive/src/main/res/values/strings.xml).
 

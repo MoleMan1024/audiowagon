@@ -9,6 +9,8 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.runner.RunWith
 import org.junit.runners.Suite
 
+// TODO: room database tests: https://developer.android.com/training/data-storage/room/testing-db#android
+
 @ExperimentalCoroutinesApi
 @RunWith(Suite::class)
 @Suite.SuiteClasses(AudioBrowserServiceTest::class, MediaBrowserTest::class, AudioItemLibraryTest::class)

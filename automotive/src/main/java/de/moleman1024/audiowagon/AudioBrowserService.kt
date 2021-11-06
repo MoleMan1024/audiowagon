@@ -28,7 +28,6 @@ or sponsored by any trademark holders mentioned in the source code.
 
 package de.moleman1024.audiowagon
 
-import android.app.PendingIntent
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Bundle
@@ -66,6 +65,8 @@ private const val TAG = "AudioBrowserService"
 const val NOTIFICATION_ID: Int = 25575
 const val ACTION_RESTART_SERVICE: String = "de.moleman1024.audiowagon.ACTION_RESTART_SERVICE"
 const val ACTION_QUICKBOOT_POWEROFF: String = "android.intent.action.QUICKBOOT_POWEROFF"
+// This PLAY_USB action seems to be essential for getting Google Assistant to accept voice commands such as
+// "play <artist | album | track>"
 const val ACTION_PLAY_USB: String = "android.car.intent.action.PLAY_USB"
 const val CMD_ENABLE_LOG_TO_USB = "de.moleman1024.audiowagon.CMD_ENABLE_LOG_TO_USB"
 const val CMD_DISABLE_LOG_TO_USB = "de.moleman1024.audiowagon.CMD_DISABLE_LOG_TO_USB"
@@ -180,17 +181,10 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                 }
             }
         }
-        // TODO: we have no launch activity, we can probably remove this
-        val sessionActivityIntent =
-            packageManager?.getLaunchIntentForPackage(packageName)?.let { sessionIntent ->
-                PendingIntent.getActivity(this, 0, sessionIntent, 0)
-            }
-        logger.debug(TAG, "sessionActivityIntent=${sessionActivityIntent.toString()}")
-        logger.debug(TAG, "packageName=${packageName}")
         if (sessionToken == null) {
             audioSession =
                 AudioSession(this, audioItemLibrary, audioFileStorage, lifecycleScope, dispatcher, gui,
-                    persistentStorage, sessionActivityIntent)
+                    persistentStorage)
             sessionToken = audioSession.sessionToken
             logger.debug(TAG, "New media session token: $sessionToken")
         }
@@ -530,7 +524,6 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         super.onTaskRemoved(rootIntent)
     }
 
-    // TODO: stop service when player errors because USB device unplugged
     private fun stopService() {
         logger.debug(TAG, "Stopping service")
         if (!isServiceStarted) {
@@ -655,6 +648,9 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             MediaConstants.BROWSER_ROOT_HINTS_KEY_ROOT_CHILDREN_SUPPORTED_FLAGS,
             MediaItem.FLAG_BROWSABLE
         )
+        // Implementing EXTRA_RECENT here would likely not work as we won't have permission to access USB drive yet
+        // when this is called during boot phase
+        // ( https://developer.android.com/guide/topics/media/media-controls )
         logger.debug(TAG, "supportedRootChildFlags=$supportedRootChildFlags")
         val hints = Bundle().apply {
             putBoolean(CONTENT_STYLE_SUPPORTED, true)
@@ -667,11 +663,15 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
 
     /**
      * Returns list of [MediaItem] depending on the given content hierarchy ID
-     * Returning empty list will show a message "no media availabl here".
+     * Returning empty list will show a message "no media available here".
      * Returning null will show "something went wrong" error message.
      *
      * The result is sent via Binder RPC to the media browser client process and its GUI, that means it
      * must be limited in size (maximum size of the parcel is 512 kB it seems).
+     *
+     * We don't use EXTRA_PAGE ( https://developer.android.com/reference/android/media/browse/MediaBrowser#EXTRA_PAGE )
+     * (IIRC the AAOS client did not send it) instead we use groups of media items to reduce the number of items on a
+     * single screen.
      */
     override fun onLoadChildren(parentId: String, result: Result<MutableList<MediaItem>>) {
         logger.debug(TAG, "onLoadChildren(parentId=$parentId)")

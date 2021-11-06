@@ -71,7 +71,9 @@ class ContentHierarchyRoot(
     }
 
     override suspend fun getAudioItems(): List<AudioItem> {
-        throw RuntimeException("No audio items for root content hierarchy")
+        // according to https://source.android.com/devices/automotive/radio#play-intents this must be implemented
+        val contentHierarchyIDShuffleAll = ContentHierarchyID(ContentHierarchyType.SHUFFLE_ALL_TRACKS)
+        return audioItemLibrary.getAudioItemsStartingFrom(contentHierarchyIDShuffleAll)
     }
 
 }

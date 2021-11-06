@@ -29,6 +29,12 @@ private val logger = Logger
 // This constant is used to limit the amount of items to return when getting media items. Supplying more than a
 // certain amount of items will cause BINDER TRANSACTION failures because of too large size in onLoadChildren()
 const val CONTENT_HIERARCHY_MAX_NUM_ITEMS = 400
+
+// This constant limits the number of characters when creating group titles. For example:
+// A group starting at track "Another One Bites The Dust" until "Bullet With Butterfly Wings" will show as
+// "Another One Bite … Bullet With Butt"
+// TODO: If we knew the width of the screen and the size of each character this could be made more intelligent to fill
+//  the available screen space
 const val NUM_TITLE_CHARS_FOR_GROUP = 16
 
 // TODO: document possible hierarchies
@@ -87,7 +93,7 @@ abstract class ContentHierarchyElement(
                         lastItemInGroup =
                             repo.getTracksForArtistLimitOffset(1, offsetRows, groupContentHierarchyID.artistID)
                     } else {
-                        // TODO: this is quite slow: 4.5 sec for 30k tracks, maybe cache it?
+                        // TODO: this is quite slow: 4.5 sec for 30k tracks in total, maybe cache it?
                         firstItemInGroup = repo.getTracksLimitOffset(1, offset)
                         lastItemInGroup = repo.getTracksLimitOffset(1, offsetRows)
                     }

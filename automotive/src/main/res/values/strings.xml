@@ -135,7 +135,7 @@ state and local laws regarding driver distraction and operation of in-vehicle in
 software.\nUse this software only when traffic conditions permit to do so safely.</string>
 	<string name="legal_disclaimer_liability_heading">Warranty / Liability</string>
 	<!-- This liability disclaimer is taken from zlib license, translations might be available online -->
-	<string name="legal_disclaimer_liability_text">This software is provided "as-is", without any express or
+	<string name="legal_disclaimer_liability_text">This software is provided \"as-is\", without any express or
 implied warranty. In no event will the authors be held liable for any damages arising from the use of this software.</string>
 	<string name="legal_disclaimer_license_heading">License</string>
 	<string name="legal_disclaimer_license_text">This software is licensed under GPLv3.\nCreated by MoleMan1024</string>
@@ -158,4 +158,6 @@ subdirectories</string>
 	<string name="setting_delete_databases">Delete databases</string>
 	<string name="setting_database_status_title">Database</string>
 	<string name="setting_enable_replaygain">ReplayGain</string>
+	<!-- This will be shown to show the voice recognized string to the user -->
+	<string name="toast_searching_voice_input">Searching for: \"%1$s\"</string>
 </resources>

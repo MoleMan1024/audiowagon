@@ -12,6 +12,7 @@ import android.provider.MediaStore
 import android.support.v4.media.session.MediaSessionCompat
 import de.moleman1024.audiowagon.*
 import de.moleman1024.audiowagon.log.Logger
+import de.moleman1024.audiowagon.medialibrary.AudioItemType
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 
@@ -143,31 +144,44 @@ class AudioSessionCallback(
 
     /**
      * This is used for Google voice assistant
-     * See https://developer.android.com/guide/topics/media-apps/interacting-with-assistant#playback-from-service
-     * TODO: Not triggered by voice assistant, no clue why
+     * See https://developer.android.com/guide/topics/media-apps/interacting-with-assistant
+     *
+     * We do not implement an intent filter for MEDIA_PLAY_FROM_SEARCH as written here:
+     * https://developer.android.com/guide/components/intents-common#PlaySearch
+     * because because we don't have an activity and we don't need to in AAOS:
+     * https://developer.android.com/guide/topics/media-apps/interacting-with-assistant#declare_legacy_support_for_voice_actions
      */
     override fun onPlayFromSearch(query: String?, extras: Bundle?) {
         logger.debug(TAG, "onPlayFromSearch(query=$query;extras=$extras)")
         super.onPlayFromSearch(query, extras)
         val audioSessionChange = AudioSessionChange(AudioSessionChangeType.ON_PLAY_FROM_SEARCH)
         if (!query.isNullOrEmpty()) {
-            when (extras?.getString(MediaStore.EXTRA_MEDIA_FOCUS)) {
-                MediaStore.Audio.Artists.ENTRY_CONTENT_TYPE -> {
-                    val artist = extras.getString(MediaStore.EXTRA_MEDIA_ARTIST)
-                    artist?.let { audioSessionChange.artistToPlay = it }
+            audioSessionChange.queryToPlay = query
+            val extraMediaFocus = extras?.getString(MediaStore.EXTRA_MEDIA_FOCUS)
+            extraMediaFocus?.let {
+                when (it) {
+                    MediaStore.Audio.Artists.ENTRY_CONTENT_TYPE -> audioSessionChange.queryFocus = AudioItemType.ARTIST
+                    MediaStore.Audio.Albums.ENTRY_CONTENT_TYPE -> audioSessionChange.queryFocus = AudioItemType.ALBUM
+                    MediaStore.Audio.Media.ENTRY_CONTENT_TYPE -> audioSessionChange.queryFocus = AudioItemType.TRACK
+                    else -> audioSessionChange.queryFocus = AudioItemType.UNSPECIFIC
                 }
-                MediaStore.Audio.Albums.ENTRY_CONTENT_TYPE -> {
-                    val album = extras.getString(MediaStore.EXTRA_MEDIA_ALBUM)
-                    album?.let { audioSessionChange.albumToPlay = it }
-                }
-                MediaStore.Audio.Media.ENTRY_CONTENT_TYPE -> {
-                    val track = extras.getString(MediaStore.EXTRA_MEDIA_TITLE)
-                    track?.let { audioSessionChange.trackToPlay = it }
-                }
-                // genre and playlist not supported
-                else -> {
-                    audioSessionChange.unspecificToPlay = query
-                }
+            }
+            // these extras from Google Assistant are strange, I have no idea where this data comes from, it fills it
+            // with data from other sources (Spotify? Youtube Music?) so it will not match local USB database ...
+            val artist = extras?.getString(MediaStore.EXTRA_MEDIA_ARTIST)
+            artist?.let { audioSessionChange.artistToPlay = it }
+            val album = extras?.getString(MediaStore.EXTRA_MEDIA_ALBUM)
+            album?.let { audioSessionChange.albumToPlay = it }
+            val track = extras?.getString(MediaStore.EXTRA_MEDIA_TITLE)
+            track?.let { audioSessionChange.trackToPlay = it }
+            // genre and playlist not supported
+            val genre = extras?.getString(MediaStore.EXTRA_MEDIA_GENRE)
+            if (!genre.isNullOrEmpty()) {
+                logger.warning(TAG, "Extra genre, not supported: $genre")
+            }
+            val playlist = extras?.getString(MediaStore.EXTRA_MEDIA_PLAYLIST)
+            if (!playlist.isNullOrEmpty()) {
+                logger.warning(TAG, "Extra playlist, not supported: $playlist")
             }
         }
         launchInScopeSafely {

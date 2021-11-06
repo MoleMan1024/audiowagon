@@ -77,14 +77,17 @@ SPDX-License-Identifier: GPL-3.0-or-later
 	<string name="setting_USB_status_title">USB status</string>
 	<string name="setting_USB_status_ok">OK</string>
 	<string name="setting_USB_status_not_connected">Ikke tilkoblet</string>
-	<string name="setting_USB_status_unknown">Ukjent. Prøv å koble til USB-stasjonen igjen eller start Android på nytt</string>
+	<string name="setting_USB_status_unknown">Ukjent. Prøv å koble til USB-stasjonen igjen eller start Android på
+nytt</string>
 	<string name="setting_USB_status_connected_no_permission">Tilkoblet. Ikke tilgangsrettigheter</string>
 	<string name="setting_USB_status_error">Lese/skrivefeil. Prøv å koble til USB-stasjonen igjen eller
 reparér/formatér hvis det feiler (FAT32)</string>
 	<string name="setting_USB_status_ejected">Utløst. Du kan nå trygt fjerne USB-stasjonen</string>
-	<string name="setting_USB_status_not_compatible">Ikke kompatibel. Vennligst formatér din USB-stasjon m/FAT32 filsystem</string>
+	<string name="setting_USB_status_not_compatible">Ikke kompatibel. Vennligst formatér din USB-stasjon m/FAT32
+filsystem</string>
 	<string name="setting_show_legal_disclaimer_title">Vis juridisk ansvarsfraskrivelse</string>
-	<string name="setting_show_legal_disclaimer_desc">Du må samtykke til juridisk ansvarsfraskrivelse før du bruker appen</string>
+	<string name="setting_show_legal_disclaimer_desc">Du må samtykke til juridisk ansvarsfraskrivelse før du bruker
+appen</string>
 	<string name="setting_version">Versjon</string>
 	<string name="legal_disclaimer_title">AudioWagon: Ansvarsfraskrivelse</string>
 	<string name="legal_disclaimer_distraction_heading">Sjåførdistraksjon</string>
@@ -92,7 +95,7 @@ reparér/formatér hvis det feiler (FAT32)</string>
 angående distrahering av sjåføren og bruk av kjøretøyets infotainmentsystemer ved bruk av denne programvaren.\n Bruk
 denne programvaren kun når trafikkforholdene tillater det på en trygg måte.</string>
 	<string name="legal_disclaimer_liability_heading">Garanti / Ansvar</string>
-	<string name="legal_disclaimer_liability_text">Denne programvaren tilbys som den er, uten noen form for garanti.
+	<string name="legal_disclaimer_liability_text">Denne programvaren tilbys \"som den er\", uten noen form for garanti.
 Ikke under noen omstendigheter skal utviklerne holdes ansvarlige for eventuelle skader forårsaket av denne
 programvaren.</string>
 	<string name="legal_disclaimer_license_heading">Lisens</string>
@@ -113,4 +116,5 @@ Google\n\nLisenstekster:\nwww.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/licen
 	<string name="setting_delete_databases">Slette databaser</string>
 	<string name="setting_database_status_title">Database</string>
 	<string name="setting_enable_replaygain">ReplayGain</string>
+	<string name="toast_searching_voice_input">Søk etter: \"%1$s\"</string>
 </resources>

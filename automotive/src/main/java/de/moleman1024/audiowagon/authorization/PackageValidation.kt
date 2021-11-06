@@ -63,7 +63,7 @@ class PackageValidation constructor(context: Context, @XmlRes xmlResId: Int) {
      * @return `true` if the caller is known, `false` otherwise.
      */
     fun isClientValid(callingPackage: String, callingUid: Int): Boolean {
-        logger.debug(TAG, "isClientValid(callingPkg=$callingPackage, callingUid=$callingUid")
+        logger.debug(TAG, "isClientValid(callingPkg=$callingPackage, callingUid=$callingUid)")
         // If the caller has already been checked, return the previous result here.
         val (checkedUid, checkResult) = callerChecked[callingPackage] ?: Pair(0, false)
         if (checkedUid == callingUid) {

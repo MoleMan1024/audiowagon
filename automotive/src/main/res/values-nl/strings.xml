@@ -71,36 +71,42 @@ SPDX-License-Identifier: GPL-3.0-or-later
 	<string name="equalizer_preset_V_shape">V-vorm</string>
 	<string name="setting_general_category_title">Algemeen</string>
 	<string name="setting_log_to_USB_title">Schrijf log bestanden naar USB-stick</string>
-	<!-- since some persons already consider USB to be an outdated technology, we should address our users formally
-	(i.e. "Sie") they are likely millennials or older ;-) -->
-	<string name="setting_log_to_USB_desc">Geef deze log bestanden aan de ontwikkelaar wanneer je een bug wilt doorgeven.</string>
+	<string name="setting_log_to_USB_desc">Geef deze log bestanden aan de ontwikkelaar wanneer je een bug wilt
+doorgeven.</string>
 	<string name="setting_USB_status_title">USB Status</string>
 	<string name="setting_USB_status_ok">OK</string>
 	<string name="setting_USB_status_not_connected">Niet verbonden</string>
-	<string name="setting_USB_status_unknown">Onbekend. Probeer de USB-stick opnieuw in te steken of herstart Android</string>
+	<string name="setting_USB_status_unknown">Onbekend. Probeer de USB-stick opnieuw in te steken of herstart
+Android</string>
 	<string name="setting_USB_status_connected_no_permission">Verbonden. Geen toestemming</string>
-	<string name="setting_USB_status_error">Lees/schrijf fout, probeer de USB-stick opnieuw in te steken of herstel/herformatteer (FAT32)
-wanneer onsuccesvol</string>
+	<string name="setting_USB_status_error">Lees/schrijf fout, probeer de USB-stick opnieuw in te steken of
+herstel/herformatteer (FAT32) wanneer onsuccesvol</string>
 	<string name="setting_USB_status_ejected">Succesvol ontkoppeld. Je kunt nu de USB-stick veilig verwijderen</string>
-	<string name="setting_USB_status_not_compatible">Niet compatibel. Formatteer de USB-stick als FAT32 bestandsysteem</string>
+	<string name="setting_USB_status_not_compatible">Niet compatibel. Formatteer de USB-stick als FAT32
+bestandsysteem</string>
 	<string name="setting_show_legal_disclaimer_title">Toon legal disclaimer</string>
-	<string name="setting_show_legal_disclaimer_desc">Je dient de legal disclaimer te accepteren om deze app te gebruiken.</string>
+	<string name="setting_show_legal_disclaimer_desc">Je dient de legal disclaimer te accepteren om deze app te
+gebruiken.</string>
 	<string name="setting_version">Versie</string>
 	<string name="legal_disclaimer_title">AudioWagon: Legal disclaimer</string>
 	<string name="legal_disclaimer_distraction_heading">Afleiding bestuurder</string>
-	<string name="legal_disclaimer_distraction_text">Je stemt in je te houden aan de van toepassing zijnde federale en lokale wetgeving
-betreffende bestuurder afleiding en bediening van een in-voertuig infotainment systeem tijdens het gebruik van deze software
-applicatie.\nGebruik deze software alleen wanneer de verkeersomstandigheden dit absoluut veilig toelaten.</string>
+	<string name="legal_disclaimer_distraction_text">Je stemt in je te houden aan de van toepassing zijnde federale en
+lokale wetgeving betreffende bestuurder afleiding en bediening van een in-voertuig infotainment systeem tijdens het
+gebruik van deze software applicatie.\nGebruik deze software alleen wanneer de verkeersomstandigheden dit absoluut
+veilig toelaten.</string>
 	<string name="legal_disclaimer_liability_heading">Garantie / Aansprakelijkheid</string>
-	<string name="legal_disclaimer_liability_text">Deze software wordt aangeboden "as-is", zonder enige vorm van garantie of enige vorm
-van aansprakelijkheid. Auteurs zullen en kunnen op geen enkele manier aansprakelijk worden gesteld ten aanzien van enige
-vorm van schade ontstaan door het gebruik van deze software.</string>
+	<string name="legal_disclaimer_liability_text">Deze software wordt aangeboden \"as-is\", zonder enige vorm van
+garantie of enige vorm van aansprakelijkheid. Auteurs zullen en kunnen op geen enkele manier aansprakelijk worden
+gesteld ten aanzien van enige vorm van schade ontstaan door het gebruik van deze software.</string>
 	<string name="legal_disclaimer_license_heading">Licentie</string>
-	<string name="legal_disclaimer_license_text">Deze software is gelicenseerd onder GPLv3.\nGemaakt door MoleMan1024</string>
+	<string name="legal_disclaimer_license_text">Deze software is gelicenseerd onder GPLv3.\nGemaakt door
+MoleMan1024</string>
 	<string name="legal_disclaimer_third_party_licenses_heading">3rd party licenties</string>
-	<string name="legal_disclaimer_third_party_licenses_text">Deze app gebruikt content van de volgende andere makers, allen gelicenseerd onder Apache 2.0:\n\n&#x2013;
-meerdere libraries gemaakt door de Android Open Source Project\n&#x2013; de libaums library is gemaakt door Magnus Jahnen\n&#x2013; Material design vector iconen
-zijn gemaakt door Google\n\nLicentie teksten:\nwww.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/licenses/gpl-3.0.html</string>
+	<string name="legal_disclaimer_third_party_licenses_text">Deze app gebruikt content van de volgende andere makers,
+allen gelicenseerd onder Apache 2.0:\n\n&#x2013;meerdere libraries gemaakt door de Android Open Source
+Project\n&#x2013; de libaums library is gemaakt door Magnus Jahnen\n&#x2013; Material design vector iconen
+zijn gemaakt door
+Google\n\nLicentie teksten:\nwww.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/licenses/gpl-3.0.html</string>
 	<string name="legal_disclaimer_confirm_btn">Accepteren</string>
 	<string name="legal_disclaimer_cancel_btn">Annuleren</string>
 	<string name="toast_error_no_tracks">Geen nummers</string>
@@ -112,4 +118,5 @@ zijn gemaakt door Google\n\nLicentie teksten:\nwww.apache.org/licenses/LICENSE-2
 	<string name="setting_delete_databases">Verzamelingen verwijderen</string>
 	<string name="setting_database_status_title">Database</string>
 	<string name="setting_enable_replaygain">ReplayGain</string>
+	<string name="toast_searching_voice_input">Zoeken: \"%1$s\"</string>
 </resources>

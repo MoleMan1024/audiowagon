@@ -71,38 +71,51 @@ SPDX-License-Identifier: GPL-3.0-or-later
 	<string name="equalizer_preset_V_shape">V-form</string>
 	<string name="setting_general_category_title">Generelt</string>
 	<string name="setting_log_to_USB_title">Skriv log-filer til USB-drevet</string>
-	<string name="setting_log_to_USB_desc">Send disse log-filer til udvikleren, når du laver en fejl-rapportering.</string>
+	<string name="setting_log_to_USB_desc">Send disse log-filer til udvikleren, når du laver en
+fejl-rapportering.</string>
 	<string name="setting_USB_status_title">USB-status</string>
 	<string name="setting_USB_status_ok">OK</string>
 	<string name="setting_USB_status_not_connected">Ikke forbundet</string>
-	<string name="setting_USB_status_unknown">Ukendt. Prøv at tilslutte USB-drevet igen, eller genstart Android-systemet</string>
+	<string name="setting_USB_status_unknown">Ukendt. Prøv at tilslutte USB-drevet igen, eller genstart
+Android-systemet</string>
 	<string name="setting_USB_status_connected_no_permission">Forbundet. Ingen adgangsrettigheder</string>
-	<string name="setting_USB_status_error">Læse/skrive-fejl, prøv at tilslutte USB-drevet igen, eller reparerer filsystemet (FAT32)</string>
+	<string name="setting_USB_status_error">Læse/skrive-fejl, prøv at tilslutte USB-drevet igen, eller reparerer
+filsystemet (FAT32)</string>
 	<string name="setting_USB_status_ejected">Koblet fra: Du kan nu tage USB-drevet ud</string>
-	<string name="setting_USB_status_not_compatible">Ikke kompatibel. Formater venligst din USB-enhed med FAT32 filesystemet</string>
+	<string name="setting_USB_status_not_compatible">Ikke kompatibel. Formater venligst din USB-enhed med FAT32
+filesystemet</string>
 	<string name="setting_show_legal_disclaimer_title">Vis juridiske betingelser</string>
-	<string name="setting_show_legal_disclaimer_desc">Du skal acceptere de juridiske betingelser før du kan anvende denne app.</string>
+	<string name="setting_show_legal_disclaimer_desc">Du skal acceptere de juridiske betingelser før du kan anvende
+denne app.</string>
 	<string name="setting_version">Version</string>
 	<string name="legal_disclaimer_title">AudioWagon: Juridiske betingelser</string>
 	<string name="legal_disclaimer_distraction_heading">Distraktion under kørsel</string>
-	<string name="legal_disclaimer_distraction_text">Du er indforstået med, at du skal overholde al relevant lovgivning i forhold til distraktion under kørslen ved anvendelse af bilens infotainmentsystem. Kør bil når du kører bil.\nBrug kun denne software når trafiksituationen tillader at gøre dette på en sikker måde.</string>
+	<string name="legal_disclaimer_distraction_text">Du er indforstået med, at du skal overholde al relevant lovgivning
+i forhold til distraktion under kørslen ved anvendelse af bilens infotainmentsystem. Kør bil når du kører bil.\nBrug
+kun denne software når trafiksituationen tillader at gøre dette på en sikker måde.</string>
 	<string name="legal_disclaimer_liability_heading">Garanti og ansvar</string>
-	<string name="legal_disclaimer_liability_text">Denne software leveres "som den er", uden nogen form for garanti eller ansvar. Udvikleren af den e software kan således ikke holdes ansvarlig for nogen skader der måtte opstå som følge af brugen af denne software.</string>
+	<string name="legal_disclaimer_liability_text">Denne software leveres \"som den er\", uden nogen form for garanti
+eller ansvar. Udvikleren af den e software kan således ikke holdes ansvarlig for nogen skader der måtte opstå som følge
+af brugen af denne software.</string>
 	<string name="legal_disclaimer_license_heading">Licens</string>
 	<string name="legal_disclaimer_license_text">Denne software er licenseret under GPLv3.\nUdviklet af MoleMan1024</string>
 	<string name="legal_disclaimer_third_party_licenses_heading">Tredjepartslicenser</string>
-	<string name="legal_disclaimer_third_party_licenses_text">Denne app bruger indhold/biblioteker fra følgende andre kilder, som alle er licenseret under Apache 2.0:\n\n&#x2013; forskellige biblioteker er udviklet af Android Open Source
-Projektet\n&#x2013; libaums-biblioteket er udviklet af Magnus Jahnen\n&#x2013; Material design vector ikoner er udviklet af Google\n\nLicenstekster:\nwww.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/licenses/gpl-3.0.html
+	<string name="legal_disclaimer_third_party_licenses_text">Denne app bruger indhold/biblioteker fra følgende andre
+kilder, som alle er licenseret under Apache 2.0:\n\n&#x2013; forskellige biblioteker er udviklet af Android Open Source
+Projektet\n&#x2013; libaums-biblioteket er udviklet af Magnus Jahnen\n&#x2013; Material design vector ikoner er
+udviklet af Google\n\nLicenstekster:\nwww.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/licenses/gpl-3.0.html
 	</string>
 	<string name="legal_disclaimer_confirm_btn">Enig</string>
 	<string name="legal_disclaimer_cancel_btn">Afbryd</string>
 	<string name="toast_error_no_tracks">Ingen musikfiler</string>
 	<string name="toast_error_not_enough_space_for_log">Ikke nok plads til at gemme log-filerne</string>
-	<string name="setting_USB_status_too_many_files_in_dir">For mange filer i et af bibliotekerne. Reducer dette ved at anvende underfoldere.</string>
+	<string name="setting_USB_status_too_many_files_in_dir">For mange filer i et af bibliotekerne. Reducer dette ved at
+anvende underfoldere.</string>
 	<string name="browse_tree_category_files">Filer</string>
 	<string name="setting_library_category_title">Medier</string>
 	<string name="setting_read_metadata">Læs metadata</string>
 	<string name="setting_delete_databases">Slette databaser</string>
 	<string name="setting_database_status_title">Database</string>
 	<string name="setting_enable_replaygain">ReplayGain</string>
+	<string name="toast_searching_voice_input">Søge efter: "%1$s"</string>
 </resources>

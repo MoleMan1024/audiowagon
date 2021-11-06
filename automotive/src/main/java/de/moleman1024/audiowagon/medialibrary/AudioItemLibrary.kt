@@ -420,20 +420,47 @@ class AudioItemLibrary(
         return searchByType(query, AudioItemType.TRACK)
     }
 
+    suspend fun searchTrackByArtist(track: String, artist: String): MutableList<AudioItem> {
+        val searchResults: MutableList<AudioItem> = mutableListOf()
+        if (track.isBlank() || artist.isBlank()) {
+            return searchResults
+        }
+        val repo = getPrimaryRepository() ?: return searchResults
+        searchResults += repo.searchTrackByArtist(track, artist)
+        return searchResults
+    }
+
+    suspend fun searchTrackByAlbum(track: String, album: String): MutableList<AudioItem> {
+        val searchResults: MutableList<AudioItem> = mutableListOf()
+        if (track.isBlank() || album.isBlank()) {
+            return searchResults
+        }
+        val repo = getPrimaryRepository() ?: return searchResults
+        searchResults += repo.searchTrackByAlbum(track, album)
+        return searchResults
+    }
+
+    suspend fun searchAlbumByArtist(album: String, artist: String): MutableList<AudioItem> {
+        val searchResults: MutableList<AudioItem> = mutableListOf()
+        if (album.isBlank() || artist.isBlank()) {
+            return searchResults
+        }
+        val repo = getPrimaryRepository() ?: return searchResults
+        searchResults += repo.searchAlbumByArtist(album, artist)
+        return searchResults
+    }
+
     private suspend fun searchByType(query: String, type: AudioItemType): MutableList<AudioItem> {
         val searchResults: MutableList<AudioItem> = mutableListOf()
         if (query.isBlank()) {
             return searchResults
         }
-        storageToRepoMap.values.forEach { repo ->
-            searchResults += when (type) {
-                AudioItemType.ARTIST -> repo.searchArtists(query)
-                AudioItemType.ALBUM -> repo.searchAlbums(query)
-                AudioItemType.TRACK -> repo.searchTracks(query)
-                else -> {
-                    throw RuntimeException("Not supported type: $type")
-                }
-            }
+        val repo = getPrimaryRepository() ?: return searchResults
+        searchResults += when (type) {
+            AudioItemType.ARTIST -> repo.searchArtists(query)
+            AudioItemType.ALBUM -> repo.searchAlbums(query)
+            AudioItemType.TRACK -> repo.searchTracks(query)
+            AudioItemType.UNSPECIFIC -> searchUnspecific(query)
         }
         return searchResults
     }
@@ -443,11 +470,10 @@ class AudioItemLibrary(
         if (query.isBlank()) {
             return searchResults
         }
-        storageToRepoMap.values.forEach { repo ->
-            searchResults += repo.searchTracksForArtist(query)
-            searchResults += repo.searchTracksForAlbum(query)
-            searchResults += repo.searchTracks(query)
-        }
+        val repo = getPrimaryRepository() ?: return searchResults
+        searchResults += repo.searchTracksForArtist(query)
+        searchResults += repo.searchTracksForAlbum(query)
+        searchResults += repo.searchTracks(query)
         return searchResults
     }
 

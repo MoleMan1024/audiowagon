@@ -67,7 +67,8 @@ stored in the car. This process will take some time (a couple of minutes for 100
 
 When connecting the same USB drive again, the app will again go through all directories and all files but will check the
 last file modification date. If the file has been modified, it will re-read the metadata of that file. If not, it will
-take the information from the database. Thus this process should be much quicker than the first time.
+take the information from the database. Thus this process should be much quicker than the first time (there is an [open
+feature request](https://github.com/MoleMan1024/audiowagon/issues/21) to make this faster or run less often).
 
 In version 0.5.0 and higher you can turn off this indexing of the metadata in the settings screen. Afterwards you will
 not be able to navigate by track/artist/album anymore, only by file/directory.
@@ -104,12 +105,10 @@ afterwards to make sure it is in a clean state.
 
 ### Is there a limitation on the number of files the app can handle?
 
-There is a theoretical limit of about 160.000 tracks. However you might observe other issues before you reach that many
-tracks (see above) and you will go mad waiting for indexing to complete 😉. 
+There is a theoretical limit of about 160000 tracks. However you might observe other issues before you reach that many
+tracks (see above) and you will go mad due to the loading time 😉. 
 
-Also there is a limitation regarding the number of files in a directory, see [the section on limitations]({{ site.baseurl }}{% link index.markdown %}#limitations).
-
-Also before you try to go there, ask yourself how many tracks you really need on your journey.  10.000 tracks with an
+Also before you try to go there, ask yourself how many tracks you really need on your journey. 10000 tracks with an
 average of 3 minutes each is already more than 20 days of music to listen to.
 
 ### Can I use multiple USB drives?
@@ -125,7 +124,7 @@ that.
 
 ### Does the app support voice input?
 
-Partially. The following utterances work with Google Assistant (at least in English):
+Yes, the following utterances work with Google Assistant (at least in English):
 
 - "Play"
 - "Pause"
@@ -134,9 +133,22 @@ Partially. The following utterances work with Google Assistant (at least in Engl
 - "Skip ahead &lt;number&gt; seconds"
 - "Skip backwards &lt;number&gt; seconds"
 - "Volume up/down"
+- "Play &lt;artist name | album name | track name&gt;"
+- "Play track &lt;track name&gt;"
+- "Play album &lt;album name&gt;"
+- "Play artist &lt;artist name&gt;"
+- "Play some music"
 
-However playing a song/artist/album by name (e.g. "play artist &lt;artistname&gt; on AudioWagon") does *not* work (if
-you find out why, please let me know).
+However it has some strange behaviour, I am still trying to figure out why this happens:
+
+- AudioWagon should be running for voice input to work properly
+- when AudioWagon is running, you can switch to *radio app* and back to AudioWagon both using your voice. However you
+  can *not* switch to AudioWagon when a different *media app* is running (for example Spotify). Commands such as "Play
+  Michael Jackson on AudioWagon" appear to *not* work
+- a Google Podcast app is sometimes shown in the main display after uttering a voice command, even when that app has
+  never been installed
+- sometimes the TTS voice says "Sorry, an error has occured" although the app has executed the command just fine
+
 
 ### Does the app support video? Will you add support for videos?
 

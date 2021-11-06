@@ -71,21 +71,20 @@ SPDX-License-Identifier: GPL-3.0-or-later
 	<string name="equalizer_preset_V_shape">V-form</string>
 	<string name="setting_general_category_title">Generell</string>
 	<string name="setting_log_to_USB_title">Skriv loggfiler till USB-enheten</string>
-	<!-- since some persons already consider USB to be an outdated technology, we should address our users formally
-	(i.e. "Sie") they are likely millennials or older ;-) -->
 	<string name="setting_log_to_USB_desc">Ge dessa loggfiler till utvecklaren när du skapar en felrapport.</string>
 	<string name="setting_USB_status_title">USB-status</string>
 	<string name="setting_USB_status_ok">OK</string>
 	<string name="setting_USB_status_not_connected">Inte ansluten</string>
 	<string name="setting_USB_status_unknown">Okänd. Försök återansluta USB-enheten eller starta om Android</string>
 	<string name="setting_USB_status_connected_no_permission">Ansluten. Inga rättigheter</string>
-	<string name="setting_USB_status_error">Läs/Skriv-fel, försök återansluta USB-enheten eller reperera/formatera om (FAT32)
-om det misslyckas</string>
+	<string name="setting_USB_status_error">Läs/Skriv-fel, försök återansluta USB-enheten eller reperera/formatera om
+(FAT32) om det misslyckas</string>
 	<string name="setting_USB_status_ejected">Utmatad. Du kan nu säkert ta bort USB-enheten</string>
 	<string name="setting_USB_status_not_compatible">Inte kompatibel. Vänligen formatera om USB-enheten med FAT32
 filsystem</string>
 	<string name="setting_show_legal_disclaimer_title">Visa de juridiska villkoren</string>
-	<string name="setting_show_legal_disclaimer_desc">Du behöver godkänna de juridiska villkoren innan du använder appen.</string>
+	<string name="setting_show_legal_disclaimer_desc">Du behöver godkänna de juridiska villkoren innan du använder
+appen.</string>
 	<string name="setting_version">Version</string>
 	<string name="legal_disclaimer_title">AudioWagon: Juridiska villkor</string>
 	<string name="legal_disclaimer_distraction_heading">Förardistraktion</string>
@@ -93,10 +92,12 @@ filsystem</string>
 ditraktion av förare och hantering av infotainment-system så länge du använder denna mjukvara.\nAnvänd bara mjukvaran
 när trafiksituationen tillåter säker användning av denna.</string>
 	<string name="legal_disclaimer_liability_heading">Garanti / Ansvar</string>
-	<string name="legal_disclaimer_liability_text">This software is provided "as-is", without any express or
-implied warranty. In no event will the authors be held liable for any damages arising from the use of this software.</string>
+	<string name="legal_disclaimer_liability_text">This software is provided \"as-is\", without any express or
+implied warranty. In no event will the authors be held liable for any damages arising from the use of this
+software.</string>
 	<string name="legal_disclaimer_license_heading">Licens</string>
-	<string name="legal_disclaimer_license_text">Denna mjukvara är licensierad enligt GPLv3.\nSkapad av MoleMan1024</string>
+	<string name="legal_disclaimer_license_text">Denna mjukvara är licensierad enligt GPLv3.\nSkapad av
+MoleMan1024</string>
 	<string name="legal_disclaimer_third_party_licenses_heading">Tredjepartslicenser</string>
 	<string name="legal_disclaimer_third_party_licenses_text">Denna app använder innehåll från följande skapare, alla
 licensierade under Apache 2.0:\n\n&#x2013; olika bibliotek skapade av Android Open Source
@@ -115,4 +116,5 @@ underkataloger</string>
 	<string name="setting_delete_databases">Ta bort databaser</string>
 	<string name="setting_database_status_title">Databas</string>
 	<string name="setting_enable_replaygain">ReplayGain</string>
+	<string name="toast_searching_voice_input">Söka efter: \"%1$s\"</string>
 </resources>

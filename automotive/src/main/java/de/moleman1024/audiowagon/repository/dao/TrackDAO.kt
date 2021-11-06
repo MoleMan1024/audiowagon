@@ -7,6 +7,7 @@ package de.moleman1024.audiowagon.repository.dao
 
 import androidx.room.*
 import de.moleman1024.audiowagon.repository.MAX_DATABASE_SEARCH_ROWS
+import de.moleman1024.audiowagon.repository.entities.Artist
 import de.moleman1024.audiowagon.repository.entities.Track
 import de.moleman1024.audiowagon.repository.entities.TrackFTS
 
@@ -37,12 +38,16 @@ interface TrackDAO {
     @Query("SELECT * FROM track WHERE parentArtistId = :artistId ORDER BY name COLLATE NOCASE ASC")
     fun queryTracksByArtist(artistId: Long): List<Track>
 
-    @Query("SELECT * FROM track WHERE parentArtistId = :artistId AND parentAlbumId = :albumId ORDER BY name COLLATE " +
-            "NOCASE ASC")
+    @Query(
+        "SELECT * FROM track WHERE parentArtistId = :artistId AND parentAlbumId = :albumId ORDER BY name COLLATE " +
+                "NOCASE ASC"
+    )
     fun queryTracksByArtistAndAlbum(artistId: Long, albumId: Long): List<Track>
 
-    @Query("SELECT * FROM track WHERE parentArtistId = :artistId AND parentAlbumId = -1 ORDER BY name COLLATE NOCASE " +
-            "ASC")
+    @Query(
+        "SELECT * FROM track WHERE parentArtistId = :artistId AND parentAlbumId = -1 ORDER BY name COLLATE NOCASE " +
+                "ASC"
+    )
     fun queryTracksByArtistWhereAlbumUnknown(artistId: Long): List<Track>
 
     @Query("SELECT * FROM track WHERE parentArtistId = -1 ORDER BY name COLLATE NOCASE ASC")
@@ -51,22 +56,30 @@ interface TrackDAO {
     @Query("SELECT * FROM track WHERE parentAlbumId = -1 ORDER BY name COLLATE NOCASE ASC")
     fun queryTracksAlbumUnknown(): List<Track>
 
-    @Query("SELECT * FROM track WHERE trackId IN (SELECT trackId FROM track ORDER BY name COLLATE NOCASE ASC LIMIT " +
-            ":maxNumRows OFFSET :offsetRows)")
+    @Query(
+        "SELECT * FROM track WHERE trackId IN (SELECT trackId FROM track ORDER BY name COLLATE NOCASE ASC LIMIT " +
+                ":maxNumRows OFFSET :offsetRows) ORDER BY name COLLATE NOCASE ASC"
+    )
     fun queryTracksLimitOffset(maxNumRows: Int, offsetRows: Int): List<Track>
 
-    @Query("SELECT * FROM track WHERE parentArtistId = :artistId AND parentAlbumId = :albumId ORDER BY name COLLATE " +
-            "NOCASE ASC LIMIT :maxNumRows OFFSET :offsetRows")
+    @Query(
+        "SELECT * FROM track WHERE parentArtistId = :artistId AND parentAlbumId = :albumId ORDER BY name COLLATE " +
+                "NOCASE ASC LIMIT :maxNumRows OFFSET :offsetRows"
+    )
     fun queryTracksForArtistAlbumLimitOffset(
         maxNumRows: Int, offsetRows: Int, artistId: Long, albumId: Long
     ): List<Track>
 
-    @Query("SELECT * FROM track WHERE parentArtistId = :artistId ORDER BY name COLLATE NOCASE ASC LIMIT :maxNumRows " +
-            "OFFSET :offsetRows")
+    @Query(
+        "SELECT * FROM track WHERE parentArtistId = :artistId ORDER BY name COLLATE NOCASE ASC LIMIT :maxNumRows " +
+                "OFFSET :offsetRows"
+    )
     fun queryTracksForArtistLimitOffset(maxNumRows: Int, offsetRows: Int, artistId: Long): List<Track>
 
-    @Query("SELECT * FROM track WHERE parentAlbumId = :albumId ORDER BY name COLLATE NOCASE ASC LIMIT :maxNumRows " +
-            "OFFSET :offsetRows")
+    @Query(
+        "SELECT * FROM track WHERE parentAlbumId = :albumId ORDER BY name COLLATE NOCASE ASC LIMIT :maxNumRows " +
+                "OFFSET :offsetRows"
+    )
     fun queryTracksForAlbumLimitOffset(maxNumRows: Int, offsetRows: Int, albumId: Long): List<Track>
 
     @Query("SELECT COUNT(*) FROM track WHERE parentArtistId = :artistId AND parentAlbumId = -1")
@@ -90,13 +103,31 @@ interface TrackDAO {
     @Query("SELECT COUNT(*) FROM track")
     fun queryNumTracks(): Int
 
-    @Query("SELECT COUNT(*) FROM track WHERE parentArtistId = :artistId AND parentAlbumId = :albumId ORDER BY name " +
-            "COLLATE NOCASE ASC")
+    @Query(
+        "SELECT COUNT(*) FROM track WHERE parentArtistId = :artistId AND parentAlbumId = :albumId ORDER BY name " +
+                "COLLATE NOCASE ASC"
+    )
     fun queryNumTracksByArtistAndAlbum(artistId: Long, albumId: Long): Int
 
-    @Query("SELECT * FROM track JOIN trackfts ON track.name = trackfts.name WHERE trackfts MATCH :query " +
-            "LIMIT $MAX_DATABASE_SEARCH_ROWS")
+    @Query(
+        "SELECT track.* FROM track JOIN trackfts ON track.name = trackfts.name WHERE trackfts MATCH :query " +
+                "LIMIT $MAX_DATABASE_SEARCH_ROWS"
+    )
     fun search(query: String): List<Track>
+
+    @Query(
+        "SELECT DISTINCT track.* FROM track JOIN trackfts ON track.name = trackfts.name JOIN artist ON " +
+                "track.parentArtistId = artist.artistId JOIN artistfts ON artist.name = artistfts.name " +
+                "WHERE trackfts MATCH :track AND artistfts MATCH :artist LIMIT $MAX_DATABASE_SEARCH_ROWS"
+    )
+    fun searchWithArtist(track: String, artist: String): List<Track>
+
+    @Query(
+        "SELECT DISTINCT track.* FROM track JOIN trackfts ON track.name = trackfts.name JOIN album ON " +
+                "track.parentAlbumId = album.albumId JOIN albumfts ON album.name = albumfts.name " +
+                "WHERE trackfts MATCH :track AND albumfts MATCH :album LIMIT $MAX_DATABASE_SEARCH_ROWS"
+    )
+    fun searchWithAlbum(track: String, album: String): List<Track>
 
     @Delete
     fun delete(track: Track)

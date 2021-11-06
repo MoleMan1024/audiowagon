@@ -29,14 +29,14 @@ open class USBAudioDataSource(
     var hasError = false
 
     init {
-        logger.debug(
+        logger.verbose(
             TAG, "Init data source with chunk size $chunkSize for file with length ${usbFile?.length}: $usbFile"
         )
     }
 
     @Synchronized
     override fun close() {
-        logger.debug(TAG, "close(usbFile=$usbFile)")
+        logger.verbose(TAG, "close(usbFile=$usbFile)")
         if (isClosed || hasError) {
             usbFile = null
             return
@@ -44,7 +44,7 @@ open class USBAudioDataSource(
         try {
             usbFile?.close()
             isClosed = true
-            logger.debug(TAG, "closed usbFile=$usbFile")
+            logger.verbose(TAG, "closed usbFile=$usbFile")
             usbFile = null
         } catch (exc: IOException) {
             // If we rethrow this, it will trigger a fatal SIGABRT and the app will be restarted.

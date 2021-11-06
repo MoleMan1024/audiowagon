@@ -77,11 +77,14 @@ an den Entwickler.</string>
 	<string name="setting_USB_status_title">USB Status</string>
 	<string name="setting_USB_status_ok">OK</string>
 	<string name="setting_USB_status_not_connected">Nicht verbunden</string>
-	<string name="setting_USB_status_unknown">Unbekannt. Versuchen Sie den USB-Stick neu einzustecken oder starten Sie Android neu</string>
+	<string name="setting_USB_status_unknown">Unbekannt. Versuchen Sie den USB-Stick neu einzustecken oder starten Sie
+Android neu</string>
 	<string name="setting_USB_status_connected_no_permission">Verbunden. Berechtigung fehlt.</string>
-	<string name="setting_USB_status_error">Schreib-/Lesefehler, versuchen Sie den USB-Stick neu einzustecken oder reparieren/formatieren Sie ihn (FAT32)</string>
+	<string name="setting_USB_status_error">Schreib-/Lesefehler, versuchen Sie den USB-Stick neu einzustecken oder
+reparieren/formatieren Sie ihn (FAT32)</string>
 	<string name="setting_USB_status_ejected">Ausgeworfen. Sie können den USB-Stick jetzt sicher abstecken</string>
-	<string name="setting_USB_status_not_compatible">Nicht kompatibel. Bitte formatieren Sie Ihren USB-Stick im FAT32 Dateisystem</string>
+	<string name="setting_USB_status_not_compatible">Nicht kompatibel. Bitte formatieren Sie Ihren USB-Stick im FAT32
+Dateisystem</string>
 	<string name="setting_show_legal_disclaimer_title">Rechtliche Hinweise anzeigen</string>
 	<string name="setting_show_legal_disclaimer_desc">Sie müssen den rechtlichen Hinweisen zustimmen, bevor Sie
 die App benutzen</string>
@@ -90,18 +93,20 @@ die App benutzen</string>
 	<string name="legal_disclaimer_distraction_heading">Ablenkung des Fahrers</string>
 	<string name="legal_disclaimer_distraction_text">Sie verpflichten sich zur Einhaltung aller anwendbaren
 bundesstaatlichen, staatlichen und lokalen Gesetze bezüglich Ablenkung im Straßenverkehr sowie Verwendung von
-Fahrzeug-Infotainment-Systemen während der Benutzung dieser Software.\nVerwenden Sie diese Software nur wenn das Verkehrsgeschehen es gefahrlos erlaubt.</string>
+Fahrzeug-Infotainment-Systemen während der Benutzung dieser Software.\nVerwenden Sie diese Software nur wenn das
+Verkehrsgeschehen es gefahrlos erlaubt.</string>
 	<string name="legal_disclaimer_liability_heading">Garantie / Haftungsausschluß</string>
-	<string name="legal_disclaimer_liability_text">Diese Software wird ohne ausdrückliche oder implizierte Garantie bereitgestellt.
-In keinem Fall können die Autoren für irgendwelche Schäden, die durch die Benutzung dieser Software entstanden sind,
-haftbar gemacht werden.</string>
+	<string name="legal_disclaimer_liability_text">Diese Software wird ohne ausdrückliche oder implizierte Garantie
+bereitgestellt. In keinem Fall können die Autoren für irgendwelche Schäden, die durch die Benutzung dieser Software
+entstanden sind, haftbar gemacht werden.</string>
 	<string name="legal_disclaimer_license_heading">Lizenzen</string>
 	<string name="legal_disclaimer_license_text">Diese Software ist lizenziert unter GPLv3. Entwickelt von MoleMan1024</string>
 	<string name="legal_disclaimer_third_party_licenses_heading">Lizenzen von Drittanbietern</string>
 	<string name="legal_disclaimer_third_party_licenses_text">Diese App verwendet Software aus folgenden anderen
 Quellen, alle lizenziert unter Apache 2.0:\n\n&#x2013; verschiedene Bibliotheken, entwickelt vom Android Open Source
 Project\n&#x2013; die libaums Bibliothek, entwickelt von Magnus Jahnen\n&#x2013; Material Design
-Vektorgrafiken, entwickelt von Google\n\nLizenzvereinbarungen:\nwww.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/licenses/gpl-3.0.html</string>
+Vektorgrafiken, entwickelt von
+Google\n\nLizenzvereinbarungen:\nwww.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/licenses/gpl-3.0.html</string>
 	<string name="legal_disclaimer_confirm_btn">Zustimmen</string>
 	<string name="legal_disclaimer_cancel_btn">Abbrechen</string>
 	<string name="toast_error_no_tracks">Keine Titel</string>
@@ -114,4 +119,5 @@ Sie Unterverzeichnisse.</string>
 	<string name="setting_delete_databases">Datenbanken löschen</string>
 	<string name="setting_database_status_title">Datenbank</string>
 	<string name="setting_enable_replaygain">ReplayGain</string>
+	<string name="toast_searching_voice_input">Suche nach: \"%1$s\"</string>
 </resources>

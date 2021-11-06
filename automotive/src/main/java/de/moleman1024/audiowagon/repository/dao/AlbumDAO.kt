@@ -36,12 +36,16 @@ interface AlbumDAO {
     @Query("SELECT * FROM album WHERE parentArtistId = :artistId")
     fun queryAlbumsByArtist(artistId: Long): List<Album>
 
-    @Query("SELECT * FROM album WHERE albumId IN (SELECT albumId FROM album ORDER BY name COLLATE NOCASE ASC LIMIT " +
-            ":maxNumRows OFFSET :offsetRows)")
+    @Query(
+        "SELECT * FROM album WHERE albumId IN (SELECT albumId FROM album ORDER BY name COLLATE NOCASE ASC LIMIT " +
+                ":maxNumRows OFFSET :offsetRows) ORDER BY name COLLATE NOCASE ASC"
+    )
     fun queryAlbumsLimitOffset(maxNumRows: Int, offsetRows: Int): List<Album>
 
-    @Query("SELECT * FROM album WHERE parentArtistId = :artistId ORDER BY name COLLATE NOCASE ASC LIMIT :maxNumRows " +
-            "OFFSET :offsetRows")
+    @Query(
+        "SELECT * FROM album WHERE parentArtistId = :artistId ORDER BY name COLLATE NOCASE ASC LIMIT :maxNumRows " +
+                "OFFSET :offsetRows"
+    )
     fun queryAlbumsForArtistLimitOffset(maxNumRows: Int, offsetRows: Int, artistId: Long): List<Album>
 
     @Query("SELECT COUNT(*) FROM album WHERE parentArtistId = :artistId")
@@ -50,9 +54,18 @@ interface AlbumDAO {
     @Query("SELECT COUNT(*) FROM album")
     fun queryNumAlbums(): Int
 
-    @Query("SELECT * FROM album JOIN albumfts ON album.name = albumfts.name WHERE albumfts MATCH :query " +
-            "LIMIT $MAX_DATABASE_SEARCH_ROWS")
+    @Query(
+        "SELECT album.* FROM album JOIN albumfts ON album.name = albumfts.name WHERE albumfts MATCH :query " +
+                "LIMIT $MAX_DATABASE_SEARCH_ROWS"
+    )
     fun search(query: String): List<Album>
+
+    @Query(
+        "SELECT DISTINCT album.* FROM album JOIN albumfts ON album.name = albumfts.name JOIN artist ON " +
+                "album.parentArtistId = artist.artistId JOIN artistfts ON artist.name = artistfts.name " +
+                "WHERE albumfts MATCH :album AND artistfts MATCH :artist LIMIT $MAX_DATABASE_SEARCH_ROWS"
+    )
+    fun searchWithArtist(album: String, artist: String): List<Album>
 
     @Query("DELETE FROM album WHERE albumId = :albumId")
     fun deleteByID(albumId: Long)

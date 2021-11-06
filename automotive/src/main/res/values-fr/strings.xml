@@ -94,7 +94,7 @@ nationales et locales concernant la distraction du conducteur et le fonctionneme
 lors de l\'utilisation de ce logiciel.\nUtilisez ce logiciel uniquement lorsque les conditions de conduite le
 permettent en toute sécurité.</string>
 	<string name="legal_disclaimer_liability_heading">Garantie / Responsabilité</string>
-	<string name="legal_disclaimer_liability_text">Ce logiciel est fourni "tel quel", sans aucune garantie expresse ou
+	<string name="legal_disclaimer_liability_text">Ce logiciel est fourni \"tel quel\", sans aucune garantie expresse ou
 implicite. En aucun cas, les auteurs ne pourront être tenus responsables des dommages résultant de l\'utilisation de
 ce logiciel.</string>
 	<string name="legal_disclaimer_license_heading">Licence</string>
@@ -116,4 +116,5 @@ utiliser des sous-répertoires.</string>
 	<string name="setting_delete_databases">Supprimer des bibliothèques</string>
 	<string name="setting_database_status_title">Bibliothèque</string>
 	<string name="setting_enable_replaygain">ReplayGain</string>
+	<string name="toast_searching_voice_input">Rechercher: \"%1$s\"</string>
 </resources>
