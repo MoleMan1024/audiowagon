@@ -133,7 +133,7 @@ Yes, the following utterances work with Google Assistant (at least in English):
 - "Skip ahead &lt;number&gt; seconds"
 - "Skip backwards &lt;number&gt; seconds"
 - "Volume up/down"
-- "Play &lt;artist name &vert; album name &vert; track name&gt;"
+- "Play &lt;artist name &#x7c; album name &#x7c; track name&gt;"
 - "Play track &lt;track name&gt;"
 - "Play album &lt;album name&gt;"
 - "Play artist &lt;artist name&gt;"
