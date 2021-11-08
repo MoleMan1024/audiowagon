@@ -46,8 +46,9 @@ class ContentHierarchyTrack(
                 tracks += repo.getTracksForAlbum(id.albumID)
             } else {
                 // selected a single track in tracks browse view, fill up playback queue with random tracks
-                tracks += repo.getTrack(id.trackID)
-                tracks += repo.getRandomTracks(NUM_ITEMS_MAX_FOR_PLAY_SHUFFLE_ALL-1)
+                val track = repo.getTrack(id.trackID)
+                tracks += track
+                tracks += repo.getRandomTracks(NUM_ITEMS_MAX_FOR_PLAY_SHUFFLE_ALL-1).filterNot { it.id == track.id }
             }
         } catch (exc: RuntimeException) {
             logger.exception(TAG, exc.message.toString(), exc)

@@ -682,7 +682,13 @@ class AudioPlayer(
     suspend fun playFromQueueID(queueID: Long) {
         withContext(dispatcher) {
             logger.debug(TAG, "playFromQueueID($queueID)")
-            val index = playbackQueue.getIndexForQueueID(queueID)
+            var index = playbackQueue.getIndexForQueueID(queueID)
+            if (index >= playbackQueue.getSize()) {
+                index = playbackQueue.getSize() - 1
+            }
+            if (index < 0) {
+                index = 0
+            }
             playQueueAtIndex(index)
         }
     }

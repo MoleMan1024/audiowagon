@@ -8,7 +8,7 @@ package de.moleman1024.audiowagon.medialibrary
 import android.net.Uri
 
 data class AudioItem(
-    //  unique identifier used by media browser service (content hierarchy ID)
+    // unique identifier used by media browser service (content hierarchy ID)
     var id: String = "",
     var uri: Uri = Uri.EMPTY,
     var artist: String = "",

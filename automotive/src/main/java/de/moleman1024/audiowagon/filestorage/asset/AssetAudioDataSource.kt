@@ -3,25 +3,30 @@ SPDX-FileCopyrightText: 2021 MoleMan1024 <moleman1024dev@gmail.com>
 SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-package de.moleman1024.audiowagon.filestorage.sd
+package de.moleman1024.audiowagon.filestorage.asset
 
+import android.content.res.AssetFileDescriptor
 import android.media.MediaDataSource
-import java.io.File
-import java.io.RandomAccessFile
+import de.moleman1024.audiowagon.log.Logger
+import java.io.InputStream
 import kotlin.math.min
 
+
 /**
- * NOTE: SD card support is only enabled in debug builds used in the Android emulator
+ * NOTE: assets bundled with the app are only used to pass Google's automatic reviews which require some demo data
  */
-class SDCardAudioDataSource(private var file: File) : MediaDataSource() {
+class AssetAudioDataSource(private val assetFD: AssetFileDescriptor) : MediaDataSource() {
+    private val inputStream: InputStream = assetFD.createInputStream()
+    // not memory efficient, but I don't care
+    private val data: ByteArray = inputStream.readBytes()
     var isClosed: Boolean = false
-    var randomAccessFile: RandomAccessFile = RandomAccessFile(file, "r")
 
     override fun close() {
         if (isClosed) {
             return
         }
-        randomAccessFile.close()
+        inputStream.close()
+        assetFD.close()
         isClosed = true
     }
 
@@ -34,12 +39,11 @@ class SDCardAudioDataSource(private var file: File) : MediaDataSource() {
             return 0
         }
         val numBytesToRead = min(size.toLong(), getSize() - position).toInt()
-        randomAccessFile.seek(position)
-        randomAccessFile.read(buffer, offset, numBytesToRead)
+        data.copyInto(buffer, offset, position.toInt(), (position + numBytesToRead).toInt())
         return numBytesToRead
     }
 
     override fun getSize(): Long {
-        return file.length()
+        return assetFD.length
     }
 }

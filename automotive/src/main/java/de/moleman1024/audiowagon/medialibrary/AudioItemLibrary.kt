@@ -474,7 +474,10 @@ class AudioItemLibrary(
         searchResults += repo.searchTracksForArtist(query)
         searchResults += repo.searchTracksForAlbum(query)
         searchResults += repo.searchTracks(query)
-        return searchResults
+        return searchResults.distinctBy {
+            val contentHierarchyID = ContentHierarchyElement.deserialize(it.id)
+            contentHierarchyID.trackID
+        }.toMutableList()
     }
 
     fun createMetadataForItem(audioItem: AudioItem): MediaMetadataCompat {

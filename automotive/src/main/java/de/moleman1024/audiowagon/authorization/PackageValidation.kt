@@ -35,6 +35,7 @@ import java.io.IOException
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
 import java.util.*
+import kotlin.NoSuchElementException
 import kotlin.collections.LinkedHashMap
 
 private const val TAG = "PkgValidation"
@@ -88,9 +89,15 @@ class PackageValidation constructor(context: Context, @XmlRes xmlResId: Int) {
             throw IllegalStateException("Caller's package UID doesn't match caller's actual UID?")
         }
         val callerSignature = callerPackageInfo.signature
-        val isPackageInAllowList = certificateAllowList[callingPackage]?.signatures?.first {
-            it.signature == callerSignature
-        } != null
+        val isPackageInAllowList: Boolean
+        try {
+            isPackageInAllowList = certificateAllowList[callingPackage]?.signatures?.first {
+                it.signature == callerSignature
+            } != null
+        } catch (exc: NoSuchElementException) {
+            logger.exception(TAG, "Caller signature not found $callerSignature: ${exc.message.toString()}", exc)
+            return false
+        }
         val isCallerKnown = when {
             // If it's our own app making the call, allow it.
             callingUid == Process.myUid() -> true

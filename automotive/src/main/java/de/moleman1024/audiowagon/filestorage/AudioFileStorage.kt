@@ -15,6 +15,8 @@ import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.authorization.SDCardDevicePermissions
 import de.moleman1024.audiowagon.authorization.USBDevicePermissions
+import de.moleman1024.audiowagon.filestorage.asset.AssetMediaDevice
+import de.moleman1024.audiowagon.filestorage.asset.AssetStorageLocation
 import de.moleman1024.audiowagon.filestorage.sd.SDCardAudioDataSource
 import de.moleman1024.audiowagon.filestorage.sd.SDCardMediaDevice
 import de.moleman1024.audiowagon.filestorage.sd.SDCardStorageLocation
@@ -71,6 +73,7 @@ open class AudioFileStorage(
     init {
         initUSBObservers()
         initSDCardForDebugBuild()
+        initAssetsForEmulator()
     }
 
     private fun initUSBObservers() {
@@ -97,11 +100,29 @@ open class AudioFileStorage(
     private fun initSDCardForDebugBuild() {
         if (Util.isDebugBuild(context)) {
             try {
-                // TOD: take this name from /storage
+                // TODO: take this name from /storage
                 val sdCardMediaDevice = SDCardMediaDevice("A749-5ABA")
                 mediaDevicesForTest.add(sdCardMediaDevice)
-            } catch (exc: RuntimeException) {
-                logger.warning(TAG, exc.message.toString())
+            } catch (exc: Exception) {
+                logger.exception(TAG, exc.message.toString(), exc)
+            }
+        }
+    }
+
+    /**
+     * This is only used to provide demo soundfiles to Google during automatic review of production builds
+     */
+    private fun initAssetsForEmulator() {
+        if (Util.isRunningInEmulator() && !Util.isDebugBuild(context)) {
+            logger.debug(TAG, "initAssetsForEmulator()")
+            try {
+                // agree to the legal disclaimer automatically in case this is automatically reviewed
+                Util.setLegalDisclaimerAgreed(context)
+                val assetManager = context.assets
+                val assetMediaDevice = AssetMediaDevice(assetManager)
+                mediaDevicesForTest.add(assetMediaDevice)
+            } catch (exc: Exception) {
+                logger.exception(TAG, exc.message.toString(), exc)
             }
         }
     }
@@ -134,6 +155,9 @@ open class AudioFileStorage(
             }
             is SDCardMediaDevice -> {
                 SDCardStorageLocation(device)
+            }
+            is AssetMediaDevice -> {
+                AssetStorageLocation(device)
             }
             else -> {
                 throw RuntimeException("Unhandled device type when creating storage location: $device")
@@ -181,6 +205,12 @@ open class AudioFileStorage(
             }
             mediaDevicesForTest.forEach {
                 addDevice(it)
+            }
+        } else {
+            if (Util.isRunningInEmulator()) {
+                mediaDevicesForTest.forEach {
+                    addDevice(it)
+                }
             }
         }
     }

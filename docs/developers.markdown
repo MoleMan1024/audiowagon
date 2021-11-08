@@ -97,7 +97,8 @@ manifest).
 After Google's review process is completed you will receive an e-mail. My impression is that these "reviews" are done
 automatically only, so they might show some strange warnings for your app that are incorrect (e.g. AudioWagon is always
 listed as "has no content". I assume the automated check they do does not insert any SD card/USB). As long as you
-receive another e-mail "Your update is live" afterwards, you can ignore these warnings.
+receive another e-mail "Your update is live" afterwards, you can ignore these warnings (you will need to somehow resolve
+the warnings before releasing to production).
 
 ### App is live
 

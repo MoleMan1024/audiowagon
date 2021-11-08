@@ -50,9 +50,7 @@ class LegalDisclaimerActivity : AppCompatActivity() {
             finish()
             return
         }
-        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
-        sharedPreferences.edit()
-            .putString(PERSISTENT_STORAGE_LEGAL_DISCLAIMER_AGREED, PERSISTENT_STORAGE_LEGAL_DISCLAIMER_VERSION).apply()
+        Util.setLegalDisclaimerAgreed(this)
         val updateUSBIntent = Intent(ACTION_USB_UPDATE)
         sendBroadcast(updateUSBIntent)
         finish()

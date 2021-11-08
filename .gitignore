@@ -21,7 +21,7 @@
 .idea/workspace.xml
 .navigation
 Thumbs.db
-assets/
+/assets/
 bin/
 bugs/
 build/

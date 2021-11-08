@@ -74,6 +74,9 @@ Adding New Keys:
         <key release="false">
             07:ee:6e:59:6e:80:e3:e7:81:9f:7c:fa:4b:98:3e:a7:50:da:e8:55:9f:27:fe:58:ed:c1:a7:76:a6:d2:15:41
         </key>
+        <key release="false">
+            1a:f3:f0:08:bb:dc:e0:13:ee:d8:cd:6b:b1:6b:ea:ad:b8:8d:7f:ec:1e:e8:46:24:dc:74:fe:41:a6:b9:89:55
+        </key>
     </signature>
 </allowed_callers>
 
