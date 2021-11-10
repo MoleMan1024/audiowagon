@@ -166,7 +166,9 @@ built into certain car models.
 
 ## Other
 
-### When will the app be released to everyone?
+### I want to thank you, do you accept donations?
 
-Current estimate is November 2021
+I am fine, thanks. If you really want to give something in return, please put it towards a good cause, for example 
+to protect the environment (reforestation, solar power, right-to-repair, local projects, etc.).
+
 
