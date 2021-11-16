@@ -38,7 +38,7 @@ class Effects(audioSessionID: Int) {
     ).build()
     private val dynamicsProcessing = DynamicsProcessing(normalPrio, audioSessionID, config)
     private var currentPreset: EqualizerPreset = EqualizerPreset.LESS_BASS
-    // Polestar 2 and Pixel 3 XL have 5 bands EQs, with Q approx 0.6
+    // Polestar 2 and Pixel 3 XL have 5 band EQs, with Q approx 0.6
     // center 60 from 30 til 120 Hz
     // center 230 from 120 til 460 Hz
     // center 910 from 460 til 1800 Hz

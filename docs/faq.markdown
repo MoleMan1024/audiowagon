@@ -33,8 +33,7 @@ on your USB drive might be damaged.
 ![Too many files in a directory](/img/too_many_files.jpg)
 
 There is a limitation that you can only have up to 128 files in directory in versions 0.6.0 and lower. Directories with
-more files than that are ignored. See [the section on limitations]({{ site.baseurl }}{% link index.markdown
-%}#limitations). This has been fixed in version 0.6.1.
+more files than that are ignored. This has been fixed in version 0.6.1 and higher, please update the app.
 
 ### Why is my USB drive not recognized?
 
@@ -63,7 +62,7 @@ apps &#8594; Show system &#8594; Media Center and tap "Force Stop", then try the
 
 When connecting a USB drive for the first time the app walks through all the directories on the USB drive and extracts
 *metadata* from all audio files (i.e. artist, album, title, year etc.). This information is written into a database
-stored in the car. This process will take some time (a couple of minutes for 10000 files)
+stored in the car. This process will take some time (a couple of minutes for 10000 files).
 
 When connecting the same USB drive again, the app will again go through all directories and all files but will check the
 last file modification date. If the file has been modified, it will re-read the metadata of that file. If not, it will
@@ -72,6 +71,65 @@ feature request](https://github.com/MoleMan1024/audiowagon/issues/21) to make th
 
 In version 0.5.0 and higher you can turn off this indexing of the metadata in the settings screen. Afterwards you will
 not be able to navigate by track/artist/album anymore, only by file/directory.
+
+### Why do my compilation albums show up as separate albums?
+
+In version 1.0.3 and higher the behaviour is the following for such "special" cases:
+
+#### Compilation albums
+
+A *compilation* is an album that contains various artists. To mark an album as a compilation it needs a special tag in
+the metadata. Different tools have different ways to achieve this, for example:
+
+- in [mp3tag](https://www.mp3tag.de/en/) open the *extended tags* of the files and add a field COMPILATION with value 1.
+  ![compilation in mp3tag](/img/compilation_mp3tag.jpg)
+- in [tagscanner](https://www.xdlab.ru/en/) tick the checkmark "Part of Compilation"
+  ![compilation in tagscanner](/img/compilation_tagscanner.jpg)
+- in [MusicBee](https://www.getmusicbee.com/) edit the track, go to *settings* tab and tick *iTunes compilation*
+  ![compilation in MusicBee](/img/compilation_musicbee.jpg)
+
+Alternatively you can also put "Various Artists" in the *album artist* tag, this will have the same effect as the
+compilation field above.
+
+Afterwards the compilation album will show up in the album view with a pseudo artist "Various Artists"
+
+![compilation](/img/compilation.jpg)
+
+Inside this album each track will show the respective artist:
+
+![compilation tracks](/img/compilation_tracks.jpg)
+
+#### Album artists
+
+The *album artist* tag in the metadata of each file is preferred over the *artist* tag.
+
+As an example consider this album containing some song covers for the artist "Mirah":
+
+![album artist list](/img/album_artist_list.jpg)
+
+It is *not* tagged as a compilation, the *album artist* is "Mirah" and the *artist* is the one that covered the song. 
+
+The AudioWagon app will react the following way based on feature request 
+[#22](https://github.com/MoleMan1024/audiowagon/issues/22):
+- In the **artist view** the *album artist* will be shown
+- In the **album view** the *album artist* will be shown 
+
+  ![album artist](/img/album_artist.jpg)
+- In the **track view** the original *artist* will be shown
+
+  ![album artist tracks](/img/album_artist_tracks.jpg)
+- In the **playback view** the original *artist* will be shown
+- For **searching** you must use the *album artist*
+
+#### Missing metadata
+
+If the *album* tag is empty an entry "Unknown album" will be created to collect such tracks. If the *artist* is
+available this album will be associated with the respective artist.
+
+If the *artist* tag is empty an entry "Unknown artist" will be created to collect such tracks.
+
+If the *title* tag is empty, the file name will be used instead.
+
 
 ### My operating system tells me that my USB drive has problems. But all files are okay?
 
@@ -145,8 +203,6 @@ However it has some strange behaviour, I am still trying to figure out why this 
 - when AudioWagon is running, you can switch to *radio app* and back to AudioWagon both using your voice. However you
   can *not* switch to AudioWagon when a different *media app* is running (for example Spotify). Commands such as "Play
   Michael Jackson on AudioWagon" appear to *not* work
-- a Google Podcast app is sometimes shown in the main display after uttering a voice command, even when that app has
-  never been installed
 - sometimes the TTS voice says "Sorry, an error has occured" although the app has executed the command just fine
 
 

@@ -53,7 +53,6 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
     private var volumeLabel: String = ""
     private var logDirectoryNum: Int = 0
     private val recentFilepathToFileMap: FilePathToFileMapCache = FilePathToFileMapCache()
-    val directoriesWithIssues = mutableListOf<String>()
 
     private class FilePathToFileMapCache : LinkedHashMap<String, UsbFile>() {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, UsbFile>?): Boolean {
@@ -272,7 +271,6 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
      * Traverses files/directories depth-first
      */
     fun walkTopDown(rootDirectory: UsbFile): Sequence<UsbFile> = sequence {
-        directoriesWithIssues.clear()
         val stack = ArrayDeque<Iterator<UsbFile>>()
         val allFilesDirs = mutableMapOf<String, Unit>()
         recentFilepathToFileMap.clear()
@@ -293,6 +291,7 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
                         if (fileOrDirectory.name.contains(Util.DIRECTORIES_TO_IGNORE_REGEX)) {
                             logger.debug(TAG, "Ignoring directory: ${fileOrDirectory.name}")
                         } else {
+                            logger.debug(TAG, "Walking directory: ${fileOrDirectory.absolutePath}")
                             stack.add(fileOrDirectory.listFiles().iterator())
                         }
                     }

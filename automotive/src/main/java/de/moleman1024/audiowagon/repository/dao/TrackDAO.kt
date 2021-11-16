@@ -100,6 +100,13 @@ interface TrackDAO {
     @Query("SELECT COUNT(*) FROM track WHERE parentArtistId = :artistId")
     fun queryNumTracksForArtist(artistId: Long): Int
 
+    @Query("SELECT COUNT(DISTINCT parentAlbumId) FROM track WHERE parentArtistId = :artistId AND parentAlbumId > -1")
+    fun queryNumAlbumsByTrackArtist(artistId: Long): Int
+
+    @Query("SELECT COUNT(DISTINCT trackId) FROM track, album WHERE track.parentAlbumId = album.albumId " +
+            "AND album.parentArtistId = :artistId")
+    fun queryNumTracksForArtistViaAlbums(artistId: Long): Int
+
     @Query("SELECT COUNT(*) FROM track")
     fun queryNumTracks(): Int
 

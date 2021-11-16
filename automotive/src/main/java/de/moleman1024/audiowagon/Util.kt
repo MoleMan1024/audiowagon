@@ -121,9 +121,9 @@ class Util {
         }
 
         /**
-         * Google automatic reviews probably run using an emulator. We use this to change the behaviour of the
-         * app to provide demo sound files when running in an emulator to pass Google's automatic review for
-         * production builds.
+         * Google reviews are probably done using an emulator not a car. That's why we use this to change the
+         * behaviour of the app to provide demo sound files when running a production build in an emulator to pass
+         * the review
          */
         fun isRunningInEmulator(): Boolean {
             return (Build.BRAND.startsWith("generic") && Build.DEVICE.startsWith("generic")

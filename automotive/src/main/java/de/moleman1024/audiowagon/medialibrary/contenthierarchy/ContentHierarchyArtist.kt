@@ -34,7 +34,9 @@ class ContentHierarchyArtist(
         val numAlbums = getNumAlbums()
         if (!hasTooManyItems(numAlbums)) {
             val albums = getAudioItems()
-            if (albums.isNotEmpty()) {
+            val pseudoCompilationArtistID: Long? = audioItemLibrary.getPseudoCompilationArtistID()
+            val isVariousArtists = pseudoCompilationArtistID == id.artistID
+            if (albums.isNotEmpty() && !isVariousArtists) {
                 items += createPseudoPlayAllItem()
             }
             for (album in albums) {
@@ -79,7 +81,7 @@ class ContentHierarchyArtist(
     private suspend fun getNumAlbums(): Int {
         var numAlbums = 0
         val repo = audioItemLibrary.getPrimaryRepository() ?: return 0
-        numAlbums += repo.getNumAlbumsForArtist(id.artistID)
+        numAlbums += repo.getNumAlbumsBasedOnTracksArtist(id.artistID)
         return numAlbums
     }
 

@@ -300,10 +300,14 @@ class AudioItemLibrary(
                     } else {
                         setTitle(context.getString(R.string.browse_tree_unknown_album))
                     }
-                    if (audioItem.artist.isNotBlank()) {
-                        setSubtitle(audioItem.artist)
+                    if (audioItem.albumArtist.isNotBlank()) {
+                        setSubtitle(audioItem.albumArtist)
                     } else {
-                        setSubtitle(context.getString(R.string.browse_tree_unknown_artist))
+                        if (audioItem.artist.isNotBlank()) {
+                            setSubtitle(audioItem.artist)
+                        } else {
+                            setSubtitle(context.getString(R.string.browse_tree_unknown_artist))
+                        }
                     }
                     setIconUri(Uri.parse(RESOURCE_ROOT_URI
                             + context.resources.getResourceEntryName(R.drawable.baseline_album_24)))
@@ -357,7 +361,7 @@ class AudioItemLibrary(
     private suspend fun getNumAlbumsForArtist(artistID: Long): Int {
         var numAlbums = 0
         val repo = getPrimaryRepository() ?: return 0
-        numAlbums += repo.getNumAlbumsForArtist(artistID)
+        numAlbums += repo.getNumAlbumsBasedOnTracksArtist(artistID)
         numAlbums += if (repo.getNumTracksWithUnknAlbumForArtist(artistID) > 0) 1 else 0
         return numAlbums
     }
@@ -519,8 +523,10 @@ class AudioItemLibrary(
     }
 
     fun cancelBuildLibrary() {
-        logger.debug(TAG, "cancelBuildLibrary()")
-        isBuildLibraryCancelled = true
+        if (isBuildingLibray) {
+            logger.debug(TAG, "cancelBuildLibrary()")
+            isBuildLibraryCancelled = true
+        }
     }
 
     // TODO: we do not support multiple repositories right now
@@ -529,6 +535,10 @@ class AudioItemLibrary(
             return null
         }
         return storageToRepoMap.values.toTypedArray()[0]
+    }
+
+    fun getPseudoCompilationArtistID(): Long? {
+        return getPrimaryRepository()?.getPseudoCompilationArtistID()
     }
 
 }

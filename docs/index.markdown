@@ -36,18 +36,13 @@ Please see Github for a [list of changes for each version of the app](https://gi
 
 ## Limitations
 
-- In AudioWagon versions 0.6.0 and lower you can only put up to 128 *files* into any directory. You can use as many
-  *directories* as you want though. I advise a directory structure like this:
-  `D:/Music/<Artist>/<Album>/<Song1..n>.mp3`. If you use more than 128 files in a directory then AudioWagon version
-  0.2.5 will corrupt your USB drive and you will lose your files on it. Version 0.3.4 and higher will prevent the data
-  loss, however the limitation still exists. The limitation is fixed and removed in version 0.6.1.
 - The app can *not* play back **.wma** files
 
 ## How to use
 
 - Install the app via the [Google Play Store](https://play.google.com/store/apps/details?id=de.moleman1024.audiowagon)
 
-- Format a USB flash drive using **FAT32** filesystem
+- Format a USB flash drive using **FAT32** filesystem (in Windows you can use [Rufus](https://rufus.ie/en/) for example).
 
 ![format](/img/format.jpg)
 
@@ -82,11 +77,14 @@ at my email (or you can use [GitHub](https://github.com/MoleMan1024/audiowagon/i
   helpful, rather describe what the behaviour of the app actually is.
 - What did you expect to happen?
 - At what date/time did the issue happen? (so I can align with the timestamps in the log files)
-- Which version of AudioWagon were you using? (version number can be found in the settings screen)
+- Which *version of AudioWagon* were you using? (version number can be found in the settings screen)
 - Which version is your car's software? (e.g. P2124 on a Polestar 2)
-- Log files are being created continously on your USB drive (if this is enabled in the settings). Please attach these
-log files from around the date/time when this happened (also provide previous log file). They have filenames like
-`aw_logs_0/audiowagon_<date_and_time>.log`. Without this I only have your description of the issue to work with.
+- *Log files* are being created continously on your USB drive (if this is enabled in the settings). Please attach these
+  log files from around the date/time when the issue happened. If unsure about the date, just provide everything. If you
+  can reproduce the issue easily, turn on logging in the settings, do whatever you need to trigger the issue, then turn
+  logging off again, then the latest log file should contain the issue. The log files have filenames like 
+  `aw_logs_0/audiowagon_<date_and_time>.log`. These files are very important, without this I only have your description 
+  of the issue to work with.
 
 
 ## How to contribute?

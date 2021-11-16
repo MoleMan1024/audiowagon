@@ -54,6 +54,7 @@ class USBDeviceConnections(
     private var isLogToUSB = false
     private val connectedDevices = mutableListOf<USBMediaDevice>()
     private var onAttachedUSBDeviceFoundJob: Job? = null
+    var isSuspended = false
 
     /**
      * Received when a USB device is (un)plugged. This can take a few seconds after plugging in the USB flash drive.
@@ -190,6 +191,10 @@ class USBDeviceConnections(
         usbDevicePermissions.setPermissionForDevice(device, permission)
         if (permission == USBPermission.UNKNOWN) {
             updateUSBStatusInSettings(R.string.setting_USB_status_connected_no_permission)
+            if (isSuspended) {
+                logger.warning(TAG, "Still suspended, can not show permission popup to user when screen is off")
+                return
+            }
             usbDevicePermissions.requestPermissionForDevice(device)
             logger.debug(TAG, "Waiting for user to grant permission")
             return

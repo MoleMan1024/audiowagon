@@ -60,7 +60,9 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
         var durationMS: Int? = null
         val durationMSAsString: String? =
             metadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
-        val isInCompilation: Boolean = extractIsCompilation(metadataRetriever)
+        val albumArtist: String? = metadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST)
+        val compilationStr: String? = metadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_COMPILATION)
+        val isInCompilation: Boolean = extractIsCompilation(compilationStr, albumArtist)
         metadataRetriever.release()
         if (dataSource is USBAudioDataSource && dataSource.hasError) {
             throw IOException("DataSource error")
@@ -77,6 +79,7 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
         val audioItemForMetadata = AudioItem()
         artist?.let { audioItemForMetadata.artist = it.trim() }
         album?.let { audioItemForMetadata.album = it.trim() }
+        albumArtist?.let { audioItemForMetadata.albumArtist = it.trim() }
         if (title?.isNotBlank() == true) {
             audioItemForMetadata.title = title.trim()
         } else {
@@ -93,13 +96,10 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
         return audioItemForMetadata
     }
 
-    private fun extractIsCompilation(metadataRetriever: MediaMetadataRetriever): Boolean {
-        val compilationStr: String? =
-            metadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_COMPILATION)
+    private fun extractIsCompilation(compilationStr: String?, albumArtist: String?): Boolean {
         if (compilationStr?.trim()?.matches(Regex("(?i)true|1")) == true) {
             return true
         }
-        val albumArtist: String? = metadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST)
         if (albumArtist?.trim()?.matches(Regex("(?i)^(various.*artist.*|compilation)$")) == true) {
             return true
         }

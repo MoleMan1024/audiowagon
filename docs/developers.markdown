@@ -144,7 +144,7 @@ phone. This can be done using these steps:
 ## Links
 
 - A sample audio app for Android that also supports AAOS: [uamp](https://github.com/android/uamp)
-- A tool by Google to test a MediaBrowser service. It will also run on AAOS. I found a few issues in the app using this.
+- A tool by Google to test a MediaBrowser service. It will also run on AAOS. I found a few issues in the app using this:
   [android-media-controller](https://github.com/googlesamples/android-media-controller)
 - The [Vehicle property IDs in the car library](https://developer.android.com/reference/android/car/VehiclePropertyIds). 
   It shows a lot of fun things that 3rd party app developers are mostly not allowed to use.

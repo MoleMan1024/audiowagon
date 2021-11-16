@@ -80,6 +80,7 @@ class AudioSession(
     private var onPlayCalledBeforeUSBReady: Boolean = false
     private var isShuttingDown: Boolean = false
     private var extractReplayGain: Boolean = false
+    var isAppUpdated: Boolean = false
 
     init {
         logger.debug(TAG, "Init AudioSession()")
@@ -272,7 +273,7 @@ class AudioSession(
         audioPlayer.addPlaybackQueueObserver { queueChange ->
             logger.debug(TAG, "queueChange=$queueChange")
             val contentHierarchyIDStr: String? = queueChange.currentItem?.description?.mediaId
-            logger.debug(TAG, "Current track content hierarchy ID: $contentHierarchyIDStr")
+            logger.debug(TAG, "content hierarchy ID to change to: $contentHierarchyIDStr")
             logger.flushToUSB()
             launchInScopeSafely("observePlaybackQueue()") {
                 if (contentHierarchyIDStr != null && contentHierarchyIDStr.isNotBlank()) {
@@ -371,6 +372,7 @@ class AudioSession(
             audioPlayer.shutdown()
             releaseMediaSession()
         }
+        isAppUpdated = false
     }
 
     fun suspend() {
@@ -403,7 +405,12 @@ class AudioSession(
             audioFocusChangeListener.cancelAudioFocusLossJob()
         }
         setCurrentQueueItem(null)
-        audioSessionNotifications.sendEmptyNotification()
+        // When the app is updated the drawable integers change so we can no longer send any
+        // notification that contains such an (outdated) drawable reference, it will lead to a RemoteServiceException
+        // https://stackoverflow.com/questions/25317659/how-to-fix-android-app-remoteserviceexception-bad-notification-posted-from-pac
+        if (!isAppUpdated) {
+            audioSessionNotifications.sendEmptyNotification()
+        }
         clearPlaybackState()
         runBlocking(dispatcher) {
             clearMediaSession()
@@ -432,7 +439,7 @@ class AudioSession(
                 }
                 AudioSessionChangeType.ON_SKIP_TO_QUEUE_ITEM -> {
                     launchInScopeSafely(audioSessionChange.type.name) {
-                        playFromQueueId(audioSessionChange.queueID)
+                        audioPlayer.playFromQueueID(audioSessionChange.queueID)
                     }
                 }
                 AudioSessionChangeType.ON_STOP -> {
@@ -694,6 +701,7 @@ class AudioSession(
             try {
                 scope.ensureActive()
                 val contentHierarchyID = ContentHierarchyElement.deserialize(contentHierarchyIDStr)
+                // TODO: same lines at 470
                 val audioItem = when (contentHierarchyID.type) {
                     ContentHierarchyType.TRACK -> {
                         audioItemLibrary.getAudioItemForTrack(contentHierarchyID)
@@ -723,8 +731,8 @@ class AudioSession(
         if (state.lastContentHierarchyID.isNotBlank()) {
             val lastContentHierarchyID = ContentHierarchyElement.deserialize(state.lastContentHierarchyID)
             if (lastContentHierarchyID.type == ContentHierarchyType.SHUFFLE_ALL_TRACKS) {
-                // In this case we restored only the last playing track/file from persistent storage above. Now we create a
-                // new shuffled playback queue for all remaining items
+                // In this case we restored only the last playing track/file from persistent storage above. Now we
+                // create a new shuffled playback queue for all remaining items
                 val shuffledItems = audioItemLibrary.getAudioItemsStartingFrom(lastContentHierarchyID)
                 for ((queueIndex, audioItem) in shuffledItems.withIndex()) {
                     if (audioItem.id == queue[0].description.mediaId) {
@@ -742,7 +750,7 @@ class AudioSession(
         setMediaSessionQueue(queue)
         try {
             audioPlayer.preparePlayFromQueue(state.queueIndex, state.trackPositionMS.toInt())
-            // TODO: not nice
+            // TODO: not nice (same player status might have been sent shortly before)
             audioPlayer.notifyPlayerStatusChange()
         } catch (exc: NoItemsInQueueException) {
             logger.warning(TAG, "No items in play queue")
@@ -752,10 +760,6 @@ class AudioSession(
             logger.debug(TAG, "Starting playback that was requested during startup before")
             audioPlayer.start()
         }
-    }
-
-    private suspend fun playFromQueueId(queueId: Long) {
-        audioPlayer.playFromQueueID(queueId)
     }
 
     private fun notifyObservers(event: Any) {

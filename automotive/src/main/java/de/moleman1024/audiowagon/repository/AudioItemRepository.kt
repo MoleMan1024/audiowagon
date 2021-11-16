@@ -48,6 +48,7 @@ class AudioItemRepository(
         AudioItemDatabase::class.java,
         databaseName
     ).build()
+    private var pseudoCompilationArtistID: Long? = null
     val trackIDsToKeep = mutableListOf<Long>()
 
     fun close() {
@@ -136,12 +137,20 @@ class AudioItemRepository(
 
     @Suppress("RedundantSuspendModifier")
     suspend fun getNumTracksForArtist(artistID: Long): Int {
-        return database.trackDAO().queryNumTracksForArtist(artistID)
+        return if (artistID != getPseudoCompilationArtistID()) {
+            database.trackDAO().queryNumTracksForArtist(artistID)
+        } else {
+            database.trackDAO().queryNumTracksForArtistViaAlbums(artistID)
+        }
     }
 
     @Suppress("RedundantSuspendModifier")
-    suspend fun getNumAlbumsForArtist(artistID: Long): Int {
-        return database.albumDAO().queryNumAlbumsByArtist(artistID)
+    suspend fun getNumAlbumsBasedOnTracksArtist(artistID: Long): Int {
+        return if (artistID != getPseudoCompilationArtistID()) {
+            database.trackDAO().queryNumAlbumsByTrackArtist(artistID)
+        } else {
+            database.albumDAO().queryNumAlbumsByArtist(artistID)
+        }
     }
 
     suspend fun getTracksWithUnknAlbumForArtist(artistID: Long): List<AudioItem> {
@@ -168,21 +177,42 @@ class AudioItemRepository(
      */
     fun populateDatabaseFrom(audioFile: AudioFile, audioItem: AudioItem) {
         var artistID: Long = -1
+        var albumArtistID: Long = -1
+        var doCreateArtistInDB = true
         if (audioItem.artist.isNotBlank()) {
             // multiple artists with same name are unlikely, ignore this case
             val artistInDB: Artist? = database.artistDAO().queryByName(audioItem.artist)
-            artistID = artistInDB?.artistId ?: database.artistDAO().insert(Artist(name = audioItem.artist))
+            if (artistInDB != null) {
+                artistID = artistInDB.artistId
+            }
+        }
+        if (audioItem.albumArtist.isNotBlank()) {
+            if (audioItem.albumArtist == audioItem.artist) {
+                albumArtistID = artistID
+            } else {
+                // this will support album artists https://github.com/MoleMan1024/audiowagon/issues/22
+                // (these are not considered compilations, the album artist is treated as the "main" artist)
+                if (!audioItem.isInCompilation) {
+                    doCreateArtistInDB = false
+                    val albumArtistInDB: Artist? = database.artistDAO().queryByName(audioItem.albumArtist)
+                    albumArtistID = albumArtistInDB?.artistId ?: database.artistDAO().insert(
+                        Artist(name = audioItem.albumArtist)
+                    )
+                }
+            }
+        }
+        if (artistID <= -1 && doCreateArtistInDB && audioItem.artist.isNotBlank()) {
+            artistID = database.artistDAO().insert(Artist(name = audioItem.artist))
+        }
+        if (albumArtistID <= -1) {
+            albumArtistID = artistID
         }
         var albumID: Long = -1
         if (audioItem.album.isNotBlank()) {
             // Watch out for special cases for albums:
             // - same album name across several artists, e.g. "Greatest Hits" albums
             // - same album name for multiple artists could also be a compilation/various artists album
-            // TODO: check if a heuristic like this https://wiki.slimdevices.com/index.php/VariousArtistsLogic might
-            //  improve situation where compilation albums are not tagged as such
-            var albumArtistID = artistID
             if (audioItem.isInCompilation) {
-                logger.debug(TAG, "AudioItem belongs to a compilation album: $audioItem")
                 albumArtistID = makePseudoCompilationArtistID()
             }
             val albumInDB: Album? = database.albumDAO().queryByNameAndArtist(audioItem.album, albumArtistID)
@@ -191,26 +221,48 @@ class AudioItemRepository(
         }
         val track = Track(
             name = audioItem.title,
-            parentArtistId = artistID,
+            parentArtistId = if (albumArtistID > -1 && !audioItem.isInCompilation) albumArtistID else artistID,
             parentAlbumId = albumID,
             indexOnAlbum = audioItem.trackNum,
             yearEpochTime = yearShortToEpochTime(audioItem.year),
-            genre = audioItem.genre,
+            // genre is not used by the app, do not store it (if we ever use it, create a database table to avoid
+            // duplicate strings)
+            genre = "",
             uriString = audioFile.uri.toString(),
             lastModifiedEpochTime = audioFile.lastModifiedDate.time,
             durationMS = audioItem.durationMS,
-            albumArtURIString = ""
+            // TODO: I mis-use this column to store the real artist name in case it does not match the album artist
+            //  (should not happen that often, should be fine as a string for now)
+            albumArtURIString = if (!doCreateArtistInDB && audioItem.artist.isNotBlank()) audioItem.artist else ""
         )
         logger.debug(TAG, "Inserting track: $track")
         val trackDatabaseID: Long = database.trackDAO().insert(track)
         trackIDsToKeep.add(trackDatabaseID)
     }
 
-    private fun makePseudoCompilationArtistID(): Long {
+    fun getPseudoCompilationArtistID(): Long? {
+        if (pseudoCompilationArtistID != null) {
+            return pseudoCompilationArtistID
+        }
         val pseudoCompilationArtistName = getPseudoCompilationArtistName()
-        val artistInDB: Artist? =
-            database.artistDAO().queryByName(pseudoCompilationArtistName)
-        return artistInDB?.artistId ?: database.artistDAO().insert(Artist(name = pseudoCompilationArtistName))
+        val artistInDB: Artist? = database.artistDAO().queryByName(pseudoCompilationArtistName)
+        pseudoCompilationArtistID = artistInDB?.artistId
+        return pseudoCompilationArtistID
+    }
+
+    private fun makePseudoCompilationArtistID(): Long {
+        if (pseudoCompilationArtistID != null) {
+            return pseudoCompilationArtistID!!
+        }
+        val pseudoCompilationArtistName = getPseudoCompilationArtistName()
+        val artistInDB: Artist? = database.artistDAO().queryByName(pseudoCompilationArtistName)
+        val resultID: Long = if (artistInDB?.artistId == null) {
+            database.artistDAO().insert(Artist(name = pseudoCompilationArtistName))
+        } else {
+            artistInDB.artistId
+        }
+        pseudoCompilationArtistID = resultID
+        return resultID
     }
 
     private fun getPseudoCompilationArtistName(): String {
@@ -416,6 +468,10 @@ class AudioItemRepository(
             }
             artistForTrack?.let { audioItemTrack.artist = it.name }
         }
+        audioItemTrack.albumArtist = audioItemTrack.artist
+        if (track.albumArtURIString.isNotBlank()) {
+            audioItemTrack.artist = track.albumArtURIString
+        }
         if (track.parentAlbumId >= 0) {
             val albumForTrack: Album? = withContext(dispatcher) {
                 database.albumDAO().queryByID(track.parentAlbumId)
@@ -499,6 +555,7 @@ class AudioItemRepository(
             database.artistDAO().queryByID(album.parentArtistId)
         }
         artistForAlbum?.let { audioItemAlbum.artist = it.name }
+        audioItemAlbum.albumArtist = audioItemAlbum.artist
         audioItemAlbum.browsPlayableFlags = audioItemAlbum.browsPlayableFlags.or(FLAG_BROWSABLE)
         // Setting the FLAG_PLAYABLE additionally here does not do anything in Android Automotive. Instead we add
         // pseudo-"play all" items on each album instead.

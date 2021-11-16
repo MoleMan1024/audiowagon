@@ -18,15 +18,14 @@ import java.net.URLConnection
 import java.util.*
 import kotlin.RuntimeException
 
-private const val TAG = "USBDevStorLoc"
-private val logger = Logger
-
 class USBDeviceStorageLocation(override val device: USBMediaDevice) : AudioFileStorageLocation {
+    override val TAG = "USBDevStorLoc"
+    override val logger = Logger
     override val storageID: String
         get() = device.getID()
     override var indexingStatus: IndexingStatus = IndexingStatus.NOT_INDEXED
     override var isDetached: Boolean = false
-    private var isIndexingCancelled: Boolean = false
+    override var isIndexingCancelled: Boolean = false
 
     @ExperimentalCoroutinesApi
     override fun indexAudioFiles(directory: Directory, scope: CoroutineScope): ReceiveChannel<AudioFile> {
@@ -61,11 +60,6 @@ class USBDeviceStorageLocation(override val device: USBMediaDevice) : AudioFileS
         val audioFile = AudioFile(uri)
         audioFile.lastModifiedDate = Date(usbFile.lastModified())
         return audioFile
-    }
-
-    override fun cancelIndexAudioFiles() {
-        logger.debug(TAG, "Cancelling audio file indexing")
-        isIndexingCancelled = true
     }
 
     override fun getDirectoryContents(directory: Directory): List<FileLike> {
@@ -126,10 +120,6 @@ class USBDeviceStorageLocation(override val device: USBMediaDevice) : AudioFileS
 
     override fun toString(): String {
         return "USBDeviceStorageLocation{${device.getID()}}"
-    }
-
-    override fun getDirectoriesWithIndexingIssues(): List<String> {
-        return device.directoriesWithIssues
     }
 
 }

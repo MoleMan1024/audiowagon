@@ -19,18 +19,18 @@ import java.io.File
 import java.net.URLConnection
 import java.util.*
 
-private const val TAG = "SDCardStorLoc"
-private val logger = Logger
 
 /**
  * NOTE: SD card support is only enabled in debug builds used in the Android emulator
  */
 class SDCardStorageLocation(override val device: SDCardMediaDevice) : AudioFileStorageLocation {
+    override val TAG = "SDCardStorLoc"
+    override val logger = Logger
     override val storageID: String
         get() = device.getID()
     override var indexingStatus: IndexingStatus = IndexingStatus.NOT_INDEXED
     override var isDetached: Boolean = false
-    private var isIndexingCancelled: Boolean = false
+    override var isIndexingCancelled: Boolean = false
 
     @ExperimentalCoroutinesApi
     override fun indexAudioFiles(directory: Directory, scope: CoroutineScope): ReceiveChannel<AudioFile> {
@@ -117,16 +117,6 @@ class SDCardStorageLocation(override val device: SDCardMediaDevice) : AudioFileS
             return false
         }
         return true
-    }
-
-    override fun getDirectoriesWithIndexingIssues(): List<String> {
-        // TODO
-        return emptyList()
-    }
-
-    override fun cancelIndexAudioFiles() {
-        logger.debug(TAG, "Cancelling audio file indexing")
-        isIndexingCancelled = true
     }
 
     override fun getRootURI(): Uri {

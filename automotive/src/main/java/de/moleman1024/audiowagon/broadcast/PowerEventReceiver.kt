@@ -11,7 +11,6 @@ import android.content.Intent
 import de.moleman1024.audiowagon.AudioBrowserService
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlin.system.exitProcess
 
 private const val TAG = "PowerEvtReceiver"
 private val logger = Logger
@@ -35,8 +34,7 @@ class PowerEventReceiver : BroadcastReceiver() {
             Intent.ACTION_SCREEN_ON -> audioBrowserService?.wakeup()
             Intent.ACTION_MY_PACKAGE_REPLACED -> {
                 // make sure to shutdown (and restart) when app has been updated
-                audioBrowserService?.shutdown()
-                exitProcess(0)
+                audioBrowserService?.shutdownAndExitAfterAppUpdate()
             }
             // Intent.ACTION_BATTERY_CHANGED was not helpful
             else -> {

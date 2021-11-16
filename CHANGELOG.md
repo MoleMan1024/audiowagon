@@ -13,6 +13,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+## [1.1.0] - 2021-11-16
+
+### Fixed
+
+- A situation could occur where indexing was started multiple times in parallel which would mess up the internal
+  database. This is avoided now. [#46](https://github.com/MoleMan1024/audiowagon/issues/46), 
+  [#49](https://github.com/MoleMan1024/audiowagon/issues/49)
+- Depending on timing of certain events sometimes two USB permission popups could appear right after each other e.g.
+  after entering the car. Now only one popup should be displayed. Related to [#46](https://github.com/MoleMan1024/audiowagon/issues/46)
+- Try to avoid an exception which occurs after updating the app to a higher version
+- Avoid that a selected track from the tracks browse view is duplicated in the resulting playback queue
+- robustness improvements
+
+### Changed
+
+- The app will now interpret the *album artist* field in the metadata of your music files. To make use of this feature
+  you will need to delete your database via the AudioWagon settings to force the app to re-create the database.
+  [#22](https://github.com/MoleMan1024/audiowagon/issues/22) and [#1](https://github.com/MoleMan1024/audiowagon/issues/1). 
+  The behaviour has been documented in a 
+  [FAQ section](https://moleman1024.github.io/audiowagon/faq.html#why-do-my-compilation-albums-show-up-as-separate-albums).
+
+
 ## [1.0.1] - 2021-11-08 (beta phase ended)
 
 ### Fixed

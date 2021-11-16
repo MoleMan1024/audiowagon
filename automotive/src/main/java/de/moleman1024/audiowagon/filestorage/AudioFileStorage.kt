@@ -56,7 +56,7 @@ open class AudioFileStorage(
     private val scope: CoroutineScope,
     private val dispatcher: CoroutineDispatcher,
     usbDevicePermissions: USBDevicePermissions,
-    private val gui: GUI
+    gui: GUI
 ) {
     // TODO: this was originally intended to support multiple storage locations, but we only allow a single one now
     private val audioFileStorageLocations: MutableList<AudioFileStorageLocation> = mutableListOf()
@@ -67,6 +67,7 @@ open class AudioFileStorage(
     private val dataSourcesMutex = Mutex()
     private var isSuspended = false
     private val replayGainRegex = "replaygain_track_gain.*?([-0-9][^ ]+?) ?dB".toRegex(RegexOption.IGNORE_CASE)
+    private val audioFileProducerChannels = mutableListOf<ReceiveChannel<AudioFile>>()
     val storageObservers = mutableListOf<(StorageChange) -> Unit>()
     val mediaDevicesForTest = mutableListOf<MediaDevice>()
 
@@ -100,8 +101,8 @@ open class AudioFileStorage(
     private fun initSDCardForDebugBuild() {
         if (Util.isDebugBuild(context)) {
             try {
-                // TODO: take this name from /storage
-                val sdCardMediaDevice = SDCardMediaDevice("A749-5ABA")
+                // TODO: provide this id from testcase
+                val sdCardMediaDevice = SDCardMediaDevice("E812-A0DC")
                 mediaDevicesForTest.add(sdCardMediaDevice)
             } catch (exc: Exception) {
                 logger.exception(TAG, exc.message.toString(), exc)
@@ -223,7 +224,7 @@ open class AudioFileStorage(
         if (!storageIDs.all { isStorageIDKnown(it) }) {
             throw RuntimeException("Unknown storage id(s) given in: $storageIDs")
         }
-        val audioFileProducerChannels = mutableListOf<ReceiveChannel<AudioFile>>()
+        audioFileProducerChannels.clear()
         storageIDs.forEach {
             logger.debug(TAG, "Creating audio file producer channel for storage: $it")
             val storageLoc = getStorageLocationForID(it)
@@ -252,6 +253,11 @@ open class AudioFileStorage(
         audioFileStorageLocations.forEach {
             it.cancelIndexAudioFiles()
         }
+        audioFileProducerChannels.forEach {
+            logger.debug(TAG, "Cancelling audio file producer channel: $it")
+            it.cancel()
+        }
+        audioFileProducerChannels.clear()
     }
 
     private fun isStorageIDKnown(storageID: String): Boolean {
@@ -382,28 +388,13 @@ open class AudioFileStorage(
             it.cancelIndexAudioFiles()
             it.close()
         }
+        usbDeviceConnections.isSuspended = true
         isSuspended = true
     }
 
     fun wakeup() {
         isSuspended = false
-    }
-
-    fun notifyIndexingIssues() {
-        if (isSuspended) {
-            return
-        }
-        val directoriesWithIndexingIssues = mutableListOf<String>()
-        audioFileStorageLocations.forEach {
-            directoriesWithIndexingIssues += it.getDirectoriesWithIndexingIssues()
-        }
-        if (directoriesWithIndexingIssues.size > 0) {
-            gui.showErrorToastMsg(context.getString(R.string.setting_USB_status_too_many_files_in_dir))
-            usbDeviceConnections.updateUSBStatusInSettings(R.string.setting_USB_status_too_many_files_in_dir)
-            directoriesWithIndexingIssues.forEach {
-                logger.warning(TAG, "Could not index audio files in directory (too many files in directory): $it")
-            }
-        }
+        usbDeviceConnections.isSuspended = false
     }
 
     private fun closeDataSources() {

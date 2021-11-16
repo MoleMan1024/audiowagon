@@ -7,15 +7,20 @@ package de.moleman1024.audiowagon.filestorage
 
 import android.media.MediaDataSource
 import android.net.Uri
+import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.ReceiveChannel
 
 interface AudioFileStorageLocation {
+    @Suppress("PropertyName")
+    val TAG: String
+    val logger: Logger
     val device: MediaDevice
     val storageID: String
     var indexingStatus: IndexingStatus
     var isDetached: Boolean
+    var isIndexingCancelled: Boolean
 
     @ExperimentalCoroutinesApi
     fun indexAudioFiles(directory: Directory, scope: CoroutineScope): ReceiveChannel<AudioFile>
@@ -23,8 +28,6 @@ interface AudioFileStorageLocation {
     fun getBufferedDataSourceForURI(uri: Uri): MediaDataSource
     fun close()
     fun setDetached()
-    fun getDirectoriesWithIndexingIssues(): List<String>
-    fun cancelIndexAudioFiles()
 
     /**
      * Returns the contents (files/directories) of the given directory. Non-recursive
@@ -35,6 +38,16 @@ interface AudioFileStorageLocation {
      * Returns the URI of the root directory of the storage location
      */
     fun getRootURI(): Uri
+
+    /**
+     * Cancels an ongoing indexing pipeline
+     */
+    fun cancelIndexAudioFiles() {
+        if (indexingStatus == IndexingStatus.INDEXING) {
+            logger.debug(TAG, "Cancelling ongoing audio file indexing")
+            isIndexingCancelled = true
+        }
+    }
 
     /**
      * Check if Android MediaPlayer supports the given content type.

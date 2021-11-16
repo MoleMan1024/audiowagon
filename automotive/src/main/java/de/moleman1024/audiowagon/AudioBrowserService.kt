@@ -318,9 +318,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     @ExperimentalCoroutinesApi
     private fun onStorageLocationAdded(storageID: String) {
         logger.info(TAG, "onStorageLocationAdded(storageID=$storageID)")
-        cancelRestoreFromPersistent()
-        cancelLoadChildren()
-        cancelLibraryCreation()
+        cancelAllJobs()
         if (!Util.isLegalDisclaimerAgreed(this)) {
             logger.info(TAG, "User did not agree to legal disclaimer yet")
             notifyBrowserChildrenChangedAllLevels()
@@ -351,10 +349,18 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                 }
             }
         }
+        if (isLibraryCreationCancelled) {
+            if (libraryCreationJob?.isActive == true ) {
+                runBlocking(dispatcher) {
+                    logger.debug(TAG, "Waiting for previous library creation job to end")
+                    libraryCreationJob?.join()
+                    logger.debug(TAG, "Previous library creation job has ended")
+                }
+            }
+        }
         isLibraryCreationCancelled = false
         libraryCreationJob = lifecycleScope.launch(libraryCreationExceptionHandler + dispatcher) {
             createLibraryFromStorages(listOf(storageID))
-            libraryCreationJob = null
             gui.showIndexingFinishedNotification()
             when (lastAudioPlayerState) {
                 AudioPlayerState.PAUSED -> moveServiceToBackground()
@@ -368,6 +374,8 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             }
             if (isLibraryCreationCancelled) {
                 isLibraryCreationCancelled = false
+                logger.debug(TAG, "libraryCreationJob ended early")
+                libraryCreationJob = null
                 return@launch
             }
             if (lastAudioPlayerState in listOf(
@@ -378,6 +386,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             } else {
                 logger.debug(TAG, "Not restoring from persistent state, user has already requested new item")
             }
+            libraryCreationJob = null
         }
     }
 
@@ -408,7 +417,6 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         }
         logger.info(TAG, "Audio library has been built for storages: $storageIDs")
         notifyBrowserChildrenChangedAllLevels()
-        audioFileStorage.notifyIndexingIssues()
     }
 
     private suspend fun restoreFromPersistent(state: PersistentPlaybackState) {
@@ -448,9 +456,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             logger.debug(TAG, "Shutdown is in progress")
             return
         }
-        cancelRestoreFromPersistent()
-        cancelLoadChildren()
-        cancelLibraryCreation()
+        cancelAllJobs()
         audioSession.storePlaybackState()
         audioSession.reset()
         if (storageID.isNotBlank()) {
@@ -563,6 +569,18 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         audioFileStorage.shutdown()
         audioItemLibrary.shutdown()
         isShuttingDown = false
+    }
+
+    /**
+     * Shutdown everything and exit the process.
+     * This should be called after the app has been updated but we are still running in an old instance of the
+     * AudioBrowserService.
+     */
+    fun shutdownAndExitAfterAppUpdate() {
+        logger.debug(TAG, "shutdownAfterAppUpdate()")
+        audioSession.isAppUpdated = true
+        shutdown()
+        exitProcess(0)
     }
 
     private fun cancelAllJobs() {

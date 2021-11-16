@@ -12,6 +12,7 @@ data class AudioItem(
     var id: String = "",
     var uri: Uri = Uri.EMPTY,
     var artist: String = "",
+    var albumArtist: String = "",
     var album: String = "",
     // will use the filename if no title in metadata
     var title: String = "",

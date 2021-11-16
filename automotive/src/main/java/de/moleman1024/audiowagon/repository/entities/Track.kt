@@ -19,6 +19,7 @@ data class Track(
     @ColumnInfo(index = true)
     val parentAlbumId: Long = -1,
     val indexOnAlbum: Short = -1,
+    // TODO: rework this, I currently mis-use it for artist names when the album artist does not match
     val albumArtURIString: String = "",
     @ColumnInfo(index = true)
     val yearEpochTime: Long = -1,

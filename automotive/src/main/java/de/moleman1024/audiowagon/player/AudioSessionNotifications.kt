@@ -115,7 +115,6 @@ class AudioSessionNotifications(
      */
     private fun sendNotification(notifBuilder: NotificationCompat.Builder) {
         val notification = prepareNotification(notifBuilder)
-        logger.debug(TAG, "Sending notification: $notification")
         notificationManager.notify(NOTIFICATION_ID, notification)
         if (!isShowingNotification) {
             registerNotifRecv()
@@ -124,14 +123,17 @@ class AudioSessionNotifications(
     }
 
     fun sendIsPlayingNotification() {
+        logger.debug(TAG, "sendIsPlayingNotification()")
         sendNotification(isPlayingNotificationBuilder)
     }
 
     fun sendIsPausedNotification() {
+        logger.debug(TAG, "sendIsPausedNotification()")
         sendNotification(isPausedNotificationBuilder)
     }
 
     fun sendEmptyNotification() {
+        logger.debug(TAG, "sendEmptyNotification()")
         val notifBuilder = NotificationCompat.Builder(context, AUDIO_SESS_NOTIF_CHANNEL)
         sendNotification(notifBuilder)
     }
@@ -139,7 +141,7 @@ class AudioSessionNotifications(
     private fun prepareNotification(notifBuilder: NotificationCompat.Builder): Notification {
         val style = androidx.media.app.NotificationCompat.MediaStyle()
         style.setMediaSession(mediaSession?.sessionToken)
-        return notifBuilder.apply {
+        notifBuilder.apply {
             setStyle(style)
             setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             setContentTitle(currentQueueItem?.description?.title)
@@ -149,7 +151,8 @@ class AudioSessionNotifications(
             setContentIntent(mediaSession?.controller?.sessionActivity)
             // TODO: can "clear all" even be used for media notification in AAOS?
             setDeleteIntent(MediaButtonReceiver.buildMediaButtonPendingIntent(context, PlaybackStateCompat.ACTION_STOP))
-        }.build()
+        }
+        return notifBuilder.build()
     }
 
     fun getNotification(): Notification {

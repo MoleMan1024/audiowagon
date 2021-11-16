@@ -39,7 +39,7 @@ class ContentHierarchyGroupAlbums(id: ContentHierarchyID, context: Context, audi
         val numAlbumGroups: Int = if (id.artistID < 0) {
             ceil(repo.getNumAlbums().toDouble() / CONTENT_HIERARCHY_MAX_NUM_ITEMS).toInt()
         } else {
-            ceil(repo.getNumAlbumsForArtist(id.artistID).toDouble() / CONTENT_HIERARCHY_MAX_NUM_ITEMS).toInt()
+            ceil(repo.getNumAlbumsBasedOnTracksArtist(id.artistID).toDouble() / CONTENT_HIERARCHY_MAX_NUM_ITEMS).toInt()
         }
         if (id.albumGroupIndex >= numAlbumGroups || id.albumGroupIndex < 0) {
             logger.error(TAG, "Group index ${id.albumGroupIndex} does not fit for $numAlbumGroups album groups")
