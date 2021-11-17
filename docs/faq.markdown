@@ -28,7 +28,7 @@ system is still on and wait for the popup to appear, then you can safely unplug 
 If you do not follow this procedure, and unplug the USB drive while it is still in use, the app could crash or the data
 on your USB drive might be damaged. 
 
-### It get a popup saying "Too many files in a directory". What is that about?
+### I get a popup saying "Too many files in a directory". What is that about?
 
 ![Too many files in a directory](/img/too_many_files.jpg)
 
@@ -74,7 +74,7 @@ not be able to navigate by track/artist/album anymore, only by file/directory.
 
 ### Why do my compilation albums show up as separate albums?
 
-In version 1.0.3 and higher the behaviour is the following for such "special" cases:
+In version 1.1.0 and higher the behaviour is the following for such "special" cases:
 
 #### Compilation albums
 
@@ -226,5 +226,9 @@ built into certain car models.
 
 I am fine, thanks. If you really want to give something in return, please put it towards a good cause, for example 
 to protect the environment (reforestation, solar power, right-to-repair, local projects, etc.).
+
+*Update Nov 2021:* Oh wow, people are actually doing this and notifying me, this is amazing! 😄
+
+- Thank you Timo for planting 100 trees in Madagascar
 
 
