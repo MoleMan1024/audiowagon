@@ -37,6 +37,18 @@ Please see Github for a [list of changes for each version of the app](https://gi
 ## Limitations
 
 - The app can *not* play back **.wma** files
+- *Some* people have reported issues when using the app with a **USB to micro SD card adapter** where no files could be
+  played back and lots of error messages were shown. In such cases the adapter is probably not compatible with the
+  library I use to read the filesystem, please try with a USB flash drive instead, I have not heard about problems with
+  those. 
+
+  *This problem applies only to certain adapters*, I also have reports where similar adapters were working
+  normally. The following hardware setups might give you issues and should be avoided:
+  - Transcend USB-A 3.0 adapter, white, with SD and µSD slot, using a µSD card
+  - unknown brand USB-A to µSD adapter, black, with label "MicroSD, USB2.0 Y", using a µSD card
+  - unknown brand USB-A to µSD adapter, black, with label "MjX R/C Technic", using a µSD card
+  - unknown brand USB-C adapter, gray, with SD and µSD slot and LED, using another adapter SD to µSD, using a µSD card
+    (this one could be fixed by removing the second unnecessary adapter)
 
 ## How to use
 
@@ -82,8 +94,8 @@ at my email (or you can use [GitHub](https://github.com/MoleMan1024/audiowagon/i
 - *Log files* are being created continously on your USB drive (if this is enabled in the settings). Please attach these
   log files from around the date/time when the issue happened. If unsure about the date, just provide everything. If you
   can reproduce the issue easily, turn on logging in the settings, do whatever you need to trigger the issue, then turn
-  logging off again, then the latest log file should contain the issue. The log files have filenames like 
-  `aw_logs_0/audiowagon_<date_and_time>.log`. These files are very important, without this I only have your description 
+  logging off again, then the latest log file should contain the issue. The log files have filenames like
+  `aw_logs_0/audiowagon_<date_and_time>.log`. These files are very important, without this I only have your description
   of the issue to work with.
 
 

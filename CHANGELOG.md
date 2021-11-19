@@ -29,8 +29,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - The app will now interpret the *album artist* field in the metadata of your music files. To make use of this feature
-  you will need to delete your database via the AudioWagon settings to force the app to re-create the database.
-  [#22](https://github.com/MoleMan1024/audiowagon/issues/22) and [#1](https://github.com/MoleMan1024/audiowagon/issues/1). 
+  when updating from 1.0.1 or lower you will need to delete your database via the AudioWagon settings to force the app 
+  to re-create the database. [#22](https://github.com/MoleMan1024/audiowagon/issues/22) and 
+  [#1](https://github.com/MoleMan1024/audiowagon/issues/1). 
   The behaviour has been documented in a 
   [FAQ section](https://moleman1024.github.io/audiowagon/faq.html#why-do-my-compilation-albums-show-up-as-separate-albums).
 

@@ -229,6 +229,6 @@ to protect the environment (reforestation, solar power, right-to-repair, local p
 
 *Update Nov 2021:* Oh wow, people are actually doing this and notifying me, this is amazing! 😄
 
-- Thank you Timo for planting 100 trees in Madagascar
+- Thank you Timo for planting 100 trees in Madagascar!
 
 
