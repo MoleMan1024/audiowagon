@@ -131,6 +131,23 @@ If the *artist* tag is empty an entry "Unknown artist" will be created to collec
 If the *title* tag is empty, the file name will be used instead.
 
 
+### After adding more files to my USB drive the browse view looks strange
+
+When you add more than 400 tracks/albums/artists the section will be shown using *groups*, it looks like 
+this:
+
+![album groups](/img/album_groups.jpg)
+
+This is necessary because Android cannot deal with lists which are extremely long. Also it will be annoying to
+scroll through such long lists. 
+
+Each group contains 400 entries and is based on the names of the
+tracks/albums/artists inside. Tapping on one entry will show those 400 tracks/albums/artists in a new list (in this
+example all albums "One" til "Sounds of Summer", sorted alphabetically):
+
+![album groups open](/img/album_group_open.jpg)
+
+
 ### My operating system tells me that my USB drive has problems. But all files are okay?
 
 This can happen when the USB drive is not properly ejected. A secret marker will be set on the USB drive and this
