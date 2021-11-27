@@ -10,6 +10,7 @@ import android.net.Uri
 import android.support.v4.media.MediaBrowserCompat.MediaItem
 import android.support.v4.media.MediaDescriptionCompat
 import de.moleman1024.audiowagon.R
+import de.moleman1024.audiowagon.SharedPrefs
 import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.*
@@ -32,7 +33,7 @@ class ContentHierarchyRoot(
     override suspend fun getMediaItems(): List<MediaItem> {
         val items: MutableList<MediaItem> = mutableListOf()
         val categories = mutableListOf<CategoryData>()
-        if (Util.isMetadataReadingEnabled(context)) {
+        if (SharedPrefs.isMetadataReadingEnabled(context)) {
             val tracksCategory = CategoryData(ContentHierarchyID(ContentHierarchyType.ROOT_TRACKS))
             tracksCategory.titleID = R.string.browse_tree_category_tracks
             // we use a copy of the music note icon here, because of a bug in the GUI where the highlight color is

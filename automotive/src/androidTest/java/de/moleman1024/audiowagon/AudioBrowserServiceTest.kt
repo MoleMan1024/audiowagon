@@ -10,6 +10,8 @@ import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.OnLifecycleEvent
 import androidx.test.platform.app.InstrumentationRegistry.getInstrumentation
 import de.moleman1024.audiowagon.log.Logger
+import de.moleman1024.audiowagon.util.ServiceFixture
+import de.moleman1024.audiowagon.util.TestUtils
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.After
 import org.junit.Assert.*
@@ -45,7 +47,6 @@ class AudioBrowserServiceTest {
     @Test
     fun onCreate_default_createsService() {
         val audioBrowserService = serviceFixture.createAudioBrowserService()
-        // TODO: this will fail right now when I use SD card images because during indexing I start the service
         assertEquals(Lifecycle.State.CREATED, audioBrowserService.lifecycle.currentState)
     }
 

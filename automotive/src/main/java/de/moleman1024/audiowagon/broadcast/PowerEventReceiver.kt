@@ -23,19 +23,17 @@ class PowerEventReceiver : BroadcastReceiver() {
         if (intent == null) {
             return
         }
-        // TODO: ACTION_SHUTDOWN does not work on Polestar 2, works fine on Pixel 3 XL AAOS.
-        //  Cannot use CarPowerManager with android.car.permission.CAR_POWER, it is reserved for system signed apps.
-        //  I have the impression the app is suspended to RAM and is not actually shut down when the car is "shut
-        //  down"...
+        // ACTION_SHUTDOWN does not seem to appear on Polestar 2, works fine on Pixel 3 XL AAOS.
+        // Cannot use CarPowerManager with android.car.permission.CAR_POWER, it is reserved for system signed apps.
+        // I have the impression the app is suspended to RAM and is not actually shut down when the car is "shut
+        // down"...
         logger.debug(TAG, "Received notification: $intent")
         when (intent.action) {
             Intent.ACTION_SHUTDOWN,
             Intent.ACTION_SCREEN_OFF -> audioBrowserService?.suspend()
             Intent.ACTION_SCREEN_ON -> audioBrowserService?.wakeup()
-            Intent.ACTION_MY_PACKAGE_REPLACED -> {
-                // make sure to shutdown (and restart) when app has been updated
-                audioBrowserService?.shutdownAndExitAfterAppUpdate()
-            }
+            // Intent.ACTION_MY_PACKAGE_REPLACED needs to be in manifest to work, it will be registered too late
+            // otherwise
             // Intent.ACTION_BATTERY_CHANGED was not helpful
             else -> {
                 // ignore

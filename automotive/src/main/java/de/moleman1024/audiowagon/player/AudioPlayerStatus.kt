@@ -14,10 +14,12 @@ data class AudioPlayerStatus(var playbackState: Int = PlaybackStateCompat.STATE_
     var queueItemID: Long = -1
     var isShuffling: Boolean = false
     var isRepeating: Boolean = false
+    var hasPlaybackQueueEnded: Boolean = false
 
     override fun toString(): String {
         return "AudioPlayerStatus(playbackState=${getStatusName(playbackState)}, queueItemID=$queueItemID, " +
-                "positionInMilliSec=$positionInMilliSec, errorCode=$errorCode, errorMsg='$errorMsg')"
+                "positionInMilliSec=$positionInMilliSec, errorCode=$errorCode, errorMsg='$errorMsg', " +
+                "hasPlaybackQueueEnded=$hasPlaybackQueueEnded)"
     }
 
     private fun getStatusName(statusCode: Int): String {

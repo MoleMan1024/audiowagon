@@ -10,6 +10,7 @@ import android.hardware.usb.UsbManager
 import androidx.test.platform.app.InstrumentationRegistry
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.mocks.MockUSBDevice
+import de.moleman1024.audiowagon.util.ServiceFixture
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.After
 import org.junit.Assert.assertTrue

@@ -38,6 +38,8 @@ class AlbumArtContentProvider : ContentProvider() {
     companion object {
         private var albumArtBuf: ByteBuffer? = null
         private var defaultAlbumArtByteArray: ByteArray = ByteArray(1)
+        private var albumArtPixels: Int = 400
+        private var useDefaultAlbumArt = true
 
         @Synchronized
         fun getAlbumArtByteBuffer(): ByteBuffer? {
@@ -47,6 +49,7 @@ class AlbumArtContentProvider : ContentProvider() {
         @Synchronized
         fun setAlbumArtByteArray(albumArtByteArray: ByteArray?) {
             if (albumArtByteArray == null) {
+                useDefaultAlbumArt = true
                 // no album art given, use the default
                 albumArtBuf = if (defaultAlbumArtByteArray.size > 1) {
                     ByteBuffer.wrap(defaultAlbumArtByteArray)
@@ -55,6 +58,7 @@ class AlbumArtContentProvider : ContentProvider() {
                 }
                 return
             }
+            useDefaultAlbumArt = false
             albumArtBuf = ByteBuffer.wrap(albumArtByteArray)
         }
 
@@ -62,11 +66,20 @@ class AlbumArtContentProvider : ContentProvider() {
         fun setDefaultAlbumArtByteArray(imageByteArray: ByteArray) {
             defaultAlbumArtByteArray = imageByteArray
         }
+
+        @Synchronized
+        fun getAlbumArtSizePixels(): Int {
+            return albumArtPixels
+        }
+
+        @Synchronized
+        fun setAlbumArtSizePixels(size: Int) {
+            albumArtPixels = size
+        }
     }
 
     override fun onCreate(): Boolean {
         logger.debug(TAG, "onCreate()")
-        createDefaultAlbumArt()
         return true
     }
 
@@ -77,7 +90,9 @@ class AlbumArtContentProvider : ContentProvider() {
     private fun createDefaultAlbumArt() {
         val drawable =
             context?.resources?.let { ResourcesCompat.getDrawable(it, R.drawable.music_note_black_48dp, null) }
-        val bitmap = Bitmap.createBitmap(400, 400, Bitmap.Config.ARGB_8888)
+        val albumArtNumPixels = getAlbumArtSizePixels()
+        logger.debug(TAG, "Creating default album art with size: $albumArtNumPixels")
+        val bitmap = Bitmap.createBitmap(albumArtNumPixels, albumArtNumPixels, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         drawable?.setBounds(0, 0, canvas.width, canvas.height)
         drawable?.draw(canvas)
@@ -95,6 +110,12 @@ class AlbumArtContentProvider : ContentProvider() {
         logger.debug(TAG, "openFile(uri=$uri)")
         if (context == null) {
             return null
+        }
+        if (defaultAlbumArtBitmap == null) {
+            createDefaultAlbumArt()
+            if (useDefaultAlbumArt) {
+                setAlbumArtByteArray(null)
+            }
         }
         val storageManager = context?.getSystemService(Context.STORAGE_SERVICE) as StorageManager
         val handler = Handler(Looper.getMainLooper())

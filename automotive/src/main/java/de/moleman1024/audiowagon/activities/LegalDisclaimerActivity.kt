@@ -10,16 +10,13 @@ import android.os.Bundle
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
-import androidx.preference.PreferenceManager
+import de.moleman1024.audiowagon.SharedPrefs
 import de.moleman1024.audiowagon.R
-import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.filestorage.usb.ACTION_USB_UPDATE
 import de.moleman1024.audiowagon.log.Logger
 
 private const val TAG = "LegalDisclAct"
 private val logger = Logger
-const val PERSISTENT_STORAGE_LEGAL_DISCLAIMER_AGREED = "agreedLegalVersion"
-const val PERSISTENT_STORAGE_LEGAL_DISCLAIMER_VERSION = "1.0"
 
 class LegalDisclaimerActivity : AppCompatActivity() {
 
@@ -45,12 +42,12 @@ class LegalDisclaimerActivity : AppCompatActivity() {
 
     private fun onAgree() {
         logger.debug(TAG, "User agreed to legal disclaimer")
-        if (Util.isLegalDisclaimerAgreed(this)) {
+        if (SharedPrefs.isLegalDisclaimerAgreed(this)) {
             // already agreed previously, do nothing
             finish()
             return
         }
-        Util.setLegalDisclaimerAgreed(this)
+        SharedPrefs.setLegalDisclaimerAgreed(this)
         val updateUSBIntent = Intent(ACTION_USB_UPDATE)
         sendBroadcast(updateUSBIntent)
         finish()

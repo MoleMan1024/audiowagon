@@ -7,11 +7,14 @@ package de.moleman1024.audiowagon
 
 import android.content.Context
 import android.content.pm.ApplicationInfo
+import android.graphics.Insets
+import android.graphics.Paint
 import android.net.Uri
-import androidx.preference.PreferenceManager
-import de.moleman1024.audiowagon.activities.PERSISTENT_STORAGE_LEGAL_DISCLAIMER_AGREED
-import de.moleman1024.audiowagon.activities.PERSISTENT_STORAGE_LEGAL_DISCLAIMER_VERSION
-import de.moleman1024.audiowagon.activities.PREF_READ_METADATA
+import android.os.Build
+import android.util.DisplayMetrics
+import android.view.WindowInsets
+import android.view.WindowManager
+import android.view.WindowMetrics
 import de.moleman1024.audiowagon.filestorage.usb.LOG_DIRECTORY
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.*
@@ -19,7 +22,8 @@ import java.io.File
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.util.*
-import android.os.Build
+import kotlin.math.ceil
+import kotlin.math.floor
 
 
 class Util {
@@ -52,25 +56,6 @@ class Util {
         fun generateUUID(): String {
             val uuid = UUID.randomUUID()
             return uuid.toString()
-        }
-
-        fun isLegalDisclaimerAgreed(context: Context): Boolean {
-            val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
-            val legalDisclaimerAgreedVersion =
-                sharedPreferences.getString(PERSISTENT_STORAGE_LEGAL_DISCLAIMER_AGREED, "")
-            return legalDisclaimerAgreedVersion == PERSISTENT_STORAGE_LEGAL_DISCLAIMER_VERSION
-        }
-
-        fun setLegalDisclaimerAgreed(context: Context) {
-            val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
-            sharedPreferences.edit()
-                .putString(PERSISTENT_STORAGE_LEGAL_DISCLAIMER_AGREED, PERSISTENT_STORAGE_LEGAL_DISCLAIMER_VERSION)
-                .apply()
-        }
-
-        fun isMetadataReadingEnabled(context: Context): Boolean {
-            val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
-            return sharedPreferences.getBoolean(PREF_READ_METADATA, true)
         }
 
         fun isDebugBuild(context: Context): Boolean {
@@ -143,6 +128,36 @@ class Util {
                     || Build.PRODUCT.contains("vbox86p")
                     || Build.PRODUCT.contains("emulator")
                     || Build.PRODUCT.contains("simulator"))
+        }
+
+        private fun getScreenWidthPixels(context: Context): Int {
+            val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                val windowMetrics: WindowMetrics = windowManager.currentWindowMetrics
+                val insets: Insets =
+                    windowMetrics.windowInsets.getInsetsIgnoringVisibility(WindowInsets.Type.systemBars())
+                windowMetrics.bounds.width() - insets.left - insets.right
+            } else {
+                val displayMetrics = DisplayMetrics()
+                @Suppress("DEPRECATION")
+                windowManager.defaultDisplay.getMetrics(displayMetrics)
+                displayMetrics.widthPixels
+            }
+        }
+
+        fun getMaxCharsForScreenWidth(context: Context): Int {
+            val screenWidthPixels = getScreenWidthPixels(context)
+            // only use a percentage of the screen since there are also icons/padding that will take up space etc.
+            val availablePixelsForText = floor(0.7 * screenWidthPixels).toInt()
+            val paint = Paint()
+            val fontBodyPixels = context.resources.getDimension(R.dimen.car_body1_size)
+            paint.textSize = fontBodyPixels
+            val commonLettersEnglish = "etaoin srhldcu"
+            val avgLetterWidth: Float = ceil(paint.measureText(commonLettersEnglish) / commonLettersEnglish.length)
+            if (avgLetterWidth <= 0) {
+                return -1
+            }
+            return floor(availablePixelsForText / avgLetterWidth).toInt()
         }
 
     }

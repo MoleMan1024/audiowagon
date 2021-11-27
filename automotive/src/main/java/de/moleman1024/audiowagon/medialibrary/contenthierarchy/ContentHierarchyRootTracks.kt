@@ -10,6 +10,7 @@ import android.net.Uri
 import android.support.v4.media.MediaBrowserCompat.MediaItem
 import android.support.v4.media.MediaDescriptionCompat
 import de.moleman1024.audiowagon.R
+import de.moleman1024.audiowagon.SharedPrefs
 import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.filestorage.AudioFileStorage
 import de.moleman1024.audiowagon.log.Logger
@@ -79,7 +80,7 @@ class ContentHierarchyRootTracks(
         var title = context.getString(R.string.browse_tree_no_entries_title)
         var subtitle = context.getString(R.string.browse_tree_no_usb_drive)
         if (numConnectedDevices > 0) {
-            if (Util.isLegalDisclaimerAgreed(context)) {
+            if (SharedPrefs.isLegalDisclaimerAgreed(context)) {
                 subtitle = context.getString(R.string.browse_tree_usb_drive_ejected)
             } else {
                 title = context.getString(R.string.browse_tree_need_to_agree_legal_title)

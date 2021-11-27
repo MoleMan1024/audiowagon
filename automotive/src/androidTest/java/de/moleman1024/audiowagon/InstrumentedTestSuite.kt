@@ -10,8 +10,26 @@ import org.junit.runner.RunWith
 import org.junit.runners.Suite
 
 // TODO: room database tests: https://developer.android.com/training/data-storage/room/testing-db#android
+// TODO: audio player + queue tests (select item from shuffle playback queue etc.)
+// TODO: test shutdown/closing of resources
+// TODO: test audio focus (also with manual user "overrides")
+// TODO: test equalizer not working after ejecting
+// TODO: test no permission for serial number(?)
+// TODO: test turning on logging without agreed legal disclaimer
+// TODO: test #12 filenames with percent signs
+// TODO: test onPlay during initilization is latched for later
+// TODO: test #44 order of items returned in some SQL queries
+// TODO: test that we avoid duplicate tracks when creating random playback queue
 
 @ExperimentalCoroutinesApi
 @RunWith(Suite::class)
-@Suite.SuiteClasses(AudioBrowserServiceTest::class, MediaBrowserTest::class, AudioItemLibraryTest::class)
+@Suite.SuiteClasses(
+    AudioBrowserServiceTest::class,
+    AudioItemLibraryTest::class,
+    DatabaseTest::class,
+    IndexingTest::class,
+    MediaBrowserTest::class,
+    SettingsFragmentTest::class,
+    SharedPrefsTest::class,
+)
 class InstrumentedTestSuite

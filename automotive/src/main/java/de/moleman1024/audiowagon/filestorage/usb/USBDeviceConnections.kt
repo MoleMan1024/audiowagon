@@ -5,15 +5,16 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 package de.moleman1024.audiowagon.filestorage.usb
 
-import android.content.*
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
-import androidx.preference.PreferenceManager
 import de.moleman1024.audiowagon.AlbumArtContentProvider
 import de.moleman1024.audiowagon.GUI
 import de.moleman1024.audiowagon.R
-import de.moleman1024.audiowagon.activities.PREF_LOG_TO_USB_KEY
-import de.moleman1024.audiowagon.activities.PREF_USB_STATUS
+import de.moleman1024.audiowagon.SharedPrefs
 import de.moleman1024.audiowagon.authorization.ACTION_USB_PERMISSION_CHANGE
 import de.moleman1024.audiowagon.authorization.USBDevicePermissions
 import de.moleman1024.audiowagon.authorization.USBPermission
@@ -23,7 +24,6 @@ import de.moleman1024.audiowagon.filestorage.DeviceChange
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.*
 import java.io.IOException
-import java.lang.IllegalArgumentException
 
 private const val TAG = "USBDevConn"
 const val ACTION_USB_ATTACHED = "de.moleman1024.audiowagon.authorization.USB_ATTACHED"
@@ -122,8 +122,7 @@ class USBDeviceConnections(
     }
 
     init {
-        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
-        val logToUSBPreference = sharedPreferences.getBoolean(PREF_LOG_TO_USB_KEY, false)
+        val logToUSBPreference = SharedPrefs.isLogToUSBEnabled(context)
         if (logToUSBPreference) {
             isLogToUSB = true
         }
@@ -204,15 +203,12 @@ class USBDeviceConnections(
 
     fun updateUSBStatusInSettings(resID: Int) {
         logger.debug(TAG, "updateUSBStatusInSettings(resID=$resID)")
-        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
-        val currentID = sharedPreferences.getInt(PREF_USB_STATUS, R.string.setting_USB_status_unknown)
+        val currentID = SharedPrefs.getUSBStatusResID(context)
         if (currentID == resID) {
             logger.debug(TAG, "updateUSBStatusInSettings(): currentID=$currentID")
             return
         }
-        val editor = sharedPreferences.edit()
-        editor.putInt(PREF_USB_STATUS, resID)
-        editor.apply()
+        SharedPrefs.setUSBStatusResID(context, resID)
     }
 
     /**

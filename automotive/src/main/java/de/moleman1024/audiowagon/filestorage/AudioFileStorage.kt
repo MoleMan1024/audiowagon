@@ -12,6 +12,7 @@ import android.support.v4.media.MediaDescriptionCompat
 import androidx.annotation.VisibleForTesting
 import de.moleman1024.audiowagon.GUI
 import de.moleman1024.audiowagon.R
+import de.moleman1024.audiowagon.SharedPrefs
 import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.authorization.SDCardDevicePermissions
 import de.moleman1024.audiowagon.authorization.USBDevicePermissions
@@ -39,11 +40,8 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-
 private const val TAG = "AudioFileStor"
 private val logger = Logger
-private const val REPLAYGAIN_NOT_FOUND: Float = -99.0f
-private const val NUM_BYTES_METADATA = 1024
 
 /**
  * This class manages storage locations and provides functions to index them for audio files
@@ -66,14 +64,12 @@ open class AudioFileStorage(
     private var dataSources = mutableListOf<MediaDataSource>()
     private val dataSourcesMutex = Mutex()
     private var isSuspended = false
-    private val replayGainRegex = "replaygain_track_gain.*?([-0-9][^ ]+?) ?dB".toRegex(RegexOption.IGNORE_CASE)
     private val audioFileProducerChannels = mutableListOf<ReceiveChannel<AudioFile>>()
     val storageObservers = mutableListOf<(StorageChange) -> Unit>()
     val mediaDevicesForTest = mutableListOf<MediaDevice>()
 
     init {
         initUSBObservers()
-        initSDCardForDebugBuild()
         initAssetsForEmulator()
     }
 
@@ -98,18 +94,6 @@ open class AudioFileStorage(
         }
     }
 
-    private fun initSDCardForDebugBuild() {
-        if (Util.isDebugBuild(context)) {
-            try {
-                // TODO: provide this id from testcase
-                val sdCardMediaDevice = SDCardMediaDevice("E812-A0DC")
-                mediaDevicesForTest.add(sdCardMediaDevice)
-            } catch (exc: Exception) {
-                logger.exception(TAG, exc.message.toString(), exc)
-            }
-        }
-    }
-
     /**
      * This is only used to provide demo soundfiles to Google during automatic review of production builds
      */
@@ -118,7 +102,7 @@ open class AudioFileStorage(
             logger.debug(TAG, "initAssetsForEmulator()")
             try {
                 // agree to the legal disclaimer automatically in case this is automatically reviewed
-                Util.setLegalDisclaimerAgreed(context)
+                SharedPrefs.setLegalDisclaimerAgreed(context)
                 val assetManager = context.assets
                 val assetMediaDevice = AssetMediaDevice(assetManager)
                 mediaDevicesForTest.add(assetMediaDevice)
@@ -129,6 +113,7 @@ open class AudioFileStorage(
     }
 
     private fun notifyObservers(storageChange: StorageChange) {
+        logger.debug(TAG, "Notifying storage observers: $storageChange")
         storageObservers.forEach { it(storageChange) }
     }
 
@@ -455,44 +440,6 @@ open class AudioFileStorage(
 
     fun areAnyStoragesAvail(): Boolean {
         return audioFileStorageLocations.isNotEmpty()
-    }
-
-    fun extractReplayGain(uri: Uri): Float {
-        logger.debug(TAG, "extractReplayGain($uri)")
-        var replayGain: Float
-        val dataSource = getDataSourceForURI(uri)
-        val dataFront = ByteArray(NUM_BYTES_METADATA)
-        // IDv3 tags are at the beginning of the file
-        dataSource.readAt(0L, dataFront, 0, dataFront.size)
-        replayGain = findReplayGainInBytes(dataFront)
-        if (replayGain != REPLAYGAIN_NOT_FOUND) {
-            dataSource.close()
-            return replayGain
-        }
-        val dataBack = ByteArray(NUM_BYTES_METADATA)
-        // APE tags are at the end of the file
-        dataSource.readAt(dataSource.size - dataBack.size, dataBack, 0, dataBack.size)
-        replayGain = findReplayGainInBytes(dataBack)
-        if (replayGain == REPLAYGAIN_NOT_FOUND) {
-            replayGain = 0f
-        }
-        dataSource.close()
-        return replayGain
-    }
-
-    private fun findReplayGainInBytes(bytes: ByteArray): Float {
-        val bytesStr = String(bytes)
-        var replayGain = REPLAYGAIN_NOT_FOUND
-        val replayGainMatch = replayGainRegex.find(bytesStr)
-        if (replayGainMatch?.groupValues?.size == 2) {
-            val replayGainStr = replayGainMatch.groupValues[1].trim()
-            try {
-                replayGain = replayGainStr.toFloat()
-            } catch (exc: NumberFormatException) {
-                return REPLAYGAIN_NOT_FOUND
-            }
-        }
-        return replayGain
     }
 
 }

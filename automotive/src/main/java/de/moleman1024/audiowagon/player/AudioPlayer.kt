@@ -12,13 +12,11 @@ import android.net.Uri
 import android.os.PersistableBundle
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
-import androidx.preference.PreferenceManager
 import de.moleman1024.audiowagon.R
+import de.moleman1024.audiowagon.SharedPrefs
 import de.moleman1024.audiowagon.Util
-import de.moleman1024.audiowagon.activities.PREF_ENABLE_EQUALIZER
-import de.moleman1024.audiowagon.activities.PREF_ENABLE_REPLAYGAIN
-import de.moleman1024.audiowagon.activities.PREF_EQUALIZER_PRESET
 import de.moleman1024.audiowagon.exceptions.AlreadyStoppedException
+import de.moleman1024.audiowagon.exceptions.MissingEffectsException
 import de.moleman1024.audiowagon.exceptions.NoItemsInQueueException
 import de.moleman1024.audiowagon.filestorage.AudioFileStorage
 import de.moleman1024.audiowagon.log.Logger
@@ -41,6 +39,7 @@ const val MEDIA_ERROR_AUDIO_FOCUS_DENIED = -1249
  * For valid/invalid state transitions of [MediaPlayer] see:
  * https://developer.android.com/reference/android/media/MediaPlayer#valid-and-invalid-states
  */
+// TODO: class too big, split
 class AudioPlayer(
     private val audioFileStorage: AudioFileStorage,
     private val audioFocus: AudioFocus,
@@ -95,9 +94,8 @@ class AudioPlayer(
     private fun initEffects() {
         effectsFlip = mediaPlayerFlip?.audioSessionId?.let { Effects(it) }
         effectsFlop = mediaPlayerFlop?.audioSessionId?.let { Effects(it) }
-        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
-        val equalizerPresetPreference = sharedPreferences.getString(PREF_EQUALIZER_PRESET, EqualizerPreset.LESS_BASS.name)
-        equalizerPresetPreference?.let {
+        val equalizerPresetPreference = SharedPrefs.getEQPreset(context)
+        equalizerPresetPreference.let {
             try {
                 val equalizerPreset = EqualizerPreset.valueOf(it)
                 effectsFlip?.setEQPreset(equalizerPreset)
@@ -106,12 +104,12 @@ class AudioPlayer(
                 logger.exception(TAG, "Could not convert preference value to equalizer preset", exc)
             }
         }
-        val enableEQPreference = sharedPreferences.getBoolean(PREF_ENABLE_EQUALIZER, false)
+        val enableEQPreference = SharedPrefs.isEQEnabled(context)
         if (enableEQPreference) {
             effectsFlip?.enableEQ()
             effectsFlop?.enableEQ()
         }
-        val enableReplayGainPreference = sharedPreferences.getBoolean(PREF_ENABLE_REPLAYGAIN, false)
+        val enableReplayGainPreference = SharedPrefs.isReplayGainEnabled(context)
         if (enableReplayGainPreference) {
             effectsFlip?.enableGain()
             effectsFlop?.enableGain()
@@ -125,6 +123,8 @@ class AudioPlayer(
                 setState(completedMediaPlayer, AudioPlayerState.PLAYBACK_COMPLETED)
                 logger.debug(TAG, "Metrics: ${getMetrics()}")
                 if (playbackQueue.hasEnded()) {
+                    logger.debug(TAG, "Playback queue has ended")
+                    playerStatus.hasPlaybackQueueEnded = true
                     stop()
                     playbackQueue.clear()
                     return@launchInScopeSafely
@@ -244,6 +244,7 @@ class AudioPlayer(
             logger.warning(TAG, "Invalid call to prepare() in state: $state")
             return
         }
+        playerStatus.hasPlaybackQueueEnded = false
         playerStatus.playbackState = PlaybackStateCompat.STATE_BUFFERING
         notifyPlayerStatusChange()
         @Suppress("BlockingMethodInNonBlockingContext")
@@ -259,6 +260,7 @@ class AudioPlayer(
         }
         player?.reset()
         setState(player, AudioPlayerState.IDLE)
+        playerStatus.hasPlaybackQueueEnded = false
         playerStatus.playbackState = PlaybackStateCompat.STATE_NONE
         playerStatus.positionInMilliSec = PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN
     }
@@ -449,6 +451,7 @@ class AudioPlayer(
             }
             currentMediaPlayer?.start()
             setState(currentMediaPlayer, AudioPlayerState.STARTED)
+            playerStatus.hasPlaybackQueueEnded = false
             playerStatus.playbackState = PlaybackStateCompat.STATE_PLAYING
             notifyPlayerStatusChange()
         }
@@ -880,10 +883,7 @@ class AudioPlayer(
 
     suspend fun enableEqualizer() {
         withContext(dispatcher) {
-            if (effectsFlip == null) {
-                logger.error(TAG, "Effects do not exist!")
-                return@withContext
-            }
+            assertEffectsObjectsExist()
             effectsFlip?.enableEQ()
             effectsFlop?.enableEQ()
         }
@@ -891,10 +891,7 @@ class AudioPlayer(
 
     suspend fun disableEqualizer() {
         withContext(dispatcher) {
-            if (effectsFlip == null) {
-                logger.error(TAG, "Effects do not exist!")
-                return@withContext
-            }
+            assertEffectsObjectsExist()
             effectsFlip?.disableEQ()
             effectsFlop?.disableEQ()
         }
@@ -902,10 +899,7 @@ class AudioPlayer(
 
     suspend fun enableReplayGain() {
         withContext(dispatcher) {
-            if (effectsFlip == null) {
-                logger.error(TAG, "Effects do not exist!")
-                return@withContext
-            }
+            assertEffectsObjectsExist()
             effectsFlip?.enableGain()
             effectsFlop?.enableGain()
         }
@@ -913,10 +907,7 @@ class AudioPlayer(
 
     suspend fun disableReplayGain() {
         withContext(dispatcher) {
-            if (effectsFlip == null) {
-                logger.error(TAG, "Effects do not exist!")
-                return@withContext
-            }
+            assertEffectsObjectsExist()
             effectsFlip?.disableGain()
             effectsFlop?.disableGain()
         }
@@ -924,10 +915,7 @@ class AudioPlayer(
 
     suspend fun setReplayGain(gain: Float) {
         withContext(dispatcher) {
-            if (effectsFlip == null) {
-                logger.error(TAG, "Effects do not exist!")
-                return@withContext
-            }
+            assertEffectsObjectsExist()
             effectsFlip?.inputGainDecibel = gain
             effectsFlop?.inputGainDecibel = gain
         }
@@ -935,12 +923,15 @@ class AudioPlayer(
 
     suspend fun setEqualizerPreset(preset: EqualizerPreset) {
         withContext(dispatcher) {
-            if (effectsFlip == null) {
-                logger.error(TAG, "Equalizer does not exist!")
-                return@withContext
-            }
+            assertEffectsObjectsExist()
             effectsFlip?.setEQPreset(preset)
             effectsFlop?.setEQPreset(preset)
+        }
+    }
+
+    private fun assertEffectsObjectsExist() {
+        if (effectsFlip == null || effectsFlop == null) {
+            throw MissingEffectsException()
         }
     }
 

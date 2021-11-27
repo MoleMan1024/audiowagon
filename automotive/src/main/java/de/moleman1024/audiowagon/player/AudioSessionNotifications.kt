@@ -20,13 +20,18 @@ import androidx.media.session.MediaButtonReceiver
 import de.moleman1024.audiowagon.NOTIFICATION_ID
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.broadcast.*
+import de.moleman1024.audiowagon.exceptions.MissingNotifChannelException
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 
 private const val TAG = "AudioSessionNotif"
 private val logger = Logger
+private const val AUDIO_SESS_NOTIF_CHANNEL: String = "AudioSessNotifChan"
 
+/**
+ * See https://developer.android.com/training/notify-user/channels
+ */
 class AudioSessionNotifications(
     private val context: Context,
     scope: CoroutineScope,
@@ -40,9 +45,11 @@ class AudioSessionNotifications(
     private lateinit var isPlayingNotificationBuilder: NotificationCompat.Builder
     private lateinit var isPausedNotificationBuilder: NotificationCompat.Builder
     private var isShowingNotification: Boolean = false
-    private val notificationReceiver: NotificationReceiver = NotificationReceiver(audioPlayer, scope, dispatcher)
+    private val broadcastMsgRecv: BroadcastMessageReceiver = BroadcastMessageReceiver(audioPlayer, scope, dispatcher)
+    private var isChannelCreated: Boolean = false
 
     fun init(session: MediaSessionCompat) {
+        isChannelCreated = false
         mediaSession = session
         deleteNotificationChannel()
         createNotificationChannel()
@@ -51,6 +58,7 @@ class AudioSessionNotifications(
 
     private fun createNotificationChannel() {
         if (notificationManager.getNotificationChannel(AUDIO_SESS_NOTIF_CHANNEL) != null) {
+            isChannelCreated = true
             logger.debug(TAG, "Notification channel already exists")
             notificationManager.cancelAll()
             return
@@ -64,14 +72,17 @@ class AudioSessionNotifications(
             setShowBadge(false)
         }
         notificationManager.createNotificationChannel(channel)
+        isChannelCreated = true
     }
 
     private fun deleteNotificationChannel() {
         if (notificationManager.getNotificationChannel(AUDIO_SESS_NOTIF_CHANNEL) == null) {
+            isChannelCreated = false
             return
         }
         logger.debug(TAG, "Deleting notification channel")
         try {
+            isChannelCreated = false
             notificationManager.deleteNotificationChannel(AUDIO_SESS_NOTIF_CHANNEL)
         } catch (exc: RuntimeException) {
             // SecurityException could happen when service is still in foreground
@@ -115,6 +126,10 @@ class AudioSessionNotifications(
      */
     private fun sendNotification(notifBuilder: NotificationCompat.Builder) {
         val notification = prepareNotification(notifBuilder)
+        if (!isChannelCreated) {
+            logger.warning(TAG, "Cannot send notification, no channel available")
+            return
+        }
         notificationManager.notify(NOTIFICATION_ID, notification)
         if (!isShowingNotification) {
             registerNotifRecv()
@@ -156,6 +171,9 @@ class AudioSessionNotifications(
     }
 
     fun getNotification(): Notification {
+        if (!isChannelCreated) {
+            throw MissingNotifChannelException()
+        }
         return prepareNotification(isPlayingNotificationBuilder)
     }
 
@@ -166,12 +184,12 @@ class AudioSessionNotifications(
         filter.addAction(ACTION_PLAY)
         filter.addAction(ACTION_PAUSE)
         filter.addAction(ACTION_NEXT)
-        context.registerReceiver(notificationReceiver, filter)
+        context.registerReceiver(broadcastMsgRecv, filter)
     }
 
     private fun unregisterNotifRecv() {
         logger.debug(TAG, "unregisterNotifRecv()")
-        context.unregisterReceiver(notificationReceiver)
+        context.unregisterReceiver(broadcastMsgRecv)
     }
 
     // TODO: check why called multiple times
@@ -179,11 +197,11 @@ class AudioSessionNotifications(
         logger.debug(TAG, "removeNotification()")
         if (!isShowingNotification) {
             logger.debug("TAG", "No notification is currently shown")
-            return
+        } else {
+            notificationManager.cancel(NOTIFICATION_ID)
         }
         // TODO: to actually remove the notification, the mediaSession needs to be released. However when that is
         //  done it should not be used again unless the media browser client is restarted
-        notificationManager.cancel(NOTIFICATION_ID)
         unregisterNotifRecv()
         isShowingNotification = false
     }

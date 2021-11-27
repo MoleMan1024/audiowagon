@@ -21,8 +21,8 @@ private val logger = Logger
 /**
  * NOTE: SD card support is only enabled in debug builds used in the Android emulator
  */
-class SDCardMediaDevice(val id: String) : MediaDevice {
-    private val rootDirectory = File("/storage/${id}")
+class SDCardMediaDevice(val id: String, private val rootDir: String = "/") : MediaDevice {
+    private val rootDirectory = File("/storage/${id}${rootDir}")
     var isClosed: Boolean = false
 
     init {
@@ -40,7 +40,6 @@ class SDCardMediaDevice(val id: String) : MediaDevice {
         val allFilesDirs = mutableMapOf<String, Unit>()
         // this requires permission READ_EXTERNAL_STORAGE requested at runtime and legacy storage enabled in manifest
         val filesAtRoot = rootDirectory.listFiles() ?: throw RuntimeException("No permission to list files on SD card")
-        filesAtRoot.toString().let { logger.debug(TAG, it) }
         stack.add(filesAtRoot.iterator())
         while (stack.isNotEmpty()) {
             if (stack.last().hasNext()) {
@@ -89,11 +88,15 @@ class SDCardMediaDevice(val id: String) : MediaDevice {
     }
 
     override fun getID(): String {
-        return id
+        return if (rootDir == "/") {
+            id
+        } else {
+            id + rootDir.replace("/", "_")
+        }
     }
 
     override fun getName(): String {
-        return "SDCardMediaDevice{id=$id}"
+        return "SDCardMediaDevice(id=${getID()})"
     }
 
     fun close() {

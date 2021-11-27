@@ -13,6 +13,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+## [1.1.3] - 2021-11-27
+
+### Fixed
+
+- avoid to extract ReplayGain from a track when such a track does not exist
+- AudioWagon will store the last playback position when you exit the app. However after reaching the end of a playback
+  queue and exiting the app, AudioWagon would still restore a previous playback state from somewhere earlier in the 
+  playback queue which was confusing. Now, when the playback queue ends (without repeat mode), the stored playback 
+  position will be cleared instead.
+
+### Changed
+
+- create album art bitmaps based on the root hint size provided by MediaBrowser clients which should slightly improve
+  memory consumption
+- calculate the possible number of characters based on screen resolution to be able to use more available screen space 
+  for artist/album/track group names in the browse view
+- try once more to avoid the elusive RemoteServiceExceptions
+- improve robustness slightly when suspending to RAM
+- internal refactoring
+- added testcases
+
+
 ## [1.1.0] - 2021-11-16
 
 ### Fixed

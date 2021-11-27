@@ -156,21 +156,18 @@ drive. That should remove this warning message.
 
 ### Files on my USB drive were deleted!
 
-This usually means the FAT32 filesystem was damaged somehow. Unfortunately this still sometimes happens to a few people.
-I am trying my best to avoid this situation but sometimes I don't know why it happens. Here are some things you can try
-if this happens to you:
+This usually means the FAT32 filesystem was damaged somehow. I am trying my best to avoid this situation, if you 
+encounter this in a recent version of the app, please send a bug report. Here are some things you can try if this 
+happens to you:
 
 - First of all do not store any important data on the USB drive other than audio files. Keep a copy of those files on
   your PC
 - Update the app to version 0.6.1 or higher, there was an issue in earlier versions that could cause this corruption
 - Try using a different USB drive (flash memory can wear out after some years)
-- Try putting less data on the USB drive (this issue seems to happen more frequently to people who have gigabytes of
-  music that they bring into their car)
+- Try putting less data on the USB drive 
 - Make sure to always properly eject the USB drive before unplugging it. Do not assume that if the infotainment screen
   is off it is safe to unplug the USB drive. Like on your phone, even with the screen off the Android system might still
   be running.
-- Try turning off log files in the settings screen. The log file will likely be lost anyway if the filesystem is
-  damaged. This will avoid that anything is written to the USB drive, the app will only read from it in this case.
 
 You might be able to recover some of your data using e.g. Windows *chkdsk* tool. You should re-format the USB drive 
 afterwards to make sure it is in a clean state.
@@ -190,7 +187,7 @@ average of 3 minutes each is already more than 20 days of music to listen to.
 
 Yes, in most cases.
 
-The only thing that will not work is using multiple USB drives of the same model from the same
+The only thing that will *not* work is using multiple USB drives of the same model from the same
 manufacturer that have the same volume label. This will mess up the internal database. Please assign unique names when
 you format or use USB drives by different manufacturers/different models.
 

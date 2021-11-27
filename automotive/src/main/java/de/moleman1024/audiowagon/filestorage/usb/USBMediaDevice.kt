@@ -274,7 +274,7 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
         val stack = ArrayDeque<Iterator<UsbFile>>()
         val allFilesDirs = mutableMapOf<String, Unit>()
         recentFilepathToFileMap.clear()
-        stack.add(rootDirectory.listFiles().iterator())
+        stack.add(rootDirectory.listFiles().sortedBy { it.name }.iterator())
         while (stack.isNotEmpty()) {
             if (stack.last().hasNext()) {
                 val fileOrDirectory = stack.last().next()
@@ -292,7 +292,7 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
                             logger.debug(TAG, "Ignoring directory: ${fileOrDirectory.name}")
                         } else {
                             logger.debug(TAG, "Walking directory: ${fileOrDirectory.absolutePath}")
-                            stack.add(fileOrDirectory.listFiles().iterator())
+                            stack.add(fileOrDirectory.listFiles().sortedBy { it.name }.iterator())
                         }
                     }
                 }
@@ -314,7 +314,7 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
         if (!directory.isDirectory) {
             throw IllegalArgumentException("Is not a directory: $directory")
         }
-        return directory.listFiles().toList()
+        return directory.listFiles().sortedBy{ it.name }.toList()
     }
 
     override fun getName(): String {

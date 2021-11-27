@@ -12,6 +12,7 @@ import android.text.format.Formatter.formatShortFileSize
 import android.widget.Toast
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.*
+import de.moleman1024.audiowagon.*
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.repository.AUDIOITEM_REPO_DB_PREFIX
@@ -25,19 +26,10 @@ import kotlin.collections.HashSet
 
 private const val TAG = "SettingsFragm"
 private val logger = Logger
-// TODO: add testcase for backward compatibility of old settings files
-// TODO: add testcase to check if fragments work (e.g. filesystem issues)
-const val PREF_LOG_TO_USB_KEY = "logToUSB"
-const val PREF_USB_STATUS = "usbStatusResID"
-const val PREF_LEGAL_DISCLAIMER = "legalDisclaimer"
-const val PREF_READ_METADATA = "readMetadata"
-const val PREF_DELETE_DATABASES = "deleteDatabases"
-const val PREF_DATABASE_STATUS = "databaseStatus"
-const val PREF_ENABLE_EQUALIZER = "enableEqualizer"
-const val PREF_EQUALIZER_PRESET = "equalizerPreset"
-const val PREF_EQUALIZER_PRESET_DEFAULT = "LESS_BASS"
-const val PREF_ENABLE_REPLAYGAIN = "enableReplayGain"
-const val PREF_EJECT = "eject"
+private const val PREF_EJECT = "eject"
+private const val PREF_DATABASE_STATUS = "databaseStatus"
+private const val PREF_DELETE_DATABASES = "deleteDatabases"
+private const val PREF_LEGAL_DISCLAIMER = "legalDisclaimer"
 
 @ExperimentalCoroutinesApi
 class SettingsFragment : PreferenceFragmentCompat() {
@@ -47,7 +39,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         run {
             logger.debug(TAG, "sharedPrefChanged()")
             when (key) {
-                PREF_USB_STATUS -> {
+                SHARED_PREF_USB_STATUS -> {
                     updateUSBAndEjectStatus(sharedPreferences)
                     updateDatabaseStatusJob?.cancelChildren()
                     updateDatabaseStatusJob = lifecycleScope.launch(dispatcher) {
@@ -57,9 +49,9 @@ class SettingsFragment : PreferenceFragmentCompat() {
                         updateDatabaseStatusJob = null
                     }
                 }
-                PREF_EQUALIZER_PRESET -> {
+                SHARED_PREF_EQUALIZER_PRESET -> {
                     updateEqualizerPreset(sharedPreferences)
-                    val eqPreset = getEqualizerPresetFromPreferences(sharedPreferences)
+                    val eqPreset = SharedPrefs.getEQPreset(sharedPreferences)
                     (activity as SettingsActivity).updateEqualizerPreset(eqPreset)
                 }
                 else -> {
@@ -80,21 +72,8 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 logger.exception(TAG, exc.message.toString(), exc)
             }
         }
-        // do not store the checked entries
+        // return false to not store the checked entries
         false
-    }
-
-    override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
-        logger.debug(TAG, "onCreatePreferences(rootKey=${rootKey})")
-        setPreferencesFromResource(R.xml.preferences, rootKey)
-        val sharedPreferences = preferenceManager.sharedPreferences
-        updateEqualizerSwitch(sharedPreferences)
-        updateEqualizerPreset(sharedPreferences)
-        updateReplayGainSwitch(sharedPreferences)
-        updateReadMetadataSwitch(sharedPreferences)
-        updateUSBAndEjectStatus(sharedPreferences)
-        updateDatabaseStatus()
-        updateDatabaseFiles()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -105,8 +84,45 @@ class SettingsFragment : PreferenceFragmentCompat() {
         multiListPref?.onPreferenceChangeListener = databaseDeleteListener
     }
 
+    override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
+        logger.debug(TAG, "onCreatePreferences(rootKey=${rootKey})")
+        setPreferencesFromResource(R.xml.preferences, rootKey)
+        updateFromSharedPrefs(preferenceManager.sharedPreferences)
+        updateDatabaseStatus()
+        updateDatabaseFiles()
+    }
+
+    private fun updateFromSharedPrefs(sharedPreferences: SharedPreferences) {
+        updateEqualizerSwitch(sharedPreferences)
+        updateEqualizerPreset(sharedPreferences)
+        updateReplayGainSwitch(sharedPreferences)
+        updateReadMetadataSwitch(sharedPreferences)
+        updateUSBAndEjectStatus(sharedPreferences)
+    }
+
+    private fun updateEqualizerSwitch(sharedPreferences: SharedPreferences) {
+        val value = SharedPrefs.isEQEnabled(sharedPreferences)
+        findPreference<SwitchPreferenceCompat>(SHARED_PREF_ENABLE_EQUALIZER)?.isChecked = value
+        findPreference<ListPreference>(SHARED_PREF_EQUALIZER_PRESET)?.isEnabled = value
+    }
+
+    private fun updateEqualizerPreset(sharedPreferences: SharedPreferences) {
+        val eqPreset = SharedPrefs.getEQPreset(sharedPreferences)
+        findPreference<ListPreference>(SHARED_PREF_EQUALIZER_PRESET)?.value = eqPreset
+    }
+
+    private fun updateReplayGainSwitch(sharedPreferences: SharedPreferences) {
+        val value = SharedPrefs.isReplayGainEnabled(sharedPreferences)
+        findPreference<SwitchPreferenceCompat>(SHARED_PREF_ENABLE_REPLAYGAIN)?.isChecked = value
+    }
+
+    private fun updateReadMetadataSwitch(sharedPreferences: SharedPreferences) {
+        val value = SharedPrefs.isMetadataReadingEnabled(sharedPreferences)
+        findPreference<SwitchPreferenceCompat>(SHARED_PREF_READ_METADATA)?.isChecked = value
+    }
+
     private fun updateUSBAndEjectStatus(sharedPreferences: SharedPreferences) {
-        val value = sharedPreferences.getInt(PREF_USB_STATUS, R.string.setting_USB_status_unknown)
+        val value = SharedPrefs.getUSBStatusResID(sharedPreferences)
         var text = context?.getString(R.string.setting_USB_status_unknown)
         try {
             text = context?.getString(value)
@@ -118,7 +134,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
             logger.warning(TAG, "text is null")
             return
         }
-        val pref = findPreference<Preference>(PREF_USB_STATUS)
+        val pref = findPreference<Preference>(SHARED_PREF_USB_STATUS)
         pref?.summary = text
         if (value in listOf(R.string.setting_USB_status_ejected, R.string.setting_USB_status_not_connected)) {
             disableEject()
@@ -135,32 +151,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
     private fun disableEject() {
         val pref = findPreference<Preference>(PREF_EJECT)
         pref?.isEnabled = false
-    }
-
-    private fun updateEqualizerSwitch(sharedPreferences: SharedPreferences) {
-        val value = sharedPreferences.getBoolean(PREF_ENABLE_EQUALIZER, false)
-        findPreference<SwitchPreferenceCompat>(PREF_ENABLE_EQUALIZER)?.isChecked = value
-        findPreference<ListPreference>(PREF_EQUALIZER_PRESET)?.isEnabled = value
-    }
-
-    private fun updateEqualizerPreset(sharedPreferences: SharedPreferences) {
-        val eqPreset = getEqualizerPresetFromPreferences(sharedPreferences)
-        findPreference<ListPreference>(PREF_EQUALIZER_PRESET)?.value = eqPreset
-    }
-
-    private fun getEqualizerPresetFromPreferences(sharedPreferences: SharedPreferences): String {
-        return sharedPreferences.getString(PREF_EQUALIZER_PRESET, PREF_EQUALIZER_PRESET_DEFAULT)
-            ?: PREF_EQUALIZER_PRESET_DEFAULT
-    }
-
-    private fun updateReplayGainSwitch(sharedPreferences: SharedPreferences) {
-        val value = sharedPreferences.getBoolean(PREF_ENABLE_REPLAYGAIN, false)
-        findPreference<SwitchPreferenceCompat>(PREF_ENABLE_REPLAYGAIN)?.isChecked = value
-    }
-
-    private fun updateReadMetadataSwitch(sharedPreferences: SharedPreferences) {
-        val value = sharedPreferences.getBoolean(PREF_READ_METADATA, true)
-        findPreference<SwitchPreferenceCompat>(PREF_READ_METADATA)?.isChecked = value
     }
 
     private fun updateDatabaseFiles() {
@@ -180,6 +170,31 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
         multiListPref?.entryValues = entries.map { it.first }.toTypedArray()
         multiListPref?.entries = entries.map { it.second }.toTypedArray()
+    }
+
+    private fun createGUIListEntryFromFile(file: File): String {
+        var fileName = file.name
+        try {
+            fileName = shortenDatabaseName(fileName)
+        } catch (exc: Exception) {
+            logger.exception(TAG, exc.message.toString(), exc)
+        }
+        var fileSizeStr = "???"
+        var lastModifiedDateStr = "???"
+        try {
+            val sizeBytes = file.length()
+            fileSizeStr = formatShortFileSize(context, sizeBytes)
+        } catch (exc: Exception) {
+            logger.exception(TAG, exc.message.toString(), exc)
+        }
+        try {
+            val lastModifiedMS = file.lastModified()
+            val lastModifiedDate = Date(lastModifiedMS)
+            lastModifiedDateStr = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(lastModifiedDate)
+        } catch (exc: Exception) {
+            logger.exception(TAG, exc.message.toString(), exc)
+        }
+        return "\u26C3 ${fileName}\n     $fileSizeStr \u2014 $lastModifiedDateStr"
     }
 
     private fun deleteFile(file: File) {
@@ -210,6 +225,11 @@ class SettingsFragment : PreferenceFragmentCompat() {
         return shortenDatabaseName(databasesInUse.first().name)
     }
 
+    private fun shortenDatabaseName(fileName: String): String {
+        val shortName = fileName.replace("^${AUDIOITEM_REPO_DB_PREFIX}(aw-)?".toRegex(), "")
+        return shortName.replace("\\.sqlite.*$".toRegex(), "")
+    }
+
     private fun getDatabasesFiles(): List<File> {
         val databasesDir = File(context?.dataDir.toString() + "/databases")
         if (!databasesDir.exists()) {
@@ -222,36 +242,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
     private fun isDatabaseFileInUse(file: File): Boolean {
         val writeHeadLogFilePath = file.absolutePath + "-wal"
         return File(writeHeadLogFilePath).exists()
-    }
-
-    private fun createGUIListEntryFromFile(file: File): String {
-        var fileName = file.name
-        try {
-            fileName = shortenDatabaseName(fileName)
-        } catch (exc: Exception) {
-            logger.exception(TAG, exc.message.toString(), exc)
-        }
-        var fileSizeStr = "???"
-        var lastModifiedDateStr = "???"
-        try {
-            val sizeBytes = file.length()
-            fileSizeStr = formatShortFileSize(context, sizeBytes)
-        } catch (exc: Exception) {
-            logger.exception(TAG, exc.message.toString(), exc)
-        }
-        try {
-            val lastModifiedMS = file.lastModified()
-            val lastModifiedDate = Date(lastModifiedMS)
-            lastModifiedDateStr = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(lastModifiedDate)
-        } catch (exc: Exception) {
-            logger.exception(TAG, exc.message.toString(), exc)
-        }
-        return "\u26C3 ${fileName}\n     $fileSizeStr \u2014 $lastModifiedDateStr"
-    }
-
-    private fun shortenDatabaseName(fileName: String): String {
-        val shortName = fileName.replace("^${AUDIOITEM_REPO_DB_PREFIX}(aw-)?".toRegex(), "")
-        return shortName.replace("\\.sqlite.*$".toRegex(), "")
     }
 
     private fun updateDatabaseStatus() {
@@ -288,7 +278,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         logger.debug(TAG, "onPreferenceTreeClick(preference=$preference)")
         try {
             when (preference?.key) {
-                PREF_LOG_TO_USB_KEY -> {
+                SHARED_PREF_LOG_TO_USB_KEY -> {
                     if ((preference as SwitchPreferenceCompat).isChecked) {
                         (activity as SettingsActivity).enableLogToUSB()
                     } else {
@@ -302,23 +292,23 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 PREF_EJECT -> {
                     (activity as SettingsActivity).eject()
                 }
-                PREF_ENABLE_EQUALIZER -> {
+                SHARED_PREF_ENABLE_EQUALIZER -> {
                     if ((preference as SwitchPreferenceCompat).isChecked) {
-                        findPreference<ListPreference>(PREF_EQUALIZER_PRESET)?.isEnabled = true
+                        findPreference<ListPreference>(SHARED_PREF_EQUALIZER_PRESET)?.isEnabled = true
                         (activity as SettingsActivity).enableEqualizer()
                     } else {
-                        findPreference<ListPreference>(PREF_EQUALIZER_PRESET)?.isEnabled = false
+                        findPreference<ListPreference>(SHARED_PREF_EQUALIZER_PRESET)?.isEnabled = false
                         (activity as SettingsActivity).disableEqualizer()
                     }
                 }
-                PREF_READ_METADATA -> {
+                SHARED_PREF_READ_METADATA -> {
                     if ((preference as SwitchPreferenceCompat).isChecked) {
                         (activity as SettingsActivity).enableReadMetadata()
                     } else {
                         (activity as SettingsActivity).disableReadMetadata()
                     }
                 }
-                PREF_ENABLE_REPLAYGAIN -> {
+                SHARED_PREF_ENABLE_REPLAYGAIN -> {
                     if ((preference as SwitchPreferenceCompat).isChecked) {
                         (activity as SettingsActivity).enableReplayGain()
                     } else {
@@ -345,7 +335,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
     private fun revertSwitch(preference: Preference) {
         when (preference.key) {
-            PREF_LOG_TO_USB_KEY, PREF_ENABLE_EQUALIZER, PREF_READ_METADATA -> {
+            SHARED_PREF_LOG_TO_USB_KEY, SHARED_PREF_ENABLE_EQUALIZER, SHARED_PREF_READ_METADATA -> {
                 val switch = (preference as SwitchPreferenceCompat)
                 switch.isChecked = !switch.isChecked
             }

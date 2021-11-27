@@ -23,8 +23,6 @@ import java.io.IOException
 private const val TAG = "AudioMetadataMaker"
 private val logger = Logger
 const val RESOURCE_ROOT_URI = "android.resource://de.moleman1024.audiowagon/drawable/"
-const val METADATA_KEY_SAMPLERATE = 38
-const val METADATA_KEY_BITS_PER_SAMPLE = 39
 
 /**
  * Extract metadata from audio files.
@@ -213,15 +211,13 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
         logger.debug(TAG, "Retrieving embedded image")
         metadataRetriever.setDataSource(mediaDataSource)
         val embeddedImage = metadataRetriever.embeddedPicture ?: return null
-        // TODO: move this log call elsewhere
-        logAudioDataMetadata(metadataRetriever)
         metadataRetriever.close()
         val resizedBitmap: Bitmap?
         try {
             logger.debug(TAG, "Decoding embedded image")
             val decodedBitmap = BitmapFactory.decodeByteArray(embeddedImage, 0, embeddedImage.size) ?: return null
             logger.debug(TAG, "Scaling image")
-            val widthHeightForResize = 400
+            val widthHeightForResize = AlbumArtContentProvider.getAlbumArtSizePixels()
             resizedBitmap =
                 if (decodedBitmap.width < widthHeightForResize || decodedBitmap.height < widthHeightForResize) {
                     decodedBitmap
@@ -238,23 +234,6 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
         // TODO: I am getting some warnings in log on Pixel 3 XL AAOS that this takes some time
         resizedBitmap?.compress(Bitmap.CompressFormat.JPEG, quality, stream) ?: return null
         return stream.toByteArray()
-    }
-
-    private fun logAudioDataMetadata(metadataRetriever: MediaMetadataRetriever) {
-        val sampleRate = metadataRetriever.extractMetadata(METADATA_KEY_SAMPLERATE)
-        // TODO: shows wrong bitrate for variable bitrate MP3s?
-        val bitRate = metadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE)
-        // TODO: bitsPerSample is null sometimes
-        val bitsPerSample = metadataRetriever.extractMetadata(METADATA_KEY_BITS_PER_SAMPLE)
-        val kbpsStr = "%.2f".format(bitRate?.toFloat()?.div(1000.0))
-        // When playing back files with samplerates > 48 kHz on the default AAOS build for Pixel 3 XL phone the are
-        // resampling artifacts in some files. These do not appear in a Polestar 2 car however, likely a different
-        // resampler is used.
-        // Also on Pixel 3 XL with AAOS default build some MP3s sound bad, also sounds like the resampler
-        logger.info(TAG, "Audio metadata: " +
-                "sampleRate=$sampleRate Hz, " +
-                "bitsPerSample=$bitsPerSample bits, " +
-                "bitRate=$kbpsStr kbps")
     }
 
 }

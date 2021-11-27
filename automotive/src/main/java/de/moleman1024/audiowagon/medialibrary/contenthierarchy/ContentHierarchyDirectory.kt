@@ -71,8 +71,8 @@ class ContentHierarchyDirectory(
             groupContentHierarchyID.directoryGroupIndex = groupIndex
             val description = MediaDescriptionCompat.Builder().apply {
                 setTitle(
-                    "${firstItemInGroup.title.take(NUM_TITLE_CHARS_FOR_GROUP)} " +
-                            "… ${lastItemInGroup.title.take(NUM_TITLE_CHARS_FOR_GROUP)}"
+                    "${firstItemInGroup.title.take(numTitleCharsPerGroup)} " +
+                            "… ${lastItemInGroup.title.take(numTitleCharsPerGroup)}"
                 )
                 setIconUri(Uri.parse(RESOURCE_ROOT_URI
                         + context.resources.getResourceEntryName(R.drawable.baseline_summarize_24)))

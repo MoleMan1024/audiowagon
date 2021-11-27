@@ -31,4 +31,10 @@ data class ContentHierarchyID(
     var path: String = ""
     @SerialName("dirGrp")
     var directoryGroupIndex: Int = -1
+
+    override fun toString(): String {
+        return "ContentHierarchyID(type=$type, storage=$storageID, trk=$trackID, art=$artistID, " +
+                "alb=$albumID, trkGrp=$trackGroupIndex, artGrp=$artistGroupIndex, " +
+                "albGrp=$albumGroupIndex, path=$path, dirGrp=$directoryGroupIndex)"
+    }
 }

@@ -10,6 +10,7 @@ import android.net.Uri
 import android.support.v4.media.MediaBrowserCompat.MediaItem
 import android.support.v4.media.MediaDescriptionCompat
 import de.moleman1024.audiowagon.R
+import de.moleman1024.audiowagon.SharedPrefs
 import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.filestorage.*
 import de.moleman1024.audiowagon.log.Logger
@@ -31,7 +32,7 @@ class ContentHierarchyRootFiles(
 
     override suspend fun getMediaItems(): List<MediaItem> {
         val items = mutableListOf<MediaItem>()
-        if (!Util.isLegalDisclaimerAgreed(context) || !audioFileStorage.areAnyStoragesAvail()) {
+        if (!SharedPrefs.isLegalDisclaimerAgreed(context) || !audioFileStorage.areAnyStoragesAvail()) {
             logger.debug(TAG, "Showing pseudo MediaItem 'no entries available'")
             items += createPseudoNoEntriesItem()
             return items
@@ -55,7 +56,7 @@ class ContentHierarchyRootFiles(
         var title = context.getString(R.string.browse_tree_no_entries_title)
         var subtitle = context.getString(R.string.browse_tree_no_usb_drive)
         if (numConnectedDevices > 0) {
-            if (Util.isLegalDisclaimerAgreed(context)) {
+            if (SharedPrefs.isLegalDisclaimerAgreed(context)) {
                 subtitle = context.getString(R.string.browse_tree_usb_drive_ejected)
             } else {
                 logger.debug(TAG, "Legal disclaimer was not yet agreed")

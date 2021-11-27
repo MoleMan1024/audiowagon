@@ -10,6 +10,7 @@ import android.net.Uri
 import android.support.v4.media.MediaBrowserCompat.MediaItem
 import android.support.v4.media.MediaDescriptionCompat
 import de.moleman1024.audiowagon.R
+import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.filestorage.AudioFile
 import de.moleman1024.audiowagon.filestorage.AudioFileStorage
 import de.moleman1024.audiowagon.filestorage.Directory
@@ -21,7 +22,8 @@ import de.moleman1024.audiowagon.medialibrary.RESOURCE_ROOT_URI
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import java.lang.AssertionError
+import kotlin.math.floor
+
 
 private const val TAG = "CHElement"
 private val logger = Logger
@@ -33,9 +35,7 @@ const val CONTENT_HIERARCHY_MAX_NUM_ITEMS = 400
 // This constant limits the number of characters when creating group titles. For example:
 // A group starting at track "Another One Bites The Dust" until "Bullet With Butterfly Wings" will show as
 // "Another One Bite … Bullet With Butt"
-// TODO: If we knew the width of the screen and the size of each character this could be made more intelligent to fill
-//  the available screen space
-const val NUM_TITLE_CHARS_FOR_GROUP = 16
+const val DEFAULT_NUM_TITLE_CHARS_FOR_GROUP = 24
 
 // TODO: document possible hierarchies
 abstract class ContentHierarchyElement(
@@ -47,6 +47,8 @@ abstract class ContentHierarchyElement(
     abstract suspend fun getAudioItems(): List<AudioItem>
 
     companion object {
+        var numTitleCharsPerGroup: Int = - 1
+
         fun deserialize(id: String): ContentHierarchyID {
             return Json.decodeFromString(id)
         }
@@ -60,8 +62,27 @@ abstract class ContentHierarchyElement(
         return numItems > CONTENT_HIERARCHY_MAX_NUM_ITEMS
     }
 
+    private fun setNumTitleCharsPerGroupBasedOnScreenWidth() {
+        if (numTitleCharsPerGroup > 0) {
+            return
+        }
+        val maxCharsForScreenWidth = Util.getMaxCharsForScreenWidth(context)
+        if (maxCharsForScreenWidth < 0) {
+            numTitleCharsPerGroup = DEFAULT_NUM_TITLE_CHARS_FOR_GROUP
+        } else {
+            numTitleCharsPerGroup = floor((maxCharsForScreenWidth - 3) / 2.0).toInt()
+            if (numTitleCharsPerGroup < DEFAULT_NUM_TITLE_CHARS_FOR_GROUP) {
+                numTitleCharsPerGroup = DEFAULT_NUM_TITLE_CHARS_FOR_GROUP
+            }
+        }
+        logger.debug(TAG, "numTitleCharsPerGroup=$numTitleCharsPerGroup")
+    }
+
     suspend fun createGroups(groupContentHierarchyID: ContentHierarchyID, numItems: Int): MutableList<MediaItem> {
         logger.debug(TAG, "Too many items ($numItems), creating groups ($groupContentHierarchyID)")
+        if (numTitleCharsPerGroup < 0) {
+            setNumTitleCharsPerGroupBasedOnScreenWidth()
+        }
         val groups = mutableListOf<MediaItem>()
         var offset = 0
         val repo = audioItemLibrary.getPrimaryRepository() ?: return groups
@@ -147,10 +168,11 @@ abstract class ContentHierarchyElement(
                     throw AssertionError("createGroups() not supported for type: ${groupContentHierarchyID.type}")
                 }
             }
+
             val description = MediaDescriptionCompat.Builder().apply {
                 setTitle(
-                    "${firstItemTitle.take(NUM_TITLE_CHARS_FOR_GROUP)} " +
-                            "… ${lastItemTitle.take(NUM_TITLE_CHARS_FOR_GROUP)}"
+                    "${firstItemTitle.take(numTitleCharsPerGroup)} " +
+                            "… ${lastItemTitle.take(numTitleCharsPerGroup)}"
                 )
                 setIconUri(Uri.parse(RESOURCE_ROOT_URI + context.resources.getResourceEntryName(iconID)))
                 setMediaId(serialize(groupContentHierarchyID))

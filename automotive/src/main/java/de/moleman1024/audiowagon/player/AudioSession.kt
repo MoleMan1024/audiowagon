@@ -10,15 +10,14 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.media.MediaPlayer
+import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import androidx.media.session.MediaButtonReceiver
-import androidx.preference.PreferenceManager
 import de.moleman1024.audiowagon.*
-import de.moleman1024.audiowagon.activities.PREF_ENABLE_REPLAYGAIN
 import de.moleman1024.audiowagon.broadcast.*
 import de.moleman1024.audiowagon.exceptions.DriveAlmostFullException
 import de.moleman1024.audiowagon.exceptions.NoItemsInQueueException
@@ -41,7 +40,6 @@ private const val TAG = "AudioSession"
 private val logger = Logger
 const val SESSION_TAG = "AudioSession"
 const val PLAYBACK_SPEED: Float = 1.0f
-const val AUDIO_SESS_NOTIF_CHANNEL: String = "AudioSessNotifChan"
 // arbitrary number
 const val REQUEST_CODE: Int = 25573
 const val ACTION_SHUFFLE_ON = "de.moleman1024.audiowagon.ACTION_SHUFFLE_ON"
@@ -49,6 +47,8 @@ const val ACTION_SHUFFLE_OFF = "de.moleman1024.audiowagon.ACTION_SHUFFLE_OFF"
 const val ACTION_REPEAT_ON = "de.moleman1024.audiowagon.ACTION_REPEAT_ON"
 const val ACTION_REPEAT_OFF = "de.moleman1024.audiowagon.ACTION_REPEAT_OFF"
 const val ACTION_EJECT = "de.moleman1024.audiowagon.ACTION_EJECT"
+private const val REPLAYGAIN_NOT_FOUND: Float = -99.0f
+private const val NUM_BYTES_METADATA = 1024
 
 class AudioSession(
     private val context: Context,
@@ -80,7 +80,7 @@ class AudioSession(
     private var onPlayCalledBeforeUSBReady: Boolean = false
     private var isShuttingDown: Boolean = false
     private var extractReplayGain: Boolean = false
-    var isAppUpdated: Boolean = false
+    private val replayGainRegex = "replaygain_track_gain.*?([-0-9][^ ]+?) ?dB".toRegex(RegexOption.IGNORE_CASE)
 
     init {
         logger.debug(TAG, "Init AudioSession()")
@@ -106,8 +106,7 @@ class AudioSession(
         sessionToken = mediaSession.sessionToken
         initPlaybackState()
         audioSessionNotifications.init(mediaSession)
-        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
-        extractReplayGain = sharedPreferences.getBoolean(PREF_ENABLE_REPLAYGAIN, false)
+        extractReplayGain = SharedPrefs.isReplayGainEnabled(context)
         observePlaybackStatus()
         observePlaybackQueue()
         observeSessionCallbacks()
@@ -212,15 +211,19 @@ class AudioSession(
                         audioFocusChangeListener.cancelAudioFocusLossJob()
                     }
                 }
+                if (audioPlayerStatus.hasPlaybackQueueEnded) {
+                    val audioPlayerEvt = AudioPlayerEvent(AudioPlayerState.PLAYBACK_COMPLETED)
+                    notifyObservers(audioPlayerEvt)
+                }
                 notifyStartPauseStop(audioPlayerStatus.playbackState)
             } else {
                 newPlaybackState = playbackStateBuilder.setErrorMessage(
                     audioPlayerStatus.errorCode, audioPlayerStatus.errorMsg
                 ).build()
-                val playerStateChange = AudioPlayerEvent(AudioPlayerState.ERROR)
-                playerStateChange.errorMsg = audioPlayerStatus.errorMsg
-                playerStateChange.errorCode = audioPlayerStatus.errorCode
-                notifyObservers(playerStateChange)
+                val audioPlayerEvt = AudioPlayerEvent(AudioPlayerState.ERROR)
+                audioPlayerEvt.errorMsg = audioPlayerStatus.errorMsg
+                audioPlayerEvt.errorCode = audioPlayerStatus.errorCode
+                notifyObservers(audioPlayerEvt)
                 handlePlayerError(audioPlayerStatus.errorCode)
             }
             playbackState = newPlaybackState
@@ -273,7 +276,7 @@ class AudioSession(
         audioPlayer.addPlaybackQueueObserver { queueChange ->
             logger.debug(TAG, "queueChange=$queueChange")
             val contentHierarchyIDStr: String? = queueChange.currentItem?.description?.mediaId
-            logger.debug(TAG, "content hierarchy ID to change to: $contentHierarchyIDStr")
+            logger.debug(TAG, "Content hierarchy ID to change to: $contentHierarchyIDStr")
             logger.flushToUSB()
             launchInScopeSafely("observePlaybackQueue()") {
                 if (contentHierarchyIDStr != null && contentHierarchyIDStr.isNotBlank()) {
@@ -323,14 +326,53 @@ class AudioSession(
         if (!extractReplayGain) {
             return
         }
-        var replayGain = 0f
+        val replayGain: Float
         try {
-            replayGain = audioFileStorage.extractReplayGain(audioItem.uri)
+            replayGain = extractReplayGain(audioItem.uri)
+            logger.debug(TAG, "Setting ReplayGain: $replayGain dB")
+            audioPlayer.setReplayGain(replayGain)
         } catch (exc: Exception) {
             logger.exception(TAG, exc.message.toString(), exc)
         }
-        logger.debug(TAG, "Setting ReplayGain: $replayGain dB")
-        audioPlayer.setReplayGain(replayGain)
+    }
+
+    // TODO: move this elsewhere
+    private fun extractReplayGain(uri: Uri): Float {
+        logger.debug(TAG, "extractReplayGain($uri)")
+        var replayGain: Float
+        val dataSource = audioFileStorage.getDataSourceForURI(uri)
+        val dataFront = ByteArray(NUM_BYTES_METADATA)
+        // IDv3 tags are at the beginning of the file
+        dataSource.readAt(0L, dataFront, 0, dataFront.size)
+        replayGain = findReplayGainInBytes(dataFront)
+        if (replayGain != REPLAYGAIN_NOT_FOUND) {
+            dataSource.close()
+            return replayGain
+        }
+        val dataBack = ByteArray(NUM_BYTES_METADATA)
+        // APE tags are at the end of the file
+        dataSource.readAt(dataSource.size - dataBack.size, dataBack, 0, dataBack.size)
+        replayGain = findReplayGainInBytes(dataBack)
+        if (replayGain == REPLAYGAIN_NOT_FOUND) {
+            replayGain = 0f
+        }
+        dataSource.close()
+        return replayGain
+    }
+
+    private fun findReplayGainInBytes(bytes: ByteArray): Float {
+        val bytesStr = String(bytes)
+        var replayGain = REPLAYGAIN_NOT_FOUND
+        val replayGainMatch = replayGainRegex.find(bytesStr)
+        if (replayGainMatch?.groupValues?.size == 2) {
+            val replayGainStr = replayGainMatch.groupValues[1].trim()
+            try {
+                replayGain = replayGainStr.toFloat()
+            } catch (exc: NumberFormatException) {
+                return REPLAYGAIN_NOT_FOUND
+            }
+        }
+        return replayGain
     }
 
     private fun sendNotificationBasedOnPlaybackState() {
@@ -365,19 +407,19 @@ class AudioSession(
         }
         isShuttingDown = true
         clearSession()
-        audioSessionNotifications.shutdown()
         runBlocking(dispatcher) {
             onPlayFromMediaIDJob?.cancelAndJoin()
             audioFocusChangeListener.cancelAudioFocusLossJob()
             audioPlayer.shutdown()
             releaseMediaSession()
         }
-        isAppUpdated = false
+        audioSessionNotifications.shutdown()
     }
 
     fun suspend() {
         logger.debug(TAG, "suspend()")
         runBlocking(dispatcher) {
+            audioPlayer.pause()
             onPlayFromMediaIDJob?.cancelAndJoin()
             audioFocusChangeListener.cancelAudioFocusLossJob()
         }
@@ -405,12 +447,7 @@ class AudioSession(
             audioFocusChangeListener.cancelAudioFocusLossJob()
         }
         setCurrentQueueItem(null)
-        // When the app is updated the drawable integers change so we can no longer send any
-        // notification that contains such an (outdated) drawable reference, it will lead to a RemoteServiceException
-        // https://stackoverflow.com/questions/25317659/how-to-fix-android-app-remoteserviceexception-bad-notification-posted-from-pac
-        if (!isAppUpdated) {
-            audioSessionNotifications.sendEmptyNotification()
-        }
+        audioSessionNotifications.sendEmptyNotification()
         clearPlaybackState()
         runBlocking(dispatcher) {
             clearMediaSession()
@@ -472,20 +509,23 @@ class AudioSession(
                 AudioSessionChangeType.ON_ENABLE_REPLAYGAIN -> {
                     extractReplayGain = true
                     launchInScopeSafely(audioSessionChange.type.name) {
-                        val contentHierarchyID = ContentHierarchyElement.deserialize(getCurrentTrackID())
-                        val audioItem = when (contentHierarchyID.type) {
-                            ContentHierarchyType.TRACK -> {
-                                audioItemLibrary.getAudioItemForTrack(contentHierarchyID)
+                        val currentTrackID = getCurrentTrackID()
+                        if (currentTrackID.isNotBlank()) {
+                            val contentHierarchyID = ContentHierarchyElement.deserialize(currentTrackID)
+                            val audioItem = when (contentHierarchyID.type) {
+                                ContentHierarchyType.TRACK -> {
+                                    audioItemLibrary.getAudioItemForTrack(contentHierarchyID)
+                                }
+                                ContentHierarchyType.FILE -> {
+                                    audioItemLibrary.getAudioItemForFile(contentHierarchyID)
+                                }
+                                else -> {
+                                    logger.error(TAG, "Cannot handle type: $contentHierarchyID")
+                                    return@launchInScopeSafely
+                                }
                             }
-                            ContentHierarchyType.FILE -> {
-                                audioItemLibrary.getAudioItemForFile(contentHierarchyID)
-                            }
-                            else -> {
-                                logger.error(TAG, "Cannot handle type: $contentHierarchyID")
-                                return@launchInScopeSafely
-                            }
+                            extractAndSetReplayGain(audioItem)
                         }
-                        extractAndSetReplayGain(audioItem)
                         audioPlayer.enableReplayGain()
                     }
                 }
@@ -760,6 +800,11 @@ class AudioSession(
             logger.debug(TAG, "Starting playback that was requested during startup before")
             audioPlayer.start()
         }
+    }
+
+    suspend fun cleanPersistent() {
+        logger.debug(TAG, "cleanPersistent()")
+        persistentStorage.clean()
     }
 
     private fun notifyObservers(event: Any) {

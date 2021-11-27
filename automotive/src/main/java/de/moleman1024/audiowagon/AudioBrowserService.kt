@@ -32,7 +32,6 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.Bundle
 import android.os.IBinder
-import android.os.PowerManager
 import android.support.v4.media.MediaBrowserCompat.MediaItem
 import android.support.v4.media.session.PlaybackStateCompat
 import androidx.annotation.VisibleForTesting
@@ -46,6 +45,7 @@ import de.moleman1024.audiowagon.authorization.PackageValidation
 import de.moleman1024.audiowagon.authorization.USBDevicePermissions
 import de.moleman1024.audiowagon.broadcast.PowerEventReceiver
 import de.moleman1024.audiowagon.exceptions.CannotRecoverUSBException
+import de.moleman1024.audiowagon.exceptions.MissingNotifChannelException
 import de.moleman1024.audiowagon.filestorage.*
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.*
@@ -55,16 +55,18 @@ import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyT
 import de.moleman1024.audiowagon.persistence.PersistentPlaybackState
 import de.moleman1024.audiowagon.persistence.PersistentStorage
 import de.moleman1024.audiowagon.player.*
+import de.moleman1024.audiowagon.repository.AudioItemRepository
 import kotlinx.coroutines.*
 import java.io.IOException
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.coroutines.coroutineContext
 import kotlin.system.exitProcess
 
 private const val TAG = "AudioBrowserService"
 const val NOTIFICATION_ID: Int = 25575
+private const val ALBUM_ART_MIN_NUM_PIXELS = 128
 const val ACTION_RESTART_SERVICE: String = "de.moleman1024.audiowagon.ACTION_RESTART_SERVICE"
-const val ACTION_QUICKBOOT_POWEROFF: String = "android.intent.action.QUICKBOOT_POWEROFF"
 // This PLAY_USB action seems to be essential for getting Google Assistant to accept voice commands such as
 // "play <artist | album | track>"
 const val ACTION_PLAY_USB: String = "android.car.intent.action.PLAY_USB"
@@ -93,6 +95,7 @@ const val CMD_EJECT = "de.moleman1024.audiowagon.CMD_EJECT"
  */
 // We need to use MediaBrowserServiceCompat instead of MediaBrowserService because the latter does not support
 // searching
+// TODO: class getting too large
 class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     private var lifecycleRegistry: LifecycleRegistry = LifecycleRegistry(this)
     private lateinit var audioItemLibrary: AudioItemLibrary
@@ -106,6 +109,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     private var dispatcher: CoroutineDispatcher = Dispatchers.IO
     private var libraryCreationJob: Job? = null
     private var restoreFromPersistentJob: Job? = null
+    private var cleanPersistentJob: Job? = null
     private var loadChildrenJobs: ConcurrentHashMap<String, Job> = ConcurrentHashMap<String, Job>()
     private var searchJob: Job? = null
     private var isServiceStarted: Boolean = false
@@ -129,6 +133,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     val logger = Logger
 
     init {
+        isShuttingDown = false
         lifecycleRegistry.currentState = Lifecycle.State.INITIALIZED
         instance = this
         setUncaughtExceptionHandler()
@@ -136,30 +141,14 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
 
     override fun onCreate() {
         logger.debug(TAG, "onCreate()")
+        isShuttingDown = false
         super.onCreate()
         powerEventReceiver = PowerEventReceiver()
         powerEventReceiver.audioBrowserService = this
         val shutdownFilter = IntentFilter().apply {
-            addAction(ACTION_QUICKBOOT_POWEROFF)
-            addAction(Intent.ACTION_DREAMING_STARTED)
-            addAction(Intent.ACTION_DREAMING_STOPPED)
-            addAction(Intent.ACTION_POWER_DISCONNECTED)
-            addAction(Intent.ACTION_POWER_CONNECTED)
-            addAction(Intent.ACTION_REBOOT)
             addAction(Intent.ACTION_SCREEN_OFF)
             addAction(Intent.ACTION_SCREEN_ON)
             addAction(Intent.ACTION_SHUTDOWN)
-            addAction(Intent.ACTION_MEDIA_BAD_REMOVAL)
-            addAction(Intent.ACTION_MEDIA_EJECT)
-            addAction(Intent.ACTION_MEDIA_MOUNTED)
-            addAction(Intent.ACTION_MEDIA_NOFS)
-            addAction(Intent.ACTION_MEDIA_REMOVED)
-            addAction(Intent.ACTION_MEDIA_UNMOUNTED)
-            addAction(Intent.ACTION_MY_PACKAGE_REPLACED)
-            addAction(Intent.ACTION_MY_PACKAGE_SUSPENDED)
-            addAction(Intent.ACTION_MY_PACKAGE_UNSUSPENDED)
-            addAction(PowerManager.ACTION_DEVICE_IDLE_MODE_CHANGED)
-            addAction(PowerManager.ACTION_POWER_SAVE_MODE_CHANGED)
         }
         registerReceiver(powerEventReceiver, shutdownFilter)
         startup()
@@ -219,7 +208,9 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         }
     }
 
-    private fun updateConnectedDevices() {
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    fun updateConnectedDevices() {
+        logger.debug(TAG, "updateConnectedDevices()")
         try {
             audioFileStorage.updateConnectedDevices()
         } catch (exc: IOException) {
@@ -236,54 +227,73 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         // https://developer.android.com/guide/topics/media-apps/audio-app/building-a-mediabrowserservice#service-lifecycle
         audioSession.observe { event ->
             logger.debug(TAG, "stateChange=$event")
-            // TODO: too nested
             when (event) {
                 is AudioPlayerEvent -> {
-                    lastAudioPlayerState = event.state
-                    when (event.state) {
-                        AudioPlayerState.STARTED -> {
-                            restoreFromPersistentJob?.let {
-                                runBlocking(dispatcher) {
-                                    cancelRestoreFromPersistent()
-                                }
-                            }
-                            startServiceInForeground()
-                        }
-                        AudioPlayerState.PAUSED -> moveServiceToBackground()
-                        AudioPlayerState.STOPPED -> stopService()
-                        AudioPlayerState.ERROR -> {
-                            if (event.errorCode == PlaybackStateCompat.ERROR_CODE_END_OF_QUEUE) {
-                                // Android Automotive media browser client will show a notification to user by itself in
-                                // case of skipping beyond end of queue, no need for us to send a toast message
-                                return@observe
-                            }
-                            logger.warning(TAG, "Player an error")
-                            gui.showErrorToastMsg(event.errorMsg)
-                        }
-                        else -> {
-                            // ignore
-                        }
-                    }
+                    handleAudioPlayerEvent(event)
                 }
                 is SettingChangeEvent -> {
-                    when (event.changeTo) {
-                        SettingState.ENABLE_READ_METADATA -> {
-                            updateConnectedDevices()
-                        }
-                        SettingState.DISABLE_READ_METADATA -> {
-                            audioFileStorage.cancelIndexing()
-                            audioItemLibrary.cancelBuildLibrary()
-                            cancelLibraryCreation()
-                        }
-                    }
+                    handleSettingChangeEvent(event)
                 }
                 is CustomActionEvent -> {
-                    when (event.action) {
-                        CustomAction.EJECT -> {
-                            cancelAllJobs()
-                        }
+                    handleCustomActionEvent(event)
+                }
+            }
+        }
+    }
+
+    private fun handleAudioPlayerEvent(event: AudioPlayerEvent) {
+        lastAudioPlayerState = event.state
+        when (event.state) {
+            AudioPlayerState.STARTED -> {
+                restoreFromPersistentJob?.let {
+                    runBlocking(dispatcher) {
+                        cancelRestoreFromPersistent()
                     }
                 }
+                cleanPersistentJob?.let {
+                    runBlocking(dispatcher) {
+                        cancelCleanPersistent()
+                    }
+                }
+                startServiceInForeground()
+            }
+            AudioPlayerState.PAUSED -> moveServiceToBackground()
+            AudioPlayerState.STOPPED -> stopService()
+            AudioPlayerState.PLAYBACK_COMPLETED -> {
+                launchCleanPersistentJob()
+            }
+            AudioPlayerState.ERROR -> {
+                if (event.errorCode == PlaybackStateCompat.ERROR_CODE_END_OF_QUEUE) {
+                    // Android Automotive media browser client will show a notification to user by itself in
+                    // case of skipping beyond end of queue, no need for us to send a toast message
+                    return
+                }
+                logger.warning(TAG, "Player encountered an error")
+                gui.showErrorToastMsg(event.errorMsg)
+            }
+            else -> {
+                // ignore
+            }
+        }
+    }
+
+    private fun handleSettingChangeEvent(event: SettingChangeEvent) {
+        when (event.changeTo) {
+            SettingState.ENABLE_READ_METADATA -> {
+                updateConnectedDevices()
+            }
+            SettingState.DISABLE_READ_METADATA -> {
+                audioFileStorage.cancelIndexing()
+                audioItemLibrary.cancelBuildLibrary()
+                cancelLibraryCreation()
+            }
+        }
+    }
+
+    private fun handleCustomActionEvent(event: CustomActionEvent) {
+        when (event.action) {
+            CustomAction.EJECT -> {
+                cancelAllJobs()
             }
         }
     }
@@ -292,8 +302,13 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         if (isServiceStarted) {
             if (!isServiceForeground) {
                 logger.debug(TAG, "Moving service to foreground")
-                startForeground(NOTIFICATION_ID, audioSession.getNotification())
-                isServiceForeground = true
+                try {
+                    val notification = audioSession.getNotification()
+                    startForeground(NOTIFICATION_ID, notification)
+                    isServiceForeground = true
+                } catch (exc: MissingNotifChannelException) {
+                    logger.exception(TAG, exc.message.toString(), exc)
+                }
             }
             return
         }
@@ -303,10 +318,15 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         // however this FAQ says foreground services are not allowed?
         // https://developer.android.com/training/cars/media/automotive-os#can_i_use_a_foreground_service
         // "foreground" is in terms of memory/priority, not in terms of a GUI window
-        startForegroundService(Intent(this, AudioBrowserService::class.java))
-        startForeground(NOTIFICATION_ID, audioSession.getNotification())
-        isServiceForeground = true
-        isServiceStarted = true
+        try {
+            val notification = audioSession.getNotification()
+            startForegroundService(Intent(this, AudioBrowserService::class.java))
+            startForeground(NOTIFICATION_ID, notification)
+            isServiceForeground = true
+            isServiceStarted = true
+        } catch (exc: MissingNotifChannelException) {
+            logger.exception(TAG, exc.message.toString(), exc)
+        }
     }
 
     private fun moveServiceToBackground() {
@@ -319,21 +339,39 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     private fun onStorageLocationAdded(storageID: String) {
         logger.info(TAG, "onStorageLocationAdded(storageID=$storageID)")
         cancelAllJobs()
-        if (!Util.isLegalDisclaimerAgreed(this)) {
+        if (!SharedPrefs.isLegalDisclaimerAgreed(this)) {
             logger.info(TAG, "User did not agree to legal disclaimer yet")
             notifyBrowserChildrenChangedAllLevels()
             return
         }
-        if (!Util.isMetadataReadingEnabled(this)) {
+        if (!SharedPrefs.isMetadataReadingEnabled(this)) {
             logger.info(TAG, "Metadata extraction is disabled in settings")
             launchRestoreFromPersistentJob()
             notifyBrowserChildrenChangedAllLevels()
             return
         }
+        createLibraryForStorage(storageID)
+    }
+
+    private fun createLibraryForStorage(storageID: String) {
+        if (isLibraryCreationCancelled) {
+            if (libraryCreationJob?.isActive == true ) {
+                runBlocking(dispatcher) {
+                    logger.debug(TAG, "Waiting for previous library creation job to end")
+                    libraryCreationJob?.join()
+                    logger.debug(TAG, "Previous library creation job has ended")
+                }
+            }
+        }
         gui.showIndexingNotification()
         // We start the service in foreground while indexing the USB device, a notification is shown to the user.
         // This is done so the user can use other apps while the indexing keeps running in the service
         startServiceInForeground()
+        isLibraryCreationCancelled = false
+        launchLibraryCreationJobForStorage(storageID)
+    }
+
+    private fun launchLibraryCreationJobForStorage(storageID: String) {
         // https://kotlinlang.org/docs/exception-handling.html#coroutineexceptionhandler
         // https://www.lukaslechner.com/why-exception-handling-with-kotlin-coroutines-is-so-hard-and-how-to-successfully-master-it/
         // https://medium.com/android-news/coroutine-in-android-working-with-lifecycle-fc9c1a31e5f3
@@ -349,18 +387,9 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                 }
             }
         }
-        if (isLibraryCreationCancelled) {
-            if (libraryCreationJob?.isActive == true ) {
-                runBlocking(dispatcher) {
-                    logger.debug(TAG, "Waiting for previous library creation job to end")
-                    libraryCreationJob?.join()
-                    logger.debug(TAG, "Previous library creation job has ended")
-                }
-            }
-        }
-        isLibraryCreationCancelled = false
         libraryCreationJob = lifecycleScope.launch(libraryCreationExceptionHandler + dispatcher) {
             createLibraryFromStorages(listOf(storageID))
+            notifyBrowserChildrenChangedAllLevels()
             gui.showIndexingFinishedNotification()
             when (lastAudioPlayerState) {
                 AudioPlayerState.PAUSED -> moveServiceToBackground()
@@ -390,6 +419,21 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         }
     }
 
+    @ExperimentalCoroutinesApi
+    private suspend fun createLibraryFromStorages(storageIDs: List<String>) {
+        logger.debug(TAG, "createLibraryFromStorages(storageIDs=${storageIDs})")
+        val storageLocations: List<AudioFileStorageLocation> = storageIDs.map {
+            audioFileStorage.getStorageLocationForID(it)
+        }
+        storageLocations.forEach { audioItemLibrary.initRepository(it.storageID) }
+        val audioFileProducerChannel = audioFileStorage.indexStorageLocations(storageIDs)
+        audioItemLibrary.buildLibrary(audioFileProducerChannel) { notifyBrowserChildrenChangedAllLevels() }
+        storageIDs.forEach {
+            audioFileStorage.setIndexingStatus(it, IndexingStatus.COMPLETED)
+        }
+        logger.info(TAG, "Audio library has been built for storages: $storageIDs")
+    }
+
     private fun launchRestoreFromPersistentJob() {
         restoreFromPersistentJob = launchInScopeSafely {
             val persistentPlaybackState = persistentStorage.retrieve()
@@ -400,23 +444,6 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             }
             restoreFromPersistentJob = null
         }
-    }
-
-    @ExperimentalCoroutinesApi
-    private suspend fun createLibraryFromStorages(storageIDs: List<String>) {
-        logger.debug(TAG, "createLibraryFromStorages(storageIDs=${storageIDs})")
-        val storageLocations: List<AudioFileStorageLocation> = storageIDs.map {
-            audioFileStorage.getStorageLocationForID(it)
-        }
-        // TODO: stop when device detached while this is ongoing
-        storageLocations.forEach { audioItemLibrary.initRepository(it.storageID) }
-        val audioFileProducerChannel = audioFileStorage.indexStorageLocations(storageIDs)
-        audioItemLibrary.buildLibrary(audioFileProducerChannel) { notifyBrowserChildrenChangedAllLevels() }
-        storageIDs.forEach {
-            audioFileStorage.setIndexingStatus(it, IndexingStatus.COMPLETED)
-        }
-        logger.info(TAG, "Audio library has been built for storages: $storageIDs")
-        notifyBrowserChildrenChangedAllLevels()
     }
 
     private suspend fun restoreFromPersistent(state: PersistentPlaybackState) {
@@ -448,6 +475,17 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             return
         }
         audioSession.prepareFromPersistent(state)
+    }
+
+    private fun launchCleanPersistentJob() {
+        cleanPersistentJob = launchInScopeSafely {
+            try {
+                audioSession.cleanPersistent()
+            } catch (exc: RuntimeException) {
+                logger.exception(TAG, "Cleaning persistent data failed", exc)
+            }
+            cleanPersistentJob = null
+        }
     }
 
     private fun onStorageLocationRemoved(storageID: String) {
@@ -568,25 +606,13 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         audioSession.shutdown()
         audioFileStorage.shutdown()
         audioItemLibrary.shutdown()
-        isShuttingDown = false
-    }
-
-    /**
-     * Shutdown everything and exit the process.
-     * This should be called after the app has been updated but we are still running in an old instance of the
-     * AudioBrowserService.
-     */
-    fun shutdownAndExitAfterAppUpdate() {
-        logger.debug(TAG, "shutdownAfterAppUpdate()")
-        audioSession.isAppUpdated = true
-        shutdown()
-        exitProcess(0)
     }
 
     private fun cancelAllJobs() {
         audioFileStorage.cancelIndexing()
         audioItemLibrary.cancelBuildLibrary()
         cancelRestoreFromPersistent()
+        cancelCleanPersistent()
         cancelLibraryCreation()
         cancelLoadChildren()
     }
@@ -640,6 +666,12 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         logger.debug(TAG, "Cancelled restoring from persistent state")
     }
 
+    private fun cancelCleanPersistent() {
+        logger.debug(TAG, "Cancelling cleaning persistent state")
+        cleanPersistentJob?.cancelChildren()
+        logger.debug(TAG, "Cancelled cleaning persistent state")
+    }
+
     private fun cancelLoadChildren() {
         logger.debug(TAG, "Cancelling handling of onLoadChildren()")
         loadChildrenJobs.forEach { (_, job) ->
@@ -666,6 +698,11 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             MediaConstants.BROWSER_ROOT_HINTS_KEY_ROOT_CHILDREN_SUPPORTED_FLAGS,
             MediaItem.FLAG_BROWSABLE
         )
+        val albumArtNumPixels = rootHints?.getInt(MediaConstants.BROWSER_ROOT_HINTS_KEY_MEDIA_ART_SIZE_PIXELS, -1)
+        if (albumArtNumPixels != null && albumArtNumPixels > ALBUM_ART_MIN_NUM_PIXELS) {
+            logger.debug(TAG, "Setting album art size: $albumArtNumPixels")
+            AlbumArtContentProvider.setAlbumArtSizePixels(albumArtNumPixels)
+        }
         // Implementing EXTRA_RECENT here would likely not work as we won't have permission to access USB drive yet
         // when this is called during boot phase
         // ( https://developer.android.com/guide/topics/media/media-controls )
@@ -697,6 +734,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         result.detach()
         val jobID = Util.generateUUID()
         val loadChildrenJob = launchInScopeSafely {
+            logger.verbose(TAG, "launch loadChildrenJob=$coroutineContext")
             try {
                 val contentHierarchyID = ContentHierarchyElement.deserialize(parentId)
                 val mediaItems: List<MediaItem> = audioItemLibrary.getMediaItemsStartingFrom(contentHierarchyID)
@@ -707,7 +745,9 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                 result.sendResult(null)
             } catch (exc: RuntimeException) {
                 logger.exception(TAG, exc.message.toString(), exc)
-                gui.showErrorToastMsg(getString(R.string.toast_error_unknown))
+                if (!isShuttingDown) {
+                    gui.showErrorToastMsg(getString(R.string.toast_error_unknown))
+                }
                 result.sendResult(null)
             } finally {
                 loadChildrenJobs.remove(jobID)
@@ -781,6 +821,11 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.NONE)
+    fun getPrimaryRepo(): AudioItemRepository? {
+        return audioItemLibrary.getPrimaryRepository()
+    }
+
+    @VisibleForTesting(otherwise = VisibleForTesting.NONE)
     companion object {
         private lateinit var instance: AudioBrowserService
 
@@ -791,6 +836,12 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     @VisibleForTesting(otherwise = VisibleForTesting.NONE)
     fun getIndexingStatus(): List<IndexingStatus> {
         return audioFileStorage.getIndexingStatus()
+    }
+
+    @VisibleForTesting(otherwise = VisibleForTesting.NONE)
+    fun setMediaDeviceForTest(mediaDevice: MediaDevice) {
+        audioFileStorage.mediaDevicesForTest.clear()
+        audioFileStorage.mediaDevicesForTest.add(mediaDevice)
     }
 
 }

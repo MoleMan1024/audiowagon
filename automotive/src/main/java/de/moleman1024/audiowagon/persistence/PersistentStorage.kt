@@ -64,4 +64,17 @@ class PersistentStorage(context: Context, private val dispatcher: CoroutineDispa
         return@withContext state
     }
 
+    suspend fun clean() {
+        logger.debug(TAG, "Cleaning persisted playback state")
+        withContext(dispatcher) {
+            sharedPreferences.edit()
+                .putString(PERSISTENT_STORAGE_CURRENT_TRACK_ID, "")
+                .putLong(PERSISTENT_STORAGE_CURRENT_TRACK_POS, 0)
+                .putInt(PERSISTENT_STORAGE_QUEUE_INDEX, 0)
+                .putString(PERSISTENT_STORAGE_QUEUE_IDS, "")
+                .putString(PERSISTENT_STORAGE_LAST_CONTENT_HIERARCHY_ID, "")
+                .apply()
+        }
+    }
+
 }

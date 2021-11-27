@@ -18,15 +18,14 @@ private val logger = Logger
 const val INDEXING_NOTIF_CHANNEL: String = "IndexingNotifChan"
 const val INDEXING_NOTIFICATION_ID: Int = 25468
 
-/**
- * See https://developers.google.com/cars/design/automotive-os/components/toast
- */
 open class GUI(private val scope: CoroutineScope, private val context: Context) {
     private var changeIndexingNotifJob: Job? = null
     private var notificationManager: NotificationManager =
         context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    private var isChannelCreated: Boolean = false
 
     init {
+        isChannelCreated = false
         deleteNotificationChannel()
         createNotificationChannel()
     }
@@ -34,6 +33,7 @@ open class GUI(private val scope: CoroutineScope, private val context: Context) 
     // TODO: almost duplicated code with AudioSession
     private fun createNotificationChannel() {
         if (notificationManager.getNotificationChannel(INDEXING_NOTIF_CHANNEL) != null) {
+            isChannelCreated = true
             logger.debug(TAG, "Indexing notification channel already exists")
             notificationManager.cancelAll()
             return
@@ -48,12 +48,16 @@ open class GUI(private val scope: CoroutineScope, private val context: Context) 
             setShowBadge(true)
         }
         notificationManager.createNotificationChannel(channel)
+        isChannelCreated = true
     }
 
     fun showErrorToastMsg(text: String) {
         showToastMsg(context.getString(R.string.toast_error, text))
     }
 
+    /**
+     * See https://developers.google.com/cars/design/automotive-os/components/toast
+     */
     fun showToastMsg(text: String) {
         logger.debug(TAG, "Showing toast message: $text")
         scope.launch(Dispatchers.Main) {
@@ -68,9 +72,7 @@ open class GUI(private val scope: CoroutineScope, private val context: Context) 
             val builder = getIndexingNotificationBuilder()
             builder.setContentText(context.getString(R.string.notif_indexing_text_in_progress))
             builder.setProgress(0, 0, true)
-            val notificationManager: NotificationManager =
-                context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.notify(INDEXING_NOTIFICATION_ID, builder.build())
+            sendNotification(builder)
         }
     }
 
@@ -80,9 +82,7 @@ open class GUI(private val scope: CoroutineScope, private val context: Context) 
             val builder = getIndexingNotificationBuilder()
             builder.setContentText(context.getString(R.string.notif_indexing_text_in_progress_num_items, numItems))
             builder.setProgress(0, 0, true)
-            val notificationManager: NotificationManager =
-                context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.notify(INDEXING_NOTIFICATION_ID, builder.build())
+            sendNotification(builder)
         }
     }
 
@@ -94,10 +94,18 @@ open class GUI(private val scope: CoroutineScope, private val context: Context) 
             builder.setContentText(context.getString(R.string.notif_indexing_text_completed))
             builder.setProgress(0, 0, false)
             builder.setTimeoutAfter(4000)
-            val notificationManager: NotificationManager =
-                context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.notify(INDEXING_NOTIFICATION_ID, builder.build())
+            sendNotification(builder)
         }
+    }
+
+    private fun sendNotification(builder: Notification.Builder) {
+        if (!isChannelCreated) {
+            logger.warning(TAG, "Cannot send notification, no channel available: ${builder.extras}")
+            return
+        }
+        val notificationManager: NotificationManager =
+            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.notify(INDEXING_NOTIFICATION_ID, builder.build())
     }
 
     private fun getIndexingNotificationBuilder(): Notification.Builder {
@@ -117,19 +125,25 @@ open class GUI(private val scope: CoroutineScope, private val context: Context) 
 
     private fun deleteNotificationChannel() {
         if (notificationManager.getNotificationChannel(INDEXING_NOTIF_CHANNEL) == null) {
+            isChannelCreated = false
             return
         }
         logger.debug(TAG, "Deleting indexing notification channel")
+        isChannelCreated = false
         notificationManager.deleteNotificationChannel(INDEXING_NOTIF_CHANNEL)
     }
 
     fun shutdown() {
-        removeIndexingNotification()
+        runBlocking {
+            removeIndexingNotification()
+        }
         deleteNotificationChannel()
     }
 
     fun suspend() {
-        removeIndexingNotification()
+        runBlocking {
+            removeIndexingNotification()
+        }
     }
 
 }

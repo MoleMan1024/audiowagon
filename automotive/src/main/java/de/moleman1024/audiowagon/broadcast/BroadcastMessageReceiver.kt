@@ -13,14 +13,14 @@ import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.player.AudioPlayer
 import kotlinx.coroutines.*
 
-private const val TAG = "NotificationReceiver"
+private const val TAG = "BroadcastMsgRecv"
 private val logger = Logger
 const val ACTION_PLAY = "de.moleman1024.audiowagon.ACTION_PLAY"
 const val ACTION_PAUSE = "de.moleman1024.audiowagon.ACTION_PAUSE"
 const val ACTION_NEXT = "de.moleman1024.audiowagon.ACTION_NEXT"
 const val ACTION_PREV = "de.moleman1024.audiowagon.ACTION_PREV"
 
-class NotificationReceiver(
+class BroadcastMessageReceiver(
     private val audioPlayer: AudioPlayer,
     private val scope: CoroutineScope,
     private val dispatcher: CoroutineDispatcher
@@ -31,7 +31,7 @@ class NotificationReceiver(
         if (intent == null) {
             return
         }
-        logger.debug(TAG, "Received notification: $intent")
+        logger.debug(TAG, "Received broadcast message: $intent")
         when (intent.action) {
             ACTION_PLAY -> launchInScopeSafely { audioPlayer.start() }
             ACTION_PAUSE -> launchInScopeSafely { audioPlayer.pause() }

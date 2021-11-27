@@ -14,6 +14,7 @@ import android.os.PersistableBundle
 import androidx.appcompat.app.AppCompatActivity
 import de.moleman1024.audiowagon.ACTION_RESTART_SERVICE
 import de.moleman1024.audiowagon.AudioBrowserService
+import de.moleman1024.audiowagon.SharedPrefs
 import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.filestorage.usb.ACTION_USB_ATTACHED
 import de.moleman1024.audiowagon.log.Logger
@@ -52,7 +53,7 @@ class USBDummyActivity : AppCompatActivity() {
         logger.debug(TAG, "onStart()")
         super.onStart()
         startService(Intent(ACTION_RESTART_SERVICE, Uri.EMPTY, this, AudioBrowserService::class.java))
-        if (!Util.isLegalDisclaimerAgreed(this)) {
+        if (!SharedPrefs.isLegalDisclaimerAgreed(this)) {
             showLegalDisclaimer()
         }
         rebroadcastUSBDeviceAttached()

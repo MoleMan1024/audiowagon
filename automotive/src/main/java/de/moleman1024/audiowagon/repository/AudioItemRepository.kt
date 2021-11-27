@@ -43,6 +43,7 @@ class AudioItemRepository(
     //  the internal flash memory, but found no easy way to do that
     // SQL query logging can be added via setQueryCallback()
     // TODO: https://developer.android.com/training/data-storage/app-specific#query-free-space
+    //  I tried with 160 GB of music which resulted in a database of ~15 megabytes
     private var database: AudioItemDatabase = Room.databaseBuilder(
         context,
         AudioItemDatabase::class.java,
@@ -50,8 +51,17 @@ class AudioItemRepository(
     ).build()
     private var pseudoCompilationArtistID: Long? = null
     val trackIDsToKeep = mutableListOf<Long>()
+    private var isClosed: Boolean = false
+
+    init {
+        isClosed = false
+    }
 
     fun close() {
+        if (isClosed) {
+            return
+        }
+        isClosed = true
         database.close()
     }
 
@@ -68,6 +78,10 @@ class AudioItemRepository(
             database.albumDAO().queryAlbumsByArtist(artistID)
         }
         for (album in albums) {
+            if (isClosed) {
+                logger.warning(TAG, "Repository was closed")
+                return listOf()
+            }
             val audioItemAlbum: AudioItem = createAudioItemForAlbum(album, artistID)
             items += audioItemAlbum
         }
@@ -81,6 +95,10 @@ class AudioItemRepository(
         }
         val compilationAlbums: List<Album> = getCompilationAlbumsForArtist(artistID)
         for (album in compilationAlbums) {
+            if (isClosed) {
+                logger.warning(TAG, "Repository was closed")
+                return listOf()
+            }
             val audioItemAlbum: AudioItem = createAudioItemForAlbum(album, artistID)
             audioItemAlbum.isInCompilation = true
             val contentHierarchyCompilation = ContentHierarchyID(ContentHierarchyType.COMPILATION)
@@ -98,6 +116,10 @@ class AudioItemRepository(
         val items: MutableList<AudioItem> = mutableListOf()
         val tracks: List<Track> = database.trackDAO().queryTracksByAlbum(albumID)
         for (track in tracks) {
+            if (isClosed) {
+                logger.warning(TAG, "Repository was closed")
+                return listOf()
+            }
             val audioItemTrack: AudioItem = createAudioItemForTrack(track, albumID = albumID)
             items += audioItemTrack
         }
@@ -109,6 +131,10 @@ class AudioItemRepository(
         val items: MutableList<AudioItem> = mutableListOf()
         val tracks: List<Track> = database.trackDAO().queryTracksByArtist(artistID)
         for (track in tracks) {
+            if (isClosed) {
+                logger.warning(TAG, "Repository was closed")
+                return listOf()
+            }
             val audioItemTrack: AudioItem = createAudioItemForTrack(track, artistID = artistID)
             items += audioItemTrack
         }
@@ -120,6 +146,10 @@ class AudioItemRepository(
         val items: MutableList<AudioItem> = mutableListOf()
         val tracks: List<Track> = database.trackDAO().queryTracksByArtistAndAlbum(artistID, albumID)
         for (track in tracks) {
+            if (isClosed) {
+                logger.warning(TAG, "Repository was closed")
+                return listOf()
+            }
             val audioItemTrack: AudioItem = createAudioItemForTrack(track, artistID, albumID)
             items += audioItemTrack
         }
@@ -157,6 +187,10 @@ class AudioItemRepository(
         val items: MutableList<AudioItem> = mutableListOf()
         val tracks: List<Track> = database.trackDAO().queryTracksByArtistWhereAlbumUnknown(artistID)
         for (track in tracks) {
+            if (isClosed) {
+                logger.warning(TAG, "Repository was closed")
+                return listOf()
+            }
             val audioItemTrack: AudioItem = createAudioItemForTrack(track, artistID, DATABASE_ID_UNKNOWN)
             items += audioItemTrack
         }
@@ -277,6 +311,10 @@ class AudioItemRepository(
         val allCompilationAlbums = database.albumDAO().queryByArtist(variousArtistsInDB.artistId)
         val matchingCompilationAlbums = mutableListOf<Album>()
         for (album in allCompilationAlbums) {
+            if (isClosed) {
+                logger.warning(TAG, "Repository was closed")
+                return listOf()
+            }
             val numTracks = database.trackDAO().queryNumTracksByArtistForAlbum(artistID, album.albumId)
             if (numTracks > 0) {
                 matchingCompilationAlbums.add(album)
@@ -360,6 +398,10 @@ class AudioItemRepository(
              database.trackDAO().queryAll()
         }
         for (track in allTracks) {
+            if (isClosed) {
+                logger.warning(TAG, "Repository was closed")
+                return listOf()
+            }
             val audioItemTrack: AudioItem = createAudioItemForTrack(track)
             items += audioItemTrack
         }
@@ -382,6 +424,10 @@ class AudioItemRepository(
             database.trackDAO().queryTracksLimitOffset(maxNumRows, offsetRows)
         }
         for (track in tracksAtOffset) {
+            if (isClosed) {
+                logger.warning(TAG, "Repository was closed")
+                return listOf()
+            }
             val audioItemTrack: AudioItem = createAudioItemForTrack(track)
             items += audioItemTrack
         }
@@ -397,6 +443,10 @@ class AudioItemRepository(
             database.trackDAO().queryTracksForArtistAlbumLimitOffset(maxNumRows, offsetRows, artistID, albumID)
         }
         for (track in tracksAtOffset) {
+            if (isClosed) {
+                logger.warning(TAG, "Repository was closed")
+                return listOf()
+            }
             val audioItemTrack: AudioItem = createAudioItemForTrack(track, artistID, albumID)
             items += audioItemTrack
         }
@@ -411,6 +461,10 @@ class AudioItemRepository(
             database.trackDAO().queryTracksForAlbumLimitOffset(maxNumRows, offsetRows, albumID)
         }
         for (track in tracksAtOffset) {
+            if (isClosed) {
+                logger.warning(TAG, "Repository was closed")
+                return listOf()
+            }
             val audioItemTrack: AudioItem = createAudioItemForTrack(track, albumID = albumID)
             items += audioItemTrack
         }
@@ -425,6 +479,10 @@ class AudioItemRepository(
             database.trackDAO().queryTracksForArtistLimitOffset(maxNumRows, offsetRows, artistID)
         }
         for (track in tracksAtOffset) {
+            if (isClosed) {
+                logger.warning(TAG, "Repository was closed")
+                return listOf()
+            }
             val audioItemTrack: AudioItem = createAudioItemForTrack(track, artistID = artistID)
             items += audioItemTrack
         }
@@ -440,6 +498,10 @@ class AudioItemRepository(
         val items: MutableList<AudioItem> = mutableListOf()
         val tracks: List<Track> = database.trackDAO().queryRandom(maxNumItems)
         for (track in tracks) {
+            if (isClosed) {
+                logger.warning(TAG, "Repository was closed")
+                return listOf()
+            }
             val audioItemTrack: AudioItem = createAudioItemForTrack(track)
             items += audioItemTrack
         }
@@ -492,6 +554,10 @@ class AudioItemRepository(
         val items: MutableList<AudioItem> = mutableListOf()
         val allAlbums: List<Album> = database.albumDAO().queryAll()
         for (album in allAlbums) {
+            if (isClosed) {
+                logger.warning(TAG, "Repository was closed")
+                return listOf()
+            }
             val audioItemAlbum = createAudioItemForAlbum(album)
             items += audioItemAlbum
         }
@@ -521,6 +587,10 @@ class AudioItemRepository(
             database.albumDAO().queryAlbumsLimitOffset(maxNumRows, offsetRows)
         }
         for (album in albumsAtOffset) {
+            if (isClosed) {
+                logger.warning(TAG, "Repository was closed")
+                return listOf()
+            }
             val audioItemTrack: AudioItem = createAudioItemForAlbum(album)
             items += audioItemTrack
         }
@@ -534,6 +604,10 @@ class AudioItemRepository(
             database.albumDAO().queryAlbumsForArtistLimitOffset(maxNumRows, offsetRows, artistID)
         }
         for (album in albumsAtOffset) {
+            if (isClosed) {
+                logger.warning(TAG, "Repository was closed")
+                return listOf()
+            }
             val audioItemTrack: AudioItem = createAudioItemForAlbum(album, artistID)
             items += audioItemTrack
         }
@@ -603,6 +677,10 @@ class AudioItemRepository(
         val items: MutableList<AudioItem> = mutableListOf()
         val allArtists: List<Artist> = database.artistDAO().queryAll()
         for (artist in allArtists) {
+            if (isClosed) {
+                logger.warning(TAG, "Repository was closed")
+                return listOf()
+            }
             val audioItemArtist = createAudioItemForArtist(artist)
             items += audioItemArtist
         }
@@ -625,6 +703,10 @@ class AudioItemRepository(
             database.artistDAO().queryArtistsLimitOffset(maxNumRows, offsetRows)
         }
         for (artist in artistsAtOffset) {
+            if (isClosed) {
+                logger.warning(TAG, "Repository was closed")
+                return listOf()
+            }
             val audioItemArtist = createAudioItemForArtist(artist)
             items += audioItemArtist
         }
@@ -749,5 +831,7 @@ class AudioItemRepository(
         calendar.set(year.toInt(), Calendar.JUNE, 1)
         return calendar.timeInMillis
     }
+
+    // TODO: class too big, split (e.g. by track, artist, album?)
 
 }
