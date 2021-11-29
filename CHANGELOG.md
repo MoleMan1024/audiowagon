@@ -12,6 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.4] - 2021-11-29
+
+### Fixed
+
+- fixed an issue in 1.1.3 where number of characters for directory groups in browse view was not calculated 
+  [#54](https://github.com/MoleMan1024/audiowagon/issues/54)
+
 
 ## [1.1.3] - 2021-11-27
 

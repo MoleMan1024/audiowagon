@@ -42,6 +42,9 @@ class ContentHierarchyDirectory(
 
     fun createGroups(directoryContents: List<FileLike>): MutableList<MediaItem> {
         logger.debug(TAG, "Too many files/dirs (${directoryContents.size}), creating groups")
+        if (numTitleCharsPerGroup < 0) {
+            setNumTitleCharsPerGroupBasedOnScreenWidth()
+        }
         val groups = mutableListOf<MediaItem>()
         var offsetStart = 0
         val lastGroupIndex = directoryContents.size / CONTENT_HIERARCHY_MAX_NUM_ITEMS

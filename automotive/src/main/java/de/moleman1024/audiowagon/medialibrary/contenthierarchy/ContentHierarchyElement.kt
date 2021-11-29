@@ -62,7 +62,7 @@ abstract class ContentHierarchyElement(
         return numItems > CONTENT_HIERARCHY_MAX_NUM_ITEMS
     }
 
-    private fun setNumTitleCharsPerGroupBasedOnScreenWidth() {
+    fun setNumTitleCharsPerGroupBasedOnScreenWidth() {
         if (numTitleCharsPerGroup > 0) {
             return
         }
