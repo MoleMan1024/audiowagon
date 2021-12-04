@@ -77,7 +77,7 @@ Please see Github for a [list of changes for each version of the app](https://gi
 
 ![Settings](/img/settings.jpg)
 
-- Read through the legal disclaimer and tap "Accept" if you agree. Then return to the main screen using the arrow in top
+- Read through the legal disclaimer and tap "Agree". Then return to the main screen using the arrow in top
   left corner.
 
 ![Legal disclaimer](/img/legal_disclaimer.jpg)
