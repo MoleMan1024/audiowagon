@@ -74,8 +74,7 @@ the settings screen using the option "Read metadata":
   This setting is recommended when you have many audio files on your USB drive but you do not change them very often.
 
 - **Off**: With this setting metadata will *not* be extracted from audio files. You will not be able to navigate nor
-  search by track, album, artist. You can only browse by directory or file. This setting is best suited when most of
-  your audio files do not have metadata.
+  search by track, album, artist. You can only browse by directory or file. 
 
   This setting is recommended when many audio files on your USB drive do not have any/correct metadata.
 
