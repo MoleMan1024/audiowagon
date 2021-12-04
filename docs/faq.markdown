@@ -28,13 +28,6 @@ system is still on and wait for the popup to appear, then you can safely unplug 
 If you do not follow this procedure, and unplug the USB drive while it is still in use, the app could crash or the data
 on your USB drive might be damaged. 
 
-### I get a popup saying "Too many files in a directory". What is that about?
-
-![Too many files in a directory](/img/too_many_files.jpg)
-
-There is a limitation that you can only have up to 128 files in directory in versions 0.6.0 and lower. Directories with
-more files than that are ignored. This has been fixed in version 0.6.1 and higher, please update the app.
-
 ### Why is my USB drive not recognized?
 
 ![FAT32 error](/img/fat32_error.jpg)
@@ -60,17 +53,31 @@ apps &#8594; Show system &#8594; Media Center and tap "Force Stop", then try the
 
 ![Indexing](/img/indexing.jpg)
 
-When connecting a USB drive for the first time the app walks through all the directories on the USB drive and extracts
-*metadata* from all audio files (i.e. artist, album, title, year etc.). This information is written into a database
-stored in the car. This process will take some time (a couple of minutes for 10000 files).
+*Indexing* means that the app will walk through all directories and extract the *metadata* from all files (i.e. artist,
+album, title, year etc.). In version 1.1.5 and higher you can choose the desired behaviour of this process in
+the settings screen using the option "Read metadata":
 
-When connecting the same USB drive again, the app will again go through all directories and all files but will check the
-last file modification date. If the file has been modified, it will re-read the metadata of that file. If not, it will
-take the information from the database. Thus this process should be much quicker than the first time (there is an [open
-feature request](https://github.com/MoleMan1024/audiowagon/issues/21) to make this faster or run less often).
+- **When USB drive connected** *(default setting)*: When connecting a USB drive for the first time the app walks through
+  all the directories on the USB drive and extracts metadata from all audio files. This information is written into a
+  database stored in the car. This process will take some time (a couple of minutes for 10000 files).
 
-In version 0.5.0 and higher you can turn off this indexing of the metadata in the settings screen. Afterwards you will
-not be able to navigate by track/artist/album anymore, only by file/directory.
+  When connecting the same USB drive again, the app will again go through all directories and all files but will check
+  the file modification date. If the file has been modified since it was last indexed, it will re-read the metadata of
+  that file. If not, it will take the information from the database. Thus this process should be much quicker than the
+  first time. However it can still take multiple seconds with large music libraries.
+
+  This setting is recommend when you don't have a lot of audio files on your USB drive.
+
+- **Manually**: Similar to above, but you have to start the indexing process by hand. You should do this whenever you 
+  change files on the USB drive. You can start the indexing using the option "Read metadata now" in the settings screen.
+
+  This setting is recommended when you have many audio files on your USB drive but you do not change them very often.
+
+- **Off**: With this setting metadata will *not* be extracted from audio files. You will not be able to navigate nor
+  search by track, album, artist. You can only browse by directory or file. This setting is best suited when most of
+  your audio files do not have metadata.
+
+  This setting is recommended when many audio files on your USB drive do not have any/correct metadata.
 
 ### Why do my compilation albums show up as separate albums?
 
@@ -133,8 +140,7 @@ If the *title* tag is empty, the file name will be used instead.
 
 ### After adding more files to my USB drive the browse view looks strange
 
-When you add more than 400 tracks/albums/artists the section will be shown using *groups*, it looks like 
-this:
+When you add more than 400 tracks/albums/artists they will be shown using *groups*, it looks like this:
 
 ![album groups](/img/album_groups.jpg)
 

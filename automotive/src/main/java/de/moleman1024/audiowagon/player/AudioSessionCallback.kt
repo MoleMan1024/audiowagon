@@ -11,8 +11,10 @@ import android.os.ResultReceiver
 import android.provider.MediaStore
 import android.support.v4.media.session.MediaSessionCompat
 import de.moleman1024.audiowagon.*
+import de.moleman1024.audiowagon.log.CrashReporting
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.AudioItemType
+import de.moleman1024.audiowagon.medialibrary.MetadataReadSetting
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 
@@ -25,7 +27,8 @@ private val logger = Logger
 class AudioSessionCallback(
     private val audioPlayer: AudioPlayer,
     private val scope: CoroutineScope,
-    private val dispatcher: CoroutineDispatcher
+    private val dispatcher: CoroutineDispatcher,
+    private val crashReporting: CrashReporting
 ) : MediaSessionCompat.Callback() {
 
     val observers = mutableListOf<(AudioSessionChange) -> Unit>()
@@ -39,6 +42,12 @@ class AudioSessionCallback(
             CMD_DISABLE_LOG_TO_USB -> {
                 notifyObservers(AudioSessionChange(AudioSessionChangeType.ON_DISABLE_LOG_TO_USB))
             }
+            CMD_ENABLE_CRASH_REPORTING -> {
+                notifyObservers(AudioSessionChange(AudioSessionChangeType.ON_ENABLE_CRASH_REPORTING))
+            }
+            CMD_DISABLE_CRASH_REPORTING -> {
+                notifyObservers(AudioSessionChange(AudioSessionChangeType.ON_DISABLE_CRASH_REPORTING))
+            }
             CMD_ENABLE_EQUALIZER -> {
                 notifyObservers(AudioSessionChange(AudioSessionChangeType.ON_ENABLE_EQUALIZER))
             }
@@ -51,17 +60,26 @@ class AudioSessionCallback(
                     args?.getString(EQUALIZER_PRESET_KEY, EqualizerPreset.LESS_BASS.name).toString()
                 notifyObservers(audioSessionChange)
             }
-            CMD_ENABLE_READ_METADATA -> {
-                notifyObservers(AudioSessionChange(AudioSessionChangeType.ON_ENABLE_READ_METADATA))
+            CMD_SET_METADATAREAD_SETTING -> {
+                val audioSessionChange = AudioSessionChange(AudioSessionChangeType.ON_SET_METADATAREAD_SETTING)
+                audioSessionChange.metadataReadSetting = args?.getString(METADATAREAD_SETTING_KEY,
+                    MetadataReadSetting.WHEN_USB_CONNECTED.name).toString()
+                notifyObservers(audioSessionChange)
             }
-            CMD_DISABLE_READ_METADTA -> {
-                notifyObservers(AudioSessionChange(AudioSessionChangeType.ON_DISABLE_READ_METADATA))
+            CMD_READ_METADATA_NOW -> {
+                notifyObservers(AudioSessionChange(AudioSessionChangeType.ON_READ_METADATA_NOW))
             }
             CMD_ENABLE_REPLAYGAIN -> {
                 notifyObservers(AudioSessionChange(AudioSessionChangeType.ON_ENABLE_REPLAYGAIN))
             }
             CMD_DISABLE_REPLAYGAIN -> {
                 notifyObservers(AudioSessionChange(AudioSessionChangeType.ON_DISABLE_REPLAYGAIN))
+            }
+            CMD_SET_AUDIOFOCUS_SETTING -> {
+                val audioSessionChange = AudioSessionChange(AudioSessionChangeType.ON_SET_AUDIOFOCUS_SETTING)
+                audioSessionChange.audioFocusSetting = args?.getString(AUDIOFOCUS_SETTING_KEY,
+                    AudioFocusSetting.PAUSE.name).toString()
+                notifyObservers(audioSessionChange)
             }
             CMD_EJECT -> {
                 notifyObservers(AudioSessionChange(AudioSessionChangeType.ON_EJECT))
@@ -262,7 +280,7 @@ class AudioSessionCallback(
     }
 
     private fun launchInScopeSafely(func: suspend () -> Unit) {
-        Util.launchInScopeSafely(scope, dispatcher, logger, TAG, func)
+        Util.launchInScopeSafely(scope, dispatcher, logger, TAG, crashReporting, func)
     }
 
     // we don't use onSetShuffleMode and onSetRepeatMode here because AAOS does not display the GUI icons for these

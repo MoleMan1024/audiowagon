@@ -23,6 +23,7 @@ import de.moleman1024.audiowagon.exceptions.DriveAlmostFullException
 import de.moleman1024.audiowagon.exceptions.NoItemsInQueueException
 import de.moleman1024.audiowagon.filestorage.AudioFile
 import de.moleman1024.audiowagon.filestorage.AudioFileStorage
+import de.moleman1024.audiowagon.log.CrashReporting
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
@@ -58,6 +59,7 @@ class AudioSession(
     private val dispatcher: CoroutineDispatcher,
     private val gui: GUI,
     private val persistentStorage: PersistentStorage,
+    private val crashReporting: CrashReporting
 ) {
     private var mediaSession: MediaSessionCompat
     private var audioSessionCallback: AudioSessionCallback
@@ -70,10 +72,11 @@ class AudioSession(
     private val mediaSessionDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
     private var lastContentHierarchyIDPlayed: String = ""
     private val audioFocus: AudioFocus = AudioFocus(context)
-    private val audioPlayer: AudioPlayer = AudioPlayer(audioFileStorage, audioFocus, scope, context)
-    private val audioSessionNotifications = AudioSessionNotifications(context, scope, dispatcher, audioPlayer)
+    private val audioPlayer: AudioPlayer = AudioPlayer(audioFileStorage, audioFocus, scope, context, crashReporting)
+    private val audioSessionNotifications =
+        AudioSessionNotifications(context, scope, dispatcher, audioPlayer, crashReporting)
     private val audioFocusChangeListener: AudioFocusChangeCallback =
-        AudioFocusChangeCallback(audioPlayer, scope, dispatcher)
+        AudioFocusChangeCallback(audioPlayer, scope, dispatcher, crashReporting)
     private var storePersistentJob: Job? = null
     private var onPlayFromMediaIDJob: Job? = null
     private var isFirstOnPlayEventAfterReset: Boolean = true
@@ -85,7 +88,7 @@ class AudioSession(
     init {
         logger.debug(TAG, "Init AudioSession()")
         isShuttingDown = false
-        audioFocus.audioFocusChangeListener = audioFocusChangeListener
+        initAudioFocus()
         val mediaButtonIntent = Intent(Intent.ACTION_MEDIA_BUTTON)
         mediaButtonIntent.setClass(context, MediaButtonReceiver::class.java)
         // TODO: unclear which is the correct mutability flag to use
@@ -93,7 +96,7 @@ class AudioSession(
         val pendingMediaBtnIntent: PendingIntent = PendingIntent.getBroadcast(
             context, REQUEST_CODE, mediaButtonIntent, 0
         )
-        audioSessionCallback = AudioSessionCallback(audioPlayer, scope, dispatcher)
+        audioSessionCallback = AudioSessionCallback(audioPlayer, scope, dispatcher, crashReporting)
         mediaSession = MediaSessionCompat(context, SESSION_TAG).apply {
             setCallback(audioSessionCallback, Handler(Looper.getMainLooper()))
             // TODO: remove queue title? does not seem to be used in AAOS
@@ -110,6 +113,16 @@ class AudioSession(
         observePlaybackStatus()
         observePlaybackQueue()
         observeSessionCallbacks()
+    }
+
+    private fun initAudioFocus() {
+        audioFocus.audioFocusChangeListener = audioFocusChangeListener
+        try {
+            val audioFocusSettingStr = SharedPrefs.getAudioFocusSetting(context)
+            audioFocus.setBehaviour(audioFocusSettingStr)
+        } catch (exc: IllegalArgumentException) {
+            logger.exception(TAG, exc.message.toString(), exc)
+        }
     }
 
     /**
@@ -496,6 +509,16 @@ class AudioSession(
                         audioFileStorage.disableLogToUSB()
                     }
                 }
+                AudioSessionChangeType.ON_ENABLE_CRASH_REPORTING -> {
+                    launchInScopeSafely(audioSessionChange.type.name) {
+                        crashReporting.enable()
+                    }
+                }
+                AudioSessionChangeType.ON_DISABLE_CRASH_REPORTING -> {
+                    launchInScopeSafely(audioSessionChange.type.name) {
+                        crashReporting.disable()
+                    }
+                }
                 AudioSessionChangeType.ON_ENABLE_EQUALIZER -> {
                     launchInScopeSafely(audioSessionChange.type.name) {
                         audioPlayer.enableEqualizer()
@@ -541,14 +564,22 @@ class AudioSession(
                         audioPlayer.setEqualizerPreset(equalizerPreset)
                     }
                 }
-                AudioSessionChangeType.ON_ENABLE_READ_METADATA -> {
+                AudioSessionChangeType.ON_SET_METADATAREAD_SETTING -> {
                     launchInScopeSafely(audioSessionChange.type.name) {
-                        notifyObservers(SettingChangeEvent(SettingState.ENABLE_READ_METADATA))
+                        notifyObservers(
+                            SettingChangeEvent(SettingKey.READ_METADATA_SETTING, audioSessionChange.metadataReadSetting)
+                        )
                     }
                 }
-                AudioSessionChangeType.ON_DISABLE_READ_METADATA -> {
+                AudioSessionChangeType.ON_READ_METADATA_NOW -> {
                     launchInScopeSafely(audioSessionChange.type.name) {
-                        notifyObservers(SettingChangeEvent(SettingState.DISABLE_READ_METADATA))
+                        notifyObservers(SettingChangeEvent(SettingKey.READ_METADATA_NOW))
+                    }
+                }
+                AudioSessionChangeType.ON_SET_AUDIOFOCUS_SETTING -> {
+                    launchInScopeSafely(audioSessionChange.type.name) {
+                        audioPlayer.pause()
+                        audioFocus.setBehaviour(audioSessionChange.audioFocusSetting)
                     }
                 }
                 AudioSessionChangeType.ON_EJECT -> {
@@ -960,7 +991,8 @@ class AudioSession(
                 gui.showErrorToastMsg(context.getString(R.string.toast_error_not_enough_space_for_log))
             }
             else -> {
-                // ignore
+                crashReporting.logMessage(msg)
+                crashReporting.recordException(exc)
             }
         }
     }

@@ -103,10 +103,9 @@ gesteld ten aanzien van enige vorm van schade ontstaan door het gebruik van deze
 MoleMan1024</string>
 	<string name="legal_disclaimer_third_party_licenses_heading">3rd party licenties</string>
 	<string name="legal_disclaimer_third_party_licenses_text">Deze app gebruikt content van de volgende andere makers,
-allen gelicenseerd onder Apache 2.0:\n\n&#x2013;meerdere libraries gemaakt door de Android Open Source
+allen gelicenseerd onder Apache 2.0:\n\n&#x2013; meerdere libraries gemaakt door de Android Open Source
 Project\n&#x2013; de libaums library is gemaakt door Magnus Jahnen\n&#x2013; Material design vector iconen
-zijn gemaakt door
-Google\n\nLicentie teksten:\nwww.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/licenses/gpl-3.0.html</string>
+zijn gemaakt door Google\n&#x2013; Firebase Crashlytics\n\nLicentie teksten:\nwww.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/licenses/gpl-3.0.html</string>
 	<string name="legal_disclaimer_confirm_btn">Accepteren</string>
 	<string name="legal_disclaimer_cancel_btn">Annuleren</string>
 	<string name="toast_error_no_tracks">Geen nummers</string>
@@ -119,4 +118,16 @@ Google\n\nLicentie teksten:\nwww.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/li
 	<string name="setting_database_status_title">Database</string>
 	<string name="setting_enable_replaygain">ReplayGain</string>
 	<string name="toast_searching_voice_input">Zoeken: \"%1$s\"</string>
+	<string name="setting_read_metadata_when_connected">Wanneer USB-stick aangesloten</string>
+	<string name="setting_read_metadata_manual">Handmatig</string>
+	<string name="setting_read_metadata_off">Uit</string>
+	<string name="setting_read_metadata_start_now">Metadata nu lezen</string>
+	<string name="browse_tree_metadata_not_yet_indexed_title">Metadata nog niet geïndexeerd</string>
+	<string name="browse_tree_metadata_not_yet_indexed_desc">Check de instellingen</string>
+	<string name="setting_audiofocus_behavior">Gedrag tijdens routebegeleiding</string>
+	<string name="setting_audiofocus_pause">Pauze</string>
+	<string name="setting_audiofocus_duck">Lager volume</string>
+	<string name="setting_crash_reporting_title">Stuur crashrapporten</string>
+	<string name="setting_crash_reporting_desc">Stuur automatisch crashrapporten naar de ontwikkelaar om te helpen
+de app verbeteren (vereist een internetverbinding).</string>
 </resources>

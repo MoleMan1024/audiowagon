@@ -9,6 +9,8 @@ SPDX-License-Identifier: GPL-3.0-or-later
 		package="de.moleman1024.audiowagon">
 
 	<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+	<!-- the app implicitly uses android.permission.INTERNET and android.permission.ACCESS_NETWORK_STATE for 
+	Firebase Crashlytics -->
 
 	<uses-feature
 			android:name="android.hardware.type.automotive"
@@ -45,6 +47,10 @@ SPDX-License-Identifier: GPL-3.0-or-later
 		<meta-data
 				android:name="com.android.automotive"
 				android:resource="@xml/automotive_app_desc" />
+		<meta-data
+				android:name="firebase_crashlytics_collection_enabled"
+				android:value="false" />
+
 		<dist:module dist:instant="true" />
 
 		<activity
@@ -94,7 +100,9 @@ SPDX-License-Identifier: GPL-3.0-or-later
 				<action android:name="android.car.intent.action.PLAY_USB" />
 			</intent-filter>
 		</service>
-		<receiver android:name="androidx.media.session.MediaButtonReceiver">
+		<receiver
+				android:name="androidx.media.session.MediaButtonReceiver"
+				android:exported="true">
 			<intent-filter>
 				<action android:name="android.intent.action.MEDIA_BUTTON" />
 			</intent-filter>

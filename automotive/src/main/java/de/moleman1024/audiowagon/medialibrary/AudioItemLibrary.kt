@@ -16,6 +16,7 @@ import androidx.media.utils.MediaConstants
 import de.moleman1024.audiowagon.GUI
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.exceptions.CannotRecoverUSBException
+import de.moleman1024.audiowagon.exceptions.NoAudioItemException
 import de.moleman1024.audiowagon.filestorage.AudioFile
 import de.moleman1024.audiowagon.filestorage.AudioFileStorage
 import de.moleman1024.audiowagon.log.Logger
@@ -234,7 +235,7 @@ class AudioItemLibrary(
         val trackContentHierarchy = ContentHierarchySingleTrack(contentHierarchyID, context, this)
         val audioItems: List<AudioItem> = trackContentHierarchy.getAudioItems()
         if (audioItems.isEmpty()) {
-            throw RuntimeException("No track for content hierarchy ID: $contentHierarchyID")
+            throw NoAudioItemException("No track for content hierarchy ID: $contentHierarchyID")
         }
         var startIndex: Int
         startIndex = audioItems.indexOfFirst {
@@ -254,7 +255,7 @@ class AudioItemLibrary(
         val fileContentHierarchy = ContentHierarchySingleFile(contentHierarchyID, context, this, audioFileStorage)
         val audioItems: List<AudioItem> = fileContentHierarchy.getAudioItems()
         if (audioItems.isEmpty()) {
-            throw RuntimeException("No file for content hierarchy ID: $contentHierarchyID")
+            throw NoAudioItemException("No file for content hierarchy ID: $contentHierarchyID")
         }
         var startIndex: Int
         startIndex = audioItems.indexOfFirst {
@@ -526,6 +527,7 @@ class AudioItemLibrary(
         if (isBuildingLibray) {
             logger.debug(TAG, "cancelBuildLibrary()")
             isBuildLibraryCancelled = true
+            isBuildingLibray = false
         }
     }
 

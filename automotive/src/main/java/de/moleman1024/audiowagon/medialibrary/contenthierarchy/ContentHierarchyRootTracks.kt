@@ -11,10 +11,12 @@ import android.support.v4.media.MediaBrowserCompat.MediaItem
 import android.support.v4.media.MediaDescriptionCompat
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.SharedPrefs
-import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.filestorage.AudioFileStorage
 import de.moleman1024.audiowagon.log.Logger
-import de.moleman1024.audiowagon.medialibrary.*
+import de.moleman1024.audiowagon.medialibrary.AudioItem
+import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
+import de.moleman1024.audiowagon.medialibrary.MetadataReadSetting
+import de.moleman1024.audiowagon.medialibrary.RESOURCE_ROOT_URI
 
 private const val TAG = "CHRootTracks"
 private val logger = Logger
@@ -32,7 +34,8 @@ class ContentHierarchyRootTracks(
 
     override suspend fun getMediaItems(): List<MediaItem> {
         val items = mutableListOf<MediaItem>()
-        if (!audioItemLibrary.areAnyReposAvail()) {
+        val numTracksInRepo = audioItemLibrary.getPrimaryRepository()?.getNumTracks() ?: 0
+        if (!audioItemLibrary.areAnyReposAvail() || numTracksInRepo <= 0) {
             logger.debug(TAG, "Showing pseudo MediaItem 'no entries available'")
             items += createPseudoNoEntriesItem()
             return items
@@ -81,7 +84,23 @@ class ContentHierarchyRootTracks(
         var subtitle = context.getString(R.string.browse_tree_no_usb_drive)
         if (numConnectedDevices > 0) {
             if (SharedPrefs.isLegalDisclaimerAgreed(context)) {
-                subtitle = context.getString(R.string.browse_tree_usb_drive_ejected)
+                if (audioFileStorage.areAnyStoragesAvail()) {
+                    val metadataReadSettingStr = SharedPrefs.getMetadataReadSetting(context)
+                    var metadataReadSetting: MetadataReadSetting = MetadataReadSetting.WHEN_USB_CONNECTED
+                    try {
+                        metadataReadSetting = MetadataReadSetting.valueOf(metadataReadSettingStr)
+                    } catch (exc: IllegalArgumentException) {
+                        logger.exception(TAG, exc.message.toString(), exc)
+                    }
+                    if (metadataReadSetting == MetadataReadSetting.MANUALLY) {
+                        title = context.getString(R.string.browse_tree_metadata_not_yet_indexed_title)
+                        subtitle = context.getString(R.string.browse_tree_metadata_not_yet_indexed_desc)
+                    } else {
+                        subtitle = context.getString(R.string.browse_tree_usb_drive_ejected)
+                    }
+                } else {
+                    subtitle = context.getString(R.string.browse_tree_usb_drive_ejected)
+                }
             } else {
                 title = context.getString(R.string.browse_tree_need_to_agree_legal_title)
                 subtitle = context.getString(R.string.browse_tree_need_to_agree_legal_desc)

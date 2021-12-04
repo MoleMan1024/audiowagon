@@ -1,12 +1,6 @@
 # Privacy Policy
 
-## Data collection
-
-The AudioWagon app does *not send or receive any data via the internet*. The app only uses data stored on the USB
-drive or in the app-specific database created in the car's filesystem.
-
-The app does *not* collect any location data, IP/MAC addresses or similar, thus this information is also *not*
-contained in the log file.
+This document explains about personal data that the AudioWagon app collects and how it is processed.
 
 ## Log files
 
@@ -19,10 +13,19 @@ The log file contains the following personal data that could be used to identify
 - filenames and metadata of audio files on the USB drive
 - volume name, brand and manufacturer of the USB drive
 
+## Firebase Crashlytics
+
+The app uses *Firebase Crashlytics*, a service provided by Google, to collect *anonymous crash and error reports* and
+will transfer them to the developer via internet. This is done so the developer can discover and fix issues in the app.
+
+The user of the app *needs to opt-in* to use this feature via the settings screen. This setting is *off by default*.
+
+A detailed description about the data collected, how and where it is being processed can be found
+[in Google's Firebase support documentation for Crashlytics](https://firebase.google.com/support/privacy?hl=en).
+
 ## Sharing usage & diagnostics data via Google
 
-The Android Automotive system however may collect some information regarding the usage of the app and will also send
-crash reports to the developer via internet. This is a feature implemented by Google, not by the app. [Check here to
-learn more about this feature and how to turn it off](https://support.google.com/accounts/answer/6078260?hl=en) (however
-as a developer I should point out that it is quite helpful to receive reports about crashes so I can improve the app).
+The Android Automotive system may collect some *information regarding the usage of the app* and will also send
+*crash reports* to the developer via internet. This is a feature implemented by the Android system, not specifically
+by the app. [Check here to learn more about this feature and how to turn it off](https://support.google.com/accounts/answer/6078260?hl=en).
 

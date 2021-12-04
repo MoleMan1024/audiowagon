@@ -47,6 +47,7 @@ import de.moleman1024.audiowagon.broadcast.PowerEventReceiver
 import de.moleman1024.audiowagon.exceptions.CannotRecoverUSBException
 import de.moleman1024.audiowagon.exceptions.MissingNotifChannelException
 import de.moleman1024.audiowagon.filestorage.*
+import de.moleman1024.audiowagon.log.CrashReporting
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.*
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyElement
@@ -78,9 +79,14 @@ const val CMD_ENABLE_REPLAYGAIN = "de.moleman1024.audiowagon.CMD_ENABLE_REPLAYGA
 const val CMD_DISABLE_REPLAYGAIN = "de.moleman1024.audiowagon.CMD_DISABLE_REPLAYGAIN"
 const val CMD_SET_EQUALIZER_PRESET = "de.moleman1024.audiowagon.CMD_SET_EQUALIZER_PRESET"
 const val EQUALIZER_PRESET_KEY = "preset"
-const val CMD_ENABLE_READ_METADATA = "de.moleman1024.audiowagon.CMD_ENABLE_READ_METADATA"
-const val CMD_DISABLE_READ_METADTA = "de.moleman1024.audiowagon.CMD_DISABLE_READ_METADTA"
+const val CMD_SET_METADATAREAD_SETTING = "de.moleman1024.audiowagon.CMD_SET_METADATAREAD_SETTING"
+const val METADATAREAD_SETTING_KEY = "metadata_read_setting"
+const val CMD_READ_METADATA_NOW = "de.moleman1024.audiowagon.CMD_READ_METADATA_NOW"
 const val CMD_EJECT = "de.moleman1024.audiowagon.CMD_EJECT"
+const val AUDIOFOCUS_SETTING_KEY = "audiofocus_setting"
+const val CMD_SET_AUDIOFOCUS_SETTING = "de.moleman1024.audiowagon.CMD_SET_AUDIOFOCUS_SETTING"
+const val CMD_ENABLE_CRASH_REPORTING = "de.moleman1024.audiowagon.CMD_ENABLE_CRASH_REPORTING"
+const val CMD_DISABLE_CRASH_REPORTING = "de.moleman1024.audiowagon.CMD_DISABLE_CRASH_REPORTING"
 
 
 @ExperimentalCoroutinesApi
@@ -106,6 +112,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     private lateinit var gui: GUI
     private lateinit var persistentStorage: PersistentStorage
     private lateinit var powerEventReceiver: PowerEventReceiver
+    private lateinit var crashReporting: CrashReporting
     private var dispatcher: CoroutineDispatcher = Dispatchers.IO
     private var libraryCreationJob: Job? = null
     private var restoreFromPersistentJob: Job? = null
@@ -119,6 +126,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     private var isShuttingDown: Boolean = false
     private var isSuspended: Boolean = false
     private var isLibraryCreationCancelled: Boolean = false
+    private var metadataReadNowRequested: Boolean = false
     private val contentHierarchyFilesRoot =
         ContentHierarchyElement.serialize(ContentHierarchyID(ContentHierarchyType.ROOT_FILES))
     private val contentHierarchyTracksRoot =
@@ -143,6 +151,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         logger.debug(TAG, "onCreate()")
         isShuttingDown = false
         super.onCreate()
+        crashReporting = CrashReporting(applicationContext, lifecycleScope, dispatcher)
         powerEventReceiver = PowerEventReceiver()
         powerEventReceiver.audioBrowserService = this
         val shutdownFilter = IntentFilter().apply {
@@ -173,7 +182,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         if (sessionToken == null) {
             audioSession =
                 AudioSession(this, audioItemLibrary, audioFileStorage, lifecycleScope, dispatcher, gui,
-                    persistentStorage)
+                    persistentStorage, crashReporting)
             sessionToken = audioSession.sessionToken
             logger.debug(TAG, "New media session token: $sessionToken")
         }
@@ -278,14 +287,23 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     }
 
     private fun handleSettingChangeEvent(event: SettingChangeEvent) {
-        when (event.changeTo) {
-            SettingState.ENABLE_READ_METADATA -> {
-                updateConnectedDevices()
-            }
-            SettingState.DISABLE_READ_METADATA -> {
+        when (event.key) {
+            SettingKey.READ_METADATA_SETTING -> {
                 audioFileStorage.cancelIndexing()
                 audioItemLibrary.cancelBuildLibrary()
                 cancelLibraryCreation()
+                when (event.value) {
+                    MetadataReadSetting.WHEN_USB_CONNECTED.name -> {
+                        updateConnectedDevices()
+                    }
+                }
+            }
+            SettingKey.READ_METADATA_NOW -> {
+                metadataReadNowRequested = true
+                audioFileStorage.cancelIndexing()
+                audioItemLibrary.cancelBuildLibrary()
+                cancelLibraryCreation()
+                updateConnectedDevices()
             }
         }
     }
@@ -344,7 +362,8 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             notifyBrowserChildrenChangedAllLevels()
             return
         }
-        if (!SharedPrefs.isMetadataReadingEnabled(this)) {
+        val metadataReadSetting = getMetadataReadSettingEnum()
+        if (metadataReadSetting == MetadataReadSetting.OFF) {
             logger.info(TAG, "Metadata extraction is disabled in settings")
             launchRestoreFromPersistentJob()
             notifyBrowserChildrenChangedAllLevels()
@@ -426,8 +445,13 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             audioFileStorage.getStorageLocationForID(it)
         }
         storageLocations.forEach { audioItemLibrary.initRepository(it.storageID) }
-        val audioFileProducerChannel = audioFileStorage.indexStorageLocations(storageIDs)
-        audioItemLibrary.buildLibrary(audioFileProducerChannel) { notifyBrowserChildrenChangedAllLevels() }
+        val metadataReadSetting = getMetadataReadSettingEnum()
+        if (metadataReadSetting == MetadataReadSetting.WHEN_USB_CONNECTED
+            || (metadataReadSetting == MetadataReadSetting.MANUALLY && metadataReadNowRequested)) {
+            metadataReadNowRequested = false
+            val audioFileProducerChannel = audioFileStorage.indexStorageLocations(storageIDs)
+            audioItemLibrary.buildLibrary(audioFileProducerChannel) { notifyBrowserChildrenChangedAllLevels() }
+        }
         storageIDs.forEach {
             audioFileStorage.setIndexingStatus(it, IndexingStatus.COMPLETED)
         }
@@ -595,6 +619,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             logger.warning(TAG, "Already shutting down")
         }
         isShuttingDown = true
+        metadataReadNowRequested = false
         logger.info(TAG, "shutdown()")
         if (lifecycleRegistry.currentState == Lifecycle.State.DESTROYED) {
             return
@@ -742,9 +767,11 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                 result.sendResult(mediaItems.toMutableList())
             } catch (exc: IOException) {
                 logger.exception(TAG, exc.message.toString(), exc)
+                crashReporting.recordException(exc)
                 result.sendResult(null)
             } catch (exc: RuntimeException) {
                 logger.exception(TAG, exc.message.toString(), exc)
+                crashReporting.recordException(exc)
                 if (!isShuttingDown) {
                     gui.showErrorToastMsg(getString(R.string.toast_error_unknown))
                 }
@@ -773,6 +800,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     private fun setUncaughtExceptionHandler() {
         val oldHandler = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+            crashReporting.recordException(throwable)
             // only log uncaught exceptions if we still have a USB device
             if ("(USB_DEVICE_DETACHED|did you unplug)".toRegex().containsMatchIn(throwable.stackTraceToString())) {
                 logger.exceptionLogcatOnly(TAG, "Uncaught exception (USB failed)", throwable)
@@ -812,7 +840,18 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     }
 
     private fun launchInScopeSafely(func: suspend () -> Unit): Job {
-        return Util.launchInScopeSafely(lifecycleScope, dispatcher, logger, TAG, func)
+        return Util.launchInScopeSafely(lifecycleScope, dispatcher, logger, TAG, crashReporting, func)
+    }
+
+    private fun getMetadataReadSettingEnum(): MetadataReadSetting {
+        val metadataReadSettingStr = SharedPrefs.getMetadataReadSetting(this)
+        var metadataReadSetting: MetadataReadSetting = MetadataReadSetting.WHEN_USB_CONNECTED
+        try {
+            metadataReadSetting = MetadataReadSetting.valueOf(metadataReadSettingStr)
+        } catch (exc: IllegalArgumentException) {
+            logger.exception(TAG, exc.message.toString(), exc)
+        }
+        return metadataReadSetting
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.NONE)

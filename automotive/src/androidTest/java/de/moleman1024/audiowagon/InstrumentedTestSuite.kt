@@ -20,6 +20,10 @@ import org.junit.runners.Suite
 // TODO: test onPlay during initilization is latched for later
 // TODO: test #44 order of items returned in some SQL queries
 // TODO: test that we avoid duplicate tracks when creating random playback queue
+// TODO: add test for #54, add >400 directories with very small music file into SD card image
+// TODO: measure memory again, see where I use too much: others 15MB, Code 15MB, Stack 0.08MB, Graphics 7 MB, Native
+//  23 MB, Java 7MB
+
 
 @ExperimentalCoroutinesApi
 @RunWith(Suite::class)

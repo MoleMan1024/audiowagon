@@ -9,6 +9,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import de.moleman1024.audiowagon.Util
+import de.moleman1024.audiowagon.log.CrashReporting
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.player.AudioPlayer
 import kotlinx.coroutines.*
@@ -23,7 +24,8 @@ const val ACTION_PREV = "de.moleman1024.audiowagon.ACTION_PREV"
 class BroadcastMessageReceiver(
     private val audioPlayer: AudioPlayer,
     private val scope: CoroutineScope,
-    private val dispatcher: CoroutineDispatcher
+    private val dispatcher: CoroutineDispatcher,
+    private val crashReporting: CrashReporting
 ) :
     BroadcastReceiver() {
 
@@ -44,7 +46,7 @@ class BroadcastMessageReceiver(
     }
 
     private fun launchInScopeSafely(func: suspend () -> Unit) {
-        Util.launchInScopeSafely(scope, dispatcher, logger, TAG, func)
+        Util.launchInScopeSafely(scope, dispatcher, logger, TAG, crashReporting, func)
     }
 
 }

@@ -104,7 +104,7 @@ programvaren.</string>
 	<string name="legal_disclaimer_third_party_licenses_text">Denne appen bruker innhold fra følgende andre
 utviklere/prosjekter, alle lisensiert under Apache 2.0:\n\n&#x2013; diverse biblioteker fra Android Open Source
 Project\n&#x2013; libaums-biblioteket laget av Magnus Jahnen\n&#x2013; Material design vektorikoner fra
-Google\n\nLisenstekster:\nwww.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/licenses/gpl-3.0.html</string>
+Google\n&#x2013; Firebase Crashlytics\n\nLisenstekster:\nwww.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/licenses/gpl-3.0.html</string>
 	<string name="legal_disclaimer_confirm_btn">Enig</string>
 	<string name="legal_disclaimer_cancel_btn">Avbryt</string>
 	<string name="toast_error_no_tracks">Ingen spor</string>
@@ -117,4 +117,16 @@ Google\n\nLisenstekster:\nwww.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/licen
 	<string name="setting_database_status_title">Database</string>
 	<string name="setting_enable_replaygain">ReplayGain</string>
 	<string name="toast_searching_voice_input">Søk etter: \"%1$s\"</string>
+	<string name="setting_read_metadata_when_connected">Når USB-stasjonen er tilkoblet</string>
+	<string name="setting_read_metadata_manual">manuelt</string>
+	<string name="setting_read_metadata_off">Av</string>
+	<string name="setting_read_metadata_start_now">Les metadata nå</string>
+	<string name="browse_tree_metadata_not_yet_indexed_title">Metadata er ennå ikke indeksert</string>
+	<string name="browse_tree_metadata_not_yet_indexed_desc">Sjekk innstillinger</string>
+	<string name="setting_audiofocus_behavior">Oppførsel under veiledning</string>
+	<string name="setting_audiofocus_pause">Pause</string>
+	<string name="setting_audiofocus_duck">Lavere volum</string>
+	<string name="setting_crash_reporting_title">Send krasjrapporter</string>
+	<string name="setting_crash_reporting_desc">Send krasjrapporter automatisk til utvikleren for å hjelpe
+forbedre appen (krever internettforbindelse).</string>
 </resources>

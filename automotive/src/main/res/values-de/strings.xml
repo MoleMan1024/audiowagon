@@ -105,8 +105,8 @@ entstanden sind, haftbar gemacht werden.</string>
 	<string name="legal_disclaimer_third_party_licenses_text">Diese App verwendet Software aus folgenden anderen
 Quellen, alle lizenziert unter Apache 2.0:\n\n&#x2013; verschiedene Bibliotheken, entwickelt vom Android Open Source
 Project\n&#x2013; die libaums Bibliothek, entwickelt von Magnus Jahnen\n&#x2013; Material Design
-Vektorgrafiken, entwickelt von
-Google\n\nLizenzvereinbarungen:\nwww.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/licenses/gpl-3.0.html</string>
+Vektorgrafiken, entwickelt von Google\n&#x2013; Firebase Crashlytics\n\nLizenzvereinbarungen:\nwww.apache.org/licenses/LICENSE-2.0
+\nwww.gnu.org/licenses/gpl-3.0.html</string>
 	<string name="legal_disclaimer_confirm_btn">Zustimmen</string>
 	<string name="legal_disclaimer_cancel_btn">Abbrechen</string>
 	<string name="toast_error_no_tracks">Keine Titel</string>
@@ -120,4 +120,16 @@ Sie Unterverzeichnisse.</string>
 	<string name="setting_database_status_title">Datenbank</string>
 	<string name="setting_enable_replaygain">ReplayGain</string>
 	<string name="toast_searching_voice_input">Suche nach: \"%1$s\"</string>
+	<string name="setting_read_metadata_when_connected">Wenn USB-Stick verbunden</string>
+	<string name="setting_read_metadata_manual">Manuell</string>
+	<string name="setting_read_metadata_off">Aus</string>
+	<string name="setting_read_metadata_start_now">Jetzt Metadaten auslesen</string>
+	<string name="browse_tree_metadata_not_yet_indexed_title">Metadata noch nicht ausgelesen</string>
+	<string name="browse_tree_metadata_not_yet_indexed_desc">Siehe Einstellungen</string>
+	<string name="setting_audiofocus_behavior">Verhalten bei Routenführung</string>
+	<string name="setting_audiofocus_pause">Pause</string>
+	<string name="setting_audiofocus_duck">Lautstärke senken</string>
+	<string name="setting_crash_reporting_title">Fehlerberichte senden</string>
+	<string name="setting_crash_reporting_desc">Fehler automatisch an den Entwickler senden, um die App zu
+verbessern (benötigt Internetverbindung).</string>
 </resources>

@@ -19,6 +19,7 @@ import de.moleman1024.audiowagon.exceptions.AlreadyStoppedException
 import de.moleman1024.audiowagon.exceptions.MissingEffectsException
 import de.moleman1024.audiowagon.exceptions.NoItemsInQueueException
 import de.moleman1024.audiowagon.filestorage.AudioFileStorage
+import de.moleman1024.audiowagon.log.CrashReporting
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.*
 import java.io.IOException
@@ -45,6 +46,7 @@ class AudioPlayer(
     private val audioFocus: AudioFocus,
     private val scope: CoroutineScope,
     private val context: Context,
+    private val crashReporting: CrashReporting
 ) {
     // currentMediaPlayer shall point to currently playing media player
     private var currentMediaPlayer: MediaPlayer? = null
@@ -936,7 +938,7 @@ class AudioPlayer(
     }
 
     private fun launchInScopeSafely(func: suspend () -> Unit): Job {
-        return Util.launchInScopeSafely(scope, dispatcher, logger, TAG, func)
+        return Util.launchInScopeSafely(scope, dispatcher, logger, TAG, crashReporting, func)
     }
 
     suspend fun isPlaybackQueueEmpty(): Boolean = withContext(dispatcher) {

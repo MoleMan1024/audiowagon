@@ -26,15 +26,31 @@ SPDX-License-Identifier: GPL-3.0-or-later
 				app:title="@string/setting_enable_replaygain"
 				app:persistent="true"
 				app:defaultValue="false" />
+		<ListPreference
+				app:key="audioFocus"
+				app:title="@string/setting_audiofocus_behavior"
+				app:persistent="true"
+				app:defaultValue="PAUSE"
+				app:useSimpleSummaryProvider="true"
+				app:entries="@array/audiofocus_settings"
+				app:entryValues="@array/audiofocus_settings_values"/>
 	</PreferenceCategory>
 	<PreferenceCategory
 			app:title="@string/setting_library_category_title"
 			app:icon="@drawable/baseline_library_music_24">
-		<SwitchPreferenceCompat
-				app:key="readMetadata"
+		<ListPreference
+				app:key="readMetaData"
 				app:title="@string/setting_read_metadata"
 				app:persistent="true"
-				app:defaultValue="true" />
+				app:defaultValue="WHEN_USB_CONNECTED"
+				app:useSimpleSummaryProvider="true"
+				app:entries="@array/read_metadata_settings"
+				app:entryValues="@array/read_metadata_settings_values"/>
+		<Preference
+				app:key="readMetaDataNow"
+				app:persistent="false"
+				app:selectable="true"
+				app:title="@string/setting_read_metadata_start_now" />
 		<Preference
 				app:key="databaseStatus"
 				app:persistent="false"
@@ -62,6 +78,12 @@ SPDX-License-Identifier: GPL-3.0-or-later
 				app:key="logToUSB"
 				app:title="@string/setting_log_to_USB_title"
 				app:summary="@string/setting_log_to_USB_desc"
+				app:persistent="true"
+				app:defaultValue="false" />
+		<SwitchPreferenceCompat
+				app:key="crashReporting"
+				app:title="@string/setting_crash_reporting_title"
+				app:summary="@string/setting_crash_reporting_desc"
 				app:persistent="true"
 				app:defaultValue="false" />
 		<Preference

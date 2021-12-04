@@ -6,7 +6,10 @@ SPDX-License-Identifier: GPL-3.0-or-later
 package de.moleman1024.audiowagon.player
 
 import android.media.AudioManager
+import android.provider.MediaStore
 import android.support.v4.media.session.PlaybackStateCompat
+import de.moleman1024.audiowagon.Util
+import de.moleman1024.audiowagon.log.CrashReporting
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.*
 
@@ -17,10 +20,13 @@ class AudioFocusChangeCallback(
     private val audioPlayer: AudioPlayer,
     val scope: CoroutineScope,
     private val dispatcher: CoroutineDispatcher,
+    private val crashReporting: CrashReporting
 ) : AudioManager.OnAudioFocusChangeListener {
     private var audioFocusLossJob: Job? = null
     @get:Synchronized @set:Synchronized
     private var isAudioFocusLostTransient = false
+    var behaviour: AudioFocusSetting = AudioFocusSetting.PAUSE
+    private var isDucked = false
     var playbackState: Int = PlaybackStateCompat.STATE_NONE
     var lastUserRequestedStateChange: AudioSessionChangeType = AudioSessionChangeType.ON_STOP
 
@@ -28,10 +34,10 @@ class AudioFocusChangeCallback(
         when (focusChange) {
             AudioManager.AUDIOFOCUS_LOSS -> {
                 logger.debug(TAG, "Audio focus loss")
-                audioFocusLossJob = scope.launch(dispatcher) {
+                audioFocusLossJob = launchInScopeSafely {
                     if (playbackState == PlaybackStateCompat.STATE_STOPPED) {
                         logger.debug(TAG, "Nothing to do for audio focus since player already stopped")
-                        return@launch
+                        return@launchInScopeSafely
                     }
                     audioPlayer.pause()
                     logger.debug(TAG, "Stopping player in 30 seconds")
@@ -40,30 +46,53 @@ class AudioFocusChangeCallback(
                     audioFocusLossJob = null
                 }
             }
-            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT,
-            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
-                logger.debug(TAG, "Audio focus transient loss")
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
+                logger.debug(TAG, "Audio focus transient loss (behaviour=$behaviour)")
                 isAudioFocusLostTransient = true
-                scope.launch(dispatcher) {
+                launchInScopeSafely {
                     if (playbackState == PlaybackStateCompat.STATE_PAUSED) {
                         logger.debug(TAG, "Nothing to do for audio focus since player already paused")
-                        return@launch
+                        return@launchInScopeSafely
                     }
                     audioPlayer.pause()
                 }
             }
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+                logger.debug(TAG, "Audio focus transient loss (can duck) (behaviour=$behaviour)")
+                isAudioFocusLostTransient = true
+                when (behaviour) {
+                    AudioFocusSetting.PAUSE -> {
+                        launchInScopeSafely {
+                            if (playbackState == PlaybackStateCompat.STATE_PAUSED) {
+                                logger.debug(TAG, "Nothing to do for audio focus since player already paused")
+                                return@launchInScopeSafely
+                            }
+                            audioPlayer.pause()
+                        }
+                    }
+                    AudioFocusSetting.DUCK -> {
+                        isDucked = true
+                    }
+                }
+            }
             AudioManager.AUDIOFOCUS_GAIN -> {
-                logger.debug(TAG, "Audio focus gain")
-                scope.launch(dispatcher) {
+                logger.debug(TAG, "Audio focus gain (behaviour=$behaviour)")
+                launchInScopeSafely {
                     cancelAudioFocusLossJob()
                     if (isAudioFocusLostTransient) {
                         logger.debug(TAG, "Audio focus re-gained")
                         isAudioFocusLostTransient = false
-                        if (lastUserRequestedStateChange != AudioSessionChangeType.ON_PLAY) {
-                            logger.debug(TAG, "User has previously paused/stopped playback, ignore audio focus gain")
-                            return@launch
+                        if (behaviour == AudioFocusSetting.PAUSE
+                            || (behaviour == AudioFocusSetting.DUCK && !isDucked)) {
+                            if (lastUserRequestedStateChange != AudioSessionChangeType.ON_PLAY) {
+                                logger.debug(
+                                    TAG, "User has previously paused/stopped playback, ignore audio focus gain"
+                                )
+                                return@launchInScopeSafely
+                            }
+                            audioPlayer.start()
                         }
-                        audioPlayer.start()
+                        isDucked = false
                     }
                 }
             }
@@ -77,6 +106,10 @@ class AudioFocusChangeCallback(
         logger.debug(TAG, "cancelAudioFocusLossJob()")
         audioFocusLossJob?.cancelAndJoin()
         audioFocusLossJob = null
+    }
+
+    private fun launchInScopeSafely(func: suspend () -> Unit): Job {
+        return Util.launchInScopeSafely(scope, dispatcher, logger, TAG, crashReporting, func)
     }
 
 }

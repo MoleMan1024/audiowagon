@@ -25,6 +25,9 @@ class AudioFocus(context: Context) {
     private var audioManager: AudioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     private val handler = Handler(Looper.getMainLooper())
     private var audioFocusRequest: AudioFocusRequest? = null
+    // the user can choose the behaviour for audio focus e.g. during route guidance prompts (pausing / ducking)
+    // ( see https://github.com/MoleMan1024/audiowagon/issues/24 )
+    private var behaviour = AudioFocusSetting.PAUSE
     var audioFocusChangeListener: AudioFocusChangeCallback? = null
 
     fun request(): AudioFocusRequestResult {
@@ -39,7 +42,9 @@ class AudioFocus(context: Context) {
                 build()
             })
             setAcceptsDelayedFocusGain(false)
-            setWillPauseWhenDucked(true)
+            // we rely on automatic ducking from Android system
+            // (see https://developer.android.com/guide/topics/media-apps/audio-focus#automatic-ducking )
+            setWillPauseWhenDucked(behaviour == AudioFocusSetting.PAUSE)
             setOnAudioFocusChangeListener(audioFocusChangeListener!!, handler)
             build()
         }
@@ -60,5 +65,11 @@ class AudioFocus(context: Context) {
             audioManager.abandonAudioFocusRequest(it)
             audioFocusRequest = null
         }
+    }
+
+    fun setBehaviour(audioFocusSettingStr: String) {
+        logger.debug(TAG, "setBehaviour($audioFocusSettingStr)")
+        behaviour = AudioFocusSetting.valueOf(audioFocusSettingStr)
+        audioFocusChangeListener?.behaviour = behaviour
     }
 }

@@ -22,4 +22,22 @@ SPDX-License-Identifier: GPL-3.0-or-later
 		<item>P2_PLUS</item>
 		<item>V_SHAPE</item>
 	</string-array>
+	<string-array name="read_metadata_settings">
+		<item>@string/setting_read_metadata_when_connected</item>
+		<item>@string/setting_read_metadata_manual</item>
+		<item>@string/setting_read_metadata_off</item>
+	</string-array>
+	<string-array name="read_metadata_settings_values">
+		<item>WHEN_USB_CONNECTED</item>
+		<item>MANUALLY</item>
+		<item>OFF</item>
+	</string-array>
+	<string-array name="audiofocus_settings">
+		<item>@string/setting_audiofocus_pause</item>
+		<item>@string/setting_audiofocus_duck</item>
+	</string-array>
+	<string-array name="audiofocus_settings_values">
+		<item>PAUSE</item>
+		<item>DUCK</item>
+	</string-array>
 </resources>

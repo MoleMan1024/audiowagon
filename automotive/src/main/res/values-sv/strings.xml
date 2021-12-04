@@ -102,7 +102,7 @@ MoleMan1024</string>
 	<string name="legal_disclaimer_third_party_licenses_text">Denna app använder innehåll från följande skapare, alla
 licensierade under Apache 2.0:\n\n&#x2013; olika bibliotek skapade av Android Open Source
 Project\n&#x2013; libaums-boblioteket skapat av Magnus Jahnen\n&#x2013; Material design vector-ikoner skapade av
-Google\n\nLicenstexter:\nwww.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/licenses/gpl-3.0.html
+Google\n&#x2013; Firebase Crashlytics\n\nLicenstexter:\nwww.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/licenses/gpl-3.0.html
 	</string>
 	<string name="legal_disclaimer_confirm_btn">Godkänn</string>
 	<string name="legal_disclaimer_cancel_btn">Avbryt</string>
@@ -117,4 +117,16 @@ underkataloger</string>
 	<string name="setting_database_status_title">Databas</string>
 	<string name="setting_enable_replaygain">ReplayGain</string>
 	<string name="toast_searching_voice_input">Söka efter: \"%1$s\"</string>
+	<string name="setting_read_metadata_when_connected">När USB-enheten är ansluten</string>
+	<string name="setting_read_metadata_manual">Manuellt</string>
+	<string name="setting_read_metadata_off">Av</string>
+	<string name="setting_read_metadata_start_now">Läs metadata nu</string>
+	<string name="browse_tree_metadata_not_yet_indexed_title">Metadata ännu inte indexerad</string>
+	<string name="browse_tree_metadata_not_yet_indexed_desc">Kontrollera inställningar</string>
+	<string name="setting_audiofocus_behavior">Beteende under vägledning</string>
+	<string name="setting_audiofocus_pause">Pausa</string>
+	<string name="setting_audiofocus_duck">Lägre volym</string>
+	<string name="setting_crash_reporting_title">Skicka kraschrapporter</string>
+	<string name="setting_crash_reporting_desc">Skicka kraschrapporter automatiskt till utvecklaren som hjälp
+förbättra appen (kräver internetanslutning).</string>
 </resources>

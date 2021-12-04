@@ -15,7 +15,9 @@ import android.util.DisplayMetrics
 import android.view.WindowInsets
 import android.view.WindowManager
 import android.view.WindowMetrics
+import de.moleman1024.audiowagon.exceptions.NoAudioItemException
 import de.moleman1024.audiowagon.filestorage.usb.LOG_DIRECTORY
+import de.moleman1024.audiowagon.log.CrashReporting
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.*
 import java.io.File
@@ -91,16 +93,37 @@ class Util {
 
         fun launchInScopeSafely(
             scope: CoroutineScope, dispatcher: CoroutineDispatcher,
-            logger: Logger, tag: String, func: suspend () -> Unit
+            logger: Logger, tag: String, crashReporting: CrashReporting, func: suspend () -> Unit
         ): Job {
             val exceptionHandler = CoroutineExceptionHandler { coroutineContext, exc ->
-                logger.exception(tag, "$coroutineContext + threw + ${exc.message}", exc)
+                val msg = "$coroutineContext + threw + ${exc.message}"
+                when (exc) {
+                    is NoAudioItemException -> {
+                        // this happens often when persistent data does not match USB drive contents, do not report this
+                        // crash in crashlytics
+                        logger.exception(tag, msg, exc)
+                    }
+                    is CancellationException -> {
+                        // cancelling suspending jobs is not an error
+                        logger.warning(tag, msg)
+                    }
+                    else -> {
+                        logger.exception(tag, msg, exc)
+                        crashReporting.logMessage(msg)
+                        crashReporting.recordException(exc)
+                    }
+                }
             }
             return scope.launch(exceptionHandler + dispatcher) {
                 try {
                     func()
+                } catch (exc: NoAudioItemException) {
+                    logger.exception(tag, exc.message.toString(), exc)
+                } catch (exc: CancellationException) {
+                    logger.warning(tag, "$exc")
                 } catch (exc: Exception) {
                     logger.exception(tag, exc.message.toString(), exc)
+                    crashReporting.recordException(exc)
                 }
             }
         }

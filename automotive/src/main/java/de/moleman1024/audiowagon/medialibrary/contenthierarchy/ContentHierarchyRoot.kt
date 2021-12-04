@@ -11,7 +11,6 @@ import android.support.v4.media.MediaBrowserCompat.MediaItem
 import android.support.v4.media.MediaDescriptionCompat
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.SharedPrefs
-import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.*
 
@@ -33,14 +32,23 @@ class ContentHierarchyRoot(
     override suspend fun getMediaItems(): List<MediaItem> {
         val items: MutableList<MediaItem> = mutableListOf()
         val categories = mutableListOf<CategoryData>()
-        if (SharedPrefs.isMetadataReadingEnabled(context)) {
+        val metadataReadSettingStr = SharedPrefs.getMetadataReadSetting(context)
+        val metadataReadSetting: MetadataReadSetting
+        try {
+            metadataReadSetting = MetadataReadSetting.valueOf(metadataReadSettingStr)
+        } catch (exc: IllegalArgumentException) {
+            logger.exception(TAG, exc.message.toString(), exc)
+            return listOf()
+        }
+        if (metadataReadSetting != MetadataReadSetting.OFF) {
             val tracksCategory = CategoryData(ContentHierarchyID(ContentHierarchyType.ROOT_TRACKS))
             tracksCategory.titleID = R.string.browse_tree_category_tracks
             // we use a copy of the music note icon here, because of a bug in the GUI where the highlight color is
             // copied to each item with the same icon ID when selected
             tracksCategory.iconID = R.drawable.category_track
             categories += tracksCategory
-            if (audioItemLibrary.areAnyReposAvail() && !audioItemLibrary.isBuildingLibray) {
+            val numTracksInRepo = audioItemLibrary.getPrimaryRepository()?.getNumTracks() ?: 0
+            if (audioItemLibrary.areAnyReposAvail() && !audioItemLibrary.isBuildingLibray && numTracksInRepo > 0) {
                 val albumsCategory = CategoryData(ContentHierarchyID(ContentHierarchyType.ROOT_ALBUMS))
                 albumsCategory.titleID = R.string.browse_tree_category_albums
                 albumsCategory.iconID = R.drawable.category_album

@@ -76,14 +76,33 @@ class SettingsActivity : AppCompatActivity() {
         mediaController.sendCommand(CMD_DISABLE_LOG_TO_USB, null, null)
     }
 
-    fun enableReadMetadata() {
+    fun enableCrashReporting() {
         assertMediaControllerInitialized()
-        mediaController.sendCommand(CMD_ENABLE_READ_METADATA, null, null)
+        mediaController.sendCommand(CMD_ENABLE_CRASH_REPORTING, null, null)
     }
 
-    fun disableReadMetadata() {
+    fun disableCrashReporting() {
         assertMediaControllerInitialized()
-        mediaController.sendCommand(CMD_DISABLE_READ_METADTA, null, null)
+        mediaController.sendCommand(CMD_DISABLE_CRASH_REPORTING, null, null)
+    }
+
+    fun setMetadataReadSetting(metadataReadSetting: String) {
+        assertMediaControllerInitialized()
+        val bundle = Bundle()
+        bundle.putString(METADATAREAD_SETTING_KEY, metadataReadSetting)
+        mediaController.sendCommand(CMD_SET_METADATAREAD_SETTING, bundle, null)
+    }
+
+    fun readMetadataNow() {
+        assertMediaControllerInitialized()
+        mediaController.sendCommand(CMD_READ_METADATA_NOW, null, null)
+    }
+
+    fun setAudioFocusSetting(audioFocusSettingStr: String) {
+        assertMediaControllerInitialized()
+        val bundle = Bundle()
+        bundle.putString(AUDIOFOCUS_SETTING_KEY, audioFocusSettingStr)
+        mediaController.sendCommand(CMD_SET_AUDIOFOCUS_SETTING, bundle, null)
     }
 
     fun enableEqualizer() {

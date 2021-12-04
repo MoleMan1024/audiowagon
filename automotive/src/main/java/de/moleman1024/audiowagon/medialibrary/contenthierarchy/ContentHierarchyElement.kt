@@ -47,7 +47,7 @@ abstract class ContentHierarchyElement(
     abstract suspend fun getAudioItems(): List<AudioItem>
 
     companion object {
-        var numTitleCharsPerGroup: Int = - 1
+        var numTitleCharsPerGroup: Int = -1
 
         fun deserialize(id: String): ContentHierarchyID {
             return Json.decodeFromString(id)

@@ -12,6 +12,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2021-12-04
+
+### Added
+
+- added a setting to select the behaviour of the app when listening to audio and a route guidance voice prompt needs to
+  be played. You can now select to either pause the audio (more suitable for audiobooks) or continue playing the audio
+  at a lower volume (more suitable for music). [#24](https://github.com/MoleMan1024/audiowagon/issues/24)
+- I still see RemoteServiceExceptions in the Google Play Console but no user has reported any issue to me. That's why 
+  I added *Google Firebase Crashlytics* to the app now to see where exactly these crashes are coming from. This 
+  Crashlytics library will send more detailed error/crash information to me via internet. This setting is disabled by 
+  default for data privacy reasons, please see the 
+  [privacy policy](https://github.com/MoleMan1024/audiowagon/blob/master/PRIVACY_POLICY.md). You will also need to 
+  re-accept the legal disclaimer.
+
+### Changed
+
+- extended the option "Read metadata" with a "manual" setting. This allows you to index metadata of audio files on the
+  connected USB drive at your request only. The 
+  [FAQ was updated](https://moleman1024.github.io/audiowagon/faq.html#what-happens-during-indexing) with a section 
+  explaining the behaviour. [#21](https://github.com/MoleMan1024/audiowagon/issues/21)
+
+
 ## [1.1.4] - 2021-11-29
 
 ### Fixed

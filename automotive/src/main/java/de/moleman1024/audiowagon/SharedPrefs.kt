@@ -8,16 +8,20 @@ package de.moleman1024.audiowagon
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.preference.PreferenceManager
+import de.moleman1024.audiowagon.medialibrary.MetadataReadSetting
+import de.moleman1024.audiowagon.player.AudioFocusSetting
 import de.moleman1024.audiowagon.player.EqualizerPreset
 
 const val SHARED_PREF_LEGAL_DISCLAIMER_AGREED = "agreedLegalVersion"
-const val SHARED_PREF_LEGAL_DISCLAIMER_VERSION = "1.0"
-const val SHARED_PREF_LOG_TO_USB_KEY = "logToUSB"
+const val SHARED_PREF_LEGAL_DISCLAIMER_VERSION = "1.1"
+const val SHARED_PREF_LOG_TO_USB = "logToUSB"
 const val SHARED_PREF_USB_STATUS = "usbStatusResID"
-const val SHARED_PREF_READ_METADATA = "readMetadata"
+const val SHARED_PREF_READ_METADATA = "readMetaData"
 const val SHARED_PREF_ENABLE_EQUALIZER = "enableEqualizer"
 const val SHARED_PREF_EQUALIZER_PRESET = "equalizerPreset"
 const val SHARED_PREF_ENABLE_REPLAYGAIN = "enableReplayGain"
+const val SHARED_PREF_AUDIOFOCUS = "audioFocus"
+const val SHARED_PREF_CRASH_REPORTING = "crashReporting"
 val SHARED_PREF_EQUALIZER_PRESET_DEFAULT = EqualizerPreset.LESS_BASS.name
 
 class SharedPrefs {
@@ -67,12 +71,23 @@ class SharedPrefs {
             return sharedPreferences.getBoolean(SHARED_PREF_ENABLE_REPLAYGAIN, false)
         }
 
-        fun isMetadataReadingEnabled(context: Context): Boolean {
-            return isMetadataReadingEnabled(getDefaultSharedPreferences(context))
+        fun getMetadataReadSetting(context: Context): String {
+            return getMetadataReadSetting(getDefaultSharedPreferences(context))
         }
 
-        fun isMetadataReadingEnabled(sharedPreferences: SharedPreferences): Boolean {
-            return sharedPreferences.getBoolean(SHARED_PREF_READ_METADATA, true)
+        fun getMetadataReadSetting(sharedPreferences: SharedPreferences): String {
+            return sharedPreferences.getString(
+                SHARED_PREF_READ_METADATA, MetadataReadSetting.WHEN_USB_CONNECTED.name
+            ) ?: MetadataReadSetting.WHEN_USB_CONNECTED.name
+        }
+
+        fun getAudioFocusSetting(context: Context): String {
+            return getAudioFocusSetting(getDefaultSharedPreferences(context))
+        }
+
+        fun getAudioFocusSetting(sharedPreferences: SharedPreferences): String {
+            return sharedPreferences.getString(SHARED_PREF_AUDIOFOCUS, AudioFocusSetting.PAUSE.name) ?:
+            AudioFocusSetting.PAUSE.name
         }
 
         fun isLogToUSBEnabled(context: Context): Boolean {
@@ -80,7 +95,15 @@ class SharedPrefs {
         }
 
         fun isLogToUSBEnabled(sharedPreferences: SharedPreferences): Boolean {
-            return  sharedPreferences.getBoolean(SHARED_PREF_LOG_TO_USB_KEY, false)
+            return sharedPreferences.getBoolean(SHARED_PREF_LOG_TO_USB, false)
+        }
+
+        fun isCrashReportingEnabled(context: Context): Boolean {
+            return isCrashReportingEnabled(getDefaultSharedPreferences(context))
+        }
+
+        fun isCrashReportingEnabled(sharedPreferences: SharedPreferences): Boolean {
+            return sharedPreferences.getBoolean(SHARED_PREF_CRASH_REPORTING, false)
         }
 
         fun getUSBStatusResID(context: Context): Int {

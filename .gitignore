@@ -33,11 +33,12 @@ docs/_site
 docs/vendor
 gen/
 local.properties
+measurements/
 obj/
 output.json
 release/
 venv/
 tools/generate_files/.idea
-
 .idea/misc.xml
 docs/Gemfile.lock
+google-services.json

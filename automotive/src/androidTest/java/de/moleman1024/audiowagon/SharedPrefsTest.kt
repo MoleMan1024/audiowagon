@@ -32,7 +32,7 @@ class SharedPrefsTest {
 
     @Test
     fun isLegalDisclaimerAgreed_sharedPrefAppVersion110_isCompatible() {
-        Assert.assertTrue(SharedPrefs.isLegalDisclaimerAgreed(sharedPrefsVersion110))
+        Assert.assertFalse(SharedPrefs.isLegalDisclaimerAgreed(sharedPrefsVersion110))
     }
 
     @Test
@@ -60,13 +60,23 @@ class SharedPrefsTest {
     }
 
     @Test
-    fun isMetadataReadingEnabled_sharedPrefAppVersion110_isCompatible() {
-        Assert.assertTrue(SharedPrefs.isMetadataReadingEnabled(sharedPrefsVersion110))
+    fun getMetadataReadSetting_sharedPrefAppVersion110_isCompatible() {
+        Assert.assertEquals("WHEN_USB_CONNECTED", SharedPrefs.getMetadataReadSetting(sharedPrefsVersion110))
+    }
+
+    @Test
+    fun getAudioFocusSetting_sharedPrefAppVersion110_isCompatible() {
+        Assert.assertEquals("PAUSE", SharedPrefs.getAudioFocusSetting(sharedPrefsVersion110))
     }
 
     @Test
     fun isLogToUSBEnabled_sharedPrefAppVersion110_isCompatible() {
         Assert.assertTrue(SharedPrefs.isLogToUSBEnabled(sharedPrefsVersion110))
+    }
+
+    @Test
+    fun isCrashReportingEnabled_sharedPrefAppVersion110_isCompatible() {
+        Assert.assertFalse(SharedPrefs.isCrashReportingEnabled(sharedPrefsVersion110))
     }
 
     @Test

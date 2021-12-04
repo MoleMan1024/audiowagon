@@ -18,6 +18,8 @@
 - [org.jetbrains.kotlinx:kotlinx-serialization](https://github.com/Kotlin/kotlinx.serialization): Apache
   2.0
 - [libaums](https://github.com/magnusja/libaums): Apache 2.0
+- [com.google.firebase.crashlytics](https://firebase.google.com/docs/crashlytics): Apache 2.0
+- [kotlinx-coroutines-play-services](https://github.com/Kotlin/kotlinx.coroutines/tree/master/integration/kotlinx-coroutines-play-services): Apache 2.0
 
 
 ## Icons

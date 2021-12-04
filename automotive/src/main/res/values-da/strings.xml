@@ -103,7 +103,7 @@ af brugen af denne software.</string>
 	<string name="legal_disclaimer_third_party_licenses_text">Denne app bruger indhold/biblioteker fra følgende andre
 kilder, som alle er licenseret under Apache 2.0:\n\n&#x2013; forskellige biblioteker er udviklet af Android Open Source
 Projektet\n&#x2013; libaums-biblioteket er udviklet af Magnus Jahnen\n&#x2013; Material design vector ikoner er
-udviklet af Google\n\nLicenstekster:\nwww.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/licenses/gpl-3.0.html
+udviklet af Google\n&#x2013; Firebase Crashlytics\n\nLicenstekster:\nwww.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/licenses/gpl-3.0.html
 	</string>
 	<string name="legal_disclaimer_confirm_btn">Enig</string>
 	<string name="legal_disclaimer_cancel_btn">Afbryd</string>
@@ -118,4 +118,16 @@ anvende underfoldere.</string>
 	<string name="setting_database_status_title">Database</string>
 	<string name="setting_enable_replaygain">ReplayGain</string>
 	<string name="toast_searching_voice_input">Søge efter: "%1$s"</string>
+	<string name="setting_read_metadata_when_connected">Når USB-drevet er tilsluttet</string>
+	<string name="setting_read_metadata_manual">manuelt</string>
+	<string name="setting_read_metadata_off">Slukket</string>
+	<string name="setting_read_metadata_start_now">Læs metadata nu</string>
+	<string name="browse_tree_metadata_not_yet_indexed_title">Metadata endnu ikke indekseret</string>
+	<string name="browse_tree_metadata_not_yet_indexed_desc">Tjek indstillingerne</string>
+	<string name="setting_audiofocus_behavior">Adfærd under rutevejledning</string>
+	<string name="setting_audiofocus_pause">Pause</string>
+	<string name="setting_audiofocus_duck">Lavere lydstyrke</string>
+	<string name="setting_crash_reporting_title">Send nedbrudsrapporter</string>
+	<string name="setting_crash_reporting_desc">Send automatisk nedbrudsrapporter til udvikleren for at hjælpe
+forbedre appen (kræver internetforbindelse).</string>
 </resources>

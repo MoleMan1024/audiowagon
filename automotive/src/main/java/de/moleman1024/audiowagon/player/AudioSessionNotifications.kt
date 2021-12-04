@@ -21,6 +21,7 @@ import de.moleman1024.audiowagon.NOTIFICATION_ID
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.broadcast.*
 import de.moleman1024.audiowagon.exceptions.MissingNotifChannelException
+import de.moleman1024.audiowagon.log.CrashReporting
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -36,7 +37,8 @@ class AudioSessionNotifications(
     private val context: Context,
     scope: CoroutineScope,
     dispatcher: CoroutineDispatcher,
-    audioPlayer: AudioPlayer
+    audioPlayer: AudioPlayer,
+    crashReporting: CrashReporting
 ) {
     var currentQueueItem: MediaSessionCompat.QueueItem? = null
     private var mediaSession: MediaSessionCompat? = null
@@ -45,7 +47,9 @@ class AudioSessionNotifications(
     private lateinit var isPlayingNotificationBuilder: NotificationCompat.Builder
     private lateinit var isPausedNotificationBuilder: NotificationCompat.Builder
     private var isShowingNotification: Boolean = false
-    private val broadcastMsgRecv: BroadcastMessageReceiver = BroadcastMessageReceiver(audioPlayer, scope, dispatcher)
+    private val broadcastMsgRecv: BroadcastMessageReceiver = BroadcastMessageReceiver(
+        audioPlayer, scope, dispatcher, crashReporting
+    )
     private var isChannelCreated: Boolean = false
 
     fun init(session: MediaSessionCompat) {

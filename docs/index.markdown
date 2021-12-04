@@ -68,6 +68,20 @@ Please see Github for a [list of changes for each version of the app](https://gi
 
 ![Permission popup](/img/allow_access.jpg)
 
+- If you have installed the app for the first time, you have to do the following 3 extra steps: you get a warning that 
+  you need to accept the legal disclaimer in the settings. Open the AudioWagon settings using the gear icon.
+
+![Legal disclaimer not agreed](/img/legal_disclaimer_not_agreed.jpg)
+
+- In the settings screen tap on "Show legal disclaimer"
+
+![Settings](/img/settings.jpg)
+
+- Read through the legal disclaimer and tap "Accept" if you agree. Then return to the main screen using the arrow in top
+  left corner.
+
+![Legal disclaimer](/img/legal_disclaimer.jpg)
+
 - **Wait for indexing** to complete or use the file/directory browser
 
 ![Indexing](/img/indexing.jpg)

@@ -17,12 +17,15 @@ data class AudioSessionChange(val type: AudioSessionChangeType) {
     var queryToPlay: String = ""
     var queryFocus: AudioItemType = AudioItemType.UNSPECIFIC
     var equalizerPreset: String = ""
+    var metadataReadSetting: String = ""
+    var audioFocusSetting: String = ""
 
     override fun toString(): String {
         return "AudioSessionChange(type=$type, queueID=$queueID, " +
                 "contentHierarchyID='$contentHierarchyID', artistToPlay='$artistToPlay', albumToPlay='$albumToPlay', " +
                 "trackToPlay='$trackToPlay', queryToPlay='$queryToPlay', queryFocus='$queryFocus' " +
-                "equalizerPreset='$equalizerPreset')"
+                "equalizerPreset='$equalizerPreset', metadataReadSetting='$metadataReadSetting', " +
+                "audioFocusSetting='$audioFocusSetting')"
     }
 
 }
