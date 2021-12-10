@@ -12,6 +12,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.2] - 2021-12-10
+
+### Fixed
+
+- finally fixed the RemoteServiceException I was seeing. This was related to the media hardware button behaviour
+  depending on timing. You should now be able to still restart the most recent media session using the play/pause
+  next/previous hardware buttons after leaving AudioWagon [#56](https://github.com/MoleMan1024/audiowagon/issues/56)
+- the app will now store a bit less data on disk when playing back a random selection of tracks
+- fixed "play music" speech command when player was stopped
+- improved service lifecycle handling
+
+
 ## [1.2.0] - 2021-12-04
 
 ### Added

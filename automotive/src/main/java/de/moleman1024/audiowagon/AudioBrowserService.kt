@@ -28,6 +28,8 @@ or sponsored by any trademark holders mentioned in the source code.
 
 package de.moleman1024.audiowagon
 
+import android.app.Notification
+import android.content.ComponentName
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Bundle
@@ -71,6 +73,7 @@ const val ACTION_RESTART_SERVICE: String = "de.moleman1024.audiowagon.ACTION_RES
 // This PLAY_USB action seems to be essential for getting Google Assistant to accept voice commands such as
 // "play <artist | album | track>"
 const val ACTION_PLAY_USB: String = "android.car.intent.action.PLAY_USB"
+const val ACTION_MEDIA_BUTTON: String = "android.intent.action.MEDIA_BUTTON"
 const val CMD_ENABLE_LOG_TO_USB = "de.moleman1024.audiowagon.CMD_ENABLE_LOG_TO_USB"
 const val CMD_DISABLE_LOG_TO_USB = "de.moleman1024.audiowagon.CMD_DISABLE_LOG_TO_USB"
 const val CMD_ENABLE_EQUALIZER = "de.moleman1024.audiowagon.CMD_ENABLE_EQUALIZER"
@@ -119,8 +122,12 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     private var cleanPersistentJob: Job? = null
     private var loadChildrenJobs: ConcurrentHashMap<String, Job> = ConcurrentHashMap<String, Job>()
     private var searchJob: Job? = null
+    @Volatile
     private var isServiceStarted: Boolean = false
-    private var isServiceForeground: Boolean = false
+    @Volatile
+    private var servicePriority: ServicePriority = ServicePriority.BACKGROUND
+    private var deferredUntilServiceInForeground: CompletableDeferred<Unit> = CompletableDeferred()
+    private var audioSessionNotification: Notification? = null
     private var latestContentHierarchyIDRequested: String = ""
     private var lastAudioPlayerState: AudioPlayerState = AudioPlayerState.IDLE
     private var isShuttingDown: Boolean = false
@@ -266,8 +273,9 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                 }
                 startServiceInForeground()
             }
-            AudioPlayerState.PAUSED -> moveServiceToBackground()
-            AudioPlayerState.STOPPED -> stopService()
+            AudioPlayerState.PAUSED, AudioPlayerState.STOPPED -> {
+                delayedMoveServiceToBackground()
+            }
             AudioPlayerState.PLAYBACK_COMPLETED -> {
                 launchCleanPersistentJob()
             }
@@ -318,12 +326,12 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
 
     private fun startServiceInForeground() {
         if (isServiceStarted) {
-            if (!isServiceForeground) {
-                logger.debug(TAG, "Moving service to foreground")
+            if (servicePriority == ServicePriority.BACKGROUND) {
+                logger.debug(TAG, "Moving already started service to foreground")
                 try {
-                    val notification = audioSession.getNotification()
-                    startForeground(NOTIFICATION_ID, notification)
-                    isServiceForeground = true
+                    audioSessionNotification = audioSession.getNotification()
+                    startForeground(NOTIFICATION_ID, audioSessionNotification)
+                    servicePriority = ServicePriority.FOREGROUND
                 } catch (exc: MissingNotifChannelException) {
                     logger.exception(TAG, exc.message.toString(), exc)
                 }
@@ -331,26 +339,30 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             return
         }
         logger.debug(TAG, "Starting foreground service")
+        servicePriority = ServicePriority.FOREGROUND_REQUESTED
+        if (deferredUntilServiceInForeground.isCompleted) {
+            deferredUntilServiceInForeground = CompletableDeferred()
+        }
         // this page says to start music player as foreground service
         // https://developer.android.com/guide/topics/media-apps/audio-app/building-a-mediabrowserservice#mediastyle-notifications
         // however this FAQ says foreground services are not allowed?
         // https://developer.android.com/training/cars/media/automotive-os#can_i_use_a_foreground_service
         // "foreground" is in terms of memory/priority, not in terms of a GUI window
         try {
-            val notification = audioSession.getNotification()
+            audioSessionNotification = audioSession.getNotification()
             startForegroundService(Intent(this, AudioBrowserService::class.java))
-            startForeground(NOTIFICATION_ID, notification)
-            isServiceForeground = true
-            isServiceStarted = true
         } catch (exc: MissingNotifChannelException) {
             logger.exception(TAG, exc.message.toString(), exc)
+            servicePriority = ServicePriority.FOREGROUND
         }
     }
 
     private fun moveServiceToBackground() {
         logger.debug(TAG, "Moving service to background")
+        // when the service is in (memory) background and no activity is using it (e.g. other media app is shown) AAOS
+        // will usually stop the service (and thus also destroy) it after one minute of idle time
         stopForeground(false)
-        isServiceForeground = false
+        servicePriority = ServicePriority.BACKGROUND
     }
 
     @ExperimentalCoroutinesApi
@@ -411,13 +423,12 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             notifyBrowserChildrenChangedAllLevels()
             gui.showIndexingFinishedNotification()
             when (lastAudioPlayerState) {
-                AudioPlayerState.PAUSED -> moveServiceToBackground()
                 AudioPlayerState.STARTED -> {
                     // do not change service status when indexing finishes while playback is ongoing
                 }
                 else -> {
-                    // player is in state STOPPED or ERROR
-                    stopService()
+                    // player is in state PAUSED/STOPPED/ERROR
+                    delayedMoveServiceToBackground()
                 }
             }
             if (isLibraryCreationCancelled) {
@@ -530,7 +541,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             }
         }
         notifyBrowserChildrenChangedAllLevels()
-        stopService()
+        delayedMoveServiceToBackground()
     }
 
     private fun notifyBrowserChildrenChangedAllLevels() {
@@ -560,9 +571,31 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         logger.debug(TAG, "onStartCommand(intent=$intent, flags=$flags, startid=$startId)")
         lifecycleRegistry.currentState = Lifecycle.State.STARTED
         isServiceStarted = true
-        if (intent?.action == ACTION_PLAY_USB) {
-            launchInScopeSafely {
-                audioSession.playAnything()
+        logger.debug(TAG, "servicePriority=$servicePriority")
+        if (intent?.component == ComponentName(this, this.javaClass)
+            && intent.action != ACTION_MEDIA_BUTTON
+            && servicePriority == ServicePriority.FOREGROUND_REQUESTED) {
+            logger.debug(TAG, "Need to move service to foreground")
+            if (audioSessionNotification == null) {
+                val msg = "Missing audioSessionNotification for foreground service"
+                logger.error(TAG, msg)
+                crashReporting.logMessage(msg)
+            } else {
+                startForeground(NOTIFICATION_ID, audioSessionNotification)
+                logger.debug(TAG, "Moved service to foreground")
+                servicePriority = ServicePriority.FOREGROUND
+                deferredUntilServiceInForeground.complete(Unit)
+            }
+        }
+        when (intent?.action) {
+            ACTION_PLAY_USB -> {
+                launchInScopeSafely {
+                    audioSession.playAnything()
+                }
+            }
+            ACTION_MEDIA_BUTTON -> audioSession.handleMediaButtonIntent(intent)
+            else -> {
+                // ignore
             }
         }
         return super.onStartCommand(intent, flags, startId)
@@ -593,20 +626,49 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     }
 
     private fun stopService() {
-        logger.debug(TAG, "Stopping service")
+        logger.debug(TAG, "stopService()")
         if (!isServiceStarted) {
             logger.warning(TAG, "Service is not running")
             return
         }
-        stopForeground(true)
-        isServiceForeground = false
-        stopSelf()
-        isServiceStarted = false
+        if (servicePriority != ServicePriority.FOREGROUND_REQUESTED) {
+            moveServiceToBackground()
+            stopSelf()
+            isServiceStarted = false
+        } else {
+            // in this case we need to wait until the service priority has changed, otherwise we will see a
+            // crash with a RemoteServiceException
+            // https://github.com/MoleMan1024/audiowagon/issues/56
+            logger.debug(TAG, "Pending foreground service start, will wait before stopping service")
+            launchInScopeSafely {
+                deferredUntilServiceInForeground.await()
+                logger.debug(TAG, "Pending foreground service start has completed")
+                moveServiceToBackground()
+                stopSelf()
+                isServiceStarted = false
+            }
+        }
+    }
+
+    private fun delayedMoveServiceToBackground() {
+        logger.debug(TAG, "delayedMoveServiceToBackground()")
+        if (servicePriority != ServicePriority.FOREGROUND_REQUESTED) {
+            if (!isServiceStarted) {
+                logger.warning(TAG, "Service is not running")
+                return
+            }
+            moveServiceToBackground()
+        } else {
+            logger.debug(TAG, "Pending foreground service start, will wait before moving service to background")
+            launchInScopeSafely {
+                deferredUntilServiceInForeground.await()
+                logger.debug(TAG, "Pending foreground service start has completed")
+                moveServiceToBackground()
+            }
+        }
     }
 
     override fun onDestroy() {
-        // TODO: this will not close the mediabrowser client GUI, make sure it will still work when service destroyed
-        // TODO: check "Stopping service due to app idle", happens sometimes but does not call any method of service?
         logger.debug(TAG, "onDestroy()")
         shutdownAndDestroy()
         unregisterReceiver(powerEventReceiver)
@@ -765,6 +827,9 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                 val mediaItems: List<MediaItem> = audioItemLibrary.getMediaItemsStartingFrom(contentHierarchyID)
                 logger.debug(TAG, "Got ${mediaItems.size} mediaItems in onLoadChildren(parentId=$parentId)")
                 result.sendResult(mediaItems.toMutableList())
+            } catch (exc: CancellationException) {
+                logger.warning(TAG, exc.message.toString())
+                result.sendResult(null)
             } catch (exc: IOException) {
                 logger.exception(TAG, exc.message.toString(), exc)
                 crashReporting.recordException(exc)
@@ -800,7 +865,6 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     private fun setUncaughtExceptionHandler() {
         val oldHandler = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
-            crashReporting.recordException(throwable)
             // only log uncaught exceptions if we still have a USB device
             if ("(USB_DEVICE_DETACHED|did you unplug)".toRegex().containsMatchIn(throwable.stackTraceToString())) {
                 logger.exceptionLogcatOnly(TAG, "Uncaught exception (USB failed)", throwable)

@@ -6,7 +6,6 @@ SPDX-License-Identifier: GPL-3.0-or-later
 package de.moleman1024.audiowagon.player
 
 import android.media.AudioManager
-import android.provider.MediaStore
 import android.support.v4.media.session.PlaybackStateCompat
 import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.log.CrashReporting

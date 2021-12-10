@@ -31,6 +31,7 @@ import de.moleman1024.audiowagon.medialibrary.AudioItemType
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyElement
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyID
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyType
+import de.moleman1024.audiowagon.medialibrary.contenthierarchy.DATABASE_ID_UNKNOWN
 import de.moleman1024.audiowagon.medialibrary.descriptionForLog
 import de.moleman1024.audiowagon.persistence.PersistentPlaybackState
 import de.moleman1024.audiowagon.persistence.PersistentStorage
@@ -89,6 +90,7 @@ class AudioSession(
         logger.debug(TAG, "Init AudioSession()")
         isShuttingDown = false
         initAudioFocus()
+        // to send play/pause button event "adb shell input keyevent 85"
         val mediaButtonIntent = Intent(Intent.ACTION_MEDIA_BUTTON)
         mediaButtonIntent.setClass(context, MediaButtonReceiver::class.java)
         // TODO: unclear which is the correct mutability flag to use
@@ -297,6 +299,7 @@ class AudioSession(
                     val audioItem: AudioItem
                     when (contentHierarchyID.type) {
                         ContentHierarchyType.TRACK -> {
+                            logger.debug(TAG, "getAudioItemForTrack($contentHierarchyID)")
                             audioItem = audioItemLibrary.getAudioItemForTrack(contentHierarchyID)
                         }
                         ContentHierarchyType.FILE -> {
@@ -398,12 +401,22 @@ class AudioSession(
     suspend fun playAnything() {
         logger.debug(TAG, "playAnything()")
         if (currentQueueItem != null) {
+            if (playbackState.isStopped) {
+                val queueIndex = audioPlayer.getPlaybackQueueIndex()
+                audioPlayer.preparePlayFromQueue(queueIndex, playbackState.position.toInt())
+            }
             audioPlayer.start()
         } else {
             val contentHierarchyIDShuffleAll = ContentHierarchyID(ContentHierarchyType.SHUFFLE_ALL_TRACKS)
             val shuffledItems = audioItemLibrary.getAudioItemsStartingFrom(contentHierarchyIDShuffleAll)
             createQueueAndPlay(shuffledItems)
         }
+    }
+
+    // https://developer.android.com/reference/androidx/media/session/MediaButtonReceiver
+    fun handleMediaButtonIntent(intent: Intent) {
+        logger.debug(TAG, "Handling media button intent")
+        MediaButtonReceiver.handleIntent(mediaSession, intent)
     }
 
     fun stopPlayer() {
@@ -537,9 +550,11 @@ class AudioSession(
                             val contentHierarchyID = ContentHierarchyElement.deserialize(currentTrackID)
                             val audioItem = when (contentHierarchyID.type) {
                                 ContentHierarchyType.TRACK -> {
+                                    logger.debug(TAG, "getAudioItemForTrack($contentHierarchyID)")
                                     audioItemLibrary.getAudioItemForTrack(contentHierarchyID)
                                 }
                                 ContentHierarchyType.FILE -> {
+                                    logger.debug(TAG, "getAudioItemForFile($contentHierarchyID)")
                                     audioItemLibrary.getAudioItemForFile(contentHierarchyID)
                                 }
                                 else -> {
@@ -719,6 +734,15 @@ class AudioSession(
             ContentHierarchyType.TRACK -> {
                 startIndex = audioItems.indexOfFirst {
                     ContentHierarchyElement.deserialize(it.id).trackID == contentHierarchyID.trackID
+                }
+                if (contentHierarchyID.artistID <= DATABASE_ID_UNKNOWN
+                    && contentHierarchyID.albumID <= DATABASE_ID_UNKNOWN
+                ) {
+                    // User tapped on an entry in track view, we are playing a random selection of tracks afterwards.
+                    // Treat this the same as SHUFFLE_ALL_TRACKS
+                    lastContentHierarchyIDPlayed = ContentHierarchyElement.serialize(
+                        ContentHierarchyID(ContentHierarchyType.SHUFFLE_ALL_TRACKS)
+                    )
                 }
             }
             ContentHierarchyType.FILE -> {
@@ -989,6 +1013,9 @@ class AudioSession(
             is DriveAlmostFullException -> {
                 logger.exceptionLogcatOnly(TAG, "Drive is almost full, cannot log to USB", exc)
                 gui.showErrorToastMsg(context.getString(R.string.toast_error_not_enough_space_for_log))
+            }
+            is CancellationException -> {
+                logger.warning(TAG, exc.message.toString())
             }
             else -> {
                 crashReporting.logMessage(msg)

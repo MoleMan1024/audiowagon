@@ -228,7 +228,6 @@ class AudioItemLibrary(
     }
 
     suspend fun getAudioItemForTrack(contentHierarchyID: ContentHierarchyID): AudioItem {
-        logger.debug(TAG, "getAudioItemForTrack($contentHierarchyID)")
         if (contentHierarchyID.type != ContentHierarchyType.TRACK) {
             throw IllegalArgumentException("Given content hierarchy ID is not for a track: $contentHierarchyID")
         }
@@ -248,7 +247,6 @@ class AudioItemLibrary(
     }
 
     suspend fun getAudioItemForFile(contentHierarchyID: ContentHierarchyID): AudioItem {
-        logger.debug(TAG, "getAudioItemForFile($contentHierarchyID")
         if (contentHierarchyID.type != ContentHierarchyType.FILE) {
             throw IllegalArgumentException("Given content hierarchy ID is not for a file: $contentHierarchyID")
         }

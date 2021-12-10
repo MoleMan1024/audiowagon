@@ -25,7 +25,7 @@ data class PersistentPlaybackState(val trackID: String) {
                 "trackPositionMS=$trackPositionMS, " +
                 "isShuffling=$isShuffling, " +
                 "isRepeating=$isRepeating, " +
-                "latContentHierarchyID=$lastContentHierarchyID, " +
+                "lastContentHierarchyID=$lastContentHierarchyID, " +
                 "queueIndex=$queueIndex, " +
                 "queueIDs=${queueIDsString})"
     }

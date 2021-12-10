@@ -20,8 +20,8 @@ android {
 		applicationId "de.moleman1024.audiowagon"
 		minSdkVersion rootProject.minSdkVersion
 		targetSdkVersion rootProject.targetSdkVersion
-		versionCode 120
-		versionName "1.2.0"
+		versionCode 122
+		versionName "1.2.2"
 		resValue "string", "VERSION_NAME", versionName
 		testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 		manifestPlaceholders["requestLegacyExternalStorage"] = "false"
