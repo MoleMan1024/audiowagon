@@ -268,7 +268,7 @@ class USBDeviceConnections(
             val deviceChange = DeviceChange(device, DeviceAction.DISCONNECT)
             notifyObservers(deviceChange)
         } catch (exc: IOException) {
-            val errorMsg = context.getString(R.string.toast_error_USB_IO)
+            val errorMsg = context.getString(R.string.toast_error_IO)
             val deviceChange = DeviceChange(error = errorMsg)
             notifyObservers(deviceChange)
         } finally {

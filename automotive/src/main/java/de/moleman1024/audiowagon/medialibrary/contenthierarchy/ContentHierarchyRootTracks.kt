@@ -35,12 +35,12 @@ class ContentHierarchyRootTracks(
     override suspend fun getMediaItems(): List<MediaItem> {
         val items = mutableListOf<MediaItem>()
         val numTracksInRepo = audioItemLibrary.getPrimaryRepository()?.getNumTracks() ?: 0
-        if (!audioItemLibrary.areAnyReposAvail() || numTracksInRepo <= 0) {
+        if (!audioItemLibrary.areAnyReposAvail() || (numTracksInRepo <= 0 && !audioItemLibrary.isBuildingLibrary)) {
             logger.debug(TAG, "Showing pseudo MediaItem 'no entries available'")
             items += createPseudoNoEntriesItem()
             return items
         }
-        if (audioItemLibrary.isBuildingLibray) {
+        if (audioItemLibrary.isBuildingLibrary) {
             items += createPseudoFoundXItems()
             return items
         }

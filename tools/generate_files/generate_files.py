@@ -23,6 +23,7 @@ def generate2kFiles(outDir: Path):
                 shutil.copyfile(_TEMPLATE_MP3_FILE, track)
             logging.debug(f"Created album: {albumDir}")
 
+
 def generate20kFiles(outDir: Path):
     for artistNum in range(130):
         for albumNum in range(10):
@@ -48,6 +49,16 @@ def genDirWithMoreThan128Files(outDir: Path):
     logging.debug(f"Created directory with too many files at: {tooManyFilesDir}")
 
 
+def generateDirWith500Files(outDir: Path):
+    directory = Path(outDir, "dir_with_many_files")
+    if not directory.exists():
+        directory.mkdir(parents=True)
+    for trackNum in range(500):
+        track = Path(directory, f"TRACK_{trackNum}.mp3")
+        shutil.copyfile(_TEMPLATE_MP3_FILE, track)
+    logging.debug(f"Created directory with 500 files at: {directory}")
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG, format=_FORMAT, datefmt=_DATE_FORMAT)
     parser = argparse.ArgumentParser(description="Generate files for testing USB filesystem")
@@ -68,5 +79,7 @@ if __name__ == "__main__":
     elif args.scenario == "mixed":
         generate2kFiles(outDirPath)
         genDirWithMoreThan128Files(outDirPath)
+    elif args.scenario == "dirWithManyFiles":
+        generateDirWith500Files(outDirPath)
 
     logging.info("DONE")

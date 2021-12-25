@@ -69,6 +69,7 @@ import kotlin.system.exitProcess
 private const val TAG = "AudioBrowserService"
 const val NOTIFICATION_ID: Int = 25575
 private const val ALBUM_ART_MIN_NUM_PIXELS = 128
+const val NUM_LOG_LINES_CRASH_REPORT = 100
 const val ACTION_RESTART_SERVICE: String = "de.moleman1024.audiowagon.ACTION_RESTART_SERVICE"
 // This PLAY_USB action seems to be essential for getting Google Assistant to accept voice commands such as
 // "play <artist | album | track>"
@@ -126,6 +127,8 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     private var isServiceStarted: Boolean = false
     @Volatile
     private var servicePriority: ServicePriority = ServicePriority.BACKGROUND
+    @Volatile
+    private var lastServiceStartReason: ServiceStartStopReason = ServiceStartStopReason.INDEXING
     private var deferredUntilServiceInForeground: CompletableDeferred<Unit> = CompletableDeferred()
     private var audioSessionNotification: Notification? = null
     private var latestContentHierarchyIDRequested: String = ""
@@ -183,6 +186,8 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                 is CannotRecoverUSBException -> {
                     cancelAllJobs()
                     notifyLibraryCreationFailure()
+                    crashReporting.logMessages(logger.getLastLogLines(NUM_LOG_LINES_CRASH_REPORT))
+                    crashReporting.recordException(exc)
                 }
             }
         }
@@ -232,9 +237,13 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         } catch (exc: IOException) {
             logger.exception(TAG, "I/O Error during update of connected USB devices", exc)
             gui.showErrorToastMsg(this.getString(R.string.toast_error_USB_init))
+            crashReporting.logMessages(logger.getLastLogLines(NUM_LOG_LINES_CRASH_REPORT))
+            crashReporting.recordException(exc)
         } catch (exc: RuntimeException) {
             logger.exception(TAG, "Runtime error during update of connected USB devices", exc)
             gui.showErrorToastMsg(this.getString(R.string.toast_error_USB_init))
+            crashReporting.logMessages(logger.getLastLogLines(NUM_LOG_LINES_CRASH_REPORT))
+            crashReporting.recordException(exc)
         }
     }
 
@@ -271,10 +280,15 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                         cancelCleanPersistent()
                     }
                 }
-                startServiceInForeground()
+                startServiceInForeground(ServiceStartStopReason.MEDIA_SESSION_CALLBACK)
             }
-            AudioPlayerState.PAUSED, AudioPlayerState.STOPPED -> {
+            AudioPlayerState.PAUSED -> {
                 delayedMoveServiceToBackground()
+            }
+            AudioPlayerState.STOPPED -> {
+                // to be nice we should call stopSelf() when we have nothing left to do, see
+                // https://developer.android.com/guide/topics/media-apps/audio-app/building-a-mediabrowserservice#service-lifecycle
+                stopService(ServiceStartStopReason.MEDIA_SESSION_CALLBACK)
             }
             AudioPlayerState.PLAYBACK_COMPLETED -> {
                 launchCleanPersistentJob()
@@ -324,7 +338,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         }
     }
 
-    private fun startServiceInForeground() {
+    private fun startServiceInForeground(reason: ServiceStartStopReason) {
         if (isServiceStarted) {
             if (servicePriority == ServicePriority.BACKGROUND) {
                 logger.debug(TAG, "Moving already started service to foreground")
@@ -334,11 +348,13 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                     servicePriority = ServicePriority.FOREGROUND
                 } catch (exc: MissingNotifChannelException) {
                     logger.exception(TAG, exc.message.toString(), exc)
+                    crashReporting.logMessages(logger.getLastLogLines(NUM_LOG_LINES_CRASH_REPORT))
+                    crashReporting.recordException(exc)
                 }
             }
             return
         }
-        logger.debug(TAG, "Starting foreground service")
+        logger.debug(TAG, "startServiceInForeground(reason=$reason)")
         servicePriority = ServicePriority.FOREGROUND_REQUESTED
         if (deferredUntilServiceInForeground.isCompleted) {
             deferredUntilServiceInForeground = CompletableDeferred()
@@ -350,10 +366,21 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         // "foreground" is in terms of memory/priority, not in terms of a GUI window
         try {
             audioSessionNotification = audioSession.getNotification()
+            if (lastServiceStartReason in listOf(ServiceStartStopReason.UNKNOWN, ServiceStartStopReason.INDEXING)
+                && reason in listOf(
+                    ServiceStartStopReason.MEDIA_SESSION_CALLBACK,
+                    ServiceStartStopReason.MEDIA_BUTTON,
+                    ServiceStartStopReason.SUSPEND_OR_SHUTDOWN
+                )
+            ) {
+                lastServiceStartReason = reason
+            }
             startForegroundService(Intent(this, AudioBrowserService::class.java))
         } catch (exc: MissingNotifChannelException) {
             logger.exception(TAG, exc.message.toString(), exc)
             servicePriority = ServicePriority.FOREGROUND
+            crashReporting.logMessages(logger.getLastLogLines(NUM_LOG_LINES_CRASH_REPORT))
+            crashReporting.recordException(exc)
         }
     }
 
@@ -397,7 +424,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         gui.showIndexingNotification()
         // We start the service in foreground while indexing the USB device, a notification is shown to the user.
         // This is done so the user can use other apps while the indexing keeps running in the service
-        startServiceInForeground()
+        startServiceInForeground(ServiceStartStopReason.INDEXING)
         isLibraryCreationCancelled = false
         launchLibraryCreationJobForStorage(storageID)
     }
@@ -409,6 +436,8 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         // TODO: the error handling is all over the place, need more structure
         val libraryCreationExceptionHandler = CoroutineExceptionHandler { _, exc ->
             notifyLibraryCreationFailure()
+            crashReporting.logMessages(logger.getLastLogLines(NUM_LOG_LINES_CRASH_REPORT))
+            crashReporting.recordException(exc)
             when (exc) {
                 is IOException -> {
                     logger.exception(TAG, "I/O exception while building library", exc)
@@ -426,9 +455,12 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                 AudioPlayerState.STARTED -> {
                     // do not change service status when indexing finishes while playback is ongoing
                 }
-                else -> {
-                    // player is in state PAUSED/STOPPED/ERROR
+                AudioPlayerState.PAUSED -> {
                     delayedMoveServiceToBackground()
+                }
+                else -> {
+                    // player is currently in state STOPPED or ERROR
+                    stopService(ServiceStartStopReason.INDEXING)
                 }
             }
             if (isLibraryCreationCancelled) {
@@ -571,7 +603,10 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         logger.debug(TAG, "onStartCommand(intent=$intent, flags=$flags, startid=$startId)")
         lifecycleRegistry.currentState = Lifecycle.State.STARTED
         isServiceStarted = true
-        logger.debug(TAG, "servicePriority=$servicePriority")
+        if (intent?.action == ACTION_MEDIA_BUTTON) {
+            lastServiceStartReason = ServiceStartStopReason.MEDIA_BUTTON
+        }
+        logger.debug(TAG, "servicePriority=$servicePriority, lastServiceStartReason=$lastServiceStartReason")
         if (intent?.component == ComponentName(this, this.javaClass)
             && intent.action != ACTION_MEDIA_BUTTON
             && servicePriority == ServicePriority.FOREGROUND_REQUESTED) {
@@ -579,7 +614,6 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             if (audioSessionNotification == null) {
                 val msg = "Missing audioSessionNotification for foreground service"
                 logger.error(TAG, msg)
-                crashReporting.logMessage(msg)
             } else {
                 startForeground(NOTIFICATION_ID, audioSessionNotification)
                 logger.debug(TAG, "Moved service to foreground")
@@ -593,7 +627,9 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                     audioSession.playAnything()
                 }
             }
-            ACTION_MEDIA_BUTTON -> audioSession.handleMediaButtonIntent(intent)
+            ACTION_MEDIA_BUTTON -> {
+                audioSession.handleMediaButtonIntent(intent)
+            }
             else -> {
                 // ignore
             }
@@ -625,15 +661,19 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         super.onTaskRemoved(rootIntent)
     }
 
-    private fun stopService() {
+    private fun stopService(reason: ServiceStartStopReason) {
         logger.debug(TAG, "stopService()")
         if (!isServiceStarted) {
             logger.warning(TAG, "Service is not running")
             return
         }
+        if (!shouldStopServiceFor(reason)) {
+            return
+        }
         if (servicePriority != ServicePriority.FOREGROUND_REQUESTED) {
             moveServiceToBackground()
             stopSelf()
+            lastServiceStartReason = ServiceStartStopReason.UNKNOWN
             isServiceStarted = false
         } else {
             // in this case we need to wait until the service priority has changed, otherwise we will see a
@@ -643,11 +683,31 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             launchInScopeSafely {
                 deferredUntilServiceInForeground.await()
                 logger.debug(TAG, "Pending foreground service start has completed")
+                if (!shouldStopServiceFor(reason)) {
+                    return@launchInScopeSafely
+                }
                 moveServiceToBackground()
                 stopSelf()
+                lastServiceStartReason = ServiceStartStopReason.UNKNOWN
                 isServiceStarted = false
             }
         }
+    }
+
+    private fun shouldStopServiceFor(reason: ServiceStartStopReason): Boolean {
+        if (reason == ServiceStartStopReason.INDEXING) {
+            // if a higher priority reason previously started the service, do not stop service when indexing ends
+            if (lastServiceStartReason in listOf(
+                    ServiceStartStopReason.MEDIA_BUTTON,
+                    ServiceStartStopReason.MEDIA_SESSION_CALLBACK,
+                    ServiceStartStopReason.SUSPEND_OR_SHUTDOWN
+                )
+            ) {
+                logger.debug(TAG, "Should not stop service because lastServiceStartReason=$lastServiceStartReason")
+                return false
+            }
+        }
+        return true
     }
 
     private fun delayedMoveServiceToBackground() {
@@ -689,7 +749,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         cancelAllJobs()
         audioSession.storePlaybackState()
         gui.shutdown()
-        stopService()
+        stopService(ServiceStartStopReason.SUSPEND_OR_SHUTDOWN)
         audioSession.shutdown()
         audioFileStorage.shutdown()
         audioItemLibrary.shutdown()
@@ -719,7 +779,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         audioSession.suspend()
         audioFileStorage.suspend()
         audioItemLibrary.suspend()
-        stopService()
+        stopService(ServiceStartStopReason.SUSPEND_OR_SHUTDOWN)
         logger.info(TAG, "end of suspend() reached")
     }
 
@@ -831,12 +891,14 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                 logger.warning(TAG, exc.message.toString())
                 result.sendResult(null)
             } catch (exc: IOException) {
-                logger.exception(TAG, exc.message.toString(), exc)
+                crashReporting.logMessages(logger.getLastLogLines(NUM_LOG_LINES_CRASH_REPORT))
                 crashReporting.recordException(exc)
+                logger.exception(TAG, exc.message.toString(), exc)
                 result.sendResult(null)
             } catch (exc: RuntimeException) {
-                logger.exception(TAG, exc.message.toString(), exc)
+                crashReporting.logMessages(logger.getLastLogLines(NUM_LOG_LINES_CRASH_REPORT))
                 crashReporting.recordException(exc)
+                logger.exception(TAG, exc.message.toString(), exc)
                 if (!isShuttingDown) {
                     gui.showErrorToastMsg(getString(R.string.toast_error_unknown))
                 }
@@ -878,7 +940,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                 }
             }
             try {
-                stopService()
+                stopService(ServiceStartStopReason.SUSPEND_OR_SHUTDOWN)
             } catch (exc: Exception) {
                 logger.exceptionLogcatOnly(TAG, exc.message.toString(), exc)
             }

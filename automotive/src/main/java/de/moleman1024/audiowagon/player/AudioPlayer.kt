@@ -16,8 +16,10 @@ import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.SharedPrefs
 import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.exceptions.AlreadyStoppedException
+import de.moleman1024.audiowagon.exceptions.CannotReadFileException
 import de.moleman1024.audiowagon.exceptions.MissingEffectsException
 import de.moleman1024.audiowagon.exceptions.NoItemsInQueueException
+import de.moleman1024.audiowagon.filestorage.AudioFile
 import de.moleman1024.audiowagon.filestorage.AudioFileStorage
 import de.moleman1024.audiowagon.log.CrashReporting
 import de.moleman1024.audiowagon.log.Logger
@@ -536,7 +538,12 @@ class AudioPlayer(
                 return@withContext
             }
             setDataSource(mediaDataSource)
-            prepare()
+            try {
+                prepare()
+            } catch (exc: IOException) {
+                val audioFile = AudioFile(uri)
+                throw CannotReadFileException(audioFile.name)
+            }
             onPreparedPlayFromQueue(currentMediaPlayer)
         }
     }

@@ -132,4 +132,6 @@ Sie Unterverzeichnisse.</string>
 	<string name="setting_crash_reporting_title">Fehlerberichte senden</string>
 	<string name="setting_crash_reporting_desc">Fehler automatisch an den Entwickler senden, um die App zu
 verbessern (benötigt Internetverbindung).</string>
+	<string name="toast_error_cannot_read_file">Datei konnte nicht gelesen werden: %1$s</string>
+	<string name="setting_website_title">Webseite</string>
 </resources>

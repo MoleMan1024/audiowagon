@@ -129,4 +129,6 @@ Google\n&#x2013; Firebase Crashlytics\n\nLisenstekster:\nwww.apache.org/licenses
 	<string name="setting_crash_reporting_title">Send krasjrapporter</string>
 	<string name="setting_crash_reporting_desc">Send krasjrapporter automatisk til utvikleren for å hjelpe
 forbedre appen (krever internettforbindelse).</string>
+	<string name="toast_error_cannot_read_file">Filen kunne ikke leses: %1$s</string>
+	<string name="setting_website_title">Nettsted</string>
 </resources>

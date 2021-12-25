@@ -20,8 +20,8 @@ android {
 		applicationId "de.moleman1024.audiowagon"
 		minSdkVersion rootProject.minSdkVersion
 		targetSdkVersion rootProject.targetSdkVersion
-		versionCode 122
-		versionName "1.2.2"
+		versionCode 125
+		versionName "1.2.5"
 		resValue "string", "VERSION_NAME", versionName
 		testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 		manifestPlaceholders["requestLegacyExternalStorage"] = "false"
@@ -70,8 +70,8 @@ dependencies {
 	implementation "androidx.lifecycle:lifecycle-runtime-ktx:$androidx_lifecycle_version"
 	implementation "org.jetbrains.kotlinx:kotlinx-serialization-core:$kotlinx_serialization_version"
 	implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinx_serialization_version"
-	implementation files("libs/libaums-0.8.1.aar")
-	implementation "com.google.firebase:firebase-crashlytics-ktx:18.2.5"
+	implementation files("libs/libaums-0.8.2.aar")
+	implementation "com.google.firebase:firebase-crashlytics-ktx:18.2.6"
 	implementation "org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.4.1"
 
 	// junit4 for local unit tests

@@ -137,4 +137,15 @@ class MediaBrowserTest {
         Assert.assertEquals(10, traversal.hierarchy[directoryRoot]?.size)
     }
 
+    /**
+     * Regression test for https://github.com/MoleMan1024/audiowagon/issues/54
+     */
+    @Test
+    fun onLoadChildren_manyFilesSDCardImage500FilesInDir_createsGroups() {
+        val traversal = MediaBrowserTraversal(browser)
+        val directoryRoot = "{\"type\":\"DIRECTORY\",\"path\":\"/storage/$SD_CARD_ID$ROOT_DIR/dirWithManyFiles\"}"
+        traversal.start(directoryRoot)
+        Assert.assertEquals(2, traversal.hierarchy[directoryRoot]?.size)
+    }
+
 }

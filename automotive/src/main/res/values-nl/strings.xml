@@ -130,4 +130,6 @@ zijn gemaakt door Google\n&#x2013; Firebase Crashlytics\n\nLicentie teksten:\nww
 	<string name="setting_crash_reporting_title">Stuur crashrapporten</string>
 	<string name="setting_crash_reporting_desc">Stuur automatisch crashrapporten naar de ontwikkelaar om te helpen
 de app verbeteren (vereist een internetverbinding).</string>
+	<string name="toast_error_cannot_read_file">Bestand kan niet worden gelezen: %1$s</string>
+	<string name="setting_website_title">Website</string>
 </resources>

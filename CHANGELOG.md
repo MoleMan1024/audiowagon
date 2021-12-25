@@ -12,6 +12,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+## [1.2.5] - 2021-12-25
+
+### Fixed
+
+- robustness improvements
+
+### Changed
+
+- show an error message to the user when a file can not be played back
+- send last 100 log file lines to Crashlytics when errors/crashes occur to be able to analyze the cause of the issue
+- now that a web browser is available, added a link to the AudioWagon website from within the settings
+
+
 ## [1.2.2] - 2021-12-10
 
 ### Fixed

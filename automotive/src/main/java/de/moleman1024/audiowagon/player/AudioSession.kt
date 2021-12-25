@@ -19,6 +19,7 @@ import android.support.v4.media.session.PlaybackStateCompat
 import androidx.media.session.MediaButtonReceiver
 import de.moleman1024.audiowagon.*
 import de.moleman1024.audiowagon.broadcast.*
+import de.moleman1024.audiowagon.exceptions.CannotReadFileException
 import de.moleman1024.audiowagon.exceptions.DriveAlmostFullException
 import de.moleman1024.audiowagon.exceptions.NoItemsInQueueException
 import de.moleman1024.audiowagon.filestorage.AudioFile
@@ -437,6 +438,7 @@ class AudioSession(
             onPlayFromMediaIDJob?.cancelAndJoin()
             audioFocusChangeListener.cancelAudioFocusLossJob()
             audioPlayer.shutdown()
+            audioFocus.release()
             releaseMediaSession()
         }
         audioSessionNotifications.shutdown()
@@ -446,6 +448,7 @@ class AudioSession(
         logger.debug(TAG, "suspend()")
         runBlocking(dispatcher) {
             audioPlayer.pause()
+            audioFocus.release()
             onPlayFromMediaIDJob?.cancelAndJoin()
             audioFocusChangeListener.cancelAudioFocusLossJob()
         }
@@ -1007,7 +1010,6 @@ class AudioSession(
     }
 
     private fun handleException(msg: String, exc: Throwable) {
-        logger.exception(TAG, msg, exc)
         when (exc) {
             is NoItemsInQueueException -> gui.showErrorToastMsg(context.getString(R.string.toast_error_no_tracks))
             is DriveAlmostFullException -> {
@@ -1017,9 +1019,18 @@ class AudioSession(
             is CancellationException -> {
                 logger.warning(TAG, exc.message.toString())
             }
-            else -> {
+            is CannotReadFileException -> {
+                gui.showErrorToastMsg(context.getString(R.string.toast_error_cannot_read_file, exc.fileName))
+                crashReporting.logMessages(logger.getLastLogLines(NUM_LOG_LINES_CRASH_REPORT))
                 crashReporting.logMessage(msg)
                 crashReporting.recordException(exc)
+                logger.exception(TAG, msg, exc)
+            }
+            else -> {
+                crashReporting.logMessages(logger.getLastLogLines(NUM_LOG_LINES_CRASH_REPORT))
+                crashReporting.logMessage(msg)
+                crashReporting.recordException(exc)
+                logger.exception(TAG, msg, exc)
             }
         }
     }

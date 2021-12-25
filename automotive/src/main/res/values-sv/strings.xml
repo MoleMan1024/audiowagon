@@ -129,4 +129,6 @@ underkataloger</string>
 	<string name="setting_crash_reporting_title">Skicka kraschrapporter</string>
 	<string name="setting_crash_reporting_desc">Skicka kraschrapporter automatiskt till utvecklaren som hjälp
 förbättra appen (kräver internetanslutning).</string>
+	<string name="toast_error_cannot_read_file">Filen kunde inte läsas: %1$s</string>
+	<string name="setting_website_title">Hemsida</string>
 </resources>

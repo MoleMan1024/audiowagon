@@ -53,7 +53,7 @@ class AudioItemLibrary(
 ) {
     private val metadataMaker = AudioMetadataMaker(audioFileStorage)
     val storageToRepoMap = mutableMapOf<String, AudioItemRepository>()
-    var isBuildingLibray = false
+    var isBuildingLibrary = false
     var numFilesSeenWhenBuildingLibrary = 0
     var libraryExceptionObservers = mutableListOf<(Exception) -> Unit>()
     private var isBuildLibraryCancelled: Boolean = false
@@ -89,7 +89,7 @@ class AudioItemLibrary(
      */
     @ExperimentalCoroutinesApi
     suspend fun buildLibrary(channel: ReceiveChannel<AudioFile>, callback: () -> Unit) {
-        isBuildingLibray = true
+        isBuildingLibrary = true
         isBuildLibraryCancelled = false
         numFilesSeenWhenBuildingLibrary = 0
         // indicate indexing has started via callback function
@@ -134,11 +134,11 @@ class AudioItemLibrary(
                 repo.clean()
             }
         }
-        isBuildingLibray = false
+        isBuildingLibrary = false
         isBuildLibraryCancelled = false
     }
 
-    private fun extractMetadataAndPopulateDB(
+    private suspend fun extractMetadataAndPopulateDB(
         audioFile: AudioFile,
         repo: AudioItemRepository,
         coroutineContext: CoroutineContext
@@ -522,10 +522,10 @@ class AudioItemLibrary(
     }
 
     fun cancelBuildLibrary() {
-        if (isBuildingLibray) {
+        if (isBuildingLibrary) {
             logger.debug(TAG, "cancelBuildLibrary()")
             isBuildLibraryCancelled = true
-            isBuildingLibray = false
+            isBuildingLibrary = false
         }
     }
 
@@ -537,7 +537,7 @@ class AudioItemLibrary(
         return storageToRepoMap.values.toTypedArray()[0]
     }
 
-    fun getPseudoCompilationArtistID(): Long? {
+    suspend fun getPseudoCompilationArtistID(): Long? {
         return getPrimaryRepository()?.getPseudoCompilationArtistID()
     }
 
