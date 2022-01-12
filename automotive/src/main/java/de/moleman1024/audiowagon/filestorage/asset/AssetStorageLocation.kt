@@ -52,6 +52,10 @@ class AssetStorageLocation(override val device: AssetMediaDevice) : AudioFileSto
         return listOf(createTestAudioFile())
     }
 
+    override fun getDirectoryContentsPlayable(directory: Directory): List<FileLike> {
+        return getDirectoryContents(directory)
+    }
+
     private fun createTestAudioFile(): AudioFile {
         val uri = Util.createURIForPath(storageID, TEST_MP3_FILENAME)
         val audioFile = AudioFile(uri)
@@ -65,6 +69,10 @@ class AssetStorageLocation(override val device: AssetMediaDevice) : AudioFileSto
 
     override fun getBufferedDataSourceForURI(uri: Uri): MediaDataSource {
         return device.getBufferedDataSourceForURI(uri)
+    }
+
+    override fun getByteArrayForURI(uri: Uri): ByteArray {
+        TODO("Not yet implemented")
     }
 
     override fun close() {

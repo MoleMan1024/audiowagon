@@ -46,7 +46,7 @@ class ContentHierarchyFile(
         }
         val directoryURI = Util.createURIForPath(storageLocation.storageID, parentPath.removePrefix("/"))
         val directoryContents: List<FileLike> =
-            storageLocation.getDirectoryContents(Directory(directoryURI)).sortedBy { it.name.lowercase() }
+            storageLocation.getDirectoryContentsPlayable(Directory(directoryURI)).sortedBy { it.name.lowercase() }
         directoryContents.filterIsInstance<AudioFile>().forEach {
             val audioFile = AudioFile(Util.createURIForPath(storageLocation.storageID, it.path))
             items += audioItemLibrary.createAudioItemForFile(audioFile)

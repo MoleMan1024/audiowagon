@@ -21,9 +21,9 @@ This app will **play audio files** from an attached **USB flash drive** in cars 
     - **skip** forwards/backwards
     - **seek** forwards/backwards
     - **shuffle** and **repeat** mode
-- currently playing track shows embedded **album art**
+- currently playing track shows **album art**
 - **compilation albums** are indicated (if marked as such in metadata)
-- **persistency**: remembers the last used playlist and playback position
+- **persistency**: remembers the last used playback queue and playback position
 - **search**: search for entries using the on-screen keyboard
 - **equalizer** with multiple presets
 - [**ReplayGain**](https://en.wikipedia.org/wiki/ReplayGain) for volume normalization of tracks
@@ -118,7 +118,7 @@ at my email (or you can use [GitHub](https://github.com/MoleMan1024/audiowagon/i
 ### Native speakers
 
 I am still looking for **volunteer native speakers to translate** the GUI texts in the app to all languages
-(except German, English, Dutch, Swedish, Norwegian, Danish, French). You can get the
+(already translated: German, English, Dutch, Swedish, Norwegian, Danish, French, Russian). You can get the
 [English strings to translate here](https://github.com/MoleMan1024/audiowagon/blob/master/automotive/src/main/res/values/strings.xml).
 
 

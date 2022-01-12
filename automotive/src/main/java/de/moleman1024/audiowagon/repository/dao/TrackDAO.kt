@@ -5,11 +5,12 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 package de.moleman1024.audiowagon.repository.dao
 
-import androidx.room.*
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Insert
+import androidx.room.Query
 import de.moleman1024.audiowagon.repository.MAX_DATABASE_SEARCH_ROWS
-import de.moleman1024.audiowagon.repository.entities.Artist
 import de.moleman1024.audiowagon.repository.entities.Track
-import de.moleman1024.audiowagon.repository.entities.TrackFTS
 
 @Dao
 interface TrackDAO {

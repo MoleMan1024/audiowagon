@@ -13,6 +13,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+## [1.3.0] - 2022-01-12
+
+### Fixed
+
+- robustness improvements
+
+### Changed
+
+- show an error message to the user when audio effects (equalizer, ReplayGain) can not be used
+
+### Added
+
+- added Russian translation
+- the behaviour when skipping backwards has changed: when the currently playing track has played less than 20 seconds,
+  the skip previous buttons will go to the previous track in the playback queue. However when the currently playing
+  track has already played more than 20 seconds, the previous buttons will now restart the track. This is more in-line
+  with the behaviour in other media software [#45](https://github.com/MoleMan1024/audiowagon/issues/45)
+- the app has been extended to support album art in directories. The highest priority is the album art embedded in the 
+  audio file. If no such album art is found, the app will now look alo for .jpg or .png in the same directory as the 
+  audio file with usual filenames (e.g. "front.jpg", "folder.png", "cover.jpg", "index.jpg", "albumart.jpg", etc.) 
+  [#36](https://github.com/MoleMan1024/audiowagon/issues/36)
+
+
 ## [1.2.5] - 2021-12-25
 
 ### Fixed
@@ -40,6 +63,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.2.0] - 2021-12-04
 
+### Changed
+
+- extended the option "Read metadata" with a "manual" setting. This allows you to index metadata of audio files on the
+  connected USB drive at your request only. The 
+  [FAQ was updated](https://moleman1024.github.io/audiowagon/faq.html#what-happens-during-indexing) with a section 
+  explaining the behaviour. [#21](https://github.com/MoleMan1024/audiowagon/issues/21)
+
 ### Added
 
 - added a setting to select the behaviour of the app when listening to audio and a route guidance voice prompt needs to
@@ -51,13 +81,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   default for data privacy reasons, please see the 
   [privacy policy](https://github.com/MoleMan1024/audiowagon/blob/master/PRIVACY_POLICY.md). You will also need to 
   re-accept the legal disclaimer.
-
-### Changed
-
-- extended the option "Read metadata" with a "manual" setting. This allows you to index metadata of audio files on the
-  connected USB drive at your request only. The 
-  [FAQ was updated](https://moleman1024.github.io/audiowagon/faq.html#what-happens-during-indexing) with a section 
-  explaining the behaviour. [#21](https://github.com/MoleMan1024/audiowagon/issues/21)
 
 
 ## [1.1.4] - 2021-11-29
@@ -146,7 +169,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - improve robustness
 
 
-## [0.6.1] - 2021-11-0
+## [0.6.1] - 2021-11-01
 
 ### Fixed
 

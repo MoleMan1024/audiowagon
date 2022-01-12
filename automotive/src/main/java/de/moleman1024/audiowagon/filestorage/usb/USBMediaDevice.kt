@@ -447,6 +447,10 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
         return fileSystem!!.freeSpace < 1024 * 1024 * MINIMUM_FREE_SPACE_FOR_LOGGING_MB
     }
 
+    fun getChunkSize(): Int {
+        return fileSystem?.chunkSize ?: DEFAULT_FILESYSTEM_CHUNK_SIZE
+    }
+
     override fun equals(other: Any?): Boolean {
         if (other !is USBMediaDevice) {
             return false

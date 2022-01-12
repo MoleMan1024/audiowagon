@@ -51,10 +51,16 @@ class SettingsFragment : PreferenceFragmentCompat() {
                         updateDatabaseStatusJob = null
                     }
                 }
+                SHARED_PREF_ENABLE_EQUALIZER -> {
+                    updateEqualizerSwitch(sharedPreferences)
+                }
                 SHARED_PREF_EQUALIZER_PRESET -> {
                     updateEqualizerPreset(sharedPreferences)
                     val eqPreset = SharedPrefs.getEQPreset(sharedPreferences)
                     (activity as SettingsActivity).updateEqualizerPreset(eqPreset)
+                }
+                SHARED_PREF_ENABLE_REPLAYGAIN -> {
+                    updateReplayGainSwitch(sharedPreferences)
                 }
                 SHARED_PREF_READ_METADATA -> {
                     updateReadMetadataList(sharedPreferences)

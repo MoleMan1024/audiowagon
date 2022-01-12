@@ -10,10 +10,7 @@ import android.media.MediaDataSource
 import android.net.Uri
 import android.support.v4.media.MediaDescriptionCompat
 import androidx.annotation.VisibleForTesting
-import de.moleman1024.audiowagon.GUI
-import de.moleman1024.audiowagon.R
-import de.moleman1024.audiowagon.SharedPrefs
-import de.moleman1024.audiowagon.Util
+import de.moleman1024.audiowagon.*
 import de.moleman1024.audiowagon.authorization.SDCardDevicePermissions
 import de.moleman1024.audiowagon.authorization.USBDevicePermissions
 import de.moleman1024.audiowagon.filestorage.asset.AssetMediaDevice
@@ -42,6 +39,7 @@ import kotlinx.coroutines.sync.withLock
 
 private const val TAG = "AudioFileStor"
 private val logger = Logger
+private const val SD_CARD_ID = "1404-9F0B"
 
 /**
  * This class manages storage locations and provides functions to index them for audio files
@@ -98,7 +96,10 @@ open class AudioFileStorage(
      * This is only used to provide demo soundfiles to Google during automatic review of production builds
      */
     private fun initAssetsForEmulator() {
-        if (Util.isRunningInEmulator() && !Util.isDebugBuild(context)) {
+        if (!Util.isRunningInEmulator()) {
+            return
+        }
+        if (!Util.isDebugBuild(context)) {
             logger.debug(TAG, "initAssetsForEmulator()")
             try {
                 // agree to the legal disclaimer automatically in case this is automatically reviewed
@@ -109,6 +110,10 @@ open class AudioFileStorage(
             } catch (exc: Exception) {
                 logger.exception(TAG, exc.message.toString(), exc)
             }
+        } else if (BuildConfig.BUILD_TYPE == "emulatorSDCard") {
+            logger.debug(TAG, "Loading SD card for testing in emulator")
+            val sdCardMediaDevice = SDCardMediaDevice(SD_CARD_ID, "/many_files")
+            mediaDevicesForTest.add(sdCardMediaDevice)
         }
     }
 
@@ -440,6 +445,25 @@ open class AudioFileStorage(
 
     fun areAnyStoragesAvail(): Boolean {
         return audioFileStorageLocations.isNotEmpty()
+    }
+
+    fun getAlbumArtInDirectoryForURI(uri: Uri): ByteArray? {
+        var albumArtBytes: ByteArray? = null
+        val directory = Util.getParentPath(AudioFile(uri).path)
+        logger.debug(TAG, "Looking for album art in directory: $directory")
+        val storageLocation = getStorageLocationForURI(uri)
+        val directoryURI = Util.createURIForPath(storageLocation.storageID, directory)
+        val directoryContents: List<FileLike> = storageLocation.getDirectoryContents(Directory(directoryURI))
+        val imageFiles =
+            directoryContents.filter { it.name.matches(Regex(".*\\.(jpg|png)$", RegexOption.IGNORE_CASE)) }.reversed()
+        val albumArtFile = imageFiles.firstOrNull {
+            it.name.matches(Regex("^(cover|folder|front|index|albumart.*|art\\.).*", RegexOption.IGNORE_CASE))
+        }
+        if (albumArtFile != null) {
+            logger.debug(TAG, "Found album art file: $albumArtFile")
+            albumArtBytes = storageLocation.getByteArrayForURI(albumArtFile.uri)
+        }
+        return albumArtBytes
     }
 
 }

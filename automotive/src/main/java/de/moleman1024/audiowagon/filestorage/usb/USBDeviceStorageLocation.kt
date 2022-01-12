@@ -8,12 +8,14 @@ package de.moleman1024.audiowagon.filestorage.usb
 import android.media.MediaDataSource
 import android.net.Uri
 import com.github.mjdev.libaums.fs.UsbFile
+import com.github.mjdev.libaums.fs.UsbFileInputStream
 import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.filestorage.*
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.produce
+import java.io.ByteArrayOutputStream
 import java.net.URLConnection
 import java.util.*
 import kotlin.RuntimeException
@@ -63,13 +65,24 @@ class USBDeviceStorageLocation(override val device: USBMediaDevice) : AudioFileS
     }
 
     override fun getDirectoryContents(directory: Directory): List<FileLike> {
+        return getDirectoryContentsWithOptionalFilter(directory)
+    }
+
+    override fun getDirectoryContentsPlayable(directory: Directory): List<FileLike> {
+        return getDirectoryContentsWithOptionalFilter(directory, ::isPlayableAudioFile)
+    }
+
+    private fun getDirectoryContentsWithOptionalFilter(
+        directory: Directory,
+        fileFilter: ((UsbFile) -> Boolean)? = null
+    ): List<FileLike> {
         val itemsInDir = mutableListOf<FileLike>()
         device.getDirectoryContents(directory.uri).forEach { usbFile ->
             if (usbFile.isDirectory) {
                 val uri = Util.createURIForPath(storageID, usbFile.absolutePath)
                 itemsInDir.add(Directory(uri))
             } else {
-                if (isPlayableAudioFile(usbFile)) {
+                if ((fileFilter != null && fileFilter(usbFile)) || fileFilter == null) {
                     val audioFile = createAudioFileFromUSBFile(usbFile)
                     itemsInDir.add(audioFile)
                 }
@@ -88,6 +101,19 @@ class USBDeviceStorageLocation(override val device: USBMediaDevice) : AudioFileS
 
     override fun getBufferedDataSourceForURI(uri: Uri): MediaDataSource {
         return device.getBufferedDataSourceForURI(uri)
+    }
+
+    override fun getByteArrayForURI(uri: Uri): ByteArray {
+        val usbFile = device.getUSBFileFromURI(uri)
+        val inputStream = UsbFileInputStream(usbFile)
+        val byteArrayOutputStream = ByteArrayOutputStream()
+        val buffer = ByteArray(device.getChunkSize())
+        var bytesRead = 0
+        while (bytesRead > -1) {
+            bytesRead = inputStream.read(buffer)
+            byteArrayOutputStream.write(buffer)
+        }
+        return byteArrayOutputStream.toByteArray()
     }
 
     override fun close() {

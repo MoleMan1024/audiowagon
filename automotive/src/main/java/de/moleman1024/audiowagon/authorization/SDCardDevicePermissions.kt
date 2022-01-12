@@ -9,8 +9,12 @@ import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
+import de.moleman1024.audiowagon.log.Logger
 import java.util.*
 import kotlin.math.abs
+
+private const val TAG = "SDCardDevPerm"
+private val logger = Logger
 
 class SDCardDevicePermissions(private val context: Context) {
     // see https://developer.android.com/training/data-storage/shared/media#direct-file-paths
@@ -18,6 +22,7 @@ class SDCardDevicePermissions(private val context: Context) {
     private val permissionRequestUUID : Int = abs(UUID.randomUUID().hashCode())
 
     fun requestPermissions(activity: Activity) {
+        logger.debug(TAG, "Requesting permission to access SD card")
         activity.requestPermissions(neededPermissions, permissionRequestUUID)
     }
 

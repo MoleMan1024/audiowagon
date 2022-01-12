@@ -79,7 +79,7 @@ an den Entwickler.</string>
 	<string name="setting_USB_status_not_connected">Nicht verbunden</string>
 	<string name="setting_USB_status_unknown">Unbekannt. Versuchen Sie den USB-Stick neu einzustecken oder starten Sie
 Android neu</string>
-	<string name="setting_USB_status_connected_no_permission">Verbunden. Berechtigung fehlt.</string>
+	<string name="setting_USB_status_connected_no_permission">Verbunden. Berechtigung fehlt</string>
 	<string name="setting_USB_status_error">Schreib-/Lesefehler, versuchen Sie den USB-Stick neu einzustecken oder
 reparieren/formatieren Sie ihn (FAT32)</string>
 	<string name="setting_USB_status_ejected">Ausgeworfen. Sie können den USB-Stick jetzt sicher abstecken</string>

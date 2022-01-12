@@ -32,6 +32,7 @@ private val logger = Logger
 const val MEDIA_ERROR_INVALID_STATE = -38
 // arbitrary number
 const val MEDIA_ERROR_AUDIO_FOCUS_DENIED = -1249
+const val SKIP_PREVIOUS_THRESHOLD_MSEC = 20000L
 
 /**
  * Manages two [MediaPlayer] instances + equalizer etc.
@@ -96,8 +97,14 @@ class AudioPlayer(
     }
 
     private fun initEffects() {
-        effectsFlip = mediaPlayerFlip?.audioSessionId?.let { Effects(it) }
-        effectsFlop = mediaPlayerFlop?.audioSessionId?.let { Effects(it) }
+        effectsFlip = mediaPlayerFlip?.audioSessionId?.let {
+            logger.debug(TAG, "Init effects for audio session ID: ${mediaPlayerFlip?.audioSessionId}")
+            Effects(it)
+        }
+        effectsFlop = mediaPlayerFlop?.audioSessionId?.let {
+            logger.debug(TAG, "Init effects for audio session ID: ${mediaPlayerFlop?.audioSessionId}")
+            Effects(it)
+        }
         val equalizerPresetPreference = SharedPrefs.getEQPreset(context)
         equalizerPresetPreference.let {
             try {
@@ -350,6 +357,23 @@ class AudioPlayer(
             playerStatus.playbackState = PlaybackStateCompat.STATE_SKIPPING_TO_PREVIOUS
             notifyPlayerStatusChange()
             playQueueAtIndex(prevQueueIndex)
+        }
+    }
+
+    /**
+     * Handle "previous" action (e.g. from steering wheel button) depending on current track time position:
+     * If currently playing track is at >= x seconds, restart the track from beginning.
+     * Else if currently playing track is at < x seconds, go to previous track instead.
+     * Requested in https://github.com/MoleMan1024/audiowagon/issues/45
+     */
+    suspend fun handlePrevious() {
+        withContext(dispatcher) {
+            val currentPosMilliSec = getCurrentPositionMilliSec()
+            if (currentPosMilliSec < SKIP_PREVIOUS_THRESHOLD_MSEC) {
+                skipPreviousTrack()
+            } else {
+                seekTo(0)
+            }
         }
     }
 

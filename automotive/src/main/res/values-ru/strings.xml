@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+SPDX-FileCopyrightText: 2021 MoleMan1024 <moleman1024dev@gmail.com>
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
+<!-- initial translation by: Vitaliy L. -->
+<resources>
+	<string name="app_name">AudioWagon</string>
+	<string name="queue_title">Список воспроизведения</string>
+	<string name="search_group_tracks">Композиции</string>
+	<string name="search_group_artists">Исполнители</string>
+	<string name="search_group_albums">Альбомы</string>
+	<string name="browse_tree_category_tracks">Композиции</string>
+	<string name="browse_tree_category_artists">Исполнители</string>
+	<string name="browse_tree_category_albums">Альбомы</string>
+	<string name="browse_tree_pseudo_track_shuffle_all">Перемешать все</string>
+	<string name="browse_tree_pseudo_play_all">Воспроизвести все</string>
+	<string name="browse_tree_unknown_album">Неизвестный альбом</string>
+	<string name="browse_tree_unknown_artist">Неизвестный исполнитель</string>
+	<string name="browse_tree_various_artists">Разные исполнители</string>
+	<string name="browse_tree_no_entries_title">Нет аудио файлов</string>
+	<string name="browse_tree_no_usb_drive">Вставьте USB Flash-накопитель</string>
+	<string name="browse_tree_usb_drive_ejected">USB Flash-накопитель извлечен или не может быть прочтен</string>
+	<string name="browse_tree_need_to_agree_legal_title">Пользовательское соглашение не принято</string>
+	<string name="browse_tree_need_to_agree_legal_desc">Проверьте настройки</string>
+	<string name="toast_indexing_started">Индексирование USB Flash-накопителя началось …</string>
+	<string name="toast_indexing_completed">Индексирование USB Flash-накопителя завершено</string>
+	<string name="toast_no_next_track">Следующая композиция отсутствует</string>
+	<string name="toast_no_prev_track">Предыдущая композиция отсутствует</string>
+	<string name="toast_eject_completed">USB Flash-накопитель отключен и может быть безопасно извлечен</string>
+	<string name="toast_error">ОШИБКА: %1$s</string>
+	<string name="toast_error_audio_focus_denied">Невозможность получить аудио-приоритет</string>
+	<string name="toast_error_USB_init">Ошибка подключения к USB Flash-накопителю</string>
+	<string name="toast_error_no_filesystem">Файловая система не поддерживется</string>
+	<string name="toast_error_library_creation_fail">Ошибка создания библиотеки</string>
+	<string name="toast_error_invalid_state">Неверное состояние</string>
+	<string name="toast_error_IO">I/O ошибка</string>
+	<string name="toast_error_malformed_data">Данные повреждены</string>
+	<string name="toast_error_timeout">Таймаут</string>
+	<string name="toast_error_not_supported">Не поддерживается</string>
+	<string name="toast_error_no_USB_device">USB Flash-накопитель отсутствует</string>
+	<string name="toast_error_unknown">Неизвестная ошибка</string>
+	<string name="notif_action_play">Воспроизведение</string>
+	<string name="notif_action_pause">Пауза</string>
+	<string name="notif_action_stop">Стоп</string>
+	<string name="notif_action_next">Следующий</string>
+	<string name="notif_action_prev">Предыдущий</string>
+	<string name="notif_channel_name">Оповещения AudioWagon</string>
+	<string name="notif_channel_desc">Канал оповещений AudioWagon</string>
+	<string name="notif_channel_name_indexing">Оповещения идексирования AudioWagon</string>
+	<string name="notif_channel_desc_indexing">Канал оповещений идексирования AudioWagon</string>
+	<string name="notif_indexing_title">Статус индексирования USB Flash-накопителя</string>
+	<string name="notif_indexing_text_in_progress">В процессе …</string>
+	<string name="notif_indexing_text_in_progress_num_items">Найдено: %1$d …</string>
+	<string name="notif_indexing_text_completed">Завершено</string>
+	<string name="action_shuffle_turn_on">Воспроизведение в случайном порядке вкл</string>
+	<string name="action_shuffle_turn_off">Воспроизведение в случайном порядке выкл</string>
+	<string name="action_repeat_turn_on">Повторное воспроизведение вкл</string>
+	<string name="action_repeat_turn_off">Повторное воспроизведение выкл</string>
+	<string name="action_eject">Извлечь</string>
+	<string name="settings_title">Настройки</string>
+	<string name="setting_enable_equalizer_title">Эквалайзер</string>
+	<string name="setting_sound_category_title">Звук</string>
+	<string name="setting_equalizer_preset_title">Пресет эквалайзера</string>
+	<string name="equalizer_preset_less_bass">Меньше низких частот</string>
+	<string name="equalizer_preset_more_bass">Больше низких частот</string>
+	<string name="equalizer_preset_less_treble">Меньше высоких частот</string>
+	<string name="equalizer_preset_more_treble">Больше высоких частот</string>
+	<string name="equalizer_preset_P2">P2</string>
+	<string name="equalizer_preset_P2_plus">P2+</string>
+	<string name="equalizer_preset_V_shape">V-образная форма</string>
+	<string name="setting_general_category_title">Общие</string>
+	<string name="setting_log_to_USB_title">Запись логов на USB Flash-накопитель</string>
+	<string name="setting_log_to_USB_desc">Отправьте файлы логов разработчику при создании отчета об ошибках.</string>
+	<string name="setting_USB_status_title">Статус USB Flash-накопителя</string>
+	<string name="setting_USB_status_ok">ОК</string>
+	<string name="setting_USB_status_not_connected">Не подключен</string>
+	<string name="setting_USB_status_unknown">Неизвесто. Попробуйте заново подключть USB Flash-накопитель или
+перезагрузить Android</string>
+	<string name="setting_USB_status_connected_no_permission">Подключен. Отсутствует разрешение</string>
+	<string name="setting_USB_status_error">Ошибка чтения/записи, попробуйте заново подключть USB Flash-накопитель либо
+востановить/отформатировать его (FAT32)</string>
+	<string name="setting_USB_status_ejected">USB Flash-накопитель отключен и может быть безопасно извлечен</string>
+	<string name="setting_USB_status_not_compatible">Не поддерживается. Пожалуйста отформатируйте USB Flash-накопитель
+в файловую систему FAT32</string>
+	<string name="setting_show_legal_disclaimer_title">Показать пользовательское соглашение</string>
+	<string name="setting_show_legal_disclaimer_desc">Вы должны согласиться с пользовательским соглашением, перед
+использованием приложения</string>
+	<string name="setting_version">Версия</string>
+	<string name="legal_disclaimer_title">AudioWagon: Пользовательское соглашение</string>
+	<string name="legal_disclaimer_distraction_heading">Отвлечение внимания водителя</string>
+	<string name="legal_disclaimer_distraction_text">Вы соглашаетесь подчиняться всем федеральным, государственным и
+местным законам об отвлечении внимания водителя, а также пользованием развлекательной системы автомобиля, во
+время использования этого приложения.\nИспользуйте это приложение только в безопасной дорожной
+обстановке.</string>
+	<string name="legal_disclaimer_liability_heading">Гарантии/Ответственность</string>
+	<string name="legal_disclaimer_liability_text">Данное програмное обеспечение распространяется по принципу
+"КАК ЕСТЬ", без каких-либо явных или не явных гарантий. В любом случае авторы несут ответственность за любые
+убытки, возникшие в результате использования данного программного обеспечения.</string>
+	<string name="legal_disclaimer_license_heading">Лицензия</string>
+	<string name="legal_disclaimer_license_text">Это программное обеспечение лицензировано под GPLv3.
+Создано MoleMan1024</string>
+	<string name="legal_disclaimer_third_party_licenses_heading">Сторонние лицензии</string>
+	<string name="legal_disclaimer_third_party_licenses_text">Это приложение использует контентот
+следующих разработчиков, под лицензией Apache 2.0:\n\n&#x2013; множество библиотек созданных Android Open
+Source Project\n&#x2013; libaums библиотеку созданную Magnus Jahnen\n&#x2013; Material Визуальный стиль от
+Google\n&#x2013; Firebase Crashlytics\n\nLicense
+texts:\nwww.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/licenses/gpl-3.0.html</string>
+	<string name="legal_disclaimer_confirm_btn">Согласен</string>
+	<string name="legal_disclaimer_cancel_btn">Отмена</string>
+	<string name="toast_error_no_tracks">Композиции отсутствуют</string>
+	<string name="toast_error_not_enough_space_for_log">Недостаточно свободного мест для записи лога.</string>
+	<string name="setting_USB_status_too_many_files_in_dir">Слишком много файлов в одной папке, пожалуйста создайте
+дополнительную папку</string>
+	<string name="browse_tree_category_files">Файлы</string>
+	<string name="setting_library_category_title">Медиафайл</string>
+	<string name="setting_read_metadata">Прочесть мета-данные</string>
+	<string name="setting_delete_databases">Удалить базу данных</string>
+	<string name="setting_database_status_title">База данных</string>
+	<string name="setting_enable_replaygain">ReplayGain</string>
+	<string name="toast_searching_voice_input">Поиск: \"%1$s\"</string>
+	<string name="setting_read_metadata_when_connected">При подключении USB Flash-накопителя</string>
+	<string name="setting_read_metadata_manual">Вручную</string>
+	<string name="setting_read_metadata_off">Выкл</string>
+	<string name="setting_read_metadata_start_now">Чтение мета-данных</string>
+	<string name="browse_tree_metadata_not_yet_indexed_title">Индексирование мета-данных не завершено</string>
+	<string name="browse_tree_metadata_not_yet_indexed_desc">Проверьте настройки</string>
+	<string name="setting_audiofocus_behavior">Поведение во время навигации</string>
+	<string name="setting_audiofocus_pause">Пауза</string>
+	<string name="setting_audiofocus_duck">Уменьшение громкости</string>
+	<string name="setting_crash_reporting_title">Послать отчет об ошибках</string>
+	<string name="setting_crash_reporting_desc">Автоматически посылать отчет об ошибках разработчику, для улучшения
+качества приложения (необходимо подлючение к Интернету).</string>
+	<string name="toast_error_cannot_read_file">Файл не может быть прочтен: %1$s</string>
+	<string name="setting_website_title">Веб-сайт</string>
+</resources>

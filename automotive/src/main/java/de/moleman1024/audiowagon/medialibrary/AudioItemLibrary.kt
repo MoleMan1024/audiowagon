@@ -57,6 +57,16 @@ class AudioItemLibrary(
     var numFilesSeenWhenBuildingLibrary = 0
     var libraryExceptionObservers = mutableListOf<(Exception) -> Unit>()
     private var isBuildLibraryCancelled: Boolean = false
+    private data class LastAlbumArt(
+        @Suppress("ArrayInDataClass") val bytes: ByteArray,
+        val albumArtist: String,
+        val album: String
+    ) {
+        override fun toString(): String {
+            return "LastAlbumArt(albumArtist=$albumArtist, album=$album)"
+        }
+    }
+    private var lastAlbumArt: LastAlbumArt? = null
 
     fun initRepository(storageID: String) {
         if (storageToRepoMap.containsKey(storageID)) {
@@ -488,6 +498,37 @@ class AudioItemLibrary(
         return metadataMaker.createMetadataForItem(audioItem)
     }
 
+    fun getAlbumArtForItem(audioItem: AudioItem): ByteArray? {
+        var albumArtBytes = metadataMaker.getEmbeddedAlbumArtForAudioItem(audioItem)
+        if (albumArtBytes != null) {
+            val albumArtResized = metadataMaker.resizeAlbumArt(albumArtBytes)
+            logger.debug(TAG, "Got album art with size: ${albumArtResized?.size}")
+            lastAlbumArt = null
+            return albumArtResized
+        }
+        // no embedded album art found, check for image in album directory
+        if (lastAlbumArt != null
+            && audioItem.albumArtist.isNotBlank() && audioItem.albumArtist == lastAlbumArt?.albumArtist
+            && audioItem.album.isNotBlank() && audioItem.album == lastAlbumArt?.album
+        ) {
+            logger.debug(TAG, "Same album+artist, re-using last album art: $lastAlbumArt")
+            return lastAlbumArt!!.bytes
+        }
+        albumArtBytes = audioFileStorage.getAlbumArtInDirectoryForURI(audioItem.uri)
+        if (albumArtBytes != null) {
+            val albumArtResized = metadataMaker.resizeAlbumArt(albumArtBytes)
+            if (albumArtResized != null) {
+                logger.debug(TAG, "Found album art in directory with size: ${albumArtResized.size}")
+                if (audioItem.albumArtist.isNotBlank() && audioItem.album.isNotBlank()) {
+                    lastAlbumArt = LastAlbumArt(albumArtResized, audioItem.albumArtist, audioItem.album)
+                }
+            }
+            return albumArtResized
+        }
+        logger.warning(TAG, "Could not retrieve any album art")
+        return albumArtBytes
+    }
+
     fun getRepoForContentHierarchyID(contentHierarchyID: ContentHierarchyID): AudioItemRepository? {
         val storageID = contentHierarchyID.storageID
         return storageToRepoMap[storageID]
@@ -505,12 +546,14 @@ class AudioItemLibrary(
         logger.debug(TAG, "shutdown()")
         storageToRepoMap.values.forEach { it.close() }
         storageToRepoMap.clear()
+        lastAlbumArt = null
     }
 
     fun suspend() {
         logger.debug(TAG, "suspend()")
         storageToRepoMap.values.forEach { it.close() }
         storageToRepoMap.clear()
+        lastAlbumArt = null
     }
 
     private fun notifyObservers(exc: Exception) {

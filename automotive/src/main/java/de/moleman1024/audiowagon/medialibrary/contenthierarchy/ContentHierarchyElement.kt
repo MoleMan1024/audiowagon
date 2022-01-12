@@ -168,7 +168,6 @@ abstract class ContentHierarchyElement(
                     throw AssertionError("createGroups() not supported for type: ${groupContentHierarchyID.type}")
                 }
             }
-
             val description = MediaDescriptionCompat.Builder().apply {
                 setTitle(
                     "${firstItemTitle.take(numTitleCharsPerGroup)} " +
