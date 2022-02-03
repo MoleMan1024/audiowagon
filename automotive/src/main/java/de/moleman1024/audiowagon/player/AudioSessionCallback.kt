@@ -236,7 +236,7 @@ class AudioSessionCallback(
         logger.debug(TAG, "onSkipToPrevious()")
         super.onSkipToPrevious()
         launchInScopeSafely {
-            audioPlayer.skipPreviousTrack()
+            audioPlayer.handlePrevious()
         }
     }
 

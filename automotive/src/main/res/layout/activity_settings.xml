@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- taken from
+<?xml version="1.0" encoding="utf-8"?><!-- taken from
 https://github.com/android/uamp/blob/main/automotive/src/main/res/layout/activity_settings.xml
 -->
 <!--
@@ -21,6 +20,7 @@ https://github.com/android/uamp/blob/main/automotive/src/main/res/layout/activit
         android:id="@+id/settings_activity"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:background="@color/settings_background"
         android:orientation="vertical">
 
     <com.google.android.material.appbar.AppBarLayout

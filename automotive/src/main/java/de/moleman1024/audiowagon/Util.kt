@@ -110,6 +110,7 @@ class Util {
                     else -> {
                         logger.exception(tag, msg, exc)
                         crashReporting.logMessage(msg)
+                        crashReporting.logMessages(logger.getLastLogLines(NUM_LOG_LINES_CRASH_REPORT))
                         crashReporting.recordException(exc)
                     }
                 }
@@ -122,8 +123,9 @@ class Util {
                 } catch (exc: CancellationException) {
                     logger.warning(tag, "$exc")
                 } catch (exc: Exception) {
-                    logger.exception(tag, exc.message.toString(), exc)
+                    crashReporting.logMessages(logger.getLastLogLines(NUM_LOG_LINES_CRASH_REPORT))
                     crashReporting.recordException(exc)
+                    logger.exception(tag, exc.message.toString(), exc)
                 }
             }
         }

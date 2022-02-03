@@ -16,7 +16,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 	<string name="search_group_artists">Artists</string>
 	<string name="search_group_albums">Albums</string>
 	<!-- The "browse tree" is the main view when starting the app -->
-	<!-- There are 3 categories at the top the user can pick from to select media items: Tracks/Albums/Artists -->
+	<!-- There are 4 categories at the top the user can pick from to select media items: Tracks/Albums/Artists/Files -->
 	<string name="browse_tree_category_tracks">Tracks</string>
 	<string name="browse_tree_category_artists">Artists</string>
 	<string name="browse_tree_category_albums">Albums</string>
@@ -50,7 +50,6 @@ SPDX-License-Identifier: GPL-3.0-or-later
 	<string name="toast_error">ERROR: %1$s</string>
 	<!-- We assume "USB" is the same in all languages -->
 	<string name="toast_error_USB" translatable="false">USB: %1$s</string>
-	<string name="toast_error_USB_IO" translatable="false">I/O</string>
 	<!-- Error messages -->
 	<!-- The app needs to receive "audio focus" before it can play back any audio. The app will lose "audio focus"
 	for example when a navigation route guidance is being read out or when a phone call is ongoing. -->
@@ -61,6 +60,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 	<!-- "state" refers to the state the software is in -->
 	<string name="toast_error_invalid_state">Invalid state</string>
 	<!-- These error strings will be prefixed with the toast_error above, e.g. "ERROR: Timeout" -->
+	<!-- "I/O" means "Input/Output" -->
 	<string name="toast_error_IO">I/O error</string>
 	<string name="toast_error_malformed_data">Malformed data</string>
 	<string name="toast_error_timeout">Timeout</string>
@@ -111,7 +111,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 	<string name="equalizer_preset_V_shape">V-shape</string>
 	<string name="setting_general_category_title">General</string>
 	<string name="setting_log_to_USB_title">Write log files to USB drive</string>
-	<!-- The user is adressed directly here. Use a formal form if applicable in your language. -->
+	<!-- The user is adressed directly here ("you"). Use a formal form if applicable in your language. -->
 	<string name="setting_log_to_USB_desc">Give these log files to the developer when you create a bug report.</string>
 	<string name="setting_USB_status_title">USB status</string>
 	<string name="setting_USB_status_ok">OK</string>
@@ -150,26 +150,40 @@ Project\n&#x2013; the libaums library created by Magnus Jahnen\n&#x2013; Materia
 	<string name="legal_disclaimer_cancel_btn">Cancel</string>
 	<string name="toast_error_no_tracks">No tracks</string>
 	<string name="toast_error_not_enough_space_for_log">Not enough space to write log file</string>
+	<!-- This string is no longer used, no need to translate it -->
 	<string name="setting_USB_status_too_many_files_in_dir">Too many files in a directory, please use
 subdirectories</string>
 	<string name="browse_tree_category_files">Files</string>
+	<!-- more entries in the settings screen: the car-internal databases can be deleted (e.g. if a USB stick is no
+	longer used) to save some space -->
 	<string name="setting_library_category_title">Media</string>
 	<string name="setting_read_metadata">Read metadata</string>
 	<string name="setting_delete_databases">Delete databases</string>
 	<string name="setting_database_status_title">Database</string>
+	<!-- ReplayGain is a technology to make audio files of different genres play back in a similar volume level
+	( https://en.wikipedia.org/wiki/ReplayGain ) -->
 	<string name="setting_enable_replaygain">ReplayGain</string>
-	<!-- This will be shown to show the voice recognized string to the user -->
+	<!-- The search query based on the recognized voice input will be shown to the user in a toast message -->
 	<string name="toast_searching_voice_input">Searching for: \"%1$s\"</string>
+	<!-- even more entries in the settings screen: how/when to index audio files on USB stick -->
 	<string name="setting_read_metadata_when_connected">When USB drive connected</string>
 	<string name="setting_read_metadata_manual">Manually</string>
 	<string name="setting_read_metadata_off">Off</string>
 	<string name="setting_read_metadata_start_now">Read metadata now</string>
+	<!-- This is shown in the browse view when Metadata indexing is set to "manual" mode, a USB stick is connected
+	but nothing was indexed yet -->
 	<string name="browse_tree_metadata_not_yet_indexed_title">Metadata not yet indexed</string>
 	<string name="browse_tree_metadata_not_yet_indexed_desc">Check the settings</string>
+	<!-- even more entries in the settings screen: the behaviour of the app when a route guidance TTS prompt is
+	played back -->
 	<string name="setting_audiofocus_behavior">Behaviour during route guidance</string>
 	<string name="setting_audiofocus_pause">Pause</string>
 	<string name="setting_audiofocus_duck">Lower volume</string>
+	<!-- setting for automatic sending of crash reports to developer -->
 	<string name="setting_crash_reporting_title">Send crash reports</string>
 	<string name="setting_crash_reporting_desc">Automatically send crash reports to the developer to help
 improve the app (requires internet connection).</string>
+	<string name="toast_error_cannot_read_file">File could not be read: %1$s</string>
+	<string name="setting_website_title">Website</string>
+	<string name="setting_website_desc" translatable="false">moleman1024.github.io/audiowagon</string>
 </resources>

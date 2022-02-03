@@ -129,4 +129,6 @@ utiliser des sous-répertoires.</string>
 	<string name="setting_crash_reporting_title">Envoyer des rapports de plantage</string>
 	<string name="setting_crash_reporting_desc">Envoyer automatiquement des rapports de plantage au développeur pour
 l\'aider améliorer l\'application (nécessite une connexion Internet).</string>
+	<string name="toast_error_cannot_read_file">Impossible de lire le fichier: %1$s</string>
+	<string name="setting_website_title">Site Internet</string>
 </resources>

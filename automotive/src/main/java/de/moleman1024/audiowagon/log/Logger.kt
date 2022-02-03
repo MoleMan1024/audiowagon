@@ -55,8 +55,6 @@ object Logger : LoggerInterface {
             } catch (exc: IOException) {
                 exceptionLogcatOnly(TAG, "Could not write to USB log file", exc)
                 usbFileHasError = true
-            } finally {
-                buffer.clear()
             }
         }
     }
@@ -166,14 +164,11 @@ object Logger : LoggerInterface {
         val threadID = android.os.Process.myTid()
         runBlocking(dispatcher) {
             val formattedLogLine = formatLogLine(timestamp, level, threadID, tag, msg)
-            if (bufOutStream == null) {
-                // if no USB output stream available yet, store logs in memory so we don't lose any important log
-                // messages
-                if (buffer.size > maxBufferLines) {
-                    buffer.removeAt(0)
-                }
-                buffer.add(formattedLogLine)
-            } else {
+            if (buffer.size > maxBufferLines) {
+                buffer.removeAt(0)
+            }
+            buffer.add(formattedLogLine)
+            if (bufOutStream != null) {
                 // FIXME: sometimes loglines overlap partially, check threads? could also be related to
                 //  https://github.com/magnusja/libaums/issues/298
                 try {
@@ -209,6 +204,10 @@ object Logger : LoggerInterface {
         msg: String
     ): String {
         return "%s [%-8s][%-5d][%-20s] %s\n".format(timestamp, level.name, threadID, tag, msg)
+    }
+
+    fun getLastLogLines(numLines: Int): List<String> {
+        return buffer.takeLast(numLines)
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.NONE)

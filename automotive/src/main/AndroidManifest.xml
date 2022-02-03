@@ -9,7 +9,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 		package="de.moleman1024.audiowagon">
 
 	<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-	<!-- the app implicitly uses android.permission.INTERNET and android.permission.ACCESS_NETWORK_STATE for 
+	<!-- the app implicitly uses android.permission.INTERNET and android.permission.ACCESS_NETWORK_STATE for
 	Firebase Crashlytics -->
 
 	<uses-feature

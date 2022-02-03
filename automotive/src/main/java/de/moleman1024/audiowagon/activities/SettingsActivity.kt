@@ -161,7 +161,11 @@ class SettingsActivity : AppCompatActivity() {
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        sdCardDevicePermissions?.onRequestPermissionsResult(requestCode, grantResults)
+        try {
+            sdCardDevicePermissions?.onRequestPermissionsResult(requestCode, grantResults)
+        } catch (exc: RuntimeException) {
+            logger.exception(TAG, exc.message.toString(), exc)
+        }
     }
 
 }

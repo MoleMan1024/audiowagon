@@ -83,12 +83,20 @@ class SDCardStorageLocation(override val device: SDCardMediaDevice) : AudioFileS
         return itemsInDir
     }
 
+    override fun getDirectoryContentsPlayable(directory: Directory): List<FileLike> {
+        return getDirectoryContents(directory)
+    }
+
     override fun getDataSourceForURI(uri: Uri): MediaDataSource {
         return device.getDataSourceForURI(uri)
     }
 
     override fun getBufferedDataSourceForURI(uri: Uri): MediaDataSource {
         return device.getBufferedDataSourceForURI(uri)
+    }
+
+    override fun getByteArrayForURI(uri: Uri): ByteArray {
+        TODO("Not yet implemented")
     }
 
     override fun close() {

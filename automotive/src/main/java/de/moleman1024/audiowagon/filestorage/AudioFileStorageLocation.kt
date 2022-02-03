@@ -26,13 +26,19 @@ interface AudioFileStorageLocation {
     fun indexAudioFiles(directory: Directory, scope: CoroutineScope): ReceiveChannel<AudioFile>
     fun getDataSourceForURI(uri: Uri): MediaDataSource
     fun getBufferedDataSourceForURI(uri: Uri): MediaDataSource
+    fun getByteArrayForURI(uri: Uri): ByteArray
     fun close()
     fun setDetached()
 
     /**
-     * Returns the contents (files/directories) of the given directory. Non-recursive
+     * Returns all content (files/directories) in the given directory. Non-recursive
      */
     fun getDirectoryContents(directory: Directory): List<FileLike>
+
+    /**
+     * Returns all directories and audio files in the given directory. Non-recursive
+     */
+    fun getDirectoryContentsPlayable(directory: Directory): List<FileLike>
 
     /**
      * Returns the URI of the root directory of the storage location

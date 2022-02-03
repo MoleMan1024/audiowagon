@@ -22,6 +22,8 @@ import de.moleman1024.audiowagon.repository.entities.Album
 import de.moleman1024.audiowagon.repository.entities.Artist
 import de.moleman1024.audiowagon.repository.entities.Track
 import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.util.*
 
 const val MAX_DATABASE_SEARCH_ROWS = 10
@@ -44,17 +46,19 @@ class AudioItemRepository(
     // SQL query logging can be added via setQueryCallback()
     // TODO: https://developer.android.com/training/data-storage/app-specific#query-free-space
     //  I tried with 160 GB of music which resulted in a database of ~15 megabytes
-    private var database: AudioItemDatabase = Room.databaseBuilder(
-        context,
-        AudioItemDatabase::class.java,
-        databaseName
-    ).build()
+    private var database: AudioItemDatabase? = null
     private var pseudoCompilationArtistID: Long? = null
     val trackIDsToKeep = mutableListOf<Long>()
     private var isClosed: Boolean = false
+    private val databaseMutex: Mutex = Mutex()
 
     init {
-        isClosed = false
+        runBlocking(dispatcher) {
+            databaseMutex.withLock {
+                database = Room.databaseBuilder(context, AudioItemDatabase::class.java, databaseName).build()
+                isClosed = false
+            }
+        }
     }
 
     fun close() {
@@ -62,12 +66,20 @@ class AudioItemRepository(
             return
         }
         isClosed = true
-        database.close()
+        runBlocking(dispatcher) {
+            databaseMutex.withLock {
+                if (database?.isOpen == true) {
+                    logger.debug(TAG, "Closing database")
+                    database?.close()
+                }
+                database = null
+            }
+        }
     }
 
     suspend fun getTrack(id: Long): AudioItem {
         val track: Track = withContext(dispatcher) {
-            database.trackDAO().queryByID(id) ?: throw RuntimeException("No track for id: $id")
+            getDatabase()?.trackDAO()?.queryByID(id) ?: throw RuntimeException("No track for id: $id")
         }
         return createAudioItemForTrack(track)
     }
@@ -75,7 +87,7 @@ class AudioItemRepository(
     suspend fun getAlbumsForArtist(artistID: Long): List<AudioItem> {
         val items: MutableList<AudioItem> = mutableListOf()
         val albums: List<Album> = withContext(dispatcher) {
-            database.albumDAO().queryAlbumsByArtist(artistID)
+            getDatabase()?.albumDAO()?.queryAlbumsByArtist(artistID) ?: listOf()
         }
         for (album in albums) {
             if (isClosed) {
@@ -86,7 +98,7 @@ class AudioItemRepository(
             items += audioItemAlbum
         }
         val numTracksWithoutAlbum: Int = withContext(dispatcher) {
-            database.trackDAO().queryNumTracksByArtistAlbumUnkn(artistID)
+            getDatabase()?.trackDAO()?.queryNumTracksByArtistAlbumUnkn(artistID) ?: 0
         }
         if (numTracksWithoutAlbum > 0) {
             logger.debug(TAG, "Artist $artistID has $numTracksWithoutAlbum tracks without album info")
@@ -114,7 +126,7 @@ class AudioItemRepository(
 
     suspend fun getTracksForAlbum(albumID: Long): List<AudioItem> {
         val items: MutableList<AudioItem> = mutableListOf()
-        val tracks: List<Track> = database.trackDAO().queryTracksByAlbum(albumID)
+        val tracks: List<Track> = getDatabase()?.trackDAO()?.queryTracksByAlbum(albumID) ?: listOf()
         for (track in tracks) {
             if (isClosed) {
                 logger.warning(TAG, "Repository was closed")
@@ -129,7 +141,7 @@ class AudioItemRepository(
 
     suspend fun getTracksForArtist(artistID: Long): List<AudioItem> {
         val items: MutableList<AudioItem> = mutableListOf()
-        val tracks: List<Track> = database.trackDAO().queryTracksByArtist(artistID)
+        val tracks: List<Track> = getDatabase()?.trackDAO()?.queryTracksByArtist(artistID) ?: listOf()
         for (track in tracks) {
             if (isClosed) {
                 logger.warning(TAG, "Repository was closed")
@@ -144,7 +156,7 @@ class AudioItemRepository(
 
     suspend fun getTracksForAlbumAndArtist(albumID: Long, artistID: Long): List<AudioItem> {
         val items: MutableList<AudioItem> = mutableListOf()
-        val tracks: List<Track> = database.trackDAO().queryTracksByArtistAndAlbum(artistID, albumID)
+        val tracks: List<Track> = getDatabase()?.trackDAO()?.queryTracksByArtistAndAlbum(artistID, albumID) ?: listOf()
         for (track in tracks) {
             if (isClosed) {
                 logger.warning(TAG, "Repository was closed")
@@ -162,30 +174,30 @@ class AudioItemRepository(
     }
 
     suspend fun getNumTracksForAlbumAndArtist(albumID: Long, artistID: Long) = withContext(dispatcher) {
-        database.trackDAO().queryNumTracksByArtistAndAlbum(artistID, albumID)
+        getDatabase()?.trackDAO()?.queryNumTracksByArtistAndAlbum(artistID, albumID) ?: 0
     }
 
     @Suppress("RedundantSuspendModifier")
     suspend fun getNumTracksForArtist(artistID: Long): Int {
         return if (artistID != getPseudoCompilationArtistID()) {
-            database.trackDAO().queryNumTracksForArtist(artistID)
+            getDatabase()?.trackDAO()?.queryNumTracksForArtist(artistID) ?: 0
         } else {
-            database.trackDAO().queryNumTracksForArtistViaAlbums(artistID)
+            getDatabase()?.trackDAO()?.queryNumTracksForArtistViaAlbums(artistID) ?: 0
         }
     }
 
     @Suppress("RedundantSuspendModifier")
     suspend fun getNumAlbumsBasedOnTracksArtist(artistID: Long): Int {
         return if (artistID != getPseudoCompilationArtistID()) {
-            database.trackDAO().queryNumAlbumsByTrackArtist(artistID)
+            getDatabase()?.trackDAO()?.queryNumAlbumsByTrackArtist(artistID) ?: 0
         } else {
-            database.albumDAO().queryNumAlbumsByArtist(artistID)
+            getDatabase()?.albumDAO()?.queryNumAlbumsByArtist(artistID) ?: 0
         }
     }
 
     suspend fun getTracksWithUnknAlbumForArtist(artistID: Long): List<AudioItem> {
         val items: MutableList<AudioItem> = mutableListOf()
-        val tracks: List<Track> = database.trackDAO().queryTracksByArtistWhereAlbumUnknown(artistID)
+        val tracks: List<Track> = getDatabase()?.trackDAO()?.queryTracksByArtistWhereAlbumUnknown(artistID) ?: listOf()
         for (track in tracks) {
             if (isClosed) {
                 logger.warning(TAG, "Repository was closed")
@@ -199,23 +211,23 @@ class AudioItemRepository(
     }
 
     suspend fun getNumTracksWithUnknAlbumForArtist(artistID: Long) = withContext(dispatcher) {
-        database.trackDAO().queryNumTracksByArtistAndAlbum(artistID, DATABASE_ID_UNKNOWN)
+        getDatabase()?.trackDAO()?.queryNumTracksByArtistAndAlbum(artistID, DATABASE_ID_UNKNOWN) ?: 0
     }
 
-    fun getDatabaseIDForTrack(audioFile: AudioFile): Long? {
-        return database.trackDAO().queryIDByURI(audioFile.uri.toString())
+    suspend fun getDatabaseIDForTrack(audioFile: AudioFile): Long? {
+        return getDatabase()?.trackDAO()?.queryIDByURI(audioFile.uri.toString())
     }
 
     /**
      * Adds a new track entry into database. Also inserts new artist, album database entry if those are new.
      */
-    fun populateDatabaseFrom(audioFile: AudioFile, audioItem: AudioItem) {
-        var artistID: Long = -1
-        var albumArtistID: Long = -1
+    suspend fun populateDatabaseFrom(audioFile: AudioFile, audioItem: AudioItem) {
+        var artistID: Long = DATABASE_ID_UNKNOWN
+        var albumArtistID: Long = DATABASE_ID_UNKNOWN
         var doCreateArtistInDB = true
         if (audioItem.artist.isNotBlank()) {
             // multiple artists with same name are unlikely, ignore this case
-            val artistInDB: Artist? = database.artistDAO().queryByName(audioItem.artist)
+            val artistInDB: Artist? = getDatabase()?.artistDAO()?.queryByName(audioItem.artist)
             if (artistInDB != null) {
                 artistID = artistInDB.artistId
             }
@@ -228,20 +240,19 @@ class AudioItemRepository(
                 // (these are not considered compilations, the album artist is treated as the "main" artist)
                 if (!audioItem.isInCompilation) {
                     doCreateArtistInDB = false
-                    val albumArtistInDB: Artist? = database.artistDAO().queryByName(audioItem.albumArtist)
-                    albumArtistID = albumArtistInDB?.artistId ?: database.artistDAO().insert(
-                        Artist(name = audioItem.albumArtist)
-                    )
+                    val albumArtistInDB: Artist? = getDatabase()?.artistDAO()?.queryByName(audioItem.albumArtist)
+                    albumArtistID = (albumArtistInDB?.artistId ?: getDatabase()?.artistDAO()
+                        ?.insert(Artist(name = audioItem.albumArtist))) ?: DATABASE_ID_UNKNOWN
                 }
             }
         }
-        if (artistID <= -1 && doCreateArtistInDB && audioItem.artist.isNotBlank()) {
-            artistID = database.artistDAO().insert(Artist(name = audioItem.artist))
+        if (artistID <= DATABASE_ID_UNKNOWN && doCreateArtistInDB && audioItem.artist.isNotBlank()) {
+            artistID = getDatabase()?.artistDAO()?.insert(Artist(name = audioItem.artist)) ?: DATABASE_ID_UNKNOWN
         }
-        if (albumArtistID <= -1) {
+        if (albumArtistID <= DATABASE_ID_UNKNOWN) {
             albumArtistID = artistID
         }
-        var albumID: Long = -1
+        var albumID: Long = DATABASE_ID_UNKNOWN
         if (audioItem.album.isNotBlank()) {
             // Watch out for special cases for albums:
             // - same album name across several artists, e.g. "Greatest Hits" albums
@@ -249,13 +260,14 @@ class AudioItemRepository(
             if (audioItem.isInCompilation) {
                 albumArtistID = makePseudoCompilationArtistID()
             }
-            val albumInDB: Album? = database.albumDAO().queryByNameAndArtist(audioItem.album, albumArtistID)
-            albumID = albumInDB?.albumId ?: database.albumDAO()
-                .insert(Album(name = audioItem.album, parentArtistId = albumArtistID))
+            val albumInDB: Album? = getDatabase()?.albumDAO()?.queryByNameAndArtist(audioItem.album, albumArtistID)
+            albumID = albumInDB?.albumId
+                ?: getDatabase()?.albumDAO()?.insert(Album(name = audioItem.album, parentArtistId = albumArtistID))
+                        ?: DATABASE_ID_UNKNOWN
         }
         val track = Track(
             name = audioItem.title,
-            parentArtistId = if (albumArtistID > -1 && !audioItem.isInCompilation) albumArtistID else artistID,
+            parentArtistId = if (albumArtistID > DATABASE_ID_UNKNOWN && !audioItem.isInCompilation) albumArtistID else artistID,
             parentAlbumId = albumID,
             indexOnAlbum = audioItem.trackNum,
             yearEpochTime = yearShortToEpochTime(audioItem.year),
@@ -270,28 +282,28 @@ class AudioItemRepository(
             albumArtURIString = if (!doCreateArtistInDB && audioItem.artist.isNotBlank()) audioItem.artist else ""
         )
         logger.debug(TAG, "Inserting track: $track")
-        val trackDatabaseID: Long = database.trackDAO().insert(track)
+        val trackDatabaseID: Long = getDatabase()?.trackDAO()?.insert(track) ?: DATABASE_ID_UNKNOWN
         trackIDsToKeep.add(trackDatabaseID)
     }
 
-    fun getPseudoCompilationArtistID(): Long? {
+    suspend fun getPseudoCompilationArtistID(): Long? {
         if (pseudoCompilationArtistID != null) {
             return pseudoCompilationArtistID
         }
         val pseudoCompilationArtistName = getPseudoCompilationArtistName()
-        val artistInDB: Artist? = database.artistDAO().queryByName(pseudoCompilationArtistName)
+        val artistInDB: Artist? = getDatabase()?.artistDAO()?.queryByName(pseudoCompilationArtistName)
         pseudoCompilationArtistID = artistInDB?.artistId
         return pseudoCompilationArtistID
     }
 
-    private fun makePseudoCompilationArtistID(): Long {
+    private suspend fun makePseudoCompilationArtistID(): Long {
         if (pseudoCompilationArtistID != null) {
             return pseudoCompilationArtistID!!
         }
         val pseudoCompilationArtistName = getPseudoCompilationArtistName()
-        val artistInDB: Artist? = database.artistDAO().queryByName(pseudoCompilationArtistName)
+        val artistInDB: Artist? = getDatabase()?.artistDAO()?.queryByName(pseudoCompilationArtistName)
         val resultID: Long = if (artistInDB?.artistId == null) {
-            database.artistDAO().insert(Artist(name = pseudoCompilationArtistName))
+            getDatabase()?.artistDAO()?.insert(Artist(name = pseudoCompilationArtistName)) ?: DATABASE_ID_UNKNOWN
         } else {
             artistInDB.artistId
         }
@@ -304,18 +316,18 @@ class AudioItemRepository(
     }
 
     // TODO: this is probably inefficient
-    private fun getCompilationAlbumsForArtist(artistID: Long): List<Album> {
+    private suspend fun getCompilationAlbumsForArtist(artistID: Long): List<Album> {
         val pseudoCompilationArtistName = getPseudoCompilationArtistName()
         val variousArtistsInDB: Artist =
-            database.artistDAO().queryByName(pseudoCompilationArtistName) ?: return listOf()
-        val allCompilationAlbums = database.albumDAO().queryByArtist(variousArtistsInDB.artistId)
+            getDatabase()?.artistDAO()?.queryByName(pseudoCompilationArtistName) ?: return listOf()
+        val allCompilationAlbums = getDatabase()?.albumDAO()?.queryByArtist(variousArtistsInDB.artistId) ?: listOf()
         val matchingCompilationAlbums = mutableListOf<Album>()
         for (album in allCompilationAlbums) {
             if (isClosed) {
                 logger.warning(TAG, "Repository was closed")
                 return listOf()
             }
-            val numTracks = database.trackDAO().queryNumTracksByArtistForAlbum(artistID, album.albumId)
+            val numTracks = getDatabase()?.trackDAO()?.queryNumTracksByArtistForAlbum(artistID, album.albumId) ?: 0
             if (numTracks > 0) {
                 matchingCompilationAlbums.add(album)
             }
@@ -323,9 +335,9 @@ class AudioItemRepository(
         return matchingCompilationAlbums
     }
 
-    fun hasAudioFileChangedForTrack(audioFile: AudioFile, trackID: Long): Boolean {
+    suspend fun hasAudioFileChangedForTrack(audioFile: AudioFile, trackID: Long): Boolean {
         val track =
-            database.trackDAO().queryByID(trackID) ?: throw RuntimeException("No track for id: $trackID")
+            getDatabase()?.trackDAO()?.queryByID(trackID) ?: throw RuntimeException("No track for id: $trackID")
         // ignore the millisecond part in the timestamps
         val trackLastModSec = track.lastModifiedEpochTime / 1000
         val audioFileLastModSec = audioFile.lastModifiedDate.time / 1000
@@ -342,9 +354,9 @@ class AudioItemRepository(
     /**
      * Remove all tracks/albums/artists in database that were not added by previous buildLibrary() call
      */
-    fun clean() {
+    suspend fun clean() {
         logger.debug(TAG, "Cleaning no longer available items from database")
-        val allTracksInDB = database.trackDAO().queryAll()
+        val allTracksInDB = getDatabase()?.trackDAO()?.queryAll() ?: listOf()
         val artistDeletionCandidates = mutableSetOf<Long>()
         val albumDeletionCandidates = mutableSetOf<Long>()
         for (track in allTracksInDB) {
@@ -354,7 +366,7 @@ class AudioItemRepository(
             artistDeletionCandidates.add(track.parentArtistId)
             albumDeletionCandidates.add(track.parentAlbumId)
             logger.debug(TAG, "Removing track from database: $track")
-            database.trackDAO().delete(track)
+            getDatabase()?.trackDAO()?.delete(track)
         }
         trackIDsToKeep.clear()
         pruneAlbums(albumDeletionCandidates)
@@ -364,12 +376,12 @@ class AudioItemRepository(
     /**
      * Remove albums that no longer have any associated tracks
      */
-    private fun pruneAlbums(deletionCandidateIDs: Set<Long>) {
+    private suspend fun pruneAlbums(deletionCandidateIDs: Set<Long>) {
         deletionCandidateIDs.forEach { albumID ->
-            val numTracksForAlbum = database.trackDAO().queryNumTracksForAlbum(albumID)
+            val numTracksForAlbum = getDatabase()?.trackDAO()?.queryNumTracksForAlbum(albumID) ?: 0
             if (numTracksForAlbum <= 0) {
                 logger.debug(TAG, "Removing album from database: $albumID")
-                database.albumDAO().deleteByID(albumID)
+                getDatabase()?.albumDAO()?.deleteByID(albumID)
             }
         }
     }
@@ -377,25 +389,25 @@ class AudioItemRepository(
     /**
      * Remove artists that no longer have any associated tracks
      */
-    private fun pruneArtists(deletionCandidateIDs: Set<Long>) {
+    private suspend fun pruneArtists(deletionCandidateIDs: Set<Long>) {
         deletionCandidateIDs.forEach { artistID ->
-            val numTracksForArtist = database.trackDAO().queryNumTracksForArtist(artistID)
+            val numTracksForArtist = getDatabase()?.trackDAO()?.queryNumTracksForArtist(artistID) ?: 0
             if (numTracksForArtist <= 0) {
                 logger.debug(TAG, "Removing artist from database: $artistID")
-                database.artistDAO().deleteByID(artistID)
+                getDatabase()?.artistDAO()?.deleteByID(artistID)
             }
         }
     }
 
-    fun removeTrack(trackID: Long) {
+    suspend fun removeTrack(trackID: Long) {
         logger.debug(TAG, "Removing track from database: $trackID")
-        database.trackDAO().deleteByID(trackID)
+        getDatabase()?.trackDAO()?.deleteByID(trackID)
     }
 
     suspend fun getAllTracks(): List<AudioItem> {
         val items: MutableList<AudioItem> = mutableListOf()
         val allTracks: List<Track> = withContext(dispatcher) {
-             database.trackDAO().queryAll()
+             getDatabase()?.trackDAO()?.queryAll() ?: listOf()
         }
         for (track in allTracks) {
             if (isClosed) {
@@ -410,18 +422,18 @@ class AudioItemRepository(
     }
 
     suspend fun getNumTracks(): Int = withContext(dispatcher) {
-        database.trackDAO().queryNumTracks()
+        getDatabase()?.trackDAO()?.queryNumTracks() ?: 0
     }
 
     suspend fun getNumTracksForAlbum(albumID: Long): Int = withContext(dispatcher) {
-        database.trackDAO().queryNumTracksForAlbum(albumID)
+        getDatabase()?.trackDAO()?.queryNumTracksForAlbum(albumID) ?: 0
     }
 
     // TODO: many similar functions in here
     suspend fun getTracksLimitOffset(maxNumRows: Int, offsetRows: Int): List<AudioItem> {
         val items: MutableList<AudioItem> = mutableListOf()
         val tracksAtOffset: List<Track> = withContext(dispatcher) {
-            database.trackDAO().queryTracksLimitOffset(maxNumRows, offsetRows)
+            getDatabase()?.trackDAO()?.queryTracksLimitOffset(maxNumRows, offsetRows) ?: listOf()
         }
         for (track in tracksAtOffset) {
             if (isClosed) {
@@ -440,7 +452,8 @@ class AudioItemRepository(
     ): List<AudioItem> {
         val items: MutableList<AudioItem> = mutableListOf()
         val tracksAtOffset: List<Track> = withContext(dispatcher) {
-            database.trackDAO().queryTracksForArtistAlbumLimitOffset(maxNumRows, offsetRows, artistID, albumID)
+            getDatabase()?.trackDAO()?.queryTracksForArtistAlbumLimitOffset(maxNumRows, offsetRows, artistID,
+                albumID) ?: listOf()
         }
         for (track in tracksAtOffset) {
             if (isClosed) {
@@ -458,7 +471,7 @@ class AudioItemRepository(
     suspend fun getTracksForAlbumLimitOffset(maxNumRows: Int, offsetRows: Int, albumID: Long): List<AudioItem> {
         val items: MutableList<AudioItem> = mutableListOf()
         val tracksAtOffset: List<Track> = withContext(dispatcher) {
-            database.trackDAO().queryTracksForAlbumLimitOffset(maxNumRows, offsetRows, albumID)
+            getDatabase()?.trackDAO()?.queryTracksForAlbumLimitOffset(maxNumRows, offsetRows, albumID) ?: listOf()
         }
         for (track in tracksAtOffset) {
             if (isClosed) {
@@ -476,7 +489,7 @@ class AudioItemRepository(
     suspend fun getTracksForArtistLimitOffset(maxNumRows: Int, offsetRows: Int, artistID: Long): List<AudioItem> {
         val items: MutableList<AudioItem> = mutableListOf()
         val tracksAtOffset: List<Track> = withContext(dispatcher) {
-            database.trackDAO().queryTracksForArtistLimitOffset(maxNumRows, offsetRows, artistID)
+            getDatabase()?.trackDAO()?.queryTracksForArtistLimitOffset(maxNumRows, offsetRows, artistID) ?: listOf()
         }
         for (track in tracksAtOffset) {
             if (isClosed) {
@@ -496,7 +509,7 @@ class AudioItemRepository(
             throw IllegalArgumentException("Invalid number of random tracks: $maxNumItems")
         }
         val items: MutableList<AudioItem> = mutableListOf()
-        val tracks: List<Track> = database.trackDAO().queryRandom(maxNumItems)
+        val tracks: List<Track> = getDatabase()?.trackDAO()?.queryRandom(maxNumItems) ?: listOf()
         for (track in tracks) {
             if (isClosed) {
                 logger.warning(TAG, "Repository was closed")
@@ -526,7 +539,7 @@ class AudioItemRepository(
         audioItemTrack.uri = Uri.parse(track.uriString)
         if (track.parentArtistId >= 0) {
             val artistForTrack: Artist? = withContext(dispatcher) {
-                database.artistDAO().queryByID(track.parentArtistId)
+                getDatabase()?.artistDAO()?.queryByID(track.parentArtistId)
             }
             artistForTrack?.let { audioItemTrack.artist = it.name }
         }
@@ -536,7 +549,7 @@ class AudioItemRepository(
         }
         if (track.parentAlbumId >= 0) {
             val albumForTrack: Album? = withContext(dispatcher) {
-                database.albumDAO().queryByID(track.parentAlbumId)
+                getDatabase()?.albumDAO()?.queryByID(track.parentAlbumId)
             }
             albumForTrack?.let { audioItemTrack.album = it.name }
         }
@@ -552,7 +565,7 @@ class AudioItemRepository(
 
     suspend fun getAllAlbums(): List<AudioItem> {
         val items: MutableList<AudioItem> = mutableListOf()
-        val allAlbums: List<Album> = database.albumDAO().queryAll()
+        val allAlbums: List<Album> = getDatabase()?.albumDAO()?.queryAll() ?: listOf()
         for (album in allAlbums) {
             if (isClosed) {
                 logger.warning(TAG, "Repository was closed")
@@ -570,7 +583,7 @@ class AudioItemRepository(
     }
 
     suspend fun getAudioItemForUnknownAlbum(): AudioItem? = withContext(dispatcher) {
-        val numTracksUnknownAlbum = database.trackDAO().queryNumTracksAlbumUnknown()
+        val numTracksUnknownAlbum = getDatabase()?.trackDAO()?.queryNumTracksAlbumUnknown() ?: 0
         if (numTracksUnknownAlbum > 0) {
             return@withContext createUnknownAlbumAudioItem()
         }
@@ -578,13 +591,13 @@ class AudioItemRepository(
     }
 
     suspend fun getNumAlbums(): Int = withContext(dispatcher) {
-        database.albumDAO().queryNumAlbums()
+        getDatabase()?.albumDAO()?.queryNumAlbums() ?: 0
     }
 
     suspend fun getAlbumsLimitOffset(maxNumRows: Int, offsetRows: Int): List<AudioItem> {
         val items: MutableList<AudioItem> = mutableListOf()
         val albumsAtOffset: List<Album> = withContext(dispatcher) {
-            database.albumDAO().queryAlbumsLimitOffset(maxNumRows, offsetRows)
+            getDatabase()?.albumDAO()?.queryAlbumsLimitOffset(maxNumRows, offsetRows) ?: listOf()
         }
         for (album in albumsAtOffset) {
             if (isClosed) {
@@ -601,7 +614,7 @@ class AudioItemRepository(
     suspend fun getAlbumsForArtistLimitOffset(maxNumRows: Int, offsetRows: Int, artistID: Long): List<AudioItem> {
         val items: MutableList<AudioItem> = mutableListOf()
         val albumsAtOffset: List<Album> = withContext(dispatcher) {
-            database.albumDAO().queryAlbumsForArtistLimitOffset(maxNumRows, offsetRows, artistID)
+            getDatabase()?.albumDAO()?.queryAlbumsForArtistLimitOffset(maxNumRows, offsetRows, artistID) ?: listOf()
         }
         for (album in albumsAtOffset) {
             if (isClosed) {
@@ -626,7 +639,7 @@ class AudioItemRepository(
         audioItemAlbum.id = ContentHierarchyElement.serialize(contentHierarchyID)
         audioItemAlbum.album = album.name
         val artistForAlbum: Artist? = withContext(dispatcher) {
-            database.artistDAO().queryByID(album.parentArtistId)
+            getDatabase()?.artistDAO()?.queryByID(album.parentArtistId)
         }
         artistForAlbum?.let { audioItemAlbum.artist = it.name }
         audioItemAlbum.albumArtist = audioItemAlbum.artist
@@ -667,7 +680,7 @@ class AudioItemRepository(
         contentHierarchyID.artistID = artistID
         unknownAlbum.id = ContentHierarchyElement.serialize(contentHierarchyID)
         val artistForAlbum: Artist? = withContext(dispatcher) {
-            database.artistDAO().queryByID(artistID)
+            getDatabase()?.artistDAO()?.queryByID(artistID)
         }
         artistForAlbum?.let { unknownAlbum.artist = it.name }
         return unknownAlbum
@@ -675,7 +688,7 @@ class AudioItemRepository(
 
     suspend fun getAllArtists(): List<AudioItem> {
         val items: MutableList<AudioItem> = mutableListOf()
-        val allArtists: List<Artist> = database.artistDAO().queryAll()
+        val allArtists: List<Artist> = getDatabase()?.artistDAO()?.queryAll() ?: listOf()
         for (artist in allArtists) {
             if (isClosed) {
                 logger.warning(TAG, "Repository was closed")
@@ -694,13 +707,13 @@ class AudioItemRepository(
     }
 
     suspend fun getNumArtists(): Int = withContext(dispatcher) {
-        database.artistDAO().queryNumArtists()
+        getDatabase()?.artistDAO()?.queryNumArtists() ?: 0
     }
 
     suspend fun getArtistsLimitOffset(maxNumRows: Int, offsetRows: Int): List<AudioItem> {
         val items: MutableList<AudioItem> = mutableListOf()
         val artistsAtOffset: List<Artist> = withContext(dispatcher) {
-            database.artistDAO().queryArtistsLimitOffset(maxNumRows, offsetRows)
+            getDatabase()?.artistDAO()?.queryArtistsLimitOffset(maxNumRows, offsetRows) ?: listOf()
         }
         for (artist in artistsAtOffset) {
             if (isClosed) {
@@ -715,7 +728,7 @@ class AudioItemRepository(
     }
 
     suspend fun getAudioItemForUnknownArtist(): AudioItem? = withContext(dispatcher) {
-        val numTracksUnknownArtist = database.trackDAO().queryNumTracksArtistUnknown()
+        val numTracksUnknownArtist = getDatabase()?.trackDAO()?.queryNumTracksArtistUnknown() ?: 0
         if (numTracksUnknownArtist > 0) {
             return@withContext createUnknownArtistAudioItem()
         }
@@ -735,8 +748,8 @@ class AudioItemRepository(
 
     suspend fun searchTracks(query: String): List<AudioItem> {
         val audioItems = mutableListOf<AudioItem>()
-        val tracks = database.trackDAO().search(sanitizeSearchQuery(query))
-        tracks.forEach {
+        val tracks = getDatabase()?.trackDAO()?.search(sanitizeSearchQuery(query))
+        tracks?.forEach {
             audioItems += createAudioItemForTrack(it)
         }
         return audioItems
@@ -744,8 +757,8 @@ class AudioItemRepository(
 
     suspend fun searchAlbums(query: String): List<AudioItem> {
         val audioItems = mutableListOf<AudioItem>()
-        val albums = database.albumDAO().search(sanitizeSearchQuery(query))
-        albums.forEach {
+        val albums = getDatabase()?.albumDAO()?.search(sanitizeSearchQuery(query))
+        albums?.forEach {
             audioItems += createAudioItemForAlbum(it)
         }
         return audioItems
@@ -753,8 +766,8 @@ class AudioItemRepository(
 
     suspend fun searchTracksForAlbum(query: String): List<AudioItem> {
         val audioItems = mutableListOf<AudioItem>()
-        val albums = database.albumDAO().search(sanitizeSearchQuery(query))
-        albums.forEach {
+        val albums = getDatabase()?.albumDAO()?.search(sanitizeSearchQuery(query))
+        albums?.forEach {
             audioItems += getTracksForAlbum(it.albumId)
         }
         return audioItems
@@ -762,8 +775,8 @@ class AudioItemRepository(
 
     suspend fun searchArtists(query: String): List<AudioItem> {
         val audioItems = mutableListOf<AudioItem>()
-        val artists = database.artistDAO().search(sanitizeSearchQuery(query))
-        artists.forEach {
+        val artists = getDatabase()?.artistDAO()?.search(sanitizeSearchQuery(query))
+        artists?.forEach {
             audioItems += createAudioItemForArtist(it)
         }
         return audioItems
@@ -771,8 +784,8 @@ class AudioItemRepository(
 
     suspend fun searchTracksForArtist(query: String): List<AudioItem> {
         val audioItems = mutableListOf<AudioItem>()
-        val artists = database.artistDAO().search(sanitizeSearchQuery(query))
-        artists.forEach {
+        val artists = getDatabase()?.artistDAO()?.search(sanitizeSearchQuery(query))
+        artists?.forEach {
             audioItems += getTracksForArtist(it.artistId)
         }
         return audioItems
@@ -780,10 +793,10 @@ class AudioItemRepository(
 
     suspend fun searchTrackByArtist(track: String, artist: String): List<AudioItem> {
         val audioItems = mutableListOf<AudioItem>()
-        val tracksByArtist = database.trackDAO().searchWithArtist(
+        val tracksByArtist = getDatabase()?.trackDAO()?.searchWithArtist(
             sanitizeSearchQuery(track), sanitizeSearchQuery(artist)
         )
-        tracksByArtist.forEach {
+        tracksByArtist?.forEach {
             audioItems += createAudioItemForTrack(it, it.parentArtistId)
         }
         return audioItems
@@ -791,10 +804,10 @@ class AudioItemRepository(
 
     suspend fun searchTrackByAlbum(track: String, album: String): List<AudioItem> {
         val audioItems = mutableListOf<AudioItem>()
-        val tracksByAlbum = database.trackDAO().searchWithAlbum(
+        val tracksByAlbum = getDatabase()?.trackDAO()?.searchWithAlbum(
             sanitizeSearchQuery(track), sanitizeSearchQuery(album)
         )
-        tracksByAlbum.forEach {
+        tracksByAlbum?.forEach {
             audioItems += createAudioItemForTrack(it, it.parentArtistId)
         }
         return audioItems
@@ -802,10 +815,10 @@ class AudioItemRepository(
 
     suspend fun searchAlbumByArtist(album: String, artist: String): List<AudioItem> {
         val audioItems = mutableListOf<AudioItem>()
-        val albumsByArtist = database.albumDAO().searchWithArtist(
+        val albumsByArtist = getDatabase()?.albumDAO()?.searchWithArtist(
             sanitizeSearchQuery(album), sanitizeSearchQuery(artist)
         )
-        albumsByArtist.forEach {
+        albumsByArtist?.forEach {
             audioItems += createAudioItemForAlbum(it, it.parentArtistId)
         }
         return audioItems
@@ -830,6 +843,12 @@ class AudioItemRepository(
         calendar.clear()
         calendar.set(year.toInt(), Calendar.JUNE, 1)
         return calendar.timeInMillis
+    }
+
+    private suspend fun getDatabase(): AudioItemDatabase? {
+        databaseMutex.withLock {
+            return database
+        }
     }
 
     // TODO: class too big, split (e.g. by track, artist, album?)

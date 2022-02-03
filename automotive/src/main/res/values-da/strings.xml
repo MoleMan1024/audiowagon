@@ -130,4 +130,6 @@ anvende underfoldere.</string>
 	<string name="setting_crash_reporting_title">Send nedbrudsrapporter</string>
 	<string name="setting_crash_reporting_desc">Send automatisk nedbrudsrapporter til udvikleren for at hjælpe
 forbedre appen (kræver internetforbindelse).</string>
+	<string name="toast_error_cannot_read_file">Filen kunne ikke læses: %1$s</string>
+	<string name="setting_website_title">Internet side</string>
 </resources>

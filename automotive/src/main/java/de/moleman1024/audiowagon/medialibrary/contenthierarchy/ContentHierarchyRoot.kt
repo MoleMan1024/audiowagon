@@ -48,7 +48,7 @@ class ContentHierarchyRoot(
             tracksCategory.iconID = R.drawable.category_track
             categories += tracksCategory
             val numTracksInRepo = audioItemLibrary.getPrimaryRepository()?.getNumTracks() ?: 0
-            if (audioItemLibrary.areAnyReposAvail() && !audioItemLibrary.isBuildingLibray && numTracksInRepo > 0) {
+            if (audioItemLibrary.areAnyReposAvail() && !audioItemLibrary.isBuildingLibrary && numTracksInRepo > 0) {
                 val albumsCategory = CategoryData(ContentHierarchyID(ContentHierarchyType.ROOT_ALBUMS))
                 albumsCategory.titleID = R.string.browse_tree_category_albums
                 albumsCategory.iconID = R.drawable.category_album

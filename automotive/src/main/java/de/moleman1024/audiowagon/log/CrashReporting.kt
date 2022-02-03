@@ -96,6 +96,15 @@ class CrashReporting(context: Context, private val scope: CoroutineScope, privat
         }
     }
 
+    fun logMessages(messages: List<String>) {
+        if (!isEnabled || isDebugBuild) {
+            return
+        }
+        messages.forEach {
+            crashlytics.log(it)
+        }
+    }
+
     private fun launchInScopeSafely(func: suspend () -> Unit) {
         Util.launchInScopeSafely(scope, dispatcher, logger, TAG, this, func)
     }

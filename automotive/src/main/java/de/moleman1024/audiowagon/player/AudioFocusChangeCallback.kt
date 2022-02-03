@@ -39,6 +39,8 @@ class AudioFocusChangeCallback(
                         return@launchInScopeSafely
                     }
                     audioPlayer.pause()
+                    // same implementation as in
+                    // https://developer.android.com/guide/topics/media-apps/audio-focus#audio-focus-change
                     logger.debug(TAG, "Stopping player in 30 seconds")
                     delay(1000L * 30L)
                     audioPlayer.stop()

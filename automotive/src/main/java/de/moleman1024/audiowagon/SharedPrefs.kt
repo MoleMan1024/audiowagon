@@ -63,12 +63,28 @@ class SharedPrefs {
             return sharedPreferences.getBoolean(SHARED_PREF_ENABLE_EQUALIZER, false)
         }
 
+        fun setEQEnabled(context: Context, isEnabled: Boolean) {
+            setEQEnabled(getDefaultSharedPreferences(context), isEnabled)
+        }
+
+        fun setEQEnabled(sharedPreferences: SharedPreferences, isEnabled: Boolean) {
+            sharedPreferences.edit().putBoolean(SHARED_PREF_ENABLE_EQUALIZER, isEnabled).apply()
+        }
+
         fun isReplayGainEnabled(context: Context): Boolean {
             return isReplayGainEnabled(getDefaultSharedPreferences(context))
         }
 
         fun isReplayGainEnabled(sharedPreferences: SharedPreferences): Boolean {
             return sharedPreferences.getBoolean(SHARED_PREF_ENABLE_REPLAYGAIN, false)
+        }
+
+        fun setReplayGainEnabled(context: Context, isEnabled: Boolean) {
+            setReplayGainEnabled(getDefaultSharedPreferences(context), isEnabled)
+        }
+
+        fun setReplayGainEnabled(sharedPreferences: SharedPreferences, isEnabled: Boolean) {
+            sharedPreferences.edit().putBoolean(SHARED_PREF_ENABLE_REPLAYGAIN, isEnabled).apply()
         }
 
         fun getMetadataReadSetting(context: Context): String {

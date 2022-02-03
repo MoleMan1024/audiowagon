@@ -7,10 +7,8 @@ package de.moleman1024.audiowagon.medialibrary.contenthierarchy
 
 import android.content.Context
 import android.support.v4.media.MediaBrowserCompat.MediaItem
-import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
-import de.moleman1024.audiowagon.repository.AudioItemRepository
 
 /**
  * User requested to play all tracks for a compilation album for a given artist

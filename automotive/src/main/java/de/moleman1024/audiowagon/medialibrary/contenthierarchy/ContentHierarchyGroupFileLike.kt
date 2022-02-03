@@ -9,12 +9,9 @@ import android.content.Context
 import android.support.v4.media.MediaBrowserCompat.MediaItem
 import de.moleman1024.audiowagon.filestorage.AudioFileStorage
 import de.moleman1024.audiowagon.filestorage.FileLike
-import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
 
-private const val TAG = "CHGroupFileLike"
-private val logger = Logger
 
 /**
  * Group of files/directories in browse view
@@ -39,6 +36,9 @@ class ContentHierarchyGroupFileLike(
     private fun getDirectoryContents(): List<FileLike> {
         val contentHierarchyDirectory = ContentHierarchyDirectory(id, context, audioItemLibrary, audioFileStorage)
         val directoryContents = contentHierarchyDirectory.getDirectoryContents()
+        if (directoryContents.isEmpty()) {
+            return listOf()
+        }
         val startIndex = CONTENT_HIERARCHY_MAX_NUM_ITEMS * id.directoryGroupIndex
         var endIndex = startIndex + CONTENT_HIERARCHY_MAX_NUM_ITEMS
         if (endIndex >= directoryContents.size) {

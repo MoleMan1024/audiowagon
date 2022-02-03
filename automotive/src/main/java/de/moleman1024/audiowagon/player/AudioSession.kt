@@ -19,7 +19,9 @@ import android.support.v4.media.session.PlaybackStateCompat
 import androidx.media.session.MediaButtonReceiver
 import de.moleman1024.audiowagon.*
 import de.moleman1024.audiowagon.broadcast.*
+import de.moleman1024.audiowagon.exceptions.CannotReadFileException
 import de.moleman1024.audiowagon.exceptions.DriveAlmostFullException
+import de.moleman1024.audiowagon.exceptions.MissingEffectsException
 import de.moleman1024.audiowagon.exceptions.NoItemsInQueueException
 import de.moleman1024.audiowagon.filestorage.AudioFile
 import de.moleman1024.audiowagon.filestorage.AudioFileStorage
@@ -83,12 +85,14 @@ class AudioSession(
     private var isFirstOnPlayEventAfterReset: Boolean = true
     private var onPlayCalledBeforeUSBReady: Boolean = false
     private var isShuttingDown: Boolean = false
+    private var isSuspending: Boolean = false
     private var extractReplayGain: Boolean = false
     private val replayGainRegex = "replaygain_track_gain.*?([-0-9][^ ]+?) ?dB".toRegex(RegexOption.IGNORE_CASE)
 
     init {
         logger.debug(TAG, "Init AudioSession()")
         isShuttingDown = false
+        isSuspending = false
         initAudioFocus()
         // to send play/pause button event "adb shell input keyevent 85"
         val mediaButtonIntent = Intent(Intent.ACTION_MEDIA_BUTTON)
@@ -312,6 +316,8 @@ class AudioSession(
                             // If we are playing files directly, extract the metadata here. This will slow down the
                             // start of playback but without it we will not be able to show the duration of file,
                             // album art etc.
+                            // TODO: this could be optimized, extractMetadataFrom and createMetadataForItem both use
+                            //  a MediaDataRetriever, should be merged
                             audioItem = audioItemLibrary.extractMetadataFrom(audioFile)
                             audioItem.id = ContentHierarchyElement.serialize(contentHierarchyID)
                             audioItem.uri = audioFile.uri
@@ -321,11 +327,11 @@ class AudioSession(
                         }
                     }
                     val metadata: MediaMetadataCompat = audioItemLibrary.createMetadataForItem(audioItem)
+                    val albumArtBytes = audioItemLibrary.getAlbumArtForItem(audioItem)
+                    AlbumArtContentProvider.setAlbumArtByteArray(albumArtBytes)
                     extractAndSetReplayGain(audioItem)
                     setCurrentQueueItem(
-                        MediaSessionCompat.QueueItem(
-                            metadata.description, queueChange.currentItem.queueId
-                        )
+                        MediaSessionCompat.QueueItem(metadata.description, queueChange.currentItem.queueId)
                     )
                     setMediaSessionMetadata(metadata)
                 } else {
@@ -347,6 +353,11 @@ class AudioSession(
             replayGain = extractReplayGain(audioItem.uri)
             logger.debug(TAG, "Setting ReplayGain: $replayGain dB")
             audioPlayer.setReplayGain(replayGain)
+        } catch (exc: MissingEffectsException) {
+            val replayGainName = context.getString(R.string.setting_enable_replaygain)
+            gui.showErrorToastMsg(replayGainName)
+            SharedPrefs.setReplayGainEnabled(context, false)
+            extractReplayGain = false
         } catch (exc: Exception) {
             logger.exception(TAG, exc.message.toString(), exc)
         }
@@ -437,6 +448,7 @@ class AudioSession(
             onPlayFromMediaIDJob?.cancelAndJoin()
             audioFocusChangeListener.cancelAudioFocusLossJob()
             audioPlayer.shutdown()
+            audioFocus.release()
             releaseMediaSession()
         }
         audioSessionNotifications.shutdown()
@@ -444,8 +456,10 @@ class AudioSession(
 
     fun suspend() {
         logger.debug(TAG, "suspend()")
+        isSuspending = true
         runBlocking(dispatcher) {
             audioPlayer.pause()
+            audioFocus.release()
             onPlayFromMediaIDJob?.cancelAndJoin()
             audioFocusChangeListener.cancelAudioFocusLossJob()
         }
@@ -456,6 +470,7 @@ class AudioSession(
             setMediaSessionQueue(listOf())
             setMediaSessionPlaybackState(playbackState)
         }
+        isSuspending = false
     }
 
     fun reset() {
@@ -534,7 +549,13 @@ class AudioSession(
                 }
                 AudioSessionChangeType.ON_ENABLE_EQUALIZER -> {
                     launchInScopeSafely(audioSessionChange.type.name) {
-                        audioPlayer.enableEqualizer()
+                        try {
+                            audioPlayer.enableEqualizer()
+                        } catch (exc: MissingEffectsException) {
+                            SharedPrefs.setEQEnabled(context, false)
+                            gui.showErrorToastMsg(context.getString(R.string.toast_error_invalid_state))
+                            throw exc
+                        }
                     }
                 }
                 AudioSessionChangeType.ON_DISABLE_EQUALIZER -> {
@@ -564,7 +585,13 @@ class AudioSession(
                             }
                             extractAndSetReplayGain(audioItem)
                         }
-                        audioPlayer.enableReplayGain()
+                        try {
+                            audioPlayer.enableReplayGain()
+                        } catch (exc: MissingEffectsException) {
+                            SharedPrefs.setReplayGainEnabled(context, false)
+                            gui.showErrorToastMsg(context.getString(R.string.toast_error_invalid_state))
+                            throw exc
+                        }
                     }
                 }
                 AudioSessionChangeType.ON_DISABLE_REPLAYGAIN -> {
@@ -793,6 +820,10 @@ class AudioSession(
                 logger.debug(TAG, "Stopping prepareFromPersistent() because of shutdown")
                 return
             }
+            if (isSuspending) {
+                logger.debug(TAG, "Stopping prepareFromPersistent() because of suspend")
+                return
+            }
             try {
                 scope.ensureActive()
                 val contentHierarchyID = ContentHierarchyElement.deserialize(contentHierarchyIDStr)
@@ -1001,13 +1032,16 @@ class AudioSession(
             try {
                 func()
             } catch (exc: Exception) {
-                handleException("$message (${exc.message})", exc)
+                if (exc.message != null) {
+                    handleException("$message (${exc.message})", exc)
+                } else {
+                    handleException(message, exc)
+                }
             }
         }
     }
 
     private fun handleException(msg: String, exc: Throwable) {
-        logger.exception(TAG, msg, exc)
         when (exc) {
             is NoItemsInQueueException -> gui.showErrorToastMsg(context.getString(R.string.toast_error_no_tracks))
             is DriveAlmostFullException -> {
@@ -1017,9 +1051,18 @@ class AudioSession(
             is CancellationException -> {
                 logger.warning(TAG, exc.message.toString())
             }
-            else -> {
+            is CannotReadFileException -> {
+                gui.showErrorToastMsg(context.getString(R.string.toast_error_cannot_read_file, exc.fileName))
+                crashReporting.logMessages(logger.getLastLogLines(NUM_LOG_LINES_CRASH_REPORT))
                 crashReporting.logMessage(msg)
                 crashReporting.recordException(exc)
+                logger.exception(TAG, msg, exc)
+            }
+            else -> {
+                crashReporting.logMessages(logger.getLastLogLines(NUM_LOG_LINES_CRASH_REPORT))
+                crashReporting.logMessage(msg)
+                crashReporting.recordException(exc)
+                logger.exception(TAG, msg, exc)
             }
         }
     }

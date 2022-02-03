@@ -16,8 +16,10 @@ import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.SharedPrefs
 import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.exceptions.AlreadyStoppedException
+import de.moleman1024.audiowagon.exceptions.CannotReadFileException
 import de.moleman1024.audiowagon.exceptions.MissingEffectsException
 import de.moleman1024.audiowagon.exceptions.NoItemsInQueueException
+import de.moleman1024.audiowagon.filestorage.AudioFile
 import de.moleman1024.audiowagon.filestorage.AudioFileStorage
 import de.moleman1024.audiowagon.log.CrashReporting
 import de.moleman1024.audiowagon.log.Logger
@@ -30,6 +32,7 @@ private val logger = Logger
 const val MEDIA_ERROR_INVALID_STATE = -38
 // arbitrary number
 const val MEDIA_ERROR_AUDIO_FOCUS_DENIED = -1249
+const val SKIP_PREVIOUS_THRESHOLD_MSEC = 20000L
 
 /**
  * Manages two [MediaPlayer] instances + equalizer etc.
@@ -94,8 +97,14 @@ class AudioPlayer(
     }
 
     private fun initEffects() {
-        effectsFlip = mediaPlayerFlip?.audioSessionId?.let { Effects(it) }
-        effectsFlop = mediaPlayerFlop?.audioSessionId?.let { Effects(it) }
+        effectsFlip = mediaPlayerFlip?.audioSessionId?.let {
+            logger.debug(TAG, "Init effects for audio session ID: ${mediaPlayerFlip?.audioSessionId}")
+            Effects(it)
+        }
+        effectsFlop = mediaPlayerFlop?.audioSessionId?.let {
+            logger.debug(TAG, "Init effects for audio session ID: ${mediaPlayerFlop?.audioSessionId}")
+            Effects(it)
+        }
         val equalizerPresetPreference = SharedPrefs.getEQPreset(context)
         equalizerPresetPreference.let {
             try {
@@ -351,6 +360,23 @@ class AudioPlayer(
         }
     }
 
+    /**
+     * Handle "previous" action (e.g. from steering wheel button) depending on current track time position:
+     * If currently playing track is at >= x seconds, restart the track from beginning.
+     * Else if currently playing track is at < x seconds, go to previous track instead.
+     * Requested in https://github.com/MoleMan1024/audiowagon/issues/45
+     */
+    suspend fun handlePrevious() {
+        withContext(dispatcher) {
+            val currentPosMilliSec = getCurrentPositionMilliSec()
+            if (currentPosMilliSec < SKIP_PREVIOUS_THRESHOLD_MSEC) {
+                skipPreviousTrack()
+            } else {
+                seekTo(0)
+            }
+        }
+    }
+
     suspend fun setShuffleOn() {
         withContext(dispatcher) {
             setShuffle(true)
@@ -536,7 +562,12 @@ class AudioPlayer(
                 return@withContext
             }
             setDataSource(mediaDataSource)
-            prepare()
+            try {
+                prepare()
+            } catch (exc: IOException) {
+                val audioFile = AudioFile(uri)
+                throw CannotReadFileException(audioFile.name)
+            }
             onPreparedPlayFromQueue(currentMediaPlayer)
         }
     }

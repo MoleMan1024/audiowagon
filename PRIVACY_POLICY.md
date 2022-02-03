@@ -2,6 +2,7 @@
 
 This document explains about personal data that the AudioWagon app collects and how it is processed.
 
+
 ## Log files
 
 The app has a *setting to collect log files*. These log files will be written to the attached USB drive. This
@@ -13,6 +14,7 @@ The log file contains the following personal data that could be used to identify
 - filenames and metadata of audio files on the USB drive
 - volume name, brand and manufacturer of the USB drive
 
+
 ## Firebase Crashlytics
 
 The app uses *Firebase Crashlytics*, a service provided by Google, to collect *anonymous crash and error reports* and
@@ -22,6 +24,10 @@ The user of the app *needs to opt-in* to use this feature via the settings scree
 
 A detailed description about the data collected, how and where it is being processed can be found
 [in Google's Firebase support documentation for Crashlytics](https://firebase.google.com/support/privacy?hl=en).
+
+In addition to the crash/error message, the last 100 lines of the log file (maximum, can be less) are transferred as
+well.
+
 
 ## Sharing usage & diagnostics data via Google
 

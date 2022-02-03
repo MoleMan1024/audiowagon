@@ -99,7 +99,7 @@ class ContentHierarchyDirectory(
             return listOf()
         }
         val directoryURI = Util.createURIForPath(storageLocation.storageID, id.path.removePrefix("/"))
-        val directoryContents = storageLocation.getDirectoryContents(Directory(directoryURI))
+        val directoryContents = storageLocation.getDirectoryContentsPlayable(Directory(directoryURI))
         return directoryContents.filter { !it.name.matches(Util.DIRECTORIES_TO_IGNORE_REGEX) }
             .sortedBy { it.name.lowercase() }
     }

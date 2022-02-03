@@ -16,6 +16,7 @@ import de.moleman1024.audiowagon.filestorage.AudioFileStorage
 import de.moleman1024.audiowagon.filestorage.usb.USBAudioDataSource
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyElement
+import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyID
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyType
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -111,6 +112,9 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
         try {
             // sometimes this is returned as e.g. "5/11" (five out of eleven tracks), remove that
             trackNumAsString = trackNumAsString.replace("/.*".toRegex(), "").trim()
+            if (trackNumAsString.isBlank()) {
+                return trackNum
+            }
             trackNum = Util.convertStringToShort(trackNumAsString)
         } catch (exc: NumberFormatException) {
             logger.error(TAG, "$exc for track number: $trackNumAsString")
@@ -137,13 +141,6 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
      */
     fun createMetadataForItem(audioItem: AudioItem): MediaMetadataCompat {
         val contentHierarchyID = ContentHierarchyElement.deserialize(audioItem.id)
-        val albumArtBytes = getArtForAudioItem(audioItem)
-        if (albumArtBytes != null) {
-            logger.debug(TAG, "Got album art with size: ${albumArtBytes.size}")
-        } else {
-            logger.warning(TAG, "Could not retrieve any album art, using default art")
-        }
-        AlbumArtContentProvider.setAlbumArtByteArray(albumArtBytes)
         // TODO: store this? https://developer.android.com/guide/topics/media-apps/working-with-a-media-session
         return MediaMetadataCompat.Builder().apply {
             putString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID, audioItem.id)
@@ -196,26 +193,34 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
             // We need to always adapt the ID of the album art to produce different content URIs even though we only
             // store the album art for a single track (i.e. the current track). If we re-use the same ID always the
             // media browser GUI client will cache the first album art and never change it
-            val idForAlbumArt =
-                if (contentHierarchyID.type == ContentHierarchyType.FILE) contentHierarchyID.path.hashCode()
-                else contentHierarchyID.trackID
-            val albumArtContentUri = Uri.parse("content://$AUTHORITY/$TRACK_ART_PATH/${idForAlbumArt}")
+            val albumArtContentUri = createURIForAlbumArt(contentHierarchyID)
             putString(MediaMetadataCompat.METADATA_KEY_ART_URI, albumArtContentUri.toString())
             putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON_URI, albumArtContentUri.toString())
         }.build()
     }
 
-    private fun getArtForAudioItem(audioItem: AudioItem): ByteArray? {
+    private fun createURIForAlbumArt(contentHierarchyID: ContentHierarchyID): Uri? {
+        val idForAlbumArt =
+            if (contentHierarchyID.type == ContentHierarchyType.FILE) contentHierarchyID.path.hashCode()
+            else contentHierarchyID.trackID
+        return Uri.parse("content://$AUTHORITY/$TRACK_ART_PATH/${idForAlbumArt}")
+    }
+
+    fun getEmbeddedAlbumArtForAudioItem(audioItem: AudioItem): ByteArray? {
         val metadataRetriever = MediaMetadataRetriever()
         val mediaDataSource = audioFileStorage.getDataSourceForURI(audioItem.uri)
         logger.debug(TAG, "Retrieving embedded image")
         metadataRetriever.setDataSource(mediaDataSource)
         val embeddedImage = metadataRetriever.embeddedPicture ?: return null
         metadataRetriever.close()
+        return embeddedImage
+    }
+
+    fun resizeAlbumArt(albumArtBytes: ByteArray): ByteArray? {
         val resizedBitmap: Bitmap?
         try {
-            logger.debug(TAG, "Decoding embedded image")
-            val decodedBitmap = BitmapFactory.decodeByteArray(embeddedImage, 0, embeddedImage.size) ?: return null
+            logger.debug(TAG, "Decoding image")
+            val decodedBitmap = BitmapFactory.decodeByteArray(albumArtBytes, 0, albumArtBytes.size) ?: return null
             logger.debug(TAG, "Scaling image")
             val widthHeightForResize = AlbumArtContentProvider.getAlbumArtSizePixels()
             resizedBitmap =

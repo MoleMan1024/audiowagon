@@ -77,13 +77,15 @@ class MediaBrowserTest {
         Assert.assertEquals(
             400,
             traversal.hierarchy[
-                    "{\"type\":\"TRACK_GROUP\",\"storage\":\"$SD_CARD_ID_WITH_ROOT\",\"art\":-1,\"alb\":-1,\"trkGrp\":4}"
+                    "{\"type\":\"TRACK_GROUP\",\"storage\":\"$SD_CARD_ID_WITH_ROOT\",\"art\":-1,\"alb\":-1," +
+                            "\"trkGrp\":5}"
             ]?.size
         )
         Assert.assertEquals(
-            140,
+            240,
             traversal.hierarchy[
-                    "{\"type\":\"TRACK_GROUP\",\"storage\":\"$SD_CARD_ID_WITH_ROOT\",\"art\":-1,\"alb\":-1,\"trkGrp\":5}"
+                    "{\"type\":\"TRACK_GROUP\",\"storage\":\"$SD_CARD_ID_WITH_ROOT\",\"art\":-1,\"alb\":-1," +
+                            "\"trkGrp\":6}"
             ]?.size
         )
     }
@@ -95,14 +97,16 @@ class MediaBrowserTest {
         traversal.start(albumsRoot)
         val unknownAlbum = "{\"type\":\"UNKNOWN_ALBUM\",\"storage\":\"$SD_CARD_ID_WITH_ROOT\",\"alb\":-1}"
         Assert.assertEquals(listOf(unknownAlbum), traversal.hierarchy[albumsRoot])
-        Assert.assertEquals(6, traversal.hierarchy[unknownAlbum]?.size)
+        Assert.assertEquals(7, traversal.hierarchy[unknownAlbum]?.size)
         Assert.assertEquals(
             400,
-            traversal.hierarchy["{\"type\":\"TRACK_GROUP\",\"storage\":\"$SD_CARD_ID_WITH_ROOT\",\"alb\":-1,\"trkGrp\":4}"]?.size
+            traversal.hierarchy["{\"type\":\"TRACK_GROUP\",\"storage\":\"$SD_CARD_ID_WITH_ROOT\",\"alb\":-1," +
+                    "\"trkGrp\":5}"]?.size
         )
         Assert.assertEquals(
-            140,
-            traversal.hierarchy["{\"type\":\"TRACK_GROUP\",\"storage\":\"$SD_CARD_ID_WITH_ROOT\",\"alb\":-1,\"trkGrp\":5}"]?.size
+            240,
+            traversal.hierarchy["{\"type\":\"TRACK_GROUP\",\"storage\":\"$SD_CARD_ID_WITH_ROOT\",\"alb\":-1," +
+                    "\"trkGrp\":6}"]?.size
         )
     }
 
@@ -112,9 +116,9 @@ class MediaBrowserTest {
         val tracksRoot = "{\"type\":\"ROOT_TRACKS\"}"
         traversal.start(tracksRoot)
         Assert.assertEquals("{\"type\":\"SHUFFLE_ALL_TRACKS\"}", traversal.hierarchy[tracksRoot]?.get(0))
-        Assert.assertEquals(7, traversal.hierarchy[tracksRoot]?.size)
-        Assert.assertEquals(400, traversal.hierarchy["{\"type\":\"TRACK_GROUP\",\"trkGrp\":4}"]?.size)
-        Assert.assertEquals(140, traversal.hierarchy["{\"type\":\"TRACK_GROUP\",\"trkGrp\":5}"]?.size)
+        Assert.assertEquals(8, traversal.hierarchy[tracksRoot]?.size)
+        Assert.assertEquals(400, traversal.hierarchy["{\"type\":\"TRACK_GROUP\",\"trkGrp\":5}"]?.size)
+        Assert.assertEquals(240, traversal.hierarchy["{\"type\":\"TRACK_GROUP\",\"trkGrp\":6}"]?.size)
     }
 
     @Test
@@ -122,7 +126,7 @@ class MediaBrowserTest {
         val traversal = MediaBrowserTraversal(browser)
         val filesRoot = "{\"type\":\"ROOT_FILES\"}"
         traversal.start(filesRoot)
-        Assert.assertEquals(11, traversal.hierarchy[filesRoot]?.size)
+        Assert.assertEquals(12, traversal.hierarchy[filesRoot]?.size)
         Assert.assertEquals(
             "{\"type\":\"DIRECTORY\",\"path\":\"/storage/$SD_CARD_ID$ROOT_DIR/ARTIST_2\"}",
             traversal.hierarchy[filesRoot]?.get(2)
@@ -135,6 +139,17 @@ class MediaBrowserTest {
         val directoryRoot = "{\"type\":\"DIRECTORY\",\"path\":\"/storage/$SD_CARD_ID$ROOT_DIR/ARTIST_0\"}"
         traversal.start(directoryRoot)
         Assert.assertEquals(10, traversal.hierarchy[directoryRoot]?.size)
+    }
+
+    /**
+     * Regression test for https://github.com/MoleMan1024/audiowagon/issues/54
+     */
+    @Test
+    fun onLoadChildren_manyFilesSDCardImage500FilesInDir_createsGroups() {
+        val traversal = MediaBrowserTraversal(browser)
+        val directoryRoot = "{\"type\":\"DIRECTORY\",\"path\":\"/storage/$SD_CARD_ID$ROOT_DIR/dirWithManyFiles\"}"
+        traversal.start(directoryRoot)
+        Assert.assertEquals(2, traversal.hierarchy[directoryRoot]?.size)
     }
 
 }
