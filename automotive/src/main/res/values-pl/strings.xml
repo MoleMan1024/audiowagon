@@ -3,99 +3,62 @@
 SPDX-FileCopyrightText: 2021 MoleMan1024 <moleman1024dev@gmail.com>
 SPDX-License-Identifier: GPL-3.0-or-later
 
-Polish translation by: Wadim Dz.
+Polish translation by: Wadim Dziedzic
 -->
 <resources>
-	<!-- The name of the app -->
 	<string name="app_name">AudioWagon</string>
-	<!-- The title of the playback queue (a list of tracks to be played back; this is NOT a user-defined playlist). 
-	It does not seem to appear in the car -->
 	<string name="queue_title">Kolejka odtwarzania</string>
-	<!-- When clicking on the magnifying glass to enter the search mode there are 3 headings shown depending on the
-	found items: Tracks/Artists/Albums. If possible do not translate "track" to sth like "song", the audio file could
-	also contain an	audiobook or podcast -->
 	<string name="search_group_tracks">Utwory</string>
 	<string name="search_group_artists">Wykonawcy</string>
 	<string name="search_group_albums">Albumy</string>
-	<!-- The "browse tree" is the main view when starting the app -->
-	<!-- There are 3 categories at the top the user can pick from to select media items: Tracks/Albums/Artists -->
 	<string name="browse_tree_category_tracks">Utwory</string>
 	<string name="browse_tree_category_artists">Wykonawcy</string>
 	<string name="browse_tree_category_albums">Albumy</string>
-	<!-- The tracks category contains a "fake" entry, when pressed, all tracks will be played back in shuffled order -->
 	<string name="browse_tree_pseudo_track_shuffle_all">Odtwarzaj losowo</string>
-	<!-- When "Play all" is pressed, all items for the currently shown album or artist will be played back -->
 	<string name="browse_tree_pseudo_play_all">Odtwarzaj wszystko</string>
-	<!-- When the metadata inside the audio file does not contain information, the album or artist is shown as
-	"Unknown" when browsing -->
 	<string name="browse_tree_unknown_album">Nieznany album</string>
 	<string name="browse_tree_unknown_artist">Nieznany wykonawca</string>
-	<!-- Albums that are marked in the metadata as compilations will show the artist "Various artists" -->
 	<string name="browse_tree_various_artists">Składanka</string>
-	<!-- Some "fake" entries shown in the main browse view e.g. when no USB stick is connected yet -->
 	<string name="browse_tree_no_entries_title">Brak plików dźwiękowych</string>
 	<string name="browse_tree_no_usb_drive">Proszę podłączyć dysk USB</string>
 	<string name="browse_tree_usb_drive_ejected">Dysk USB jest odłączony lub wystąpił błąd odczytu</string>
 	<string name="browse_tree_need_to_agree_legal_title">Nie zaakceptowano wyłączeń odpowiedzialności prawnej</string>
 	<string name="browse_tree_need_to_agree_legal_desc">Proszę sprawdzić ustawienia aplikacji</string>
-	<!-- We use unicode symbols here to avoid the complex linguistic implications in multiple languages for the
-	wordings "artists"/"tracks" together with numbers. No need to translate. -->
-	<string name="browse_tree_num_albums_num_tracks" translatable="false">%1$d &#x1F4BF; &#x2B1D; %2$d &#x1D160;</string>
-	<!-- These "toasts" are short pop-up messages that might be shown to the user at the top or bottom of the screen -->
 	<string name="toast_indexing_started">Rozpoczęto indeksowanie USB…</string>
 	<string name="toast_indexing_completed">Zakończono indeksowanie USB</string>
-	<!-- If there is no next/previous track in the current playlist that the user can skip forward/backward to -->
 	<string name="toast_no_next_track">Brak następnego utworu</string>
 	<string name="toast_no_prev_track">Brak poprzedniego utworu</string>
 	<string name="toast_eject_completed">Odłączono dysk USB, można teraz wyjąć go z gniazda</string>
-	<!-- please translate only the "ERROR:" part in front, keep the variable placeholder as-is -->
 	<string name="toast_error">Błąd: %1$s</string>
-	<!-- We assume "USB" is the same in all languages -->
-	<string name="toast_error_USB" translatable="false">USB: %1$s</string>
-	<string name="toast_error_USB_IO" translatable="false">I/O</string>
-	<!-- Error messages -->
-	<!-- The app needs to receive "audio focus" before it can play back any audio. The app will lose "audio focus"
-	for example when a navigation route guidance is being read out or when a phone call is ongoing. -->
 	<string name="toast_error_audio_focus_denied">Brak dostępu do audio focus</string>
 	<string name="toast_error_USB_init">Błąd połączenia z dyskiem USB</string>
 	<string name="toast_error_no_filesystem">Nie znaleziono żadnego obsługiwanego systemu plików</string>
 	<string name="toast_error_library_creation_fail">Nie udało się utworzyć biblioteki</string>
-	<!-- "state" refers to the state the software is in -->
 	<string name="toast_error_invalid_state">Błędny stan aplikacji</string>
-	<!-- These error strings will be prefixed with the toast_error above, e.g. "ERROR: Timeout" -->
 	<string name="toast_error_IO">Błąd wejścia/wyjścia</string>
 	<string name="toast_error_malformed_data">Niepoprawne dane</string>
 	<string name="toast_error_timeout">Upłynął limit czasu operacji</string>
 	<string name="toast_error_not_supported">Brak obsługi</string>
 	<string name="toast_error_no_USB_device">Brak urządzenia USB</string>
 	<string name="toast_error_unknown">Nieznany</string>
-	<!-- Names for the playback actions. These are not shown in the car. -->
 	<string name="notif_action_play">Odtwarzaj</string>
 	<string name="notif_action_pause">Pauza</string>
 	<string name="notif_action_stop">Zatrzymaj</string>
-	<!-- Names for actions to skip to next or previous track. Usually not shown on screen, we use icons -->
 	<string name="notif_action_next">Następny</string>
 	<string name="notif_action_prev">Poprzedni</string>
-	<!-- Names and descriptions for the notification channels, these may appear in Android settings. -->
 	<string name="notif_channel_name">Powiadomienia AudioWagon</string>
 	<string name="notif_channel_desc">Kanał powiadomień AudioWagon</string>
 	<string name="notif_channel_name_indexing">Powiadomienia indeksowania AudioWagon</string>
 	<string name="notif_channel_desc_indexing">Kanał powiadomień indeksowania AudioWagon</string>
-	<!-- Notifications will appear e.g. in Polestar 2 in a pull-down drawer at the top of the screen (indicated by an
-	 orange line) -->
 	<string name="notif_indexing_title">Stan indeksowania USB</string>
 	<string name="notif_indexing_text_in_progress">W toku…</string>
-	<!-- This text is also shown as a "fake" media item on the main view when USB indexing is ongoing. The usage of
-	the colon should avoid any dependency of the cardinal number on the noun "item" -->
 	<string name="notif_indexing_text_in_progress_num_items">Znaleziono: %1$d …</string>
 	<string name="notif_indexing_text_completed">Zakończono</string>
-	<!-- Names for "special" actions. We use icons, so these are not shown in the car. -->
 	<string name="action_shuffle_turn_on">Losowe wł.</string>
 	<string name="action_shuffle_turn_off">Losowe wył.</string>
 	<string name="action_repeat_turn_on">Powtarzanie wł.</string>
 	<string name="action_repeat_turn_off">Powtarzanie wył.</string>
 	<string name="action_eject">Odłącz dysk USB</string>
-	<!-- The settings screen -->
 	<string name="settings_title">Ustawienia</string>
 	<string name="setting_enable_equalizer_title">Korektor dźwięku</string>
 	<string name="setting_sound_category_title">Dźwięk</string>
@@ -104,16 +67,11 @@ Polish translation by: Wadim Dz.
 	<string name="equalizer_preset_more_bass">Więcej basów</string>
 	<string name="equalizer_preset_less_treble">Mniej wysokich</string>
 	<string name="equalizer_preset_more_treble">Więcej wysokich</string>
-	<!-- These are equalizer presets intended for the Polestar 2 car. Do not mention the name "Polestar" to avoid
-	trademark issues. -->
 	<string name="equalizer_preset_P2">P2</string>
 	<string name="equalizer_preset_P2_plus">P2+</string>
-	<!-- This refers to the shape of the equalizer bands where the bass is increased, the middle is normal, and the
-	highs are increased. It is shaped like the letter V -->
 	<string name="equalizer_preset_V_shape">V-kształtne</string>
 	<string name="setting_general_category_title">Ogólne</string>
 	<string name="setting_log_to_USB_title">Zapis dziennika na dysku USB</string>
-	<!-- The user is adressed directly here. Use a formal form if applicable in your language. -->
 	<string name="setting_log_to_USB_desc">Plik dziennika należy dołączyć do zgłoszenia błędu w aplikacji.</string>
 	<string name="setting_USB_status_title">Stan dysku USB</string>
 	<string name="setting_USB_status_ok">OK</string>
@@ -130,21 +88,17 @@ Polish translation by: Wadim Dz.
 	<string name="setting_show_legal_disclaimer_desc">Przed skorzystaniem z aplikacji należy zaakceptować wyłączenia
 		odpowiedzialności prawnej.</string>
 	<string name="setting_version">Wersja</string>
-	<!-- The legal disclaimer screen -->
 	<string name="legal_disclaimer_title">AudioWagon: Wyłączenia odpowiedzialności prawnej</string>
 	<string name="legal_disclaimer_distraction_heading">Rozpraszanie uwagi kierowcy</string>
-	<!-- This is the first longer text. Use \n for line breaks in similar places as in the original. -->
 	<string name="legal_disclaimer_distraction_text">Podczas korzystania z aplikacji będę stosować się do wszystkich federalnych,
-		krajowych i lokalnych przepisów dotyczących zachowania ostrożności przez kierowców w zakresie\n
+		krajowych i lokalnych przepisów dotyczących zachowania ostrożności przez kierowców w zakresie
 		korzystania z systemów multimedialnych w pojazdach mechanicznych.</string>
 	<string name="legal_disclaimer_liability_heading">Gwarancja / Odpowiedzialność</string>
-	<!-- This liability disclaimer is taken from zlib license, translations might be available online -->
 	<string name="legal_disclaimer_liability_text">Oprogramowanie dostarczane jest \"takim jakie jest\". Autorzy nie
 		ponoszą odpowiedzialności za jakiekolwiek szkody wynikające z jego użytkowania.</string>
 	<string name="legal_disclaimer_license_heading">Licencja</string>
 	<string name="legal_disclaimer_license_text">To oprogramowanie dostępne jest na licencji GPLv3.\nAutor: MoleMan1024</string>
 	<string name="legal_disclaimer_third_party_licenses_heading">Licencje podmiotów trzecich</string>
-	<!-- &#x2013; are bullet markers -->
 	<string name="legal_disclaimer_third_party_licenses_text">Ta aplikacja zawiera utwory następujących autorów
 		(wszystkie na licencji Apache 2.0):\n\n&#x2013; Zestaw bibliotek stworzonych przez Android Open	Source Project\n
 		&#x2013; Biblioteka libaums autorstwa Magnusa Jahnena\n&#x2013; Ikony wektorowe material design autorstwa
@@ -164,7 +118,6 @@ Polish translation by: Wadim Dz.
 	<string name="setting_delete_databases">Usuń biblioteki</string>
 	<string name="setting_database_status_title">Biblioteka metadanych</string>
 	<string name="setting_enable_replaygain">ReplayGain</string>
-	<!-- This will be shown to show the voice recognized string to the user -->
 	<string name="toast_searching_voice_input">Wyszukiwanie \"%1$s\"</string>
 	<string name="setting_read_metadata_when_connected">Po podłączeniu dysku USB</string>
 	<string name="setting_read_metadata_manual">Ręcznie</string>
