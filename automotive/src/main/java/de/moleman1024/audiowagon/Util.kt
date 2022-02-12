@@ -93,10 +93,10 @@ class Util {
 
         fun launchInScopeSafely(
             scope: CoroutineScope, dispatcher: CoroutineDispatcher,
-            logger: Logger, tag: String, crashReporting: CrashReporting, func: suspend () -> Unit
+            logger: Logger, tag: String, crashReporting: CrashReporting, func: suspend (CoroutineScope) -> Unit
         ): Job {
             val exceptionHandler = CoroutineExceptionHandler { coroutineContext, exc ->
-                val msg = "$coroutineContext + threw + ${exc.message}"
+                val msg = "$coroutineContext threw $exc"
                 when (exc) {
                     is NoAudioItemException -> {
                         // this happens often when persistent data does not match USB drive contents, do not report this
@@ -105,7 +105,7 @@ class Util {
                     }
                     is CancellationException -> {
                         // cancelling suspending jobs is not an error
-                        logger.warning(tag, msg)
+                        logger.warning(tag, "CancellationException (msg=$msg)")
                     }
                     else -> {
                         logger.exception(tag, msg, exc)
@@ -117,11 +117,11 @@ class Util {
             }
             return scope.launch(exceptionHandler + dispatcher) {
                 try {
-                    func()
+                    func(this)
                 } catch (exc: NoAudioItemException) {
                     logger.exception(tag, exc.message.toString(), exc)
                 } catch (exc: CancellationException) {
-                    logger.warning(tag, "$exc")
+                    logger.warning(tag, "CancellationException (msg=${exc.message} exc=$exc)")
                 } catch (exc: Exception) {
                     crashReporting.logMessages(logger.getLastLogLines(NUM_LOG_LINES_CRASH_REPORT))
                     crashReporting.recordException(exc)

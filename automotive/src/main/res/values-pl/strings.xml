@@ -2,9 +2,8 @@
 <!--
 SPDX-FileCopyrightText: 2021 MoleMan1024 <moleman1024dev@gmail.com>
 SPDX-License-Identifier: GPL-3.0-or-later
-
-Polish translation by: Wadim Dziedzic
 -->
+<!-- initial translation by: Wadim Dziedzic -->
 <resources>
 	<string name="app_name">AudioWagon</string>
 	<string name="queue_title">Kolejka odtwarzania</string>
@@ -24,7 +23,7 @@ Polish translation by: Wadim Dziedzic
 	<string name="browse_tree_usb_drive_ejected">Dysk USB jest odłączony lub wystąpił błąd odczytu</string>
 	<string name="browse_tree_need_to_agree_legal_title">Nie zaakceptowano wyłączeń odpowiedzialności prawnej</string>
 	<string name="browse_tree_need_to_agree_legal_desc">Proszę sprawdzić ustawienia aplikacji</string>
-	<string name="toast_indexing_started">Rozpoczęto indeksowanie USB…</string>
+	<string name="toast_indexing_started">Rozpoczęto indeksowanie USB …</string>
 	<string name="toast_indexing_completed">Zakończono indeksowanie USB</string>
 	<string name="toast_no_next_track">Brak następnego utworu</string>
 	<string name="toast_no_prev_track">Brak poprzedniego utworu</string>
@@ -76,42 +75,39 @@ Polish translation by: Wadim Dziedzic
 	<string name="setting_USB_status_title">Stan dysku USB</string>
 	<string name="setting_USB_status_ok">OK</string>
 	<string name="setting_USB_status_not_connected">Brak połączenia</string>
-	<string name="setting_USB_status_unknown">Nieznany. Proszę podłączyć ponownie dysk lub zrestartować system
-		Android</string>
+	<string name="setting_USB_status_unknown">Nieznany. Proszę podłączyć ponownie dysk lub zrestartować system 
+Android</string>
 	<string name="setting_USB_status_connected_no_permission">Podłączony. Brak uprawnień</string>
-	<string name="setting_USB_status_error">Błąd odczytu/zapisu. Proszę podłączyć ponownie dysk lub
-		naprawić/sformatować system plików (FAT32)</string>
+	<string name="setting_USB_status_error">Błąd odczytu/zapisu. Proszę podłączyć ponownie dysk lub 
+naprawić/sformatować system plików (FAT32)</string>
 	<string name="setting_USB_status_ejected">Odłączony. Można wyciągnąć dysk USB z gniazda</string>
-	<string name="setting_USB_status_not_compatible">Niekompatybilny. Proszę sformatować dysk w systemie plików
-		FAT32</string>
+	<string name="setting_USB_status_not_compatible">Niekompatybilny. Proszę sformatować dysk w systemie plików 
+FAT32</string>
 	<string name="setting_show_legal_disclaimer_title">Wyłączenia odpowiedzialności prawnej</string>
-	<string name="setting_show_legal_disclaimer_desc">Przed skorzystaniem z aplikacji należy zaakceptować wyłączenia
-		odpowiedzialności prawnej.</string>
+	<string name="setting_show_legal_disclaimer_desc">Przed skorzystaniem z aplikacji należy zaakceptować wyłączenia 
+odpowiedzialności prawnej.</string>
 	<string name="setting_version">Wersja</string>
 	<string name="legal_disclaimer_title">AudioWagon: Wyłączenia odpowiedzialności prawnej</string>
 	<string name="legal_disclaimer_distraction_heading">Rozpraszanie uwagi kierowcy</string>
-	<string name="legal_disclaimer_distraction_text">Podczas korzystania z aplikacji będę stosować się do wszystkich federalnych,
-		krajowych i lokalnych przepisów dotyczących zachowania ostrożności przez kierowców w zakresie
-		korzystania z systemów multimedialnych w pojazdach mechanicznych.</string>
+	<string name="legal_disclaimer_distraction_text">Podczas korzystania z aplikacji będę stosować się do wszystkich 
+federalnych, krajowych i lokalnych przepisów dotyczących zachowania ostrożności przez kierowców w zakresie 
+korzystania z systemów multimedialnych w pojazdach mechanicznych.</string>
 	<string name="legal_disclaimer_liability_heading">Gwarancja / Odpowiedzialność</string>
-	<string name="legal_disclaimer_liability_text">Oprogramowanie dostarczane jest \"takim jakie jest\". Autorzy nie
-		ponoszą odpowiedzialności za jakiekolwiek szkody wynikające z jego użytkowania.</string>
+	<string name="legal_disclaimer_liability_text">Oprogramowanie dostarczane jest \"takim jakie jest\". Autorzy nie 
+ponoszą odpowiedzialności za jakiekolwiek szkody wynikające z jego użytkowania.</string>
 	<string name="legal_disclaimer_license_heading">Licencja</string>
 	<string name="legal_disclaimer_license_text">To oprogramowanie dostępne jest na licencji GPLv3.\nAutor: MoleMan1024</string>
 	<string name="legal_disclaimer_third_party_licenses_heading">Licencje podmiotów trzecich</string>
-	<string name="legal_disclaimer_third_party_licenses_text">Ta aplikacja zawiera utwory następujących autorów
-		(wszystkie na licencji Apache 2.0):\n\n&#x2013; Zestaw bibliotek stworzonych przez Android Open	Source Project\n
-		&#x2013; Biblioteka libaums autorstwa Magnusa Jahnena\n&#x2013; Ikony wektorowe material design autorstwa
-		firmy Google\n
-		&#x2013; Firebase Crashlytics\n\nPełne teksty
-		licencji:\nwww.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/licenses/gpl-3.0.html
-	</string>
+	<string name="legal_disclaimer_third_party_licenses_text">Ta aplikacja zawiera utwory następujących autorów 
+(wszystkie na licencji Apache 2.0):\n\n&#x2013; Zestaw bibliotek stworzonych przez Android Open	Source Project\n&#x2013; 
+Biblioteka libaums autorstwa Magnusa Jahnena\n&#x2013; Ikony wektorowe material design autorstwa firmy Google\n&#x2013;
+Firebase Crashlytics\n\nPełne teksty licencji:\nwww.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/licenses/gpl-3.0.html</string>
 	<string name="legal_disclaimer_confirm_btn">Akceptuj</string>
 	<string name="legal_disclaimer_cancel_btn">Odrzuć</string>
 	<string name="toast_error_no_tracks">Brak utworów</string>
 	<string name="toast_error_not_enough_space_for_log">Brak miejsca do zapisu pliku dziennika</string>
-	<string name="setting_USB_status_too_many_files_in_dir">Zbyt dużo plików w katalogu. Proszę umieścić pliki w
-		podkatalogach</string>
+	<string name="setting_USB_status_too_many_files_in_dir">Zbyt dużo plików w katalogu. Proszę umieścić pliki w 
+podkatalogach</string>
 	<string name="browse_tree_category_files">Pliki</string>
 	<string name="setting_library_category_title">Media</string>
 	<string name="setting_read_metadata">Odczyt metadanych</string>
@@ -129,8 +125,8 @@ Polish translation by: Wadim Dziedzic
 	<string name="setting_audiofocus_pause">Pauza</string>
 	<string name="setting_audiofocus_duck">Mniejsza głośność</string>
 	<string name="setting_crash_reporting_title">Wysyłanie raportów o awariach aplikacji</string>
-	<string name="setting_crash_reporting_desc">Automatycznie wysyłanie raportów do twórcy aplikacji. Pomaga
-		to w ulepszeniu aplikacji. (Funkcja wymaga połączenia z internetem).</string>
+	<string name="setting_crash_reporting_desc">Automatycznie wysyłanie raportów do twórcy aplikacji. Pomaga 
+to w ulepszeniu aplikacji (funkcja wymaga połączenia z internetem).</string>
 	<string name="toast_error_cannot_read_file">Nie można odczytać pliku: %1$s</string>
 	<string name="setting_website_title">Strona internetowa</string>
 </resources>

@@ -15,6 +15,7 @@ import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
 import de.moleman1024.audiowagon.medialibrary.RESOURCE_ROOT_URI
 import de.moleman1024.audiowagon.repository.AudioItemRepository
+import kotlinx.coroutines.yield
 
 private const val TAG = "CHUnknAlbum"
 private val logger = Logger

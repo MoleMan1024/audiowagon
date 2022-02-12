@@ -17,13 +17,15 @@ android {
 	buildToolsVersion "30.0.3"
 
 	defaultConfig {
+		manifestPlaceholders
 		applicationId "de.moleman1024.audiowagon"
 		minSdkVersion rootProject.minSdkVersion
 		targetSdkVersion rootProject.targetSdkVersion
-		versionCode 130
-		versionName "1.3.0"
+		versionCode 140
+		versionName "1.4.0"
 		resValue "string", "VERSION_NAME", versionName
 		testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+		signingConfig signingConfigs.debug
 		manifestPlaceholders["requestLegacyExternalStorage"] = "false"
 	}
 
@@ -38,6 +40,7 @@ android {
 		}
 		emulatorSDCard {
 			initWith debug
+			signingConfig signingConfigs.debug
 		}
 	}
 

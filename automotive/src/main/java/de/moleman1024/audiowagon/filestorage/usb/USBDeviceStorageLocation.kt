@@ -35,7 +35,7 @@ class USBDeviceStorageLocation(override val device: USBMediaDevice) : AudioFileS
         val startDirectory = device.getUSBFileFromURI(directory.uri)
         return scope.produce {
             try {
-                for (usbFile in device.walkTopDown(startDirectory)) {
+                for (usbFile in device.walkTopDown(startDirectory, this)) {
                     if (isIndexingCancelled) {
                         logger.debug(TAG, "Cancel indexAudioFiles()")
                         break

@@ -15,7 +15,6 @@ import androidx.appcompat.app.AppCompatActivity
 import de.moleman1024.audiowagon.ACTION_RESTART_SERVICE
 import de.moleman1024.audiowagon.AudioBrowserService
 import de.moleman1024.audiowagon.SharedPrefs
-import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.filestorage.usb.ACTION_USB_ATTACHED
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -34,7 +33,9 @@ private val logger = Logger
  * https://www.sdgsystems.com/post/android-usb-permissions
  * https://stackoverflow.com/questions/12388914/usb-device-access-pop-up-suppression
  *
- * This does not work on AAOS in Polestar 2, works fine on Pixel 3 XL with AAOS.
+ * This does not work on AAOS in Polestar 2, works fine on Pixel 3 XL with AAOS. I have not seen any app related to
+ * https://android.googlesource.com/platform/packages/services/Car/+/refs/tags/android-10.0.0_r40/car-usb-handler/ in
+ * the Polestar, maybe that is why ...
  */
 @ExperimentalCoroutinesApi
 class USBDummyActivity : AppCompatActivity() {

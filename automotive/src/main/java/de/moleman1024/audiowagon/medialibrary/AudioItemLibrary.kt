@@ -37,9 +37,6 @@ https://developer.android.com/training/cars/media#apply_content_style
 https://developers.google.com/cars/design/automotive-os/apps/media/interaction-model/browsing
 */
 const val CONTENT_STYLE_SUPPORTED = "android.media.browse.CONTENT_STYLE_SUPPORTED"
-const val CONTENT_STYLE_PLAYABLE_HINT = "android.media.browse.CONTENT_STYLE_PLAYABLE_HINT"
-const val CONTENT_STYLE_BROWSABLE_HINT = "android.media.browse.CONTENT_STYLE_BROWSABLE_HINT"
-const val CONTENT_STYLE_LIST_ITEM_HINT_VALUE = 1
 private const val UPDATE_INDEX_NOTIF_FOR_EACH_NUM_ITEMS = 100
 private const val TAG = "AudioItemLibr"
 private val logger = Logger

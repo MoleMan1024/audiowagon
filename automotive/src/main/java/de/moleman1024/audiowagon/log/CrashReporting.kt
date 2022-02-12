@@ -105,7 +105,7 @@ class CrashReporting(context: Context, private val scope: CoroutineScope, privat
         }
     }
 
-    private fun launchInScopeSafely(func: suspend () -> Unit) {
+    private fun launchInScopeSafely(func: suspend (CoroutineScope) -> Unit) {
         Util.launchInScopeSafely(scope, dispatcher, logger, TAG, this, func)
     }
 

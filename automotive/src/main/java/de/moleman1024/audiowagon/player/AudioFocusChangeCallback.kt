@@ -109,7 +109,7 @@ class AudioFocusChangeCallback(
         audioFocusLossJob = null
     }
 
-    private fun launchInScopeSafely(func: suspend () -> Unit): Job {
+    private fun launchInScopeSafely(func: suspend (CoroutineScope) -> Unit): Job {
         return Util.launchInScopeSafely(scope, dispatcher, logger, TAG, crashReporting, func)
     }
 

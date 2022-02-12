@@ -174,10 +174,18 @@ index 146d98f..07de6a5 100644
      mavenCentral()
  }
 diff --git a/libaums/src/main/java/com/github/mjdev/libaums/driver/ByteBlockDevice.kt b/libaums/src/main/java/com/github/mjdev/libaums/driver/ByteBlockDevice.kt
-index d3dce5b..b12804a 100644
+index d3dce5b..f14a336 100644
 --- a/libaums/src/main/java/com/github/mjdev/libaums/driver/ByteBlockDevice.kt
 +++ b/libaums/src/main/java/com/github/mjdev/libaums/driver/ByteBlockDevice.kt
-@@ -22,86 +22,86 @@ open class ByteBlockDevice @JvmOverloads constructor(private val targetBlockDevi
+@@ -2,6 +2,7 @@ package com.github.mjdev.libaums.driver
+ 
+ import java.io.IOException
+ import java.nio.ByteBuffer
++import kotlin.math.min
+ 
+ /**
+  * Simple class which wraps around an existing [BlockDeviceDriver] to enable byte addressing
+@@ -22,86 +23,86 @@ open class ByteBlockDevice @JvmOverloads constructor(private val targetBlockDevi
      }
  
      @Throws(IOException::class)
@@ -256,7 +264,7 @@ index d3dce5b..b12804a 100644
 -            tmp.put(src.array(), src.position(), remaining)
 -            src.position(src.position() + remaining)
 +            tmp.position((deviceOffset % blockSize).toInt())
-+            val remaining = Math.min(tmp.remaining(), buffer.remaining())
++            val remaining = min(tmp.remaining(), buffer.remaining())
 +            tmp.put(buffer.array(), buffer.position(), remaining)
 +            buffer.position(buffer.position() + remaining)
              tmp.clear()
@@ -298,7 +306,7 @@ index d3dce5b..b12804a 100644
          }
      }
  
-@@ -109,4 +109,4 @@ open class ByteBlockDevice @JvmOverloads constructor(private val targetBlockDevi
+@@ -109,4 +110,4 @@ open class ByteBlockDevice @JvmOverloads constructor(private val targetBlockDevi
  
          private val TAG = ByteBlockDevice::class.java.simpleName
      }
@@ -306,7 +314,7 @@ index d3dce5b..b12804a 100644
 \ No newline at end of file
 +} 
 diff --git a/libaums/src/main/java/com/github/mjdev/libaums/driver/scsi/ScsiBlockDevice.kt b/libaums/src/main/java/com/github/mjdev/libaums/driver/scsi/ScsiBlockDevice.kt
-index 56b92be..20786c6 100644
+index 56b92be..e7d6f89 100644
 --- a/libaums/src/main/java/com/github/mjdev/libaums/driver/scsi/ScsiBlockDevice.kt
 +++ b/libaums/src/main/java/com/github/mjdev/libaums/driver/scsi/ScsiBlockDevice.kt
 @@ -174,10 +174,8 @@ class ScsiBlockDevice(private val usbCommunication: UsbCommunication, private va
@@ -320,7 +328,7 @@ index 56b92be..20786c6 100644
          throw IOException("MAX_RECOVERY_ATTEMPTS Exceeded while trying to transfer command to device, please reattach device and try again")
      }
  
-@@ -255,26 +253,28 @@ class ScsiBlockDevice(private val usbCommunication: UsbCommunication, private va
+@@ -255,26 +253,36 @@ class ScsiBlockDevice(private val usbCommunication: UsbCommunication, private va
          }
  
          var transferLength = command.dCbwDataTransferLength
@@ -349,7 +357,15 @@ index 56b92be..20786c6 100644
                              + command)
                  }
 +                tempBuffer.flip()
-+                inBuffer.limit(inBuffer.position() + transferLength)
++                val limit = inBuffer.position() + transferLength
++                if (limit < 0 || limit > inBuffer.capacity()) {
++                    throw IOException(
++                        "Could not set inBuffer limit to: $limit " +
++                                "(pos=${inBuffer.position()}, capacity=${inBuffer.capacity()}, " +
++                                "transferLength=$transferLength"
++                    )
++                }
++                inBuffer.limit(limit)
 +                inBuffer.put(tempBuffer)
              } else {
 +                inBuffer.clear()
@@ -357,7 +373,7 @@ index 56b92be..20786c6 100644
                  written = 0
                  do {
                      written += usbCommunication.bulkOutTransfer(inBuffer)
-@@ -286,7 +286,6 @@ class ScsiBlockDevice(private val usbCommunication: UsbCommunication, private va
+@@ -286,7 +294,6 @@ class ScsiBlockDevice(private val usbCommunication: UsbCommunication, private va
              }
          }
  
@@ -365,7 +381,7 @@ index 56b92be..20786c6 100644
          // expecting csw now
          cswBuffer.clear()
          read = usbCommunication.bulkInTransfer(cswBuffer)
-@@ -311,16 +310,13 @@ class ScsiBlockDevice(private val usbCommunication: UsbCommunication, private va
+@@ -311,16 +318,13 @@ class ScsiBlockDevice(private val usbCommunication: UsbCommunication, private va
      @Synchronized
      @Throws(IOException::class)
      override fun read(deviceOffset: Long, buffer: ByteBuffer) {
@@ -382,7 +398,7 @@ index 56b92be..20786c6 100644
      }
  
      /**
-@@ -331,20 +327,17 @@ class ScsiBlockDevice(private val usbCommunication: UsbCommunication, private va
+@@ -331,20 +335,17 @@ class ScsiBlockDevice(private val usbCommunication: UsbCommunication, private va
      @Synchronized
      @Throws(IOException::class)
      override fun write(deviceOffset: Long, buffer: ByteBuffer) {

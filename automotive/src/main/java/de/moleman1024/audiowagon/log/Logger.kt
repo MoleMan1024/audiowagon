@@ -10,6 +10,7 @@ import android.util.Log.getStackTraceString
 import androidx.annotation.VisibleForTesting
 import com.github.mjdev.libaums.fs.UsbFile
 import com.github.mjdev.libaums.fs.UsbFileOutputStream
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.runBlocking
 import java.io.BufferedOutputStream
@@ -89,7 +90,10 @@ object Logger : LoggerInterface {
             return
         }
         try {
-            runBlocking(dispatcher) {
+            val exceptionHandler = CoroutineExceptionHandler { coroutineContext, exc ->
+                exceptionLogcatOnly(TAG, "$coroutineContext threw ${exc.message} when flushing to USB", exc)
+            }
+            runBlocking(dispatcher + exceptionHandler) {
                 try {
                     bufOutStream?.flush()
                 } catch (exc: IOException) {
@@ -99,6 +103,9 @@ object Logger : LoggerInterface {
             usbFile?.flush()
         } catch (exc: IOException) {
             exceptionLogcatOnly(TAG, "I/O exception when flushing log to USB device", exc)
+            usbFileHasError = true
+        } catch (exc: RuntimeException) {
+            exceptionLogcatOnly(TAG, "Runtime exception when flushing log to USB device", exc)
             usbFileHasError = true
         }
     }
@@ -168,22 +175,23 @@ object Logger : LoggerInterface {
                 buffer.removeAt(0)
             }
             buffer.add(formattedLogLine)
-            if (bufOutStream != null) {
-                // FIXME: sometimes loglines overlap partially, check threads? could also be related to
-                //  https://github.com/magnusja/libaums/issues/298
-                try {
-                    bufOutStream?.write(formattedLogLine.toByteArray())
-                    if (stackTrace.isBlank()) {
-                        return@runBlocking
-                    }
-                    stackTrace.lines().forEach { line ->
-                        val formattedStackTraceLine = formatLogLine(timestamp, level, threadID, tag, line)
-                        bufOutStream?.write(formattedStackTraceLine.toByteArray())
-                    }
-                } catch (exc: IOException) {
-                    exceptionLogcatOnly(TAG, "Could not write to USB buffered output stream for logging", exc)
-                    usbFileHasError = true
+            if (bufOutStream == null) {
+                return@runBlocking
+            }
+            // FIXME: sometimes loglines overlap partially, check threads? could also be related to
+            //  https://github.com/magnusja/libaums/issues/298
+            try {
+                bufOutStream?.write(formattedLogLine.toByteArray())
+                if (stackTrace.isBlank()) {
+                    return@runBlocking
                 }
+                stackTrace.lines().forEach { line ->
+                    val formattedStackTraceLine = formatLogLine(timestamp, level, threadID, tag, line)
+                    bufOutStream?.write(formattedStackTraceLine.toByteArray())
+                }
+            } catch (exc: IOException) {
+                exceptionLogcatOnly(TAG, "Could not write to USB buffered output stream for logging", exc)
+                usbFileHasError = true
             }
         }
     }

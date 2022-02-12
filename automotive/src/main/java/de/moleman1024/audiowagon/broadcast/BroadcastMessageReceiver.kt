@@ -45,7 +45,7 @@ class BroadcastMessageReceiver(
         }
     }
 
-    private fun launchInScopeSafely(func: suspend () -> Unit) {
+    private fun launchInScopeSafely(func: suspend (CoroutineScope) -> Unit) {
         Util.launchInScopeSafely(scope, dispatcher, logger, TAG, crashReporting, func)
     }
 

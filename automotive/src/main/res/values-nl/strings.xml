@@ -3,7 +3,7 @@
 SPDX-FileCopyrightText: 2021 MoleMan1024 <moleman1024dev@gmail.com>
 SPDX-License-Identifier: GPL-3.0-or-later
 -->
-<!-- initial translation by: Stef H. -->
+<!-- initial translation by: S. Hendricks -->
 <resources>
 	<string name="app_name">AudioWagon</string>
 	<string name="queue_title">Afspeellijst</string>
@@ -71,12 +71,12 @@ SPDX-License-Identifier: GPL-3.0-or-later
 	<string name="equalizer_preset_V_shape">V-vorm</string>
 	<string name="setting_general_category_title">Algemeen</string>
 	<string name="setting_log_to_USB_title">Schrijf log bestanden naar USB-stick</string>
-	<string name="setting_log_to_USB_desc">Geef deze log bestanden aan de ontwikkelaar wanneer je een bug wilt
+	<string name="setting_log_to_USB_desc">Deel deze log bestanden met de ontwikkelaar wanneer je een bug wilt
 doorgeven.</string>
 	<string name="setting_USB_status_title">USB Status</string>
 	<string name="setting_USB_status_ok">OK</string>
 	<string name="setting_USB_status_not_connected">Niet verbonden</string>
-	<string name="setting_USB_status_unknown">Onbekend. Probeer de USB-stick opnieuw in te steken of herstart
+	<string name="setting_USB_status_unknown">Onbekend probleem. Probeer de USB-stick opnieuw in te steken of herstart
 Android</string>
 	<string name="setting_USB_status_connected_no_permission">Verbonden. Geen toestemming</string>
 	<string name="setting_USB_status_error">Lees/schrijf fout, probeer de USB-stick opnieuw in te steken of
@@ -91,7 +91,7 @@ gebruiken.</string>
 	<string name="legal_disclaimer_title">AudioWagon: Legal disclaimer</string>
 	<string name="legal_disclaimer_distraction_heading">Afleiding bestuurder</string>
 	<string name="legal_disclaimer_distraction_text">Je stemt in je te houden aan de van toepassing zijnde federale en
-lokale wetgeving betreffende bestuurder afleiding en bediening van een in-voertuig infotainment systeem tijdens het
+lokale wetgeving betreffende bestuurderafleiding alsmede bediening van een in-voertuig infotainment systeem tijdens het
 gebruik van deze software applicatie.\nGebruik deze software alleen wanneer de verkeersomstandigheden dit absoluut
 veilig toelaten.</string>
 	<string name="legal_disclaimer_liability_heading">Garantie / Aansprakelijkheid</string>
@@ -128,8 +128,8 @@ zijn gemaakt door Google\n&#x2013; Firebase Crashlytics\n\nLicentie teksten:\nww
 	<string name="setting_audiofocus_pause">Pauze</string>
 	<string name="setting_audiofocus_duck">Lager volume</string>
 	<string name="setting_crash_reporting_title">Stuur crashrapporten</string>
-	<string name="setting_crash_reporting_desc">Stuur automatisch crashrapporten naar de ontwikkelaar om te helpen
-de app verbeteren (vereist een internetverbinding).</string>
+	<string name="setting_crash_reporting_desc">Stuur automatisch crashrapporten naar de ontwikkelaar om de app helpen 
+verbeteren (vereist een internetverbinding).</string>
 	<string name="toast_error_cannot_read_file">Bestand kan niet worden gelezen: %1$s</string>
 	<string name="setting_website_title">Website</string>
 </resources>

@@ -82,6 +82,7 @@ class AudioSession(
         AudioFocusChangeCallback(audioPlayer, scope, dispatcher, crashReporting)
     private var storePersistentJob: Job? = null
     private var onPlayFromMediaIDJob: Job? = null
+    private var observePlaybackQueueJob: Job? = null
     private var isFirstOnPlayEventAfterReset: Boolean = true
     private var onPlayCalledBeforeUSBReady: Boolean = false
     private var isShuttingDown: Boolean = false
@@ -135,6 +136,7 @@ class AudioSession(
      * See https://developers.google.com/cars/design/automotive-os/apps/media/create-your-app/customize-playback
      */
     private fun initPlaybackState() {
+        logger.debug(TAG, "initPlaybackState()")
         val actions = createPlaybackActions()
         val customActionShuffleOn = createCustomActionShuffleIsOff()
         val customActionRepeatOn = createCustomActionRepeatIsOff()
@@ -297,7 +299,10 @@ class AudioSession(
             val contentHierarchyIDStr: String? = queueChange.currentItem?.description?.mediaId
             logger.debug(TAG, "Content hierarchy ID to change to: $contentHierarchyIDStr")
             logger.flushToUSB()
-            launchInScopeSafely("observePlaybackQueue()") {
+            runBlocking(dispatcher) {
+                observePlaybackQueueJob?.cancelAndJoin()
+            }
+            observePlaybackQueueJob = launchInScopeSafely("observePlaybackQueue()") {
                 if (contentHierarchyIDStr != null && contentHierarchyIDStr.isNotBlank()) {
                     val contentHierarchyID = ContentHierarchyElement.deserialize(contentHierarchyIDStr)
                     val audioItem: AudioItem
@@ -326,7 +331,9 @@ class AudioSession(
                             throw IllegalArgumentException("Invalid content hierarchy: $contentHierarchyID")
                         }
                     }
+                    it.ensureActive()
                     val metadata: MediaMetadataCompat = audioItemLibrary.createMetadataForItem(audioItem)
+                    it.ensureActive()
                     val albumArtBytes = audioItemLibrary.getAlbumArtForItem(audioItem)
                     AlbumArtContentProvider.setAlbumArtByteArray(albumArtBytes)
                     extractAndSetReplayGain(audioItem)
@@ -340,6 +347,7 @@ class AudioSession(
                 }
                 setMediaSessionQueue(queueChange.items)
                 sendNotificationBasedOnPlaybackState()
+                observePlaybackQueueJob = null
             }
         }
     }
@@ -446,6 +454,7 @@ class AudioSession(
         clearSession()
         runBlocking(dispatcher) {
             onPlayFromMediaIDJob?.cancelAndJoin()
+            observePlaybackQueueJob?.cancelAndJoin()
             audioFocusChangeListener.cancelAudioFocusLossJob()
             audioPlayer.shutdown()
             audioFocus.release()
@@ -461,6 +470,7 @@ class AudioSession(
             audioPlayer.pause()
             audioFocus.release()
             onPlayFromMediaIDJob?.cancelAndJoin()
+            observePlaybackQueueJob?.cancelAndJoin()
             audioFocusChangeListener.cancelAudioFocusLossJob()
         }
         setCurrentQueueItem(null)
@@ -673,6 +683,7 @@ class AudioSession(
             } catch (exc: Exception) {
                 logger.exception(TAG, "Exception in handleOnPlay()", exc)
                 when (exc) {
+                    // TODO: for Android 12 turn this into PlaybackState error if possible
                     is NoItemsInQueueException -> gui.showErrorToastMsg(context.getString(R.string.toast_error_no_tracks))
                     is DriveAlmostFullException -> {
                         logger.exceptionLogcatOnly(TAG, "Drive is almost full, cannot log to USB", exc)
@@ -971,7 +982,9 @@ class AudioSession(
             if (lastContentHierarchyID.type == ContentHierarchyType.SHUFFLE_ALL_TRACKS) {
                 // When the user is shuffling all tracks, we don't store the queue, we will recreate a new shuffled queue
                 // when restoring from persistent state instead (to save storage space)
-                playbackStateToPersist.queueIDs = queueIDs.subList(queueIndex, queueIndex + 1)
+                if (queueIDs.isNotEmpty()) {
+                    playbackStateToPersist.queueIDs = queueIDs.subList(queueIndex, queueIndex + 1)
+                }
             }
         }
         runBlocking(dispatcher) {
@@ -1024,13 +1037,13 @@ class AudioSession(
         audioSessionNotifications.currentQueueItem = item
     }
 
-    private fun launchInScopeSafely(message: String, func: suspend () -> Unit): Job {
+    private fun launchInScopeSafely(message: String, func: suspend (CoroutineScope) -> Unit): Job {
         val exceptionHandler = CoroutineExceptionHandler { coroutineContext, exc ->
             handleException("$message ($coroutineContext threw ${exc.message})", exc)
         }
         return scope.launch(exceptionHandler + dispatcher) {
             try {
-                func()
+                func(this)
             } catch (exc: Exception) {
                 if (exc.message != null) {
                     handleException("$message (${exc.message})", exc)
@@ -1049,7 +1062,7 @@ class AudioSession(
                 gui.showErrorToastMsg(context.getString(R.string.toast_error_not_enough_space_for_log))
             }
             is CancellationException -> {
-                logger.warning(TAG, exc.message.toString())
+                logger.warning(TAG, "CancellationException (msg=$msg exc=$exc)")
             }
             is CannotReadFileException -> {
                 gui.showErrorToastMsg(context.getString(R.string.toast_error_cannot_read_file, exc.fileName))

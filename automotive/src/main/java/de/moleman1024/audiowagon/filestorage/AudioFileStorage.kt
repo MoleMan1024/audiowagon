@@ -167,7 +167,7 @@ open class AudioFileStorage(
             return
         }
         val storageLocation = storageLocations.first()
-        // we first notify the observers before remove the storage location, the observer will access it
+        // we first notify the observers before removing the storage location, the observer will access it
         val storageChange = StorageChange(storageLocation.storageID, StorageAction.REMOVE)
         notifyObservers(storageChange)
         // TODO: the initial design of the app allowed for multiple audio file storage locations in parallel, I
@@ -369,6 +369,7 @@ open class AudioFileStorage(
             it.cancelIndexAudioFiles()
             it.close()
         }
+        audioFileStorageLocations.clear()
     }
 
     fun suspend() {
@@ -378,6 +379,7 @@ open class AudioFileStorage(
             it.cancelIndexAudioFiles()
             it.close()
         }
+        audioFileStorageLocations.clear()
         usbDeviceConnections.isSuspended = true
         isSuspended = true
     }

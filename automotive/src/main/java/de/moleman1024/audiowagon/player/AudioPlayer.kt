@@ -32,7 +32,7 @@ private val logger = Logger
 const val MEDIA_ERROR_INVALID_STATE = -38
 // arbitrary number
 const val MEDIA_ERROR_AUDIO_FOCUS_DENIED = -1249
-const val SKIP_PREVIOUS_THRESHOLD_MSEC = 20000L
+const val SKIP_PREVIOUS_THRESHOLD_MSEC = 10000L
 
 /**
  * Manages two [MediaPlayer] instances + equalizer etc.
@@ -144,6 +144,7 @@ class AudioPlayer(
                 playbackQueue.incrementIndex()
                 currentMediaPlayer = getNextPlayer()
                 notifyPlayerStatusChange()
+                it.ensureActive()
                 try {
                     setupNextPlayer()
                 } catch (exc: IOException) {
@@ -534,7 +535,7 @@ class AudioPlayer(
         // this needs to run in a different dispatcher than the single thread used for this AudioPlayer to avoid
         // deadlocks
         val exceptionHandler = CoroutineExceptionHandler { coroutineContext, exc ->
-            logger.exception(TAG, coroutineContext.toString() + " threw " + exc.message.toString(), exc)
+            logger.exception(TAG, "$coroutineContext threw ${exc.message}", exc)
         }
         scope.launch(exceptionHandler + playerStatusDispatcher) {
             playerStatusObservers.forEach { it(status) }
@@ -968,7 +969,7 @@ class AudioPlayer(
         }
     }
 
-    private fun launchInScopeSafely(func: suspend () -> Unit): Job {
+    private fun launchInScopeSafely(func: suspend (CoroutineScope) -> Unit): Job {
         return Util.launchInScopeSafely(scope, dispatcher, logger, TAG, crashReporting, func)
     }
 

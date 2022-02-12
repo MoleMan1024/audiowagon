@@ -20,7 +20,7 @@ import org.junit.Assert
 
 private const val TAG = "MediaBrowserTest"
 // TODO: this timing will change if database was previously indexed or not
-private const val TIMEOUT_MS_LIBRARY_CREATION = 30 * 1000
+private const val TIMEOUT_MS_LIBRARY_CREATION = 40 * 1000
 // this SD card image needs to contain directories for each of our test modules
 const val SD_CARD_ID = "1404-9F0B"
 private const val ROOT_DIR = "/many_files"

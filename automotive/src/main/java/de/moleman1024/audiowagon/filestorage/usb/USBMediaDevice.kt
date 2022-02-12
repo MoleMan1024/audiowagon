@@ -22,6 +22,8 @@ import de.moleman1024.audiowagon.exceptions.NoFileSystemException
 import de.moleman1024.audiowagon.filestorage.AudioFile
 import de.moleman1024.audiowagon.filestorage.MediaDevice
 import de.moleman1024.audiowagon.log.Logger
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ensureActive
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.io.UnsupportedEncodingException
@@ -270,12 +272,13 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
     /**
      * Traverses files/directories depth-first
      */
-    fun walkTopDown(rootDirectory: UsbFile): Sequence<UsbFile> = sequence {
+    fun walkTopDown(rootDirectory: UsbFile, scope: CoroutineScope): Sequence<UsbFile> = sequence {
         val stack = ArrayDeque<Iterator<UsbFile>>()
         val allFilesDirs = mutableMapOf<String, Unit>()
         recentFilepathToFileMap.clear()
         stack.add(rootDirectory.listFiles().sortedBy { it.name }.iterator())
         while (stack.isNotEmpty()) {
+            scope.ensureActive()
             if (stack.last().hasNext()) {
                 val fileOrDirectory = stack.last().next()
                 if (!allFilesDirs.containsKey(fileOrDirectory.absolutePath)) {

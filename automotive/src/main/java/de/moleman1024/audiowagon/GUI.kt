@@ -52,6 +52,8 @@ open class GUI(private val scope: CoroutineScope, private val context: Context) 
     }
 
     fun showErrorToastMsg(text: String) {
+        // TODO: no longer allowed in AAOS 12, use setErrorMessage in playbackState instead (but don't do it when
+        //  browse view is updated often, it will flicker)
         showToastMsg(context.getString(R.string.toast_error, text))
     }
 

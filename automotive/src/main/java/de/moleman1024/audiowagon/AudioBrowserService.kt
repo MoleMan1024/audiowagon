@@ -201,9 +201,8 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             )
             sessionToken = audioSession.sessionToken
             logger.debug(TAG, "New media session token: $sessionToken")
-            // Try to avoid "RemoteServiceException: Context.startForegroundService() did not then call
+            // This avoids "RemoteServiceException: Context.startForegroundService() did not then call
             // Service.startForeground" when previously started foreground service is restarted
-            // Can't reproduce it though...
             // If the service was not started previously, startForeground() should do nothing
             audioSessionNotification = audioSession.getNotification()
             startForeground(NOTIFICATION_ID, audioSessionNotification)
@@ -247,6 +246,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             audioFileStorage.updateConnectedDevices()
         } catch (exc: IOException) {
             logger.exception(TAG, "I/O Error during update of connected USB devices", exc)
+            // TODO: for Android 12 turn into notification
             gui.showErrorToastMsg(this.getString(R.string.toast_error_USB_init))
             crashReporting.logMessages(logger.getLastLogLines(NUM_LOG_LINES_CRASH_REPORT))
             crashReporting.recordException(exc)
@@ -349,6 +349,11 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         }
     }
 
+    /**
+     * When playing back music we move the service to foreground ("foreground" is in terms of memory/priority, not in
+     * terms of a GUI window). We also move it to foreground during indexing, so the user can switch to another app
+     * and indexing will not be stopped automatically (Android may destroy background services at any time)
+     */
     private fun startServiceInForeground(reason: ServiceStartStopReason) {
         if (isServiceStarted) {
             if (servicePriority == ServicePriority.BACKGROUND) {
@@ -370,11 +375,6 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         if (deferredUntilServiceInForeground.isCompleted) {
             deferredUntilServiceInForeground = CompletableDeferred()
         }
-        // this page says to start music player as foreground service
-        // https://developer.android.com/guide/topics/media-apps/audio-app/building-a-mediabrowserservice#mediastyle-notifications
-        // however this FAQ says foreground services are not allowed?
-        // https://developer.android.com/training/cars/media/automotive-os#can_i_use_a_foreground_service
-        // "foreground" is in terms of memory/priority, not in terms of a GUI window
         try {
             audioSessionNotification = audioSession.getNotification()
             if (lastServiceStartReason <= reason) {
@@ -391,10 +391,12 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         }
     }
 
+    /**
+     *  When the service is in (memory) background and no activity is using it (e.g. other media app is shown) AAOS
+     *  will usually stop the service (and thus also destroy) it after one minute of idle time
+     */
     private fun moveServiceToBackground() {
         logger.debug(TAG, "Moving service to background")
-        // when the service is in (memory) background and no activity is using it (e.g. other media app is shown) AAOS
-        // will usually stop the service (and thus also destroy) it after one minute of idle time
         stopForeground(false)
         servicePriority = ServicePriority.BACKGROUND
     }
@@ -652,7 +654,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
 
     @Suppress("RedundantNullableReturnType")
     /**
-     * https://developer.android.com/guide/components/bound-services#Lifecycle
+     * See https://developer.android.com/guide/components/bound-services#Lifecycle
      */
     override fun onBind(intent: Intent?): IBinder? {
         logger.debug(TAG, "onBind(intent=$intent)")
@@ -877,8 +879,14 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         logger.debug(TAG, "supportedRootChildFlags=$supportedRootChildFlags")
         val hints = Bundle().apply {
             putBoolean(CONTENT_STYLE_SUPPORTED, true)
-            putInt(CONTENT_STYLE_BROWSABLE_HINT, CONTENT_STYLE_LIST_ITEM_HINT_VALUE)
-            putInt(CONTENT_STYLE_PLAYABLE_HINT, CONTENT_STYLE_LIST_ITEM_HINT_VALUE)
+            putInt(
+                MediaConstants.DESCRIPTION_EXTRAS_KEY_CONTENT_STYLE_BROWSABLE,
+                MediaConstants.DESCRIPTION_EXTRAS_VALUE_CONTENT_STYLE_LIST_ITEM
+            )
+            putInt(
+                MediaConstants.DESCRIPTION_EXTRAS_KEY_CONTENT_STYLE_PLAYABLE,
+                MediaConstants.DESCRIPTION_EXTRAS_VALUE_CONTENT_STYLE_LIST_ITEM
+            )
             putBoolean(MediaConstants.BROWSER_SERVICE_EXTRAS_KEY_SEARCH_SUPPORTED, true)
         }
         return BrowserRoot(contentHierarchyRoot, hints)
@@ -986,11 +994,12 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     private fun notifyLibraryCreationFailure() {
         gui.removeIndexingNotification()
         if (!isSuspended) {
+            // TODO: for Android 12 turn this into a notification
             gui.showErrorToastMsg(getString(R.string.toast_error_library_creation_fail))
         }
     }
 
-    private fun launchInScopeSafely(func: suspend () -> Unit): Job {
+    private fun launchInScopeSafely(func: suspend (CoroutineScope) -> Unit): Job {
         return Util.launchInScopeSafely(lifecycleScope, dispatcher, logger, TAG, crashReporting, func)
     }
 

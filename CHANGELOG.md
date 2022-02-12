@@ -13,6 +13,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+## [1.4.0] - 2022-02-12
+
+### Fixed
+
+- robustness improvements
+
+### Added
+
+- added Polish translation
+
+### Changed
+
+- updated Dutch translation
+- modified skip backwards threshold added in version 1.3.0 to 10 seconds (down from 20 seconds)
+- logging improvements
+
+
 ## [1.3.0] - 2022-01-12
 
 ### Fixed
@@ -31,7 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   track has already played more than 20 seconds, the previous buttons will now restart the track. This is more in-line
   with the behaviour in other media software [#45](https://github.com/MoleMan1024/audiowagon/issues/45)
 - the app has been extended to support album art in directories. The highest priority is the album art embedded in the 
-  audio file. If no such album art is found, the app will now look alo for .jpg or .png in the same directory as the 
+  audio file. If no such album art is found, the app will now look also for .jpg or .png in the same directory as the 
   audio file with usual filenames (e.g. "front.jpg", "folder.png", "cover.jpg", "index.jpg", "albumart.jpg", etc.) 
   [#36](https://github.com/MoleMan1024/audiowagon/issues/36)
 

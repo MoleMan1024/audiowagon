@@ -42,7 +42,7 @@ class AudioItemRepository(
     // The database file is created in internal storage only after the first row has been added to it
     private val databaseName = "$AUDIOITEM_REPO_DB_PREFIX${storageID}.sqlite"
     // TODO: this is not ideal, I would rather like to store the database on the USB flash drive to reduce wear on
-    //  the internal flash memory, but found no easy way to do that
+    //  the internal flash memory, but found no way to do that in Room
     // SQL query logging can be added via setQueryCallback()
     // TODO: https://developer.android.com/training/data-storage/app-specific#query-free-space
     //  I tried with 160 GB of music which resulted in a database of ~15 megabytes
@@ -90,6 +90,7 @@ class AudioItemRepository(
             getDatabase()?.albumDAO()?.queryAlbumsByArtist(artistID) ?: listOf()
         }
         for (album in albums) {
+            yield()
             if (isClosed) {
                 logger.warning(TAG, "Repository was closed")
                 return listOf()
@@ -107,6 +108,7 @@ class AudioItemRepository(
         }
         val compilationAlbums: List<Album> = getCompilationAlbumsForArtist(artistID)
         for (album in compilationAlbums) {
+            yield()
             if (isClosed) {
                 logger.warning(TAG, "Repository was closed")
                 return listOf()
@@ -128,6 +130,7 @@ class AudioItemRepository(
         val items: MutableList<AudioItem> = mutableListOf()
         val tracks: List<Track> = getDatabase()?.trackDAO()?.queryTracksByAlbum(albumID) ?: listOf()
         for (track in tracks) {
+            yield()
             if (isClosed) {
                 logger.warning(TAG, "Repository was closed")
                 return listOf()
@@ -143,6 +146,7 @@ class AudioItemRepository(
         val items: MutableList<AudioItem> = mutableListOf()
         val tracks: List<Track> = getDatabase()?.trackDAO()?.queryTracksByArtist(artistID) ?: listOf()
         for (track in tracks) {
+            yield()
             if (isClosed) {
                 logger.warning(TAG, "Repository was closed")
                 return listOf()
@@ -158,6 +162,7 @@ class AudioItemRepository(
         val items: MutableList<AudioItem> = mutableListOf()
         val tracks: List<Track> = getDatabase()?.trackDAO()?.queryTracksByArtistAndAlbum(artistID, albumID) ?: listOf()
         for (track in tracks) {
+            yield()
             if (isClosed) {
                 logger.warning(TAG, "Repository was closed")
                 return listOf()
@@ -199,6 +204,7 @@ class AudioItemRepository(
         val items: MutableList<AudioItem> = mutableListOf()
         val tracks: List<Track> = getDatabase()?.trackDAO()?.queryTracksByArtistWhereAlbumUnknown(artistID) ?: listOf()
         for (track in tracks) {
+            yield()
             if (isClosed) {
                 logger.warning(TAG, "Repository was closed")
                 return listOf()
@@ -323,6 +329,7 @@ class AudioItemRepository(
         val allCompilationAlbums = getDatabase()?.albumDAO()?.queryByArtist(variousArtistsInDB.artistId) ?: listOf()
         val matchingCompilationAlbums = mutableListOf<Album>()
         for (album in allCompilationAlbums) {
+            yield()
             if (isClosed) {
                 logger.warning(TAG, "Repository was closed")
                 return listOf()
@@ -410,6 +417,7 @@ class AudioItemRepository(
              getDatabase()?.trackDAO()?.queryAll() ?: listOf()
         }
         for (track in allTracks) {
+            yield()
             if (isClosed) {
                 logger.warning(TAG, "Repository was closed")
                 return listOf()
@@ -436,6 +444,7 @@ class AudioItemRepository(
             getDatabase()?.trackDAO()?.queryTracksLimitOffset(maxNumRows, offsetRows) ?: listOf()
         }
         for (track in tracksAtOffset) {
+            yield()
             if (isClosed) {
                 logger.warning(TAG, "Repository was closed")
                 return listOf()
@@ -456,6 +465,7 @@ class AudioItemRepository(
                 albumID) ?: listOf()
         }
         for (track in tracksAtOffset) {
+            yield()
             if (isClosed) {
                 logger.warning(TAG, "Repository was closed")
                 return listOf()
@@ -474,6 +484,7 @@ class AudioItemRepository(
             getDatabase()?.trackDAO()?.queryTracksForAlbumLimitOffset(maxNumRows, offsetRows, albumID) ?: listOf()
         }
         for (track in tracksAtOffset) {
+            yield()
             if (isClosed) {
                 logger.warning(TAG, "Repository was closed")
                 return listOf()
@@ -492,6 +503,7 @@ class AudioItemRepository(
             getDatabase()?.trackDAO()?.queryTracksForArtistLimitOffset(maxNumRows, offsetRows, artistID) ?: listOf()
         }
         for (track in tracksAtOffset) {
+            yield()
             if (isClosed) {
                 logger.warning(TAG, "Repository was closed")
                 return listOf()
@@ -511,6 +523,7 @@ class AudioItemRepository(
         val items: MutableList<AudioItem> = mutableListOf()
         val tracks: List<Track> = getDatabase()?.trackDAO()?.queryRandom(maxNumItems) ?: listOf()
         for (track in tracks) {
+            yield()
             if (isClosed) {
                 logger.warning(TAG, "Repository was closed")
                 return listOf()
@@ -567,6 +580,7 @@ class AudioItemRepository(
         val items: MutableList<AudioItem> = mutableListOf()
         val allAlbums: List<Album> = getDatabase()?.albumDAO()?.queryAll() ?: listOf()
         for (album in allAlbums) {
+            yield()
             if (isClosed) {
                 logger.warning(TAG, "Repository was closed")
                 return listOf()
@@ -600,6 +614,7 @@ class AudioItemRepository(
             getDatabase()?.albumDAO()?.queryAlbumsLimitOffset(maxNumRows, offsetRows) ?: listOf()
         }
         for (album in albumsAtOffset) {
+            yield()
             if (isClosed) {
                 logger.warning(TAG, "Repository was closed")
                 return listOf()
@@ -617,6 +632,7 @@ class AudioItemRepository(
             getDatabase()?.albumDAO()?.queryAlbumsForArtistLimitOffset(maxNumRows, offsetRows, artistID) ?: listOf()
         }
         for (album in albumsAtOffset) {
+            yield()
             if (isClosed) {
                 logger.warning(TAG, "Repository was closed")
                 return listOf()
@@ -690,6 +706,7 @@ class AudioItemRepository(
         val items: MutableList<AudioItem> = mutableListOf()
         val allArtists: List<Artist> = getDatabase()?.artistDAO()?.queryAll() ?: listOf()
         for (artist in allArtists) {
+            yield()
             if (isClosed) {
                 logger.warning(TAG, "Repository was closed")
                 return listOf()
@@ -716,6 +733,7 @@ class AudioItemRepository(
             getDatabase()?.artistDAO()?.queryArtistsLimitOffset(maxNumRows, offsetRows) ?: listOf()
         }
         for (artist in artistsAtOffset) {
+            yield()
             if (isClosed) {
                 logger.warning(TAG, "Repository was closed")
                 return listOf()
@@ -846,6 +864,9 @@ class AudioItemRepository(
     }
 
     private suspend fun getDatabase(): AudioItemDatabase? {
+        if (isClosed) {
+            return null
+        }
         databaseMutex.withLock {
             return database
         }
