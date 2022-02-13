@@ -20,6 +20,11 @@ Sorry, I don't know why that happens. It works fine on the mobile phone that I u
 maker probably put some extra security in the car that will always trigger this permission dialog popup. I would need
 help from the car maker or Google to improve this.
 
+**More technical details for car maker**: At least in Polestar 2 it looks like 
+[car-usb-handler](https://android.googlesource.com/platform/packages/services/Car/+/refs/tags/android-10.0.0_r40/car-usb-handler) 
+is not included in the build, Polestar/Volvo team please consider adding it, I think the permission would then be stored
+across reboots which would make the few thousand users this app has very happy.
+
 ### What is the eject button for?
 
 The eject button will make sure that the USB drive is not in use when you unplug it. Press it while the infotainment
