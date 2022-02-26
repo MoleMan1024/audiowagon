@@ -9,6 +9,7 @@ import android.content.Context
 import android.support.v4.media.MediaBrowserCompat.MediaItem
 import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 const val NUM_ITEMS_MAX_FOR_PLAY_SHUFFLE_ALL = 500
 
@@ -16,6 +17,7 @@ const val NUM_ITEMS_MAX_FOR_PLAY_SHUFFLE_ALL = 500
  * A pseudo browse view entry to play all tracks on the device in shuffled order. Shown as first entry in "tracks"
  * root view.
  */
+@ExperimentalCoroutinesApi
 class ContentHierarchyShuffleAllTracks(
     context: Context,
     audioItemLibrary: AudioItemLibrary

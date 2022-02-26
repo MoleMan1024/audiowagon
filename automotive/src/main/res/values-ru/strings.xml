@@ -25,21 +25,21 @@ SPDX-License-Identifier: GPL-3.0-or-later
 	<string name="browse_tree_need_to_agree_legal_desc">Проверьте настройки</string>
 	<string name="toast_indexing_started">Индексирование USB Flash-накопителя началось …</string>
 	<string name="toast_indexing_completed">Индексирование USB Flash-накопителя завершено</string>
-	<string name="toast_no_next_track">Следующая композиция отсутствует</string>
-	<string name="toast_no_prev_track">Предыдущая композиция отсутствует</string>
-	<string name="toast_eject_completed">USB Flash-накопитель отключен и может быть безопасно извлечен</string>
-	<string name="toast_error">ОШИБКА: %1$s</string>
-	<string name="toast_error_audio_focus_denied">Невозможность получить аудио-приоритет</string>
-	<string name="toast_error_USB_init">Ошибка подключения к USB Flash-накопителю</string>
-	<string name="toast_error_no_filesystem">Файловая система не поддерживется</string>
-	<string name="toast_error_library_creation_fail">Ошибка создания библиотеки</string>
-	<string name="toast_error_invalid_state">Неверное состояние</string>
-	<string name="toast_error_IO">I/O ошибка</string>
-	<string name="toast_error_malformed_data">Данные повреждены</string>
-	<string name="toast_error_timeout">Таймаут</string>
-	<string name="toast_error_not_supported">Не поддерживается</string>
-	<string name="toast_error_no_USB_device">USB Flash-накопитель отсутствует</string>
-	<string name="toast_error_unknown">Неизвестная ошибка</string>
+	<string name="no_next_track">Следующая композиция отсутствует</string>
+	<string name="no_prev_track">Предыдущая композиция отсутствует</string>
+	<string name="eject_completed">USB Flash-накопитель отключен и может быть безопасно извлечен</string>
+	<string name="error">ОШИБКА: %1$s</string>
+	<string name="error_audio_focus_denied">Невозможность получить аудио-приоритет</string>
+	<string name="error_USB_init">Ошибка подключения к USB Flash-накопителю</string>
+	<string name="error_no_filesystem">Файловая система не поддерживется</string>
+	<string name="error_library_creation_fail">Ошибка создания библиотеки</string>
+	<string name="error_invalid_state">Неверное состояние</string>
+	<string name="error_IO">I/O ошибка</string>
+	<string name="error_malformed_data">Данные повреждены</string>
+	<string name="error_timeout">Таймаут</string>
+	<string name="error_not_supported">Не поддерживается</string>
+	<string name="error_no_USB_device">USB Flash-накопитель отсутствует</string>
+	<string name="error_unknown">Неизвестная ошибка</string>
 	<string name="notif_action_play">Воспроизведение</string>
 	<string name="notif_action_pause">Пауза</string>
 	<string name="notif_action_stop">Стоп</string>
@@ -108,8 +108,8 @@ Google\n&#x2013; Firebase Crashlytics\n\nLicense
 texts:\nwww.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/licenses/gpl-3.0.html</string>
 	<string name="legal_disclaimer_confirm_btn">Согласен</string>
 	<string name="legal_disclaimer_cancel_btn">Отмена</string>
-	<string name="toast_error_no_tracks">Композиции отсутствуют</string>
-	<string name="toast_error_not_enough_space_for_log">Недостаточно свободного мест для записи лога.</string>
+	<string name="error_no_tracks">Композиции отсутствуют</string>
+	<string name="error_not_enough_space_for_log">Недостаточно свободного мест для записи лога.</string>
 	<string name="setting_USB_status_too_many_files_in_dir">Слишком много файлов в одной папке, пожалуйста создайте
 дополнительную папку</string>
 	<string name="browse_tree_category_files">Файлы</string>
@@ -118,7 +118,7 @@ texts:\nwww.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/licenses/gpl-3.0.html</
 	<string name="setting_delete_databases">Удалить базу данных</string>
 	<string name="setting_database_status_title">База данных</string>
 	<string name="setting_enable_replaygain">ReplayGain</string>
-	<string name="toast_searching_voice_input">Поиск: \"%1$s\"</string>
+	<string name="searching_voice_input">Поиск: \"%1$s\"</string>
 	<string name="setting_read_metadata_when_connected">При подключении USB Flash-накопителя</string>
 	<string name="setting_read_metadata_manual">Вручную</string>
 	<string name="setting_read_metadata_off">Выкл</string>
@@ -131,6 +131,6 @@ texts:\nwww.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/licenses/gpl-3.0.html</
 	<string name="setting_crash_reporting_title">Послать отчет об ошибках</string>
 	<string name="setting_crash_reporting_desc">Автоматически посылать отчет об ошибках разработчику, для улучшения
 качества приложения (необходимо подлючение к Интернету).</string>
-	<string name="toast_error_cannot_read_file">Файл не может быть прочтен: %1$s</string>
+	<string name="cannot_read_file">Файл не может быть прочтен: %1$s</string>
 	<string name="setting_website_title">Веб-сайт</string>
 </resources>

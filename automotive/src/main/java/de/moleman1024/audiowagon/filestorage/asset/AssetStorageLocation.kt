@@ -15,6 +15,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.produce
+import java.io.InputStream
 import java.util.*
 
 private const val TEST_MP3_FILENAME = "test.mp3"
@@ -72,6 +73,10 @@ class AssetStorageLocation(override val device: AssetMediaDevice) : AudioFileSto
     }
 
     override fun getByteArrayForURI(uri: Uri): ByteArray {
+        TODO("Not yet implemented")
+    }
+
+    override fun getInputStreamForURI(uri: Uri): InputStream {
         TODO("Not yet implemented")
     }
 

@@ -11,10 +11,12 @@ import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
 import de.moleman1024.audiowagon.repository.AudioItemRepository
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 private const val TAG = "CHAllTracksForArtist"
 private val logger = Logger
 
+@ExperimentalCoroutinesApi
 class ContentHierarchyAllTracksForArtist(
     id: ContentHierarchyID,
     context: Context,

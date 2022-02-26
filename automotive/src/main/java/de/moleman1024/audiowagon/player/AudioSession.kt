@@ -38,6 +38,8 @@ import de.moleman1024.audiowagon.medialibrary.descriptionForLog
 import de.moleman1024.audiowagon.persistence.PersistentPlaybackState
 import de.moleman1024.audiowagon.persistence.PersistentStorage
 import kotlinx.coroutines.*
+import java.io.FileNotFoundException
+import java.io.IOException
 import java.util.concurrent.Executors
 
 private const val TAG = "AudioSession"
@@ -54,13 +56,13 @@ const val ACTION_EJECT = "de.moleman1024.audiowagon.ACTION_EJECT"
 private const val REPLAYGAIN_NOT_FOUND: Float = -99.0f
 private const val NUM_BYTES_METADATA = 1024
 
+@ExperimentalCoroutinesApi
 class AudioSession(
     private val context: Context,
     private val audioItemLibrary: AudioItemLibrary,
     private val audioFileStorage: AudioFileStorage,
     val scope: CoroutineScope,
     private val dispatcher: CoroutineDispatcher,
-    private val gui: GUI,
     private val persistentStorage: PersistentStorage,
     private val crashReporting: CrashReporting
 ) {
@@ -95,7 +97,7 @@ class AudioSession(
         isShuttingDown = false
         isSuspending = false
         initAudioFocus()
-        // to send play/pause button event "adb shell input keyevent 85"
+        // to send play/pause button event: "adb shell input keyevent 85"
         val mediaButtonIntent = Intent(Intent.ACTION_MEDIA_BUTTON)
         mediaButtonIntent.setClass(context, MediaButtonReceiver::class.java)
         // TODO: unclear which is the correct mutability flag to use
@@ -305,42 +307,57 @@ class AudioSession(
             observePlaybackQueueJob = launchInScopeSafely("observePlaybackQueue()") {
                 if (contentHierarchyIDStr != null && contentHierarchyIDStr.isNotBlank()) {
                     val contentHierarchyID = ContentHierarchyElement.deserialize(contentHierarchyIDStr)
-                    val audioItem: AudioItem
-                    when (contentHierarchyID.type) {
-                        ContentHierarchyType.TRACK -> {
-                            logger.debug(TAG, "getAudioItemForTrack($contentHierarchyID)")
-                            audioItem = audioItemLibrary.getAudioItemForTrack(contentHierarchyID)
-                        }
-                        ContentHierarchyType.FILE -> {
-                            var storageID = contentHierarchyID.storageID
-                            if (storageID.isBlank()) {
-                                storageID = audioFileStorage.getPrimaryStorageLocation().storageID
+                    var audioItem: AudioItem? = null
+                    var audioFile: AudioFile? = null
+                    try {
+                        when (contentHierarchyID.type) {
+                            ContentHierarchyType.TRACK -> {
+                                logger.debug(TAG, "getAudioItemForTrack($contentHierarchyID)")
+                                audioItem = audioItemLibrary.getAudioItemForTrack(contentHierarchyID)
                             }
-                            contentHierarchyID.storageID = storageID
-                            val audioFile = AudioFile(Util.createURIForPath(storageID, contentHierarchyID.path))
-                            // If we are playing files directly, extract the metadata here. This will slow down the
-                            // start of playback but without it we will not be able to show the duration of file,
-                            // album art etc.
-                            // TODO: this could be optimized, extractMetadataFrom and createMetadataForItem both use
-                            //  a MediaDataRetriever, should be merged
-                            audioItem = audioItemLibrary.extractMetadataFrom(audioFile)
-                            audioItem.id = ContentHierarchyElement.serialize(contentHierarchyID)
-                            audioItem.uri = audioFile.uri
+                            ContentHierarchyType.FILE -> {
+                                var storageID = contentHierarchyID.storageID
+                                if (storageID.isBlank()) {
+                                    storageID = audioFileStorage.getPrimaryStorageLocation().storageID
+                                }
+                                contentHierarchyID.storageID = storageID
+                                audioFile = AudioFile(Util.createURIForPath(storageID, contentHierarchyID.path))
+                                // If we are playing files directly, extract the metadata here. This will slow down the
+                                // start of playback but without it we will not be able to show the duration of file,
+                                // album art etc.
+                                // TODO: this could be optimized, extractMetadataFrom and createMetadataForItem both use
+                                //  a MediaDataRetriever, should be merged
+                                audioItem = audioItemLibrary.extractMetadataFrom(audioFile)
+                                audioItem.id = ContentHierarchyElement.serialize(contentHierarchyID)
+                                audioItem.uri = audioFile.uri
+                            }
+                            else -> {
+                                throw IllegalArgumentException("Invalid content hierarchy: $contentHierarchyID")
+                            }
                         }
-                        else ->  {
-                            throw IllegalArgumentException("Invalid content hierarchy: $contentHierarchyID")
+                        it.ensureActive()
+                        val metadata: MediaMetadataCompat = audioItemLibrary.createMetadataForItem(audioItem)
+                        it.ensureActive()
+                        val albumArtBytes = audioItemLibrary.getAlbumArtForItem(audioItem)
+                        AlbumArtContentProvider.setAlbumArtByteArray(albumArtBytes)
+                        extractAndSetReplayGain(audioItem)
+                        setCurrentQueueItem(
+                            MediaSessionCompat.QueueItem(metadata.description, queueChange.currentItem.queueId)
+                        )
+                        setMediaSessionMetadata(metadata)
+                    } catch (exc: FileNotFoundException) {
+                        logger.exception(TAG, exc.message.toString(), exc)
+                        var fileName: String = context.getString(R.string.error_unknown)
+                        if (audioFile != null) {
+                            fileName = audioFile.name
+                        } else {
+                            if (audioItem != null) {
+                                audioFile = AudioFile(audioItem.uri)
+                                fileName = audioFile.name
+                            }
                         }
+                        showError(context.getString(R.string.cannot_read_file, fileName))
                     }
-                    it.ensureActive()
-                    val metadata: MediaMetadataCompat = audioItemLibrary.createMetadataForItem(audioItem)
-                    it.ensureActive()
-                    val albumArtBytes = audioItemLibrary.getAlbumArtForItem(audioItem)
-                    AlbumArtContentProvider.setAlbumArtByteArray(albumArtBytes)
-                    extractAndSetReplayGain(audioItem)
-                    setCurrentQueueItem(
-                        MediaSessionCompat.QueueItem(metadata.description, queueChange.currentItem.queueId)
-                    )
-                    setMediaSessionMetadata(metadata)
                 } else {
                     setCurrentQueueItem(null)
                     setMediaSessionMetadata(null)
@@ -363,7 +380,7 @@ class AudioSession(
             audioPlayer.setReplayGain(replayGain)
         } catch (exc: MissingEffectsException) {
             val replayGainName = context.getString(R.string.setting_enable_replaygain)
-            gui.showErrorToastMsg(replayGainName)
+            showError(replayGainName)
             SharedPrefs.setReplayGainEnabled(context, false)
             extractReplayGain = false
         } catch (exc: Exception) {
@@ -563,7 +580,7 @@ class AudioSession(
                             audioPlayer.enableEqualizer()
                         } catch (exc: MissingEffectsException) {
                             SharedPrefs.setEQEnabled(context, false)
-                            gui.showErrorToastMsg(context.getString(R.string.toast_error_invalid_state))
+                            showError(context.getString(R.string.error_invalid_state))
                             throw exc
                         }
                     }
@@ -599,7 +616,7 @@ class AudioSession(
                             audioPlayer.enableReplayGain()
                         } catch (exc: MissingEffectsException) {
                             SharedPrefs.setReplayGainEnabled(context, false)
-                            gui.showErrorToastMsg(context.getString(R.string.toast_error_invalid_state))
+                            showError(context.getString(R.string.error_invalid_state))
                             throw exc
                         }
                     }
@@ -642,7 +659,7 @@ class AudioSession(
                         audioPlayer.prepareForEject()
                         audioFileStorage.disableLogToUSB()
                         audioFileStorage.removeAllDevicesFromStorage()
-                        gui.showToastMsg(context.getString(R.string.toast_eject_completed))
+                        showPopup(context.getString(R.string.eject_completed))
                     }
                 }
                 AudioSessionChangeType.ON_PLAY_FROM_SEARCH -> {
@@ -683,11 +700,12 @@ class AudioSession(
             } catch (exc: Exception) {
                 logger.exception(TAG, "Exception in handleOnPlay()", exc)
                 when (exc) {
-                    // TODO: for Android 12 turn this into PlaybackState error if possible
-                    is NoItemsInQueueException -> gui.showErrorToastMsg(context.getString(R.string.toast_error_no_tracks))
+                    is NoItemsInQueueException -> {
+                        showPopup(context.getString(R.string.error_no_tracks))
+                    }
                     is DriveAlmostFullException -> {
                         logger.exceptionLogcatOnly(TAG, "Drive is almost full, cannot log to USB", exc)
-                        gui.showErrorToastMsg(context.getString(R.string.toast_error_not_enough_space_for_log))
+                        showPopup(context.getString(R.string.error_not_enough_space_for_log))
                     }
                     else -> {
                         // no special exception handling
@@ -705,6 +723,9 @@ class AudioSession(
         }
     }
 
+    /**
+     * This is used by for playing items by voice input only.
+     */
     private suspend fun playFromSearch(change: AudioSessionChange) {
         logger.debug(TAG, "playFromSearch(audioSessionChange=$change)")
         var audioItems: List<AudioItem> = listOf()
@@ -745,14 +766,14 @@ class AudioSession(
             }
         }
         if (audioItems.isNotEmpty()) {
-            gui.showToastMsg(context.getString(R.string.toast_searching_voice_input, searchQueryForGUI))
+            showPopup(context.getString(R.string.searching_voice_input, searchQueryForGUI))
             createQueueAndPlay(audioItems)
             return
         }
         // if the more specific fields above did not yield any results, try searching using the raw query
         if (change.queryToPlay.isNotBlank()) {
             searchQueryForGUI = change.queryToPlay
-            gui.showToastMsg(context.getString(R.string.toast_searching_voice_input, searchQueryForGUI))
+            showPopup(context.getString(R.string.searching_voice_input, searchQueryForGUI))
             audioItems = audioItemLibrary.searchUnspecific(change.queryToPlay)
             createQueueAndPlay(audioItems)
         } else {
@@ -795,7 +816,7 @@ class AudioSession(
                 }
             }
             else -> {
-                logger.warning(TAG, "Ignoring playFromContentHierarchyID($contentHierarchyID)")
+                // ignore
             }
         }
         if (startIndex < 0) {
@@ -920,6 +941,23 @@ class AudioSession(
 
     private suspend fun setMediaSessionPlaybackState(state: PlaybackStateCompat) {
         withContext(mediaSessionDispatcher) {
+            mediaSession.setPlaybackState(state)
+        }
+    }
+
+    suspend fun showError(text: String) {
+        val errorMsg = context.getString(R.string.error, text)
+        logger.warning(TAG, "Showing error: $errorMsg")
+        showPopup(errorMsg)
+    }
+
+    private suspend fun showPopup(text: String) {
+        logger.warning(TAG, "Showing popup: $text")
+        val state = PlaybackStateCompat.Builder(playbackState).apply {
+            setErrorMessage(PlaybackStateCompat.ERROR_CODE_APP_ERROR, text)
+        }.build()
+        withContext(mediaSessionDispatcher) {
+            playbackState = state
             mediaSession.setPlaybackState(state)
         }
     }
@@ -1056,19 +1094,40 @@ class AudioSession(
 
     private fun handleException(msg: String, exc: Throwable) {
         when (exc) {
-            is NoItemsInQueueException -> gui.showErrorToastMsg(context.getString(R.string.toast_error_no_tracks))
+            is NoItemsInQueueException -> {
+                launchInScopeSafely("No tracks") {
+                    showError(context.getString(R.string.error_no_tracks))
+                }
+            }
             is DriveAlmostFullException -> {
                 logger.exceptionLogcatOnly(TAG, "Drive is almost full, cannot log to USB", exc)
-                gui.showErrorToastMsg(context.getString(R.string.toast_error_not_enough_space_for_log))
+                launchInScopeSafely("Not enough space for log") {
+                    showError(context.getString(R.string.error_not_enough_space_for_log))
+                }
             }
             is CancellationException -> {
                 logger.warning(TAG, "CancellationException (msg=$msg exc=$exc)")
             }
             is CannotReadFileException -> {
-                gui.showErrorToastMsg(context.getString(R.string.toast_error_cannot_read_file, exc.fileName))
+                launchInScopeSafely("Cannot read file") {
+                    showError(context.getString(R.string.cannot_read_file, exc.fileName))
+                }
                 crashReporting.logMessages(logger.getLastLogLines(NUM_LOG_LINES_CRASH_REPORT))
                 crashReporting.logMessage(msg)
                 crashReporting.recordException(exc)
+                logger.exception(TAG, msg, exc)
+            }
+            is FileNotFoundException -> {
+                // This can happen when metadata indexing is set to false and files have changed on USB drive. No
+                // need for crash reporting in this case
+                logger.exception(TAG, msg, exc)
+            }
+            is IOException -> {
+                if (exc.message?.contains("MAX_RECOVERY_ATTEMPTS") == false) {
+                    crashReporting.logMessages(logger.getLastLogLines(NUM_LOG_LINES_CRASH_REPORT))
+                    crashReporting.logMessage(msg)
+                    crashReporting.recordException(exc)
+                }
                 logger.exception(TAG, msg, exc)
             }
             else -> {

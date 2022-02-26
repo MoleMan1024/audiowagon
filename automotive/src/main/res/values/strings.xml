@@ -39,34 +39,33 @@ SPDX-License-Identifier: GPL-3.0-or-later
 	<!-- We use unicode symbols here to avoid the complex linguistic implications in multiple languages for the
 	wordings "artists"/"tracks" together with numbers. No need to translate. -->
 	<string name="browse_tree_num_albums_num_tracks" translatable="false">%1$d &#x1F4BF; &#x2B1D; %2$d &#x1D160;</string>
-	<!-- These "toasts" are short pop-up messages that might be shown to the user at the top or bottom of the screen -->
 	<string name="toast_indexing_started">USB indexing started …</string>
 	<string name="toast_indexing_completed">USB indexing completed</string>
 	<!-- If there is no next/previous track in the current playlist that the user can skip forward/backward to -->
-	<string name="toast_no_next_track">No next track</string>
-	<string name="toast_no_prev_track">No previous track</string>
-	<string name="toast_eject_completed">USB device ejected, it is safe to unplug it</string>
+	<string name="no_next_track">No next track</string>
+	<string name="no_prev_track">No previous track</string>
+	<string name="eject_completed">USB device ejected, it is safe to unplug it</string>
 	<!-- please translate only the "ERROR:" part in front, keep the variable placeholder as-is -->
-	<string name="toast_error">ERROR: %1$s</string>
+	<string name="error">ERROR: %1$s</string>
 	<!-- We assume "USB" is the same in all languages -->
-	<string name="toast_error_USB" translatable="false">USB: %1$s</string>
+	<string name="error_USB" translatable="false">USB: %1$s</string>
 	<!-- Error messages -->
 	<!-- The app needs to receive "audio focus" before it can play back any audio. The app will lose "audio focus"
 	for example when a navigation route guidance is being read out or when a phone call is ongoing. -->
-	<string name="toast_error_audio_focus_denied">Could not get audio focus</string>
-	<string name="toast_error_USB_init">Error in connection to USB drive</string>
-	<string name="toast_error_no_filesystem">No supported filesystem</string>
-	<string name="toast_error_library_creation_fail">Library creation failed</string>
+	<string name="error_audio_focus_denied">Could not get audio focus</string>
+	<string name="error_USB_init">Error in connection to USB drive</string>
+	<string name="error_no_filesystem">No supported filesystem</string>
+	<string name="error_library_creation_fail">Library creation failed</string>
 	<!-- "state" refers to the state the software is in -->
-	<string name="toast_error_invalid_state">Invalid state</string>
+	<string name="error_invalid_state">Invalid state</string>
 	<!-- These error strings will be prefixed with the toast_error above, e.g. "ERROR: Timeout" -->
 	<!-- "I/O" means "Input/Output" -->
-	<string name="toast_error_IO">I/O error</string>
-	<string name="toast_error_malformed_data">Malformed data</string>
-	<string name="toast_error_timeout">Timeout</string>
-	<string name="toast_error_not_supported">Not supported</string>
-	<string name="toast_error_no_USB_device">No USB device</string>
-	<string name="toast_error_unknown">Unknown</string>
+	<string name="error_IO">I/O error</string>
+	<string name="error_malformed_data">Malformed data</string>
+	<string name="error_timeout">Timeout</string>
+	<string name="error_not_supported">Not supported</string>
+	<string name="error_no_USB_device">No USB device</string>
+	<string name="error_unknown">Unknown</string>
 	<!-- Names for the playback actions. These are not shown in the car. -->
 	<string name="notif_action_play">Play</string>
 	<string name="notif_action_pause">Pause</string>
@@ -148,8 +147,8 @@ Project\n&#x2013; the libaums library created by Magnus Jahnen\n&#x2013; Materia
 	</string>
 	<string name="legal_disclaimer_confirm_btn">Agree</string>
 	<string name="legal_disclaimer_cancel_btn">Cancel</string>
-	<string name="toast_error_no_tracks">No tracks</string>
-	<string name="toast_error_not_enough_space_for_log">Not enough space to write log file</string>
+	<string name="error_no_tracks">No tracks</string>
+	<string name="error_not_enough_space_for_log">Not enough space to write log file</string>
 	<!-- This string is no longer used, no need to translate it -->
 	<string name="setting_USB_status_too_many_files_in_dir">Too many files in a directory, please use
 subdirectories</string>
@@ -164,7 +163,7 @@ subdirectories</string>
 	( https://en.wikipedia.org/wiki/ReplayGain ) -->
 	<string name="setting_enable_replaygain">ReplayGain</string>
 	<!-- The search query based on the recognized voice input will be shown to the user in a toast message -->
-	<string name="toast_searching_voice_input">Searching for: \"%1$s\"</string>
+	<string name="searching_voice_input">Searching for: \"%1$s\"</string>
 	<!-- even more entries in the settings screen: how/when to index audio files on USB stick -->
 	<string name="setting_read_metadata_when_connected">When USB drive connected</string>
 	<string name="setting_read_metadata_manual">Manually</string>
@@ -183,7 +182,7 @@ subdirectories</string>
 	<string name="setting_crash_reporting_title">Send crash reports</string>
 	<string name="setting_crash_reporting_desc">Automatically send crash reports to the developer to help
 improve the app (requires internet connection).</string>
-	<string name="toast_error_cannot_read_file">File could not be read: %1$s</string>
+	<string name="cannot_read_file">File could not be read: %1$s</string>
 	<string name="setting_website_title">Website</string>
 	<string name="setting_website_desc" translatable="false">moleman1024.github.io/audiowagon</string>
 </resources>

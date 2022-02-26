@@ -18,6 +18,7 @@ import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyElement
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyID
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyType
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 
@@ -30,6 +31,7 @@ const val RESOURCE_ROOT_URI = "android.resource://de.moleman1024.audiowagon/draw
  *
  * See also https://developer.android.com/reference/kotlin/android/media/MediaMetadataRetriever
  */
+@ExperimentalCoroutinesApi
 class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
 
     fun extractMetadataFrom(audioFile: AudioFile): AudioItem {
@@ -55,6 +57,7 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
         val title: String? = metadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)
         val genre: String? = metadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_GENRE)
         val trackNum: Short? = extractTrackNumFromMetadata(metadataRetriever)
+        val discNum: Short? = extractDiscNumFromMetadata(metadataRetriever)
         val year: Short? = extractYearFromMetadata(metadataRetriever)
         var durationMS: Int? = null
         val durationMSAsString: String? =
@@ -86,6 +89,7 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
         }
         genre?.let { audioItemForMetadata.genre = it.trim() }
         trackNum?.let { audioItemForMetadata.trackNum = it }
+        discNum?.let { audioItemForMetadata.discNum = it }
         year?.let { audioItemForMetadata.year = it }
         durationMS?.let { audioItemForMetadata.durationMS = it }
         audioItemForMetadata.isInCompilation = isInCompilation
@@ -122,6 +126,21 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
         return trackNum
     }
 
+    private fun extractDiscNumFromMetadata(metadataRetriever: MediaMetadataRetriever): Short? {
+        var discNum: Short? = null
+        val discNumAsString: String =
+            metadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DISC_NUMBER) ?: return null
+        try {
+            if (discNumAsString.isBlank()) {
+                return discNum
+            }
+            discNum = Util.convertStringToShort(discNumAsString)
+        } catch (exc: NumberFormatException) {
+            logger.error(TAG, "$exc for disc number: $discNumAsString")
+        }
+        return discNum
+    }
+
     private fun extractYearFromMetadata(metadataRetriever: MediaMetadataRetriever): Short? {
         var year: Short? = null
         var yearAsString: String =
@@ -156,6 +175,9 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
             }
             if (audioItem.trackNum >= 0) {
                 putLong(MediaMetadataCompat.METADATA_KEY_TRACK_NUMBER, audioItem.trackNum.toLong())
+            }
+            if (audioItem.discNum >= 0) {
+                putLong(MediaMetadataCompat.METADATA_KEY_DISC_NUMBER, audioItem.discNum.toLong())
             }
             if (audioItem.genre.isNotBlank()) {
                 putString(MediaMetadataCompat.METADATA_KEY_GENRE, audioItem.genre)

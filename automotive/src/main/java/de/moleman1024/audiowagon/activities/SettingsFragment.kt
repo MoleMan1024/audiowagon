@@ -9,7 +9,6 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.text.format.Formatter.formatShortFileSize
-import android.widget.Toast
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.*
 import de.moleman1024.audiowagon.*
@@ -98,7 +97,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
     override fun onCreate(savedInstanceState: Bundle?) {
         logger.debug(TAG, "onCreate()")
         super.onCreate(savedInstanceState)
-        preferenceManager.sharedPreferences.registerOnSharedPreferenceChangeListener(listener)
+        preferenceManager.sharedPreferences?.registerOnSharedPreferenceChangeListener(listener)
         val multiListPref = findPreference<MultiSelectListPreference>(PREF_DELETE_DATABASES)
         multiListPref?.onPreferenceChangeListener = databaseDeleteListener
     }
@@ -111,7 +110,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         updateDatabaseFiles()
     }
 
-    private fun updateFromSharedPrefs(sharedPreferences: SharedPreferences) {
+    private fun updateFromSharedPrefs(sharedPreferences: SharedPreferences?) {
         updateLogToUSB(sharedPreferences)
         updateCrashReporting(sharedPreferences)
         updateEqualizerSwitch(sharedPreferences)
@@ -123,38 +122,38 @@ class SettingsFragment : PreferenceFragmentCompat() {
         updateUSBAndEjectStatus(sharedPreferences)
     }
 
-    private fun updateLogToUSB(sharedPreferences: SharedPreferences) {
+    private fun updateLogToUSB(sharedPreferences: SharedPreferences?) {
         val value = SharedPrefs.isLogToUSBEnabled(sharedPreferences)
         findPreference<SwitchPreferenceCompat>(SHARED_PREF_LOG_TO_USB)?.isChecked = value
     }
 
-    private fun updateCrashReporting(sharedPreferences: SharedPreferences) {
+    private fun updateCrashReporting(sharedPreferences: SharedPreferences?) {
         val value = SharedPrefs.isCrashReportingEnabled(sharedPreferences)
         findPreference<SwitchPreferenceCompat>(SHARED_PREF_CRASH_REPORTING)?.isChecked = value
     }
 
-    private fun updateEqualizerSwitch(sharedPreferences: SharedPreferences) {
+    private fun updateEqualizerSwitch(sharedPreferences: SharedPreferences?) {
         val value = SharedPrefs.isEQEnabled(sharedPreferences)
         findPreference<SwitchPreferenceCompat>(SHARED_PREF_ENABLE_EQUALIZER)?.isChecked = value
         findPreference<ListPreference>(SHARED_PREF_EQUALIZER_PRESET)?.isEnabled = value
     }
 
-    private fun updateEqualizerPreset(sharedPreferences: SharedPreferences) {
+    private fun updateEqualizerPreset(sharedPreferences: SharedPreferences?) {
         val eqPreset = SharedPrefs.getEQPreset(sharedPreferences)
         findPreference<ListPreference>(SHARED_PREF_EQUALIZER_PRESET)?.value = eqPreset
     }
 
-    private fun updateReplayGainSwitch(sharedPreferences: SharedPreferences) {
+    private fun updateReplayGainSwitch(sharedPreferences: SharedPreferences?) {
         val value = SharedPrefs.isReplayGainEnabled(sharedPreferences)
         findPreference<SwitchPreferenceCompat>(SHARED_PREF_ENABLE_REPLAYGAIN)?.isChecked = value
     }
 
-    private fun updateReadMetadataList(sharedPreferences: SharedPreferences) {
+    private fun updateReadMetadataList(sharedPreferences: SharedPreferences?) {
         val metadataReadSetting = SharedPrefs.getMetadataReadSetting(sharedPreferences)
         findPreference<ListPreference>(SHARED_PREF_READ_METADATA)?.value = metadataReadSetting
     }
 
-    private fun updateReadMetadataNowButton(sharedPreferences: SharedPreferences) {
+    private fun updateReadMetadataNowButton(sharedPreferences: SharedPreferences?) {
         val usbStatusValue = SharedPrefs.getUSBStatusResID(sharedPreferences)
         if (usbStatusValue in listOf(R.string.setting_USB_status_ejected, R.string.setting_USB_status_not_connected)) {
             findPreference<Preference>(PREF_READ_METADATA_NOW)?.isEnabled = false
@@ -164,17 +163,17 @@ class SettingsFragment : PreferenceFragmentCompat() {
         findPreference<Preference>(PREF_READ_METADATA_NOW)?.isEnabled = isMetadataReadSetToManual
     }
 
-    private fun isMetadataReadSetToManual(sharedPreferences: SharedPreferences): Boolean {
+    private fun isMetadataReadSetToManual(sharedPreferences: SharedPreferences?): Boolean {
         val metadataReadSetting = SharedPrefs.getMetadataReadSetting(sharedPreferences)
         return metadataReadSetting == MetadataReadSetting.MANUALLY.name
     }
 
-    private fun updateAudioFocusList(sharedPreferences: SharedPreferences) {
+    private fun updateAudioFocusList(sharedPreferences: SharedPreferences?) {
         val audioFocusSetting = SharedPrefs.getAudioFocusSetting(sharedPreferences)
         findPreference<ListPreference>(SHARED_PREF_AUDIOFOCUS)?.value = audioFocusSetting
     }
 
-    private fun updateUSBAndEjectStatus(sharedPreferences: SharedPreferences) {
+    private fun updateUSBAndEjectStatus(sharedPreferences: SharedPreferences?) {
         val value = SharedPrefs.getUSBStatusResID(sharedPreferences)
         var text = context?.getString(R.string.setting_USB_status_unknown)
         try {
@@ -196,7 +195,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
     }
 
-    private fun enableSettingsThatNeedUSBDrive(sharedPreferences: SharedPreferences) {
+    private fun enableSettingsThatNeedUSBDrive(sharedPreferences: SharedPreferences?) {
         val ejectPref = findPreference<Preference>(PREF_EJECT)
         ejectPref?.isEnabled = true
         val isMetadataReadSetToManual = isMetadataReadSetToManual(sharedPreferences)
@@ -331,14 +330,14 @@ class SettingsFragment : PreferenceFragmentCompat() {
         // We register the listeners in onCreate and onDestroy() instead of in onResume() and onPause() because the
         // latter two will be triggered by the transparent USBDummyActivity. The user would still see the preferences
         // screen but it would not update in realtime.
-        preferenceManager.sharedPreferences.unregisterOnSharedPreferenceChangeListener(listener)
+        preferenceManager.sharedPreferences?.unregisterOnSharedPreferenceChangeListener(listener)
         super.onDestroy()
     }
 
-    override fun onPreferenceTreeClick(preference: Preference?): Boolean {
+    override fun onPreferenceTreeClick(preference: Preference): Boolean {
         logger.debug(TAG, "onPreferenceTreeClick(preference=$preference)")
         try {
-            when (preference?.key) {
+            when (preference.key) {
                 SHARED_PREF_LOG_TO_USB -> {
                     if ((preference as SwitchPreferenceCompat).isChecked) {
                         (activity as SettingsActivity).enableLogToUSB()
@@ -385,14 +384,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
             }
         } catch (exc: RuntimeException) {
             logger.exception(TAG, exc.message.toString(), exc)
-            if (preference != null) {
-                revertSwitch(preference)
-                val error = requireContext().getString(
-                    R.string.toast_error, requireContext().getString(R.string.toast_error_invalid_state)
-                )
-                val toast = Toast.makeText(context, error, Toast.LENGTH_SHORT)
-                toast.show()
-            }
+            revertSwitch(preference)
         }
         return super.onPreferenceTreeClick(preference)
     }

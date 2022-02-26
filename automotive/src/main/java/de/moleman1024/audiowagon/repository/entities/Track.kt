@@ -18,6 +18,7 @@ data class Track(
     val parentArtistId: Long = -1,
     @ColumnInfo(index = true)
     val parentAlbumId: Long = -1,
+    // TODO: rename indexOnAlbum to trackNum, add discNum
     val indexOnAlbum: Short = -1,
     // TODO: rework this, I currently mis-use it for artist names when the album artist does not match
     val albumArtURIString: String = "",

@@ -41,6 +41,7 @@ private const val UPDATE_INDEX_NOTIF_FOR_EACH_NUM_ITEMS = 100
 private const val TAG = "AudioItemLibr"
 private val logger = Logger
 
+@ExperimentalCoroutinesApi
 class AudioItemLibrary(
     private val context: Context,
     private val audioFileStorage: AudioFileStorage,
@@ -209,6 +210,7 @@ class AudioItemLibrary(
             ContentHierarchyType.DIRECTORY -> ContentHierarchyDirectory(
                 contentHierarchyID, context, this, audioFileStorage
             )
+            ContentHierarchyType.PLAYLIST -> ContentHierarchyPlaylist(contentHierarchyID, context, this, audioFileStorage)
             ContentHierarchyType.TRACK_GROUP -> ContentHierarchyGroupTracks(contentHierarchyID, context, this)
             ContentHierarchyType.ALBUM_GROUP -> ContentHierarchyGroupAlbums(contentHierarchyID, context, this)
             ContentHierarchyType.ARTIST_GROUP -> ContentHierarchyGroupArtists(contentHierarchyID, context, this)

@@ -15,6 +15,7 @@ import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
 import de.moleman1024.audiowagon.medialibrary.RESOURCE_ROOT_URI
 import de.moleman1024.audiowagon.repository.AudioItemRepository
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 private const val TAG = "CHArtist"
 private val logger = Logger
@@ -22,6 +23,7 @@ private val logger = Logger
 /**
  * A single artist in the browse view (shows the albums belonging to the artist)
  */
+@ExperimentalCoroutinesApi
 class ContentHierarchyArtist(
     id: ContentHierarchyID,
     context: Context,

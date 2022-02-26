@@ -15,6 +15,7 @@ import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
 import de.moleman1024.audiowagon.medialibrary.RESOURCE_ROOT_URI
 import de.moleman1024.audiowagon.repository.AudioItemRepository
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 private const val TAG = "CHAlbum"
 private val logger = Logger
@@ -23,6 +24,7 @@ const val DATABASE_ID_UNKNOWN = -1L
 /**
  * A single album in the browse view (shows the tracks belonging to the album)
  */
+@ExperimentalCoroutinesApi
 class ContentHierarchyAlbum(
     id: ContentHierarchyID,
     context: Context,
@@ -82,7 +84,7 @@ class ContentHierarchyAlbum(
             return mutableListOf()
         }
         return if (id.albumID != DATABASE_ID_UNKNOWN) {
-            tracks.sortedBy { it.trackNum }
+            tracks.sortedWith(compareBy({ it.discNum }, { it.trackNum }))
         } else {
             // unknown album collects all kinds of tracks, makes no sense to sort them by track number
             tracks.sortedBy { it.title.lowercase() }

@@ -19,6 +19,7 @@ import kotlinx.coroutines.channels.consumeEach
 private const val TAG = "CHAllFilesForDirectory"
 private val logger = Logger
 
+@ExperimentalCoroutinesApi
 class ContentHierarchyAllFilesForDirectory(
     id: ContentHierarchyID,
     context: Context,
@@ -31,7 +32,6 @@ class ContentHierarchyAllFilesForDirectory(
         throw RuntimeException("Not browsable")
     }
 
-    @ExperimentalCoroutinesApi
     override suspend fun getAudioItems(): List<AudioItem> {
         val items = mutableListOf<AudioItem>()
         val storageLocation = audioFileStorage.getPrimaryStorageLocation()

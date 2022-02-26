@@ -1,6 +1,7 @@
 package de.moleman1024.audiowagon
 
-enum class ServiceStartStopReason(value: Int) {
+@Suppress("unused")
+enum class ServiceStartStopReason(val level: Int) {
     UNKNOWN(0),
     INDEXING(1),
     MEDIA_BUTTON(2),

@@ -9,7 +9,6 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
-import android.widget.Toast
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.*
 
@@ -49,23 +48,6 @@ open class GUI(private val scope: CoroutineScope, private val context: Context) 
         }
         notificationManager.createNotificationChannel(channel)
         isChannelCreated = true
-    }
-
-    fun showErrorToastMsg(text: String) {
-        // TODO: no longer allowed in AAOS 12, use setErrorMessage in playbackState instead (but don't do it when
-        //  browse view is updated often, it will flicker)
-        showToastMsg(context.getString(R.string.toast_error, text))
-    }
-
-    /**
-     * See https://developers.google.com/cars/design/automotive-os/components/toast
-     */
-    fun showToastMsg(text: String) {
-        logger.debug(TAG, "Showing toast message: $text")
-        scope.launch(Dispatchers.Main) {
-            val toast = Toast.makeText(context, text, Toast.LENGTH_LONG)
-            toast.show()
-        }
     }
 
     fun showIndexingNotification() {

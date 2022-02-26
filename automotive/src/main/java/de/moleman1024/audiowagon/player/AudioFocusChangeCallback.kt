@@ -15,6 +15,7 @@ import kotlinx.coroutines.*
 private const val TAG = "AudioFocusChangeCB"
 private val logger = Logger
 
+@ExperimentalCoroutinesApi
 class AudioFocusChangeCallback(
     private val audioPlayer: AudioPlayer,
     val scope: CoroutineScope,

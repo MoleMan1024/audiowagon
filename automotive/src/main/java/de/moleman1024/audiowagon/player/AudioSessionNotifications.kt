@@ -25,6 +25,7 @@ import de.moleman1024.audiowagon.log.CrashReporting
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 private const val TAG = "AudioSessionNotif"
 private val logger = Logger
@@ -33,6 +34,7 @@ private const val AUDIO_SESS_NOTIF_CHANNEL: String = "AudioSessNotifChan"
 /**
  * See https://developer.android.com/training/notify-user/channels
  */
+@ExperimentalCoroutinesApi
 class AudioSessionNotifications(
     private val context: Context,
     scope: CoroutineScope,

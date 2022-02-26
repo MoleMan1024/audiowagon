@@ -15,12 +15,18 @@ import android.util.DisplayMetrics
 import android.view.WindowInsets
 import android.view.WindowManager
 import android.view.WindowMetrics
+import com.github.mjdev.libaums.fs.UsbFile
 import de.moleman1024.audiowagon.exceptions.NoAudioItemException
+import de.moleman1024.audiowagon.filestorage.AudioFile
+import de.moleman1024.audiowagon.filestorage.FileLike
+import de.moleman1024.audiowagon.filestorage.PlaylistFile
+import de.moleman1024.audiowagon.filestorage.PlaylistType
 import de.moleman1024.audiowagon.filestorage.usb.LOG_DIRECTORY
 import de.moleman1024.audiowagon.log.CrashReporting
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.*
 import java.io.File
+import java.net.URLConnection
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.util.*
@@ -89,6 +95,92 @@ class Util {
                 yearSanitized = yearSanitized.replace("-.*".toRegex(), "").trim()
             }
             return yearSanitized
+        }
+
+        fun determinePlayableFileType(file: File): FileLike? {
+            if (file.isDirectory) {
+                return null
+            }
+            return determinePlayableFileType(file.name)
+        }
+
+        fun determinePlayableFileType(usbFile: UsbFile): FileLike? {
+            if (usbFile.isDirectory || usbFile.isRoot) {
+                return null
+            }
+            return determinePlayableFileType(usbFile.name)
+        }
+
+        fun guessContentType(fileName: String): String? {
+            val guessedContentType: String
+            try {
+                val safeFileName = makeFileNameSafeForContentTypeGuessing(fileName)
+                guessedContentType = URLConnection.guessContentTypeFromName(safeFileName) ?: return null
+            } catch (exc: StringIndexOutOfBoundsException) {
+                return null
+            }
+            return guessedContentType
+        }
+
+        fun determinePlayableFileType(fileName: String): FileLike? {
+            val guessedContentType = guessContentType(fileName) ?: return null
+            val isPlaylistFile = isSupportedContentTypePlaylist(guessedContentType)
+            if (isPlaylistFile) {
+                return PlaylistFile()
+            }
+            val isAudioFile = isSupportedContentTypeAudioFile(guessedContentType)
+            if (isAudioFile) {
+                return AudioFile()
+            }
+            return null
+        }
+
+        /**
+         * Check if Android MediaPlayer supports the given content type.
+         * See https://source.android.com/compatibility/10/android-10-cdd#5_1_3_audio_codecs_details
+         * For example .wma is not supported.
+         */
+        private fun isSupportedContentTypeAudioFile(contentType: String): Boolean {
+            if (!listOf("audio").any { contentType.startsWith(it) }) {
+                return false
+            }
+            if (listOf(
+                    "3gp", "aac", "amr", "flac", "m4a", "matroska", "mid", "mp3", "mp4", "mpeg", "mpg", "ogg", "opus",
+                    "vorbis", "wav", "xmf"
+                ).any {
+                    it in contentType
+                }
+            ) {
+                return true
+            }
+            return false
+        }
+
+        private fun isSupportedContentTypePlaylist(contentType: String): Boolean {
+            if (!listOf("audio", "application").any { contentType.startsWith(it) }) {
+                return false
+            }
+            if (isPlaylistFile(contentType)) {
+                return true
+            }
+            return false
+        }
+
+        /**
+         * Checks if the given audio content/MIME type string represents a playlist (e.g. "mpegurl" is for .m3u
+         * playlists)
+         *
+         * @param contentType the content/MIME type string
+         */
+        private fun isPlaylistFile(contentType: String): Boolean {
+            return PlaylistType.values().any { it.mimeType == contentType }
+        }
+
+        /**
+         * The method guessContentTypeFromName() throws errors when certain characters appear in the name, remove those
+         */
+        private fun makeFileNameSafeForContentTypeGuessing(fileName: String): String {
+            return fileName.replace("#", "")
         }
 
         fun launchInScopeSafely(

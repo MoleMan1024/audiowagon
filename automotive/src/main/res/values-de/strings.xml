@@ -24,21 +24,21 @@ SPDX-License-Identifier: GPL-3.0-or-later
 	<string name="browse_tree_need_to_agree_legal_desc">Siehe Einstellungen</string>
 	<string name="toast_indexing_started">USB-Stick wird eingelesen …</string>
 	<string name="toast_indexing_completed">Einlesen von USB-Stick erfolgreich</string>
-	<string name="toast_no_next_track">Kein nächster Titel</string>
-	<string name="toast_no_prev_track">Kein vorheriger Titel</string>
-	<string name="toast_eject_completed">USB-Stick wurde ausgeworfen, er kann jetzt abgesteckt werden</string>
-	<string name="toast_error">FEHLER: %1$s</string>a
-	<string name="toast_error_audio_focus_denied">Audiofokus nicht erhalten</string>
-	<string name="toast_error_USB_init">Fehler bei Verbindung zum USB-Stick</string>
-	<string name="toast_error_no_filesystem">Kein unterstütztes Dateisystem</string>
-	<string name="toast_error_library_creation_fail">Erzeugen der Datenbank fehlgeschlagen</string>
-	<string name="toast_error_invalid_state">Falscher Zustand</string>
-	<string name="toast_error_IO">I/O Fehler</string>
-	<string name="toast_error_malformed_data">Daten im falschen Format</string>
-	<string name="toast_error_timeout">Zeitüberschreitung</string>
-	<string name="toast_error_not_supported">Nicht unterstützt</string>
-	<string name="toast_error_no_USB_device">Kein USB-Stick</string>
-	<string name="toast_error_unknown">Unbekannt</string>
+	<string name="no_next_track">Kein nächster Titel</string>
+	<string name="no_prev_track">Kein vorheriger Titel</string>
+	<string name="eject_completed">USB-Stick wurde ausgeworfen, er kann jetzt abgesteckt werden</string>
+	<string name="error">FEHLER: %1$s</string>a
+	<string name="error_audio_focus_denied">Audiofokus nicht erhalten</string>
+	<string name="error_USB_init">Fehler bei Verbindung zum USB-Stick</string>
+	<string name="error_no_filesystem">Kein unterstütztes Dateisystem</string>
+	<string name="error_library_creation_fail">Erzeugen der Datenbank fehlgeschlagen</string>
+	<string name="error_invalid_state">Falscher Zustand</string>
+	<string name="error_IO">I/O Fehler</string>
+	<string name="error_malformed_data">Daten im falschen Format</string>
+	<string name="error_timeout">Zeitüberschreitung</string>
+	<string name="error_not_supported">Nicht unterstützt</string>
+	<string name="error_no_USB_device">Kein USB-Stick</string>
+	<string name="error_unknown">Unbekannt</string>
 	<string name="notif_action_play">Abspielen</string>
 	<string name="notif_action_pause">Pause</string>
 	<string name="notif_action_stop">Stop</string>
@@ -109,8 +109,8 @@ Vektorgrafiken, entwickelt von Google\n&#x2013; Firebase Crashlytics\n\nLizenzve
 \nwww.gnu.org/licenses/gpl-3.0.html</string>
 	<string name="legal_disclaimer_confirm_btn">Zustimmen</string>
 	<string name="legal_disclaimer_cancel_btn">Abbrechen</string>
-	<string name="toast_error_no_tracks">Keine Titel</string>
-	<string name="toast_error_not_enough_space_for_log">Zu wenig freier Speicherplatz für Logdatei</string>
+	<string name="error_no_tracks">Keine Titel</string>
+	<string name="error_not_enough_space_for_log">Zu wenig freier Speicherplatz für Logdatei</string>
 	<string name="setting_USB_status_too_many_files_in_dir">Zu viele Dateien in einem Verzeichnis, bitte verwenden
 Sie Unterverzeichnisse.</string>
 	<string name="browse_tree_category_files">Dateien</string>
@@ -119,7 +119,7 @@ Sie Unterverzeichnisse.</string>
 	<string name="setting_delete_databases">Datenbanken löschen</string>
 	<string name="setting_database_status_title">Datenbank</string>
 	<string name="setting_enable_replaygain">ReplayGain</string>
-	<string name="toast_searching_voice_input">Suche nach: \"%1$s\"</string>
+	<string name="searching_voice_input">Suche nach: \"%1$s\"</string>
 	<string name="setting_read_metadata_when_connected">Wenn USB-Stick verbunden</string>
 	<string name="setting_read_metadata_manual">Manuell</string>
 	<string name="setting_read_metadata_off">Aus</string>
@@ -132,6 +132,6 @@ Sie Unterverzeichnisse.</string>
 	<string name="setting_crash_reporting_title">Fehlerberichte senden</string>
 	<string name="setting_crash_reporting_desc">Fehler automatisch an den Entwickler senden, um die App zu
 verbessern (benötigt Internetverbindung).</string>
-	<string name="toast_error_cannot_read_file">Datei konnte nicht gelesen werden: %1$s</string>
+	<string name="cannot_read_file">Datei konnte nicht gelesen werden: %1$s</string>
 	<string name="setting_website_title">Webseite</string>
 </resources>

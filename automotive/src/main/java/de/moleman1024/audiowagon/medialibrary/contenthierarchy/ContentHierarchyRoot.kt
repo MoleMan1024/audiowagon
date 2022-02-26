@@ -13,6 +13,7 @@ import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.SharedPrefs
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.*
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 private const val TAG = "CHRoot"
 private val logger = Logger
@@ -20,6 +21,7 @@ private val logger = Logger
 /**
  * The root of the browse tree. Shows max 4 categories (tracks, albums, artists, files)
  */
+@ExperimentalCoroutinesApi
 class ContentHierarchyRoot(
     context: Context, audioItemLibrary: AudioItemLibrary
 ) :

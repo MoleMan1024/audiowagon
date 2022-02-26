@@ -18,6 +18,7 @@ data class AudioItem(
     var title: String = "",
     var genre: String = "",
     var trackNum: Short = -1,
+    var discNum: Short = -1,
     var year: Short = -1,
     var durationMS: Int = -1,
     var albumArtURI: Uri = Uri.EMPTY,

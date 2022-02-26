@@ -14,7 +14,7 @@ import de.moleman1024.audiowagon.repository.entities.*
 
 @Database(
     entities = [Album::class, Artist::class, Track::class, AlbumFTS::class, ArtistFTS::class, TrackFTS::class],
-    exportSchema = false,
+    exportSchema = true,
     version = 1
 )
 abstract class AudioItemDatabase : RoomDatabase() {

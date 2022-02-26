@@ -12,7 +12,6 @@ import android.content.IntentFilter
 import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
 import de.moleman1024.audiowagon.AlbumArtContentProvider
-import de.moleman1024.audiowagon.GUI
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.SharedPrefs
 import de.moleman1024.audiowagon.authorization.ACTION_USB_PERMISSION_CHANGE
@@ -47,8 +46,7 @@ class USBDeviceConnections(
     private val context: Context,
     val scope: CoroutineScope,
     private val dispatcher: CoroutineDispatcher,
-    private val usbDevicePermissions: USBDevicePermissions,
-    private val gui: GUI
+    private val usbDevicePermissions: USBDevicePermissions
 ) {
     val deviceObservers = mutableListOf<(DeviceChange) -> Unit>()
     private var isLogToUSB = false
@@ -233,13 +231,13 @@ class USBDeviceConnections(
         } catch (exc: NoPartitionsException) {
             // libaums library only supports FAT32 (4 GB file size limit per file)
             logger.exception(TAG, "No (supported) partitions on USB drive", exc)
-            val deviceChange = DeviceChange(error = context.getString(R.string.toast_error_no_filesystem))
+            val deviceChange = DeviceChange(error = context.getString(R.string.error_no_filesystem))
             updateUSBStatusInSettings(R.string.setting_USB_status_not_compatible)
             notifyObservers(deviceChange)
             return
         } catch (exc: IllegalStateException) {
             logger.exception(TAG, "Illegal state when initiating filesystem, missing permission?", exc)
-            val deviceChange = DeviceChange(error = context.getString(R.string.toast_error_USB_init))
+            val deviceChange = DeviceChange(error = context.getString(R.string.error_USB_init))
             notifyObservers(deviceChange)
             return
         }
@@ -248,7 +246,6 @@ class USBDeviceConnections(
                 connectedDevice.enableLogging()
             } catch (exc: DriveAlmostFullException) {
                 logger.exceptionLogcatOnly(TAG, exc.message.toString(), exc)
-                gui.showErrorToastMsg(context.getString(R.string.toast_error_not_enough_space_for_log))
             } catch (exc: RuntimeException) {
                 logger.exception(TAG, exc.message.toString(), exc)
             }
@@ -268,7 +265,7 @@ class USBDeviceConnections(
             val deviceChange = DeviceChange(device, DeviceAction.DISCONNECT)
             notifyObservers(deviceChange)
         } catch (exc: IOException) {
-            val errorMsg = context.getString(R.string.toast_error_IO)
+            val errorMsg = context.getString(R.string.error_IO)
             val deviceChange = DeviceChange(error = errorMsg)
             notifyObservers(deviceChange)
         } finally {

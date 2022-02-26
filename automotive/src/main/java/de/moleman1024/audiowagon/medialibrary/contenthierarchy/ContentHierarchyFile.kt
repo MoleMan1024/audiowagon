@@ -15,6 +15,7 @@ import de.moleman1024.audiowagon.filestorage.FileLike
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 private const val TAG = "CHFile"
 private val logger = Logger
@@ -22,6 +23,7 @@ private val logger = Logger
 /**
  * A file in the browse view
  */
+@ExperimentalCoroutinesApi
 class ContentHierarchyFile(
     id: ContentHierarchyID,
     context: Context,

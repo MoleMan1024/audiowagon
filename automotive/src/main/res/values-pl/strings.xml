@@ -25,21 +25,21 @@ SPDX-License-Identifier: GPL-3.0-or-later
 	<string name="browse_tree_need_to_agree_legal_desc">Proszę sprawdzić ustawienia aplikacji</string>
 	<string name="toast_indexing_started">Rozpoczęto indeksowanie USB …</string>
 	<string name="toast_indexing_completed">Zakończono indeksowanie USB</string>
-	<string name="toast_no_next_track">Brak następnego utworu</string>
-	<string name="toast_no_prev_track">Brak poprzedniego utworu</string>
-	<string name="toast_eject_completed">Odłączono dysk USB, można teraz wyjąć go z gniazda</string>
-	<string name="toast_error">Błąd: %1$s</string>
-	<string name="toast_error_audio_focus_denied">Brak dostępu do audio focus</string>
-	<string name="toast_error_USB_init">Błąd połączenia z dyskiem USB</string>
-	<string name="toast_error_no_filesystem">Nie znaleziono żadnego obsługiwanego systemu plików</string>
-	<string name="toast_error_library_creation_fail">Nie udało się utworzyć biblioteki</string>
-	<string name="toast_error_invalid_state">Błędny stan aplikacji</string>
-	<string name="toast_error_IO">Błąd wejścia/wyjścia</string>
-	<string name="toast_error_malformed_data">Niepoprawne dane</string>
-	<string name="toast_error_timeout">Upłynął limit czasu operacji</string>
-	<string name="toast_error_not_supported">Brak obsługi</string>
-	<string name="toast_error_no_USB_device">Brak urządzenia USB</string>
-	<string name="toast_error_unknown">Nieznany</string>
+	<string name="no_next_track">Brak następnego utworu</string>
+	<string name="no_prev_track">Brak poprzedniego utworu</string>
+	<string name="eject_completed">Odłączono dysk USB, można teraz wyjąć go z gniazda</string>
+	<string name="error">Błąd: %1$s</string>
+	<string name="error_audio_focus_denied">Brak dostępu do audio focus</string>
+	<string name="error_USB_init">Błąd połączenia z dyskiem USB</string>
+	<string name="error_no_filesystem">Nie znaleziono żadnego obsługiwanego systemu plików</string>
+	<string name="error_library_creation_fail">Nie udało się utworzyć biblioteki</string>
+	<string name="error_invalid_state">Błędny stan aplikacji</string>
+	<string name="error_IO">Błąd wejścia/wyjścia</string>
+	<string name="error_malformed_data">Niepoprawne dane</string>
+	<string name="error_timeout">Upłynął limit czasu operacji</string>
+	<string name="error_not_supported">Brak obsługi</string>
+	<string name="error_no_USB_device">Brak urządzenia USB</string>
+	<string name="error_unknown">Nieznany</string>
 	<string name="notif_action_play">Odtwarzaj</string>
 	<string name="notif_action_pause">Pauza</string>
 	<string name="notif_action_stop">Zatrzymaj</string>
@@ -104,8 +104,8 @@ Biblioteka libaums autorstwa Magnusa Jahnena\n&#x2013; Ikony wektorowe material 
 Firebase Crashlytics\n\nPełne teksty licencji:\nwww.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/licenses/gpl-3.0.html</string>
 	<string name="legal_disclaimer_confirm_btn">Akceptuj</string>
 	<string name="legal_disclaimer_cancel_btn">Odrzuć</string>
-	<string name="toast_error_no_tracks">Brak utworów</string>
-	<string name="toast_error_not_enough_space_for_log">Brak miejsca do zapisu pliku dziennika</string>
+	<string name="error_no_tracks">Brak utworów</string>
+	<string name="error_not_enough_space_for_log">Brak miejsca do zapisu pliku dziennika</string>
 	<string name="setting_USB_status_too_many_files_in_dir">Zbyt dużo plików w katalogu. Proszę umieścić pliki w 
 podkatalogach</string>
 	<string name="browse_tree_category_files">Pliki</string>
@@ -114,7 +114,7 @@ podkatalogach</string>
 	<string name="setting_delete_databases">Usuń biblioteki</string>
 	<string name="setting_database_status_title">Biblioteka metadanych</string>
 	<string name="setting_enable_replaygain">ReplayGain</string>
-	<string name="toast_searching_voice_input">Wyszukiwanie \"%1$s\"</string>
+	<string name="searching_voice_input">Wyszukiwanie \"%1$s\"</string>
 	<string name="setting_read_metadata_when_connected">Po podłączeniu dysku USB</string>
 	<string name="setting_read_metadata_manual">Ręcznie</string>
 	<string name="setting_read_metadata_off">Nigdy</string>
@@ -127,6 +127,6 @@ podkatalogach</string>
 	<string name="setting_crash_reporting_title">Wysyłanie raportów o awariach aplikacji</string>
 	<string name="setting_crash_reporting_desc">Automatycznie wysyłanie raportów do twórcy aplikacji. Pomaga 
 to w ulepszeniu aplikacji (funkcja wymaga połączenia z internetem).</string>
-	<string name="toast_error_cannot_read_file">Nie można odczytać pliku: %1$s</string>
+	<string name="cannot_read_file">Nie można odczytać pliku: %1$s</string>
 	<string name="setting_website_title">Strona internetowa</string>
 </resources>

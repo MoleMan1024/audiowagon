@@ -15,6 +15,7 @@ import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
 import de.moleman1024.audiowagon.medialibrary.RESOURCE_ROOT_URI
 import de.moleman1024.audiowagon.repository.AudioItemRepository
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.yield
 
 private const val TAG = "CHUnknAlbum"
@@ -23,6 +24,7 @@ private val logger = Logger
 /**
  * A pseudo album "unknown" that is used to collect all tracks for an artist where album information is missing
  */
+@ExperimentalCoroutinesApi
 class ContentHierarchyUnknAlbum(
     id: ContentHierarchyID,
     context: Context,

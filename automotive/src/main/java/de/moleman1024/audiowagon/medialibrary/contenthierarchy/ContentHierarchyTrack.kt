@@ -11,6 +11,7 @@ import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
 import de.moleman1024.audiowagon.repository.AudioItemRepository
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 private const val TAG = "CHTrack"
 private val logger = Logger
@@ -18,6 +19,7 @@ private val logger = Logger
 /**
  * A single track in the browse view
  */
+@ExperimentalCoroutinesApi
 class ContentHierarchyTrack(
     id: ContentHierarchyID,
     context: Context,

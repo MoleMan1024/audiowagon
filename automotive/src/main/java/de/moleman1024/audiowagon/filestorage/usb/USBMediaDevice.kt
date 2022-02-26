@@ -374,6 +374,7 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
         if (usbFileFromCache != null) {
             return usbFileFromCache
         }
+        // "search" in libaums is case-sensitive
         return getRoot().search(filePath) ?: throw FileNotFoundException("USB file not found: $uri")
     }
 

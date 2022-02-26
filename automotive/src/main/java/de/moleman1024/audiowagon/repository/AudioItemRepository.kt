@@ -34,6 +34,7 @@ private val logger = Logger
 /**
  * See https://developer.android.com/training/data-storage/room
  */
+@ExperimentalCoroutinesApi
 class AudioItemRepository(
     private val storageID: String,
     val context: Context,
@@ -172,7 +173,7 @@ class AudioItemRepository(
         }
         logger.debug(TAG, "Returning ${items.size} tracks for album $albumID and artist $artistID")
         return if (albumID != DATABASE_ID_UNKNOWN) {
-            items.sortedBy { it.trackNum }
+            items.sortedWith(compareBy({ it.discNum }, { it.trackNum }))
         } else {
             items.sortedBy { it.title.lowercase() }
         }

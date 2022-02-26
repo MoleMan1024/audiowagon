@@ -16,6 +16,7 @@ import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
 import de.moleman1024.audiowagon.medialibrary.RESOURCE_ROOT_URI
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 private const val TAG = "CHDirectory"
 private val logger = Logger
@@ -23,6 +24,7 @@ private val logger = Logger
 /**
  * The browse view showing a directory on the device (or showing groups of files)
  */
+@ExperimentalCoroutinesApi
 class ContentHierarchyDirectory(
     id: ContentHierarchyID,
     context: Context,

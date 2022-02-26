@@ -25,21 +25,21 @@ SPDX-License-Identifier: GPL-3.0-or-later
 	<string name="browse_tree_need_to_agree_legal_desc">Sjekk innstillinger</string>
 	<string name="toast_indexing_started">USB-indeksering påbegynt …</string>
 	<string name="toast_indexing_completed">USB-indeksering ferdig</string>
-	<string name="toast_no_next_track">Neste spor finnes ikke</string>
-	<string name="toast_no_prev_track">Forrige spor finnes ikke</string>
-	<string name="toast_eject_completed">USB-enhet løst ut, kan fjernes trygt</string>
-	<string name="toast_error">FEIL: %1$s</string>a
-	<string name="toast_error_audio_focus_denied">Kunne ikke overta lydfokus</string>
-	<string name="toast_error_USB_init">Feil i USB-tilkobling</string>
-	<string name="toast_error_no_filesystem">Ingen støttede filsystemer</string>
-	<string name="toast_error_library_creation_fail">Bibliotekopprettelse feilet</string>
-	<string name="toast_error_invalid_state">Ugyldig tilstand</string>
-	<string name="toast_error_IO">I/O feil</string>
-	<string name="toast_error_malformed_data">Korrupte data</string>
-	<string name="toast_error_timeout">Tidsavbrudd</string>
-	<string name="toast_error_not_supported">Ikke støttet</string>
-	<string name="toast_error_no_USB_device">Ingen USB-enhet</string>
-	<string name="toast_error_unknown">Ukjent</string>
+	<string name="no_next_track">Neste spor finnes ikke</string>
+	<string name="no_prev_track">Forrige spor finnes ikke</string>
+	<string name="eject_completed">USB-enhet løst ut, kan fjernes trygt</string>
+	<string name="error">FEIL: %1$s</string>a
+	<string name="error_audio_focus_denied">Kunne ikke overta lydfokus</string>
+	<string name="error_USB_init">Feil i USB-tilkobling</string>
+	<string name="error_no_filesystem">Ingen støttede filsystemer</string>
+	<string name="error_library_creation_fail">Bibliotekopprettelse feilet</string>
+	<string name="error_invalid_state">Ugyldig tilstand</string>
+	<string name="error_IO">I/O feil</string>
+	<string name="error_malformed_data">Korrupte data</string>
+	<string name="error_timeout">Tidsavbrudd</string>
+	<string name="error_not_supported">Ikke støttet</string>
+	<string name="error_no_USB_device">Ingen USB-enhet</string>
+	<string name="error_unknown">Ukjent</string>
 	<string name="notif_action_play">Spill av</string>
 	<string name="notif_action_pause">Pause</string>
 	<string name="notif_action_stop">Stopp</string>
@@ -107,8 +107,8 @@ Project\n&#x2013; libaums-biblioteket laget av Magnus Jahnen\n&#x2013; Material 
 Google\n&#x2013; Firebase Crashlytics\n\nLisenstekster:\nwww.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/licenses/gpl-3.0.html</string>
 	<string name="legal_disclaimer_confirm_btn">Enig</string>
 	<string name="legal_disclaimer_cancel_btn">Avbryt</string>
-	<string name="toast_error_no_tracks">Ingen spor</string>
-	<string name="toast_error_not_enough_space_for_log">Utilstrekkelig plass til å skrive loggfil</string>
+	<string name="error_no_tracks">Ingen spor</string>
+	<string name="error_not_enough_space_for_log">Utilstrekkelig plass til å skrive loggfil</string>
 	<string name="setting_USB_status_too_many_files_in_dir">For mange filer i en mappe, bruk undermapper</string>
 	<string name="browse_tree_category_files">Filer</string>
 	<string name="setting_library_category_title">Media</string>
@@ -116,7 +116,7 @@ Google\n&#x2013; Firebase Crashlytics\n\nLisenstekster:\nwww.apache.org/licenses
 	<string name="setting_delete_databases">Slette databaser</string>
 	<string name="setting_database_status_title">Database</string>
 	<string name="setting_enable_replaygain">ReplayGain</string>
-	<string name="toast_searching_voice_input">Søk etter: \"%1$s\"</string>
+	<string name="searching_voice_input">Søk etter: \"%1$s\"</string>
 	<string name="setting_read_metadata_when_connected">Når USB-stasjonen er tilkoblet</string>
 	<string name="setting_read_metadata_manual">manuelt</string>
 	<string name="setting_read_metadata_off">Av</string>
@@ -129,6 +129,6 @@ Google\n&#x2013; Firebase Crashlytics\n\nLisenstekster:\nwww.apache.org/licenses
 	<string name="setting_crash_reporting_title">Send krasjrapporter</string>
 	<string name="setting_crash_reporting_desc">Send krasjrapporter automatisk til utvikleren for å hjelpe
 forbedre appen (krever internettforbindelse).</string>
-	<string name="toast_error_cannot_read_file">Filen kunne ikke leses: %1$s</string>
+	<string name="cannot_read_file">Filen kunne ikke leses: %1$s</string>
 	<string name="setting_website_title">Nettsted</string>
 </resources>

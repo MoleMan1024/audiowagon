@@ -25,21 +25,21 @@ SPDX-License-Identifier: GPL-3.0-or-later
 	<string name="browse_tree_need_to_agree_legal_desc">Tjek indstillingerne</string>
 	<string name="toast_indexing_started">USB-indeksering er igang …</string>
 	<string name="toast_indexing_completed">USB-indeksering er afsluttet</string>
-	<string name="toast_no_next_track">Der er ikke et næste nummer at afspille</string>
-	<string name="toast_no_prev_track">Der er ikke et forrige nummer at afspille</string>
-	<string name="toast_eject_completed">USB-drev er nu sikker at fjerne</string>
-	<string name="toast_error">FEJL: %1$s</string>
-	<string name="toast_error_audio_focus_denied">Kunne ikke få adgang til lydenheden</string>
-	<string name="toast_error_USB_init">Fejl i forbindelsen til USB-drevet</string>
-	<string name="toast_error_no_filesystem">Ikke et understøttet filsystem</string>
-	<string name="toast_error_library_creation_fail">Oprettelse af bibliotek fejlede</string>
-	<string name="toast_error_invalid_state">Ugyldig tilstand</string>
-	<string name="toast_error_IO">I/O error</string>
-	<string name="toast_error_malformed_data">Forkert dataformat</string>
-	<string name="toast_error_timeout">Timeout</string>
-	<string name="toast_error_not_supported">Ikke understøttet</string>
-	<string name="toast_error_no_USB_device">Ingen/intet USB-drev</string>
-	<string name="toast_error_unknown">Ukendt</string>
+	<string name="no_next_track">Der er ikke et næste nummer at afspille</string>
+	<string name="no_prev_track">Der er ikke et forrige nummer at afspille</string>
+	<string name="eject_completed">USB-drev er nu sikker at fjerne</string>
+	<string name="error">FEJL: %1$s</string>
+	<string name="error_audio_focus_denied">Kunne ikke få adgang til lydenheden</string>
+	<string name="error_USB_init">Fejl i forbindelsen til USB-drevet</string>
+	<string name="error_no_filesystem">Ikke et understøttet filsystem</string>
+	<string name="error_library_creation_fail">Oprettelse af bibliotek fejlede</string>
+	<string name="error_invalid_state">Ugyldig tilstand</string>
+	<string name="error_IO">I/O error</string>
+	<string name="error_malformed_data">Forkert dataformat</string>
+	<string name="error_timeout">Timeout</string>
+	<string name="error_not_supported">Ikke understøttet</string>
+	<string name="error_no_USB_device">Ingen/intet USB-drev</string>
+	<string name="error_unknown">Ukendt</string>
 	<string name="notif_action_play">Afspil</string>
 	<string name="notif_action_pause">Pause</string>
 	<string name="notif_action_stop">Stop</string>
@@ -107,8 +107,8 @@ udviklet af Google\n&#x2013; Firebase Crashlytics\n\nLicenstekster:\nwww.apache.
 	</string>
 	<string name="legal_disclaimer_confirm_btn">Enig</string>
 	<string name="legal_disclaimer_cancel_btn">Afbryd</string>
-	<string name="toast_error_no_tracks">Ingen musikfiler</string>
-	<string name="toast_error_not_enough_space_for_log">Ikke nok plads til at gemme log-filerne</string>
+	<string name="error_no_tracks">Ingen musikfiler</string>
+	<string name="error_not_enough_space_for_log">Ikke nok plads til at gemme log-filerne</string>
 	<string name="setting_USB_status_too_many_files_in_dir">For mange filer i et af bibliotekerne. Reducer dette ved at
 anvende underfoldere.</string>
 	<string name="browse_tree_category_files">Filer</string>
@@ -117,7 +117,7 @@ anvende underfoldere.</string>
 	<string name="setting_delete_databases">Slette databaser</string>
 	<string name="setting_database_status_title">Database</string>
 	<string name="setting_enable_replaygain">ReplayGain</string>
-	<string name="toast_searching_voice_input">Søge efter: "%1$s"</string>
+	<string name="searching_voice_input">Søge efter: "%1$s"</string>
 	<string name="setting_read_metadata_when_connected">Når USB-drevet er tilsluttet</string>
 	<string name="setting_read_metadata_manual">manuelt</string>
 	<string name="setting_read_metadata_off">Slukket</string>
@@ -130,6 +130,6 @@ anvende underfoldere.</string>
 	<string name="setting_crash_reporting_title">Send nedbrudsrapporter</string>
 	<string name="setting_crash_reporting_desc">Send automatisk nedbrudsrapporter til udvikleren for at hjælpe
 forbedre appen (kræver internetforbindelse).</string>
-	<string name="toast_error_cannot_read_file">Filen kunne ikke læses: %1$s</string>
+	<string name="cannot_read_file">Filen kunne ikke læses: %1$s</string>
 	<string name="setting_website_title">Internet side</string>
 </resources>

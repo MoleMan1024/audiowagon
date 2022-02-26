@@ -15,6 +15,7 @@ import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
 import de.moleman1024.audiowagon.medialibrary.RESOURCE_ROOT_URI
 import de.moleman1024.audiowagon.repository.AudioItemRepository
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 private const val TAG = "CHCompilation"
 private val logger = Logger
@@ -22,6 +23,7 @@ private val logger = Logger
 /**
  * A single compilation album in the browse view (shows the tracks belonging to the album)
  */
+@ExperimentalCoroutinesApi
 class ContentHierarchyCompilation(
     id: ContentHierarchyID,
     context: Context,
@@ -73,7 +75,7 @@ class ContentHierarchyCompilation(
             logger.error(TAG, exc.toString())
             return mutableListOf()
         }
-        return tracks.sortedBy { it.trackNum }
+        return tracks.sortedWith(compareBy({ it.discNum }, { it.trackNum }))
     }
 
     private suspend fun getNumTracks(): Int {

@@ -16,7 +16,7 @@ private const val TAG = "USBAudDataSrc"
 private val logger = Logger
 
 /**
- * Class to read audio data from given file on USB filesystem. It is used for extraction of metadata of audio files
+ * Class to read data from given file on USB filesystem. It is used for extraction of metadata of audio files
  * (e.g. MP3 tags, album art).
  * Do NOT use this class for playback, USB filesystem access is slow and will introduce audio glitches during playback.
  * Use [USBAudioCachedDataSource] instead for playback.

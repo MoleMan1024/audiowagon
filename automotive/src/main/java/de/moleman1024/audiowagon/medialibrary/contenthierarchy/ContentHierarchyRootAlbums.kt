@@ -9,10 +9,12 @@ import android.content.Context
 import android.support.v4.media.MediaBrowserCompat.MediaItem
 import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 /**
  * The browse view showing all albums on the device (or showing groups of albums)
  */
+@ExperimentalCoroutinesApi
 class ContentHierarchyRootAlbums(
     context: Context,
     audioItemLibrary: AudioItemLibrary

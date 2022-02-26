@@ -24,6 +24,7 @@ import de.moleman1024.audiowagon.filestorage.AudioFileStorage
 import de.moleman1024.audiowagon.log.CrashReporting
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.*
+import java.io.FileNotFoundException
 import java.io.IOException
 import java.util.concurrent.Executors
 
@@ -44,6 +45,7 @@ const val SKIP_PREVIOUS_THRESHOLD_MSEC = 10000L
  * https://developer.android.com/reference/android/media/MediaPlayer#valid-and-invalid-states
  */
 // TODO: class too big, split
+@ExperimentalCoroutinesApi
 class AudioPlayer(
     private val audioFileStorage: AudioFileStorage,
     private val audioFocus: AudioFocus,
@@ -72,6 +74,7 @@ class AudioPlayer(
     private val playbackQueue = PlaybackQueue(dispatcher)
     private val playerStatusDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
     private var setupNextPlayerJob: Job? = null
+    private var numFilesNotFound: Int = 0
 
     init {
         launchInScopeSafely {
@@ -186,21 +189,21 @@ class AudioPlayer(
                 playerStatus.errorCode = what
                 when (what) {
                     MEDIA_ERROR_INVALID_STATE ->
-                        playerStatus.errorMsg = context.getString(R.string.toast_error_invalid_state
+                        playerStatus.errorMsg = context.getString(R.string.error_invalid_state
                     )
-                    MediaPlayer.MEDIA_ERROR_IO -> playerStatus.errorMsg = context.getString(R.string.toast_error_IO)
+                    MediaPlayer.MEDIA_ERROR_IO -> playerStatus.errorMsg = context.getString(R.string.error_IO)
                     MediaPlayer.MEDIA_ERROR_MALFORMED ->
-                        playerStatus.errorMsg = context.getString(R.string.toast_error_malformed_data)
+                        playerStatus.errorMsg = context.getString(R.string.error_malformed_data)
                     MediaPlayer.MEDIA_ERROR_TIMED_OUT ->
-                        playerStatus.errorMsg = context.getString(R.string.toast_error_timeout)
+                        playerStatus.errorMsg = context.getString(R.string.error_timeout)
                     MediaPlayer.MEDIA_ERROR_UNSUPPORTED ->
-                        playerStatus.errorMsg = context.getString(R.string.toast_error_not_supported)
+                        playerStatus.errorMsg = context.getString(R.string.error_not_supported)
                     else -> {
                         val numConnectedDevices = audioFileStorage.getNumConnectedDevices()
                         if (numConnectedDevices <= 0) {
-                            playerStatus.errorMsg = context.getString(R.string.toast_error_no_USB_device)
+                            playerStatus.errorMsg = context.getString(R.string.error_no_USB_device)
                         } else {
-                            playerStatus.errorMsg = context.getString(R.string.toast_error_unknown)
+                            playerStatus.errorMsg = context.getString(R.string.error_unknown)
                         }
                     }
                 }
@@ -324,7 +327,7 @@ class AudioPlayer(
                 endOfQueueStatus.positionInMilliSec = getCurrentPositionMilliSec()
                 endOfQueueStatus.queueItemID = playbackQueue.getCurrentItem()?.queueId ?: -1
                 endOfQueueStatus.errorCode = PlaybackStateCompat.ERROR_CODE_END_OF_QUEUE
-                endOfQueueStatus.errorMsg = context.getString(R.string.toast_no_next_track)
+                endOfQueueStatus.errorMsg = context.getString(R.string.no_next_track)
                 endOfQueueStatus.playbackState = PlaybackStateCompat.STATE_ERROR
                 notifyPlayerStatus(endOfQueueStatus)
                 return@withContext
@@ -350,7 +353,7 @@ class AudioPlayer(
                 endOfQueueStatus.positionInMilliSec = getCurrentPositionMilliSec()
                 endOfQueueStatus.queueItemID = playbackQueue.getCurrentItem()?.queueId ?: -1
                 endOfQueueStatus.errorCode = PlaybackStateCompat.ERROR_CODE_END_OF_QUEUE
-                endOfQueueStatus.errorMsg = context.getString(R.string.toast_no_prev_track)
+                endOfQueueStatus.errorMsg = context.getString(R.string.no_prev_track)
                 endOfQueueStatus.playbackState = PlaybackStateCompat.STATE_ERROR
                 notifyPlayerStatus(endOfQueueStatus)
                 return@withContext
@@ -473,7 +476,7 @@ class AudioPlayer(
                 audioFocusDeniedStatus.positionInMilliSec = getCurrentPositionMilliSec()
                 audioFocusDeniedStatus.queueItemID = playbackQueue.getCurrentItem()?.queueId ?: -1
                 audioFocusDeniedStatus.errorCode = MEDIA_ERROR_AUDIO_FOCUS_DENIED
-                audioFocusDeniedStatus.errorMsg = context.getString(R.string.toast_error_audio_focus_denied)
+                audioFocusDeniedStatus.errorMsg = context.getString(R.string.error_audio_focus_denied)
                 audioFocusDeniedStatus.playbackState = PlaybackStateCompat.STATE_ERROR
                 notifyPlayerStatus(audioFocusDeniedStatus)
                 return@withContext
@@ -559,17 +562,32 @@ class AudioPlayer(
             val mediaDataSource: MediaDataSource
             try {
                 mediaDataSource = getDataSourceForURI(uri)
+                setDataSource(mediaDataSource)
+                try {
+                    prepare()
+                    numFilesNotFound = 0
+                } catch (exc: IOException) {
+                    val audioFile = AudioFile(uri)
+                    throw CannotReadFileException(audioFile.name)
+                }
+                onPreparedPlayFromQueue(currentMediaPlayer)
             } catch (exc: UnsupportedOperationException) {
                 return@withContext
+            } catch (exc: FileNotFoundException) {
+                // If file is missing, try next file in queue. This can happen if audio item library does not match
+                // the USB filesystem (e.g. due to manual indexing)
+                numFilesNotFound += 1
+                if (numFilesNotFound < 5) {
+                    logger.debug(TAG, "File not found, trying to play next item in queue instead: ${AudioFile(uri).name}")
+                    delay(4000)
+                    skipNextTrack()
+                } else {
+                    logger.error(TAG, "Too many files not found, update metadata or check your playlist")
+                    delay(4000)
+                    playerStatus.playbackState = PlaybackStateCompat.STATE_ERROR
+                    notifyPlayerStatusChange()
+                }
             }
-            setDataSource(mediaDataSource)
-            try {
-                prepare()
-            } catch (exc: IOException) {
-                val audioFile = AudioFile(uri)
-                throw CannotReadFileException(audioFile.name)
-            }
-            onPreparedPlayFromQueue(currentMediaPlayer)
         }
     }
 

@@ -421,7 +421,7 @@ index 56b92be..e7d6f89 100644
      }
  }
 diff --git a/libaums/src/main/java/com/github/mjdev/libaums/fs/AbstractUsbFile.kt b/libaums/src/main/java/com/github/mjdev/libaums/fs/AbstractUsbFile.kt
-index 9d5d410..46f8cb2 100644
+index 9d5d410..f33b7d7 100644
 --- a/libaums/src/main/java/com/github/mjdev/libaums/fs/AbstractUsbFile.kt
 +++ b/libaums/src/main/java/com/github/mjdev/libaums/fs/AbstractUsbFile.kt
 @@ -25,34 +25,34 @@ abstract class AbstractUsbFile : UsbFile {
@@ -480,6 +480,16 @@ index 9d5d410..46f8cb2 100644
  
          return null
      }
+@@ -70,7 +70,8 @@ abstract class AbstractUsbFile : UsbFile {
+     @Throws(IOException::class)
+     private fun searchThis(name: String): UsbFile? {
+         for (file in listFiles()) {
+-            if (file.name == name)
++            // modified this to allow case insensitive search (better support for Windows)
++            if (file.name.lowercase() == name.lowercase())
+                 return file
+         }
+ 
 diff --git a/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/ClusterChain.kt b/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/ClusterChain.kt
 index cf71835..b231e21 100644
 --- a/libaums/src/main/java/com/github/mjdev/libaums/fs/fat32/ClusterChain.kt

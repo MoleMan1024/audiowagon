@@ -21,6 +21,7 @@ enum class ContentHierarchyType {
     ARTIST,
     FILE,
     DIRECTORY,
+    PLAYLIST,
     ALBUM_GROUP,
     ARTIST_GROUP,
     TRACK_GROUP,

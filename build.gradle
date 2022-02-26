@@ -5,21 +5,17 @@ SPDX-License-Identifier: GPL-3.0-or-later
 buildscript {
 	ext {
 		minSdkVersion = 29
-		compileSdkVersion = 30
+		compileSdkVersion = 31
 		targetSdkVersion = 30
-		androidx_app_compat_version = "1.3.1"
-		androidx_lifecycle_version = "2.3.1"
-		androidx_media_version = "1.4.3"
-		kotlin_version = "1.5.21"
+		kotlin_version = "1.6.10"
 	}
-
 	repositories {
 		google()
 		mavenCentral()
 		gradlePluginPortal()
 	}
 	dependencies {
-		classpath "com.android.tools.build:gradle:4.2.2"
+		classpath 'com.android.tools.build:gradle:7.1.1'
 		classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
 		// Firebase Crashlytics requires this
 		classpath "com.google.gms:google-services:4.3.10"

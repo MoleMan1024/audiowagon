@@ -7,23 +7,26 @@ package de.moleman1024.audiowagon.medialibrary.contenthierarchy
 
 import android.content.Context
 import android.support.v4.media.MediaBrowserCompat.MediaItem
+import de.moleman1024.audiowagon.Util
+import de.moleman1024.audiowagon.filestorage.*
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
-import de.moleman1024.audiowagon.repository.AudioItemRepository
+import de.moleman1024.audiowagon.medialibrary.PlaylistFileResolver
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 
-private const val TAG = "CHSingleTrack"
+private const val TAG = "CHPlaylist"
 private val logger = Logger
 
 /**
- * A single track is requested (used when preparing playback queue from persistent data)
+ * A file in the browse view
  */
 @ExperimentalCoroutinesApi
-class ContentHierarchySingleTrack(
+class ContentHierarchyPlaylist(
     id: ContentHierarchyID,
     context: Context,
-    audioItemLibrary: AudioItemLibrary
+    audioItemLibrary: AudioItemLibrary,
+    private val audioFileStorage: AudioFileStorage
 ) :
     ContentHierarchyElement(id, context, audioItemLibrary) {
 
@@ -32,16 +35,10 @@ class ContentHierarchySingleTrack(
     }
 
     override suspend fun getAudioItems(): List<AudioItem> {
-        val repo: AudioItemRepository = audioItemLibrary.getRepoForContentHierarchyID(id) ?: return listOf()
-        val tracks: MutableList<AudioItem> = mutableListOf()
-        try {
-            // play a single track only
-            tracks += repo.getTrack(id.trackID)
-        } catch (exc: RuntimeException) {
-            logger.exception(TAG, exc.message.toString(), exc)
-            return listOf()
-        }
-        return tracks
+        val storageLocation = audioFileStorage.getPrimaryStorageLocation()
+        val playlistFile = PlaylistFile(Util.createURIForPath(storageLocation.storageID, id.path))
+        val playlistFileResolver = PlaylistFileResolver(playlistFile.uri, audioFileStorage, audioItemLibrary)
+        return playlistFileResolver.parseForAudioItems()
     }
 
 }

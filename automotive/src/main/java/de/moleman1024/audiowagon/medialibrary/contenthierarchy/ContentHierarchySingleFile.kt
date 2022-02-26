@@ -13,13 +13,12 @@ import de.moleman1024.audiowagon.filestorage.AudioFileStorage
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
-
-private const val TAG = "CHSingleFile"
-private val logger = Logger
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 /**
  * A single file is requested (used when preparing playback queue from persistent data)
  */
+@ExperimentalCoroutinesApi
 class ContentHierarchySingleFile(
     id: ContentHierarchyID,
     context: Context,

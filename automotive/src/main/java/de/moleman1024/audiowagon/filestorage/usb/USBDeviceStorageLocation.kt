@@ -10,13 +10,14 @@ import android.net.Uri
 import com.github.mjdev.libaums.fs.UsbFile
 import com.github.mjdev.libaums.fs.UsbFileInputStream
 import de.moleman1024.audiowagon.Util
+import de.moleman1024.audiowagon.Util.Companion.determinePlayableFileType
 import de.moleman1024.audiowagon.filestorage.*
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.produce
 import java.io.ByteArrayOutputStream
-import java.net.URLConnection
+import java.io.InputStream
 import java.util.*
 import kotlin.RuntimeException
 
@@ -40,8 +41,13 @@ class USBDeviceStorageLocation(override val device: USBMediaDevice) : AudioFileS
                         logger.debug(TAG, "Cancel indexAudioFiles()")
                         break
                     }
-                    if (!isPlayableAudioFile(usbFile)) {
+                    val fileType = determinePlayableFileType(usbFile)
+                    if (fileType == null) {
                         logger.debug(TAG, "Skipping unsupported file: $usbFile")
+                        continue
+                    }
+                    if (fileType !is AudioFile) {
+                        // skip playlists, we don't need them indexed in media library
                         continue
                     }
                     val audioFile = createAudioFileFromUSBFile(usbFile)
@@ -69,12 +75,12 @@ class USBDeviceStorageLocation(override val device: USBMediaDevice) : AudioFileS
     }
 
     override fun getDirectoryContentsPlayable(directory: Directory): List<FileLike> {
-        return getDirectoryContentsWithOptionalFilter(directory, ::isPlayableAudioFile)
+        return getDirectoryContentsWithOptionalFilter(directory, ::determinePlayableFileType)
     }
 
     private fun getDirectoryContentsWithOptionalFilter(
         directory: Directory,
-        fileFilter: ((UsbFile) -> Boolean)? = null
+        fileTypeGuesser: ((UsbFile) -> FileLike?)? = null
     ): List<FileLike> {
         val itemsInDir = mutableListOf<FileLike>()
         device.getDirectoryContents(directory.uri).forEach { usbFile ->
@@ -82,9 +88,25 @@ class USBDeviceStorageLocation(override val device: USBMediaDevice) : AudioFileS
                 val uri = Util.createURIForPath(storageID, usbFile.absolutePath)
                 itemsInDir.add(Directory(uri))
             } else {
-                if ((fileFilter != null && fileFilter(usbFile)) || fileFilter == null) {
-                    val audioFile = createAudioFileFromUSBFile(usbFile)
-                    itemsInDir.add(audioFile)
+                if (fileTypeGuesser == null) {
+                    val uri = Util.createURIForPath(storageID, usbFile.absolutePath)
+                    val generalFile = GeneralFile(uri)
+                    itemsInDir.add(generalFile)
+                } else {
+                    when (fileTypeGuesser(usbFile)) {
+                        is AudioFile -> {
+                            val audioFile = createAudioFileFromUSBFile(usbFile)
+                            itemsInDir.add(audioFile)
+                        }
+                        is PlaylistFile -> {
+                            val uri = Util.createURIForPath(storageID, usbFile.absolutePath)
+                            val playlistFile = PlaylistFile(uri)
+                            itemsInDir.add(playlistFile)
+                        }
+                        else -> {
+                            logger.warning(TAG, "Ignoring file type of: $usbFile")
+                        }
+                    }
                 }
             }
         }
@@ -104,8 +126,7 @@ class USBDeviceStorageLocation(override val device: USBMediaDevice) : AudioFileS
     }
 
     override fun getByteArrayForURI(uri: Uri): ByteArray {
-        val usbFile = device.getUSBFileFromURI(uri)
-        val inputStream = UsbFileInputStream(usbFile)
+        val inputStream = getInputStreamForURI(uri)
         val byteArrayOutputStream = ByteArrayOutputStream()
         val buffer = ByteArray(device.getChunkSize())
         var bytesRead = 0
@@ -116,6 +137,11 @@ class USBDeviceStorageLocation(override val device: USBMediaDevice) : AudioFileS
         return byteArrayOutputStream.toByteArray()
     }
 
+    override fun getInputStreamForURI(uri: Uri): InputStream {
+        val usbFile = device.getUSBFileFromURI(uri)
+        return UsbFileInputStream(usbFile)
+    }
+
     override fun close() {
         device.close()
     }
@@ -124,24 +150,6 @@ class USBDeviceStorageLocation(override val device: USBMediaDevice) : AudioFileS
         device.preventLoggingToDetachedDevice()
         device.closeMassStorageFilesystem()
         isDetached = true
-    }
-
-    private fun isPlayableAudioFile(usbFile: UsbFile): Boolean {
-        if (usbFile.isDirectory || usbFile.isRoot) {
-            return false
-        }
-        val guessedContentType: String
-        try {
-            val safeFileName = makeFileNameSafeForContentTypeGuessing(usbFile.name)
-            guessedContentType = URLConnection.guessContentTypeFromName(safeFileName) ?: return false
-        } catch (exc: StringIndexOutOfBoundsException) {
-            logger.exception(TAG, "Error when guessing content type of: ${usbFile.name}", exc)
-            return false
-        }
-        if (!isSupportedContentType(guessedContentType)) {
-            return false
-        }
-        return true
     }
 
     override fun toString(): String {

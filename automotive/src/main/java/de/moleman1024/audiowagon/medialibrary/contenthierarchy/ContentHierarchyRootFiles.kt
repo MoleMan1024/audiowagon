@@ -15,6 +15,7 @@ import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.filestorage.*
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.*
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 private const val TAG = "CHRootFiles"
 private val logger = Logger
@@ -23,6 +24,7 @@ private val logger = Logger
  * The browse view showing all files/directories on the device (plus a pseudo item to shuffle all files) (or
  * showing groups of files)
  */
+@ExperimentalCoroutinesApi
 class ContentHierarchyRootFiles(
     context: Context,
     audioItemLibrary: AudioItemLibrary,

@@ -11,11 +11,13 @@ import de.moleman1024.audiowagon.filestorage.AudioFileStorage
 import de.moleman1024.audiowagon.filestorage.FileLike
 import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 
 /**
  * Group of files/directories in browse view
  */
+@ExperimentalCoroutinesApi
 class ContentHierarchyGroupFileLike(
     id: ContentHierarchyID,
     context: Context,

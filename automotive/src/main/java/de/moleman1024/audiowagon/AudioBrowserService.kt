@@ -44,6 +44,7 @@ import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.lifecycleScope
 import androidx.media.MediaBrowserServiceCompat
 import androidx.media.utils.MediaConstants
+import de.moleman1024.audiowagon.SharedPrefs.Companion.getMetadataReadSettingEnum
 import de.moleman1024.audiowagon.authorization.PackageValidation
 import de.moleman1024.audiowagon.authorization.USBDevicePermissions
 import de.moleman1024.audiowagon.broadcast.PowerEventReceiver
@@ -63,7 +64,6 @@ import de.moleman1024.audiowagon.repository.AudioItemRepository
 import kotlinx.coroutines.*
 import java.io.FileNotFoundException
 import java.io.IOException
-import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.coroutineContext
 import kotlin.system.exitProcess
@@ -182,7 +182,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         persistentStorage = PersistentStorage(this, dispatcher)
         gui = GUI(lifecycleScope, applicationContext)
         usbDevicePermissions = USBDevicePermissions(this)
-        audioFileStorage = AudioFileStorage(this, lifecycleScope, dispatcher, usbDevicePermissions, gui)
+        audioFileStorage = AudioFileStorage(this, lifecycleScope, dispatcher, usbDevicePermissions)
         audioItemLibrary = AudioItemLibrary(this, audioFileStorage, lifecycleScope, dispatcher, gui)
         audioItemLibrary.libraryExceptionObservers.add { exc ->
             when (exc) {
@@ -196,8 +196,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         }
         if (sessionToken == null) {
             audioSession = AudioSession(
-                this, audioItemLibrary, audioFileStorage, lifecycleScope, dispatcher, gui,
-                persistentStorage, crashReporting
+                this, audioItemLibrary, audioFileStorage, lifecycleScope, dispatcher, persistentStorage, crashReporting
             )
             sessionToken = audioSession.sessionToken
             logger.debug(TAG, "New media session token: $sessionToken")
@@ -223,7 +222,9 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             if (storageChange.error.isNotBlank()) {
                 logger.warning(TAG, "Audio file storage notified an error")
                 if (!isSuspended) {
-                    gui.showErrorToastMsg(getString(R.string.toast_error_USB, storageChange.error))
+                    runBlocking(dispatcher) {
+                        audioSession.showError(getString(R.string.error_USB, storageChange.error))
+                    }
                 }
                 audioSession.stopPlayer()
                 // TODO: this needs to change to properly support multiple storages
@@ -246,13 +247,16 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             audioFileStorage.updateConnectedDevices()
         } catch (exc: IOException) {
             logger.exception(TAG, "I/O Error during update of connected USB devices", exc)
-            // TODO: for Android 12 turn into notification
-            gui.showErrorToastMsg(this.getString(R.string.toast_error_USB_init))
+            runBlocking(dispatcher) {
+                audioSession.showError(this@AudioBrowserService.getString(R.string.error_USB_init))
+            }
             crashReporting.logMessages(logger.getLastLogLines(NUM_LOG_LINES_CRASH_REPORT))
             crashReporting.recordException(exc)
         } catch (exc: RuntimeException) {
             logger.exception(TAG, "Runtime error during update of connected USB devices", exc)
-            gui.showErrorToastMsg(this.getString(R.string.toast_error_USB_init))
+            runBlocking(dispatcher) {
+                audioSession.showError(this@AudioBrowserService.getString(R.string.error_USB_init))
+            }
             crashReporting.logMessages(logger.getLastLogLines(NUM_LOG_LINES_CRASH_REPORT))
             crashReporting.recordException(exc)
         }
@@ -307,11 +311,13 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             AudioPlayerState.ERROR -> {
                 if (event.errorCode == PlaybackStateCompat.ERROR_CODE_END_OF_QUEUE) {
                     // Android Automotive media browser client will show a notification to user by itself in
-                    // case of skipping beyond end of queue, no need for us to send a toast message
+                    // case of skipping beyond end of queue, no need for us to send a error message
                     return
                 }
                 logger.warning(TAG, "Player encountered an error")
-                gui.showErrorToastMsg(event.errorMsg)
+                runBlocking(dispatcher) {
+                    audioSession.showError(event.errorMsg)
+                }
             }
             else -> {
                 // ignore
@@ -410,7 +416,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             notifyBrowserChildrenChangedAllLevels()
             return
         }
-        val metadataReadSetting = getMetadataReadSettingEnum()
+        val metadataReadSetting = getMetadataReadSettingEnum(this, logger, TAG)
         if (metadataReadSetting == MetadataReadSetting.OFF) {
             logger.info(TAG, "Metadata extraction is disabled in settings")
             launchRestoreFromPersistentJob()
@@ -499,7 +505,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             audioFileStorage.getStorageLocationForID(it)
         }
         storageLocations.forEach { audioItemLibrary.initRepository(it.storageID) }
-        val metadataReadSetting = getMetadataReadSettingEnum()
+        val metadataReadSetting = getMetadataReadSettingEnum(this, logger, TAG)
         if (metadataReadSetting == MetadataReadSetting.WHEN_USB_CONNECTED
             || (metadataReadSetting == MetadataReadSetting.MANUALLY && metadataReadNowRequested)
         ) {
@@ -933,7 +939,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                 crashReporting.recordException(exc)
                 logger.exception(TAG, exc.message.toString(), exc)
                 if (!isShuttingDown) {
-                    gui.showErrorToastMsg(getString(R.string.toast_error_unknown))
+                    audioSession.showError(getString(R.string.error_unknown))
                 }
                 result.sendResult(null)
             } finally {
@@ -994,24 +1000,14 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     private fun notifyLibraryCreationFailure() {
         gui.removeIndexingNotification()
         if (!isSuspended) {
-            // TODO: for Android 12 turn this into a notification
-            gui.showErrorToastMsg(getString(R.string.toast_error_library_creation_fail))
+            runBlocking(dispatcher) {
+                audioSession.showError(getString(R.string.error_library_creation_fail))
+            }
         }
     }
 
     private fun launchInScopeSafely(func: suspend (CoroutineScope) -> Unit): Job {
         return Util.launchInScopeSafely(lifecycleScope, dispatcher, logger, TAG, crashReporting, func)
-    }
-
-    private fun getMetadataReadSettingEnum(): MetadataReadSetting {
-        val metadataReadSettingStr = SharedPrefs.getMetadataReadSetting(this)
-        var metadataReadSetting: MetadataReadSetting = MetadataReadSetting.WHEN_USB_CONNECTED
-        try {
-            metadataReadSetting = MetadataReadSetting.valueOf(metadataReadSettingStr)
-        } catch (exc: IllegalArgumentException) {
-            logger.exception(TAG, exc.message.toString(), exc)
-        }
-        return metadataReadSetting
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.NONE)

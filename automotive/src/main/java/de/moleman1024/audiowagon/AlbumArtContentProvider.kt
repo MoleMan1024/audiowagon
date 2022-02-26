@@ -31,6 +31,8 @@ const val TRACK_ART_PATH = "trackArt"
 
 /**
  * See https://developer.android.com/guide/topics/providers/content-provider-creating
+ * Very "minimal" content provider that will just return one image currently stored in a byte buffer. On each track
+ * change this buffer is updated with a new album art image (or with the default "music note" icon image)
  */
 class AlbumArtContentProvider : ContentProvider() {
     private var defaultAlbumArtBitmap: Bitmap? = null
@@ -106,6 +108,9 @@ class AlbumArtContentProvider : ContentProvider() {
         setDefaultAlbumArtByteArray(defaultAlbumArtByteArray)
     }
 
+    /**
+     * We always provide whatever is currently stored in the album art byte buffer above
+     */
     override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor? {
         logger.debug(TAG, "openFile(uri=$uri)")
         if (context == null) {
@@ -159,6 +164,7 @@ class AlbumArtContentProvider : ContentProvider() {
         )
     }
 
+    // some default implementations that are required for content providers but that do nothing
     override fun query(
         uri: Uri,
         projection: Array<out String>?,

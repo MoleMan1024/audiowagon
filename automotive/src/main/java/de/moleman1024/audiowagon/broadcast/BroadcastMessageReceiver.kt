@@ -21,6 +21,7 @@ const val ACTION_PAUSE = "de.moleman1024.audiowagon.ACTION_PAUSE"
 const val ACTION_NEXT = "de.moleman1024.audiowagon.ACTION_NEXT"
 const val ACTION_PREV = "de.moleman1024.audiowagon.ACTION_PREV"
 
+@ExperimentalCoroutinesApi
 class BroadcastMessageReceiver(
     private val audioPlayer: AudioPlayer,
     private val scope: CoroutineScope,

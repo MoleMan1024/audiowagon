@@ -36,6 +36,7 @@ import kotlinx.coroutines.channels.produce
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.io.InputStream
 
 private const val TAG = "AudioFileStor"
 private val logger = Logger
@@ -47,17 +48,17 @@ private const val SD_CARD_ID = "1404-9F0B"
  * We need to implement this ourselves, none of the stuff in https://developer.android.com/training/data-storage will
  * work for USB
  */
+@ExperimentalCoroutinesApi
 open class AudioFileStorage(
     private val context: Context,
     private val scope: CoroutineScope,
     private val dispatcher: CoroutineDispatcher,
-    usbDevicePermissions: USBDevicePermissions,
-    gui: GUI
+    usbDevicePermissions: USBDevicePermissions
 ) {
     // TODO: this was originally intended to support multiple storage locations, but we only allow a single one now
     private val audioFileStorageLocations: MutableList<AudioFileStorageLocation> = mutableListOf()
     private var usbDeviceConnections: USBDeviceConnections = USBDeviceConnections(
-        context, scope, dispatcher, usbDevicePermissions, gui
+        context, scope, dispatcher, usbDevicePermissions
     )
     private var dataSources = mutableListOf<MediaDataSource>()
     private val dataSourcesMutex = Mutex()
@@ -87,6 +88,9 @@ open class AudioFileStorage(
                     setAllDataSourcesClosed()
                     detachStorageForDevice(it)
                     removeDevice(it)
+                }
+                else -> {
+                    // ignore
                 }
             }
         }
@@ -412,7 +416,7 @@ open class AudioFileStorage(
     /**
      * This will determine what files in the browse tree will look like in the GUI
      */
-    fun createFileDescription(file: AudioFile): MediaDescriptionCompat {
+    fun createAudioFileDescription(file: AudioFile): MediaDescriptionCompat {
         val contentHierarchyID = ContentHierarchyID(ContentHierarchyType.FILE)
         contentHierarchyID.path = file.uri.path.toString()
         val builder = MediaDescriptionCompat.Builder().apply {
@@ -445,6 +449,20 @@ open class AudioFileStorage(
         return builder.build()
     }
 
+    fun createPlaylistFileDescription(file: PlaylistFile): MediaDescriptionCompat {
+        val contentHierarchyID = ContentHierarchyID(ContentHierarchyType.PLAYLIST)
+        contentHierarchyID.path = file.uri.path.toString()
+        val builder = MediaDescriptionCompat.Builder().apply {
+            setTitle(file.name)
+            setIconUri(Uri.parse(
+                RESOURCE_ROOT_URI
+                        + context.resources.getResourceEntryName(R.drawable.baseline_description_24)))
+            setMediaId(ContentHierarchyElement.serialize(contentHierarchyID))
+            setMediaUri(file.uri)
+        }
+        return builder.build()
+    }
+
     fun areAnyStoragesAvail(): Boolean {
         return audioFileStorageLocations.isNotEmpty()
     }
@@ -466,6 +484,11 @@ open class AudioFileStorage(
             albumArtBytes = storageLocation.getByteArrayForURI(albumArtFile.uri)
         }
         return albumArtBytes
+    }
+
+    fun getInputStream(uri: Uri): InputStream {
+        val storageLocation = getStorageLocationForURI(uri)
+        return storageLocation.getInputStreamForURI(uri)
     }
 
 }

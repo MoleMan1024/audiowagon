@@ -25,21 +25,21 @@ SPDX-License-Identifier: GPL-3.0-or-later
 	<string name="browse_tree_need_to_agree_legal_desc">Kontrollera inställningar</string>
 	<string name="toast_indexing_started">USB-indexering startad …</string>
 	<string name="toast_indexing_completed">USB-indexering klar</string>
-	<string name="toast_no_next_track">Inget ytterligare spår</string>
-	<string name="toast_no_prev_track">Inget föregående spår</string>
-	<string name="toast_eject_completed">USB-enheten utmatad, den är nu säker att koppla ur</string>
-	<string name="toast_error">FEL: %1$s</string>a
-	<string name="toast_error_audio_focus_denied">Ljudenheten upptagen</string>
-	<string name="toast_error_USB_init">Fel vid anslutning av USB-enhet</string>
-	<string name="toast_error_no_filesystem">Inget okänt filsystem</string>
-	<string name="toast_error_library_creation_fail">Misslyckades med att skapa bibliotek</string>
-	<string name="toast_error_invalid_state">Ogiltigt tillstånd</string>
-	<string name="toast_error_IO">I/O-fel</string>
-	<string name="toast_error_malformed_data">Missformad data</string>
-	<string name="toast_error_timeout">Timeout</string>
-	<string name="toast_error_not_supported">Ej stöd</string>
-	<string name="toast_error_no_USB_device">Ingen USB-enhet</string>
-	<string name="toast_error_unknown">Okänd</string>
+	<string name="no_next_track">Inget ytterligare spår</string>
+	<string name="no_prev_track">Inget föregående spår</string>
+	<string name="eject_completed">USB-enheten utmatad, den är nu säker att koppla ur</string>
+	<string name="error">FEL: %1$s</string>a
+	<string name="error_audio_focus_denied">Ljudenheten upptagen</string>
+	<string name="error_USB_init">Fel vid anslutning av USB-enhet</string>
+	<string name="error_no_filesystem">Inget okänt filsystem</string>
+	<string name="error_library_creation_fail">Misslyckades med att skapa bibliotek</string>
+	<string name="error_invalid_state">Ogiltigt tillstånd</string>
+	<string name="error_IO">I/O-fel</string>
+	<string name="error_malformed_data">Missformad data</string>
+	<string name="error_timeout">Timeout</string>
+	<string name="error_not_supported">Ej stöd</string>
+	<string name="error_no_USB_device">Ingen USB-enhet</string>
+	<string name="error_unknown">Okänd</string>
 	<string name="notif_action_play">Spela</string>
 	<string name="notif_action_pause">Pausa</string>
 	<string name="notif_action_stop">Stoppa</string>
@@ -106,8 +106,8 @@ Google\n&#x2013; Firebase Crashlytics\n\nLicenstexter:\nwww.apache.org/licenses/
 	</string>
 	<string name="legal_disclaimer_confirm_btn">Godkänn</string>
 	<string name="legal_disclaimer_cancel_btn">Avbryt</string>
-	<string name="toast_error_no_tracks">Inga spår</string>
-	<string name="toast_error_not_enough_space_for_log">Inte tillräckligt utrymme att skriva logg-fil</string>
+	<string name="error_no_tracks">Inga spår</string>
+	<string name="error_not_enough_space_for_log">Inte tillräckligt utrymme att skriva logg-fil</string>
 	<string name="setting_USB_status_too_many_files_in_dir">För många filer i en katalog. Vänligen använd
 underkataloger</string>
 	<string name="browse_tree_category_files">Filer</string>
@@ -116,7 +116,7 @@ underkataloger</string>
 	<string name="setting_delete_databases">Ta bort databaser</string>
 	<string name="setting_database_status_title">Databas</string>
 	<string name="setting_enable_replaygain">ReplayGain</string>
-	<string name="toast_searching_voice_input">Söka efter: \"%1$s\"</string>
+	<string name="searching_voice_input">Söka efter: \"%1$s\"</string>
 	<string name="setting_read_metadata_when_connected">När USB-enheten är ansluten</string>
 	<string name="setting_read_metadata_manual">Manuellt</string>
 	<string name="setting_read_metadata_off">Av</string>
@@ -129,6 +129,6 @@ underkataloger</string>
 	<string name="setting_crash_reporting_title">Skicka kraschrapporter</string>
 	<string name="setting_crash_reporting_desc">Skicka kraschrapporter automatiskt till utvecklaren som hjälp
 förbättra appen (kräver internetanslutning).</string>
-	<string name="toast_error_cannot_read_file">Filen kunde inte läsas: %1$s</string>
+	<string name="cannot_read_file">Filen kunde inte läsas: %1$s</string>
 	<string name="setting_website_title">Hemsida</string>
 </resources>

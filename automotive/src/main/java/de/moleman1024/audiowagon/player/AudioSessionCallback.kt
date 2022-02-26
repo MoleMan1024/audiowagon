@@ -17,6 +17,7 @@ import de.moleman1024.audiowagon.medialibrary.AudioItemType
 import de.moleman1024.audiowagon.medialibrary.MetadataReadSetting
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 private const val TAG = "AudioSessCB"
 private val logger = Logger
@@ -24,6 +25,7 @@ private val logger = Logger
 /**
  * See https://developer.android.com/reference/android/support/v4/media/session/MediaSessionCompat.Callback
  */
+@ExperimentalCoroutinesApi
 class AudioSessionCallback(
     private val audioPlayer: AudioPlayer,
     private val scope: CoroutineScope,
@@ -192,15 +194,6 @@ class AudioSessionCallback(
             album?.let { audioSessionChange.albumToPlay = it }
             val track = extras?.getString(MediaStore.EXTRA_MEDIA_TITLE)
             track?.let { audioSessionChange.trackToPlay = it }
-            // genre and playlist not supported
-            val genre = extras?.getString(MediaStore.EXTRA_MEDIA_GENRE)
-            if (!genre.isNullOrEmpty()) {
-                logger.warning(TAG, "Extra genre, not supported: $genre")
-            }
-            val playlist = extras?.getString(MediaStore.EXTRA_MEDIA_PLAYLIST)
-            if (!playlist.isNullOrEmpty()) {
-                logger.warning(TAG, "Extra playlist, not supported: $playlist")
-            }
         }
         launchInScopeSafely {
             notifyObservers(audioSessionChange)

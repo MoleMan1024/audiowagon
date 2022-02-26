@@ -7,26 +7,30 @@ plugins {
 	id "kotlin-android"
 	id "kotlin-kapt"
 	id "jacoco"
-	id "org.jetbrains.kotlin.plugin.serialization" version "1.5.31"
+	id "org.jetbrains.kotlin.plugin.serialization" version "$kotlin_version"
 	id "com.google.gms.google-services"
 	id "com.google.firebase.crashlytics"
 }
 
 android {
 	compileSdkVersion rootProject.compileSdkVersion
-	buildToolsVersion "30.0.3"
 
 	defaultConfig {
 		manifestPlaceholders
 		applicationId "de.moleman1024.audiowagon"
 		minSdkVersion rootProject.minSdkVersion
 		targetSdkVersion rootProject.targetSdkVersion
-		versionCode 140
-		versionName "1.4.0"
+		versionCode 150
+		versionName "1.5.0"
 		resValue "string", "VERSION_NAME", versionName
 		testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 		signingConfig signingConfigs.debug
 		manifestPlaceholders["requestLegacyExternalStorage"] = "false"
+		javaCompileOptions {
+			annotationProcessorOptions {
+				arguments += ["room.schemaLocation": "$projectDir/schemas".toString()]
+			}
+		}
 	}
 
 	buildTypes {
@@ -55,33 +59,30 @@ android {
 }
 
 dependencies {
-	def room_version = "2.3.0"
-	def junit_version = "4.13.2"
-	def mockito_version = "3.11.1"
-	def espresso_version = "3.4.0"
 	def androidx_test_version = "1.4.0"
 	def kotlinx_serialization_version = "1.3.0"
-	def fragment_version = "1.3.0"
+	def mockito_version = "3.11.1"
+	def room_version = "2.4.1"
 
-	implementation "com.google.android.material:material:1.4.0"
-	implementation "androidx.preference:preference-ktx:1.1.1"
-	implementation "androidx.media:media:$androidx_media_version"
-	implementation "androidx.appcompat:appcompat:$androidx_app_compat_version"
+	implementation "com.google.android.material:material:1.5.0"
+	implementation "androidx.preference:preference-ktx:1.2.0"
+	implementation "androidx.media:media:1.5.0"
+	implementation "androidx.appcompat:appcompat:1.4.1"
 	implementation "androidx.room:room-runtime:$room_version"
-	implementation "androidx.constraintlayout:constraintlayout:2.1.2"
+	implementation "androidx.constraintlayout:constraintlayout:2.1.3"
 	kapt "androidx.room:room-compiler:$room_version"
 	implementation "androidx.room:room-ktx:$room_version"
-	implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.0"
+	implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.2"
 	implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
-	implementation "androidx.lifecycle:lifecycle-runtime-ktx:$androidx_lifecycle_version"
+	implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.4.1"
 	implementation "org.jetbrains.kotlinx:kotlinx-serialization-core:$kotlinx_serialization_version"
 	implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinx_serialization_version"
 	implementation files("libs/libaums-0.8.2.aar")
-	implementation "com.google.firebase:firebase-crashlytics-ktx:18.2.6"
+	implementation "com.google.firebase:firebase-crashlytics-ktx:18.2.8"
 	implementation "org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.4.1"
 
 	// junit4 for local unit tests
-	testImplementation "junit:junit:$junit_version"
+	testImplementation "junit:junit:4.13.2"
 	testImplementation "androidx.test:core:$androidx_test_version"
 	testImplementation "org.mockito:mockito-core:$mockito_version"
 	testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.5.0"
@@ -91,8 +92,8 @@ dependencies {
 	androidTestImplementation "androidx.test:runner:$androidx_test_version"
 	androidTestImplementation "androidx.test:rules:$androidx_test_version"
 	androidTestImplementation "androidx.test.ext:junit:1.1.3"
-	androidTestImplementation "androidx.test.espresso:espresso-core:$espresso_version"
-	debugImplementation "androidx.fragment:fragment-testing:$fragment_version"
+	androidTestImplementation "androidx.test.espresso:espresso-core:3.4.0"
+	debugImplementation "androidx.fragment:fragment-testing:1.4.1"
 	androidTestImplementation "org.mockito:mockito-core:$mockito_version"
 	androidTestImplementation "org.mockito:mockito-android:$mockito_version"
 	androidTestImplementation "org.springframework:spring-context:5.3.8"

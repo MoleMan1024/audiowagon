@@ -8,6 +8,7 @@ package de.moleman1024.audiowagon.filestorage.sd
 import android.media.MediaDataSource
 import android.net.Uri
 import de.moleman1024.audiowagon.Util
+import de.moleman1024.audiowagon.Util.Companion.determinePlayableFileType
 import de.moleman1024.audiowagon.filestorage.*
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.CancellationException
@@ -16,6 +17,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.produce
 import java.io.File
+import java.io.InputStream
 import java.net.URLConnection
 import java.util.*
 
@@ -37,14 +39,19 @@ class SDCardStorageLocation(override val device: SDCardMediaDevice) : AudioFileS
         logger.debug(TAG, "indexAudioFiles(directory=$directory, ${device.getName()})")
         val startDirectory = device.getFileFromURI(directory.uri)
         return scope.produce {
+            // TODO: similar code to USBDeviceStorageLocation
             try {
                 for (file in device.walkTopDown(startDirectory)) {
                     if (isIndexingCancelled) {
                         logger.debug(TAG, "Cancel indexAudioFiles()")
                         break
                     }
-                    if (!isPlayableAudioFile(file)) {
-                        logger.debug(TAG, "Skipping non-audio file: $file")
+                    val fileType = determinePlayableFileType(file)
+                    if (fileType == null) {
+                        logger.debug(TAG, "Skipping unsupported file: $file")
+                        continue
+                    }
+                    if (fileType !is AudioFile) {
                         continue
                     }
                     val audioFile = createAudioFileFromFile(file)
@@ -74,7 +81,8 @@ class SDCardStorageLocation(override val device: SDCardMediaDevice) : AudioFileS
                 val uri = Util.createURIForPath(storageID, file.absolutePath)
                 itemsInDir.add(Directory(uri))
             } else {
-                if (isPlayableAudioFile(file)) {
+                val fileType = determinePlayableFileType(file)
+                if (fileType != null) {
                     val audioFile = createAudioFileFromFile(file)
                     itemsInDir.add(audioFile)
                 }
@@ -99,6 +107,10 @@ class SDCardStorageLocation(override val device: SDCardMediaDevice) : AudioFileS
         TODO("Not yet implemented")
     }
 
+    override fun getInputStreamForURI(uri: Uri): InputStream {
+        TODO("Not yet implemented")
+    }
+
     override fun close() {
         device.close()
     }
@@ -106,25 +118,6 @@ class SDCardStorageLocation(override val device: SDCardMediaDevice) : AudioFileS
     override fun setDetached() {
         device.isClosed = true
         isDetached = true
-    }
-
-    // TODO: remove code duplication
-    private fun isPlayableAudioFile(file: File): Boolean {
-        if (file.isDirectory) {
-            return false
-        }
-        val guessedContentType: String
-        try {
-            val safeFileName = makeFileNameSafeForContentTypeGuessing(file.name)
-            guessedContentType = URLConnection.guessContentTypeFromName(safeFileName) ?: return false
-        } catch (exc: StringIndexOutOfBoundsException) {
-            logger.exception(TAG, "Error when guessing content type of: ${file.name}", exc)
-            return false
-        }
-        if (!isSupportedContentType(guessedContentType)) {
-            return false
-        }
-        return true
     }
 
     override fun getRootURI(): Uri {

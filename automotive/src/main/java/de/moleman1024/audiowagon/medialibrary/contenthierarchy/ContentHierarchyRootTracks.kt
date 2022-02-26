@@ -17,6 +17,7 @@ import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
 import de.moleman1024.audiowagon.medialibrary.MetadataReadSetting
 import de.moleman1024.audiowagon.medialibrary.RESOURCE_ROOT_URI
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 private const val TAG = "CHRootTracks"
 private val logger = Logger
@@ -25,6 +26,7 @@ private val logger = Logger
  * The browse view showing all tracks on the device (plus a pseudo item to shuffle all tracks) (or showing groups of
  * tracks)
  */
+@ExperimentalCoroutinesApi
 class ContentHierarchyRootTracks(
     context: Context,
     audioItemLibrary: AudioItemLibrary,

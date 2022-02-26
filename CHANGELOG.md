@@ -13,6 +13,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+## [1.5.0] - 2022-02-26
+
+### Fixed
+
+- when AudioWagon was set to "Read metadata manually", and a file was deleted from USB drive, and the metadata was not
+  updated by the user, and the track for that missing file was requested to be played, then the playback would just
+  hang. This is improved now to show an error popup for the missing file and the playback queue will continue to the
+  next track (if still available on USB drive)
+
+### Changed
+
+- prepare for AAOS 12 where toasts are no longer allowed for non-system apps. Replaced all toast messages with error
+  states in PlaybackStateCompat which have the same visual effect
+
+### Added
+
+- Playlist files (.m3u, .pls and .xspf) that reference other files on the USB drive can now be played back from the 
+  file view. [#51](https://github.com/MoleMan1024/audiowagon/issues/51)
+
+
 ## [1.4.0] - 2022-02-12
 
 ### Fixed

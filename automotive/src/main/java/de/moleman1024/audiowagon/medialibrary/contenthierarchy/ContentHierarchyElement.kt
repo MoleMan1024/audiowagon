@@ -11,14 +11,12 @@ import android.support.v4.media.MediaBrowserCompat.MediaItem
 import android.support.v4.media.MediaDescriptionCompat
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.Util
-import de.moleman1024.audiowagon.filestorage.AudioFile
-import de.moleman1024.audiowagon.filestorage.AudioFileStorage
-import de.moleman1024.audiowagon.filestorage.Directory
-import de.moleman1024.audiowagon.filestorage.FileLike
+import de.moleman1024.audiowagon.filestorage.*
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
 import de.moleman1024.audiowagon.medialibrary.RESOURCE_ROOT_URI
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -38,6 +36,7 @@ const val CONTENT_HIERARCHY_MAX_NUM_ITEMS = 400
 const val DEFAULT_NUM_TITLE_CHARS_FOR_GROUP = 24
 
 // TODO: document possible hierarchies
+@ExperimentalCoroutinesApi
 abstract class ContentHierarchyElement(
     val id: ContentHierarchyID,
     val context: Context,
@@ -194,7 +193,11 @@ abstract class ContentHierarchyElement(
                     MediaItem(description, MediaItem.FLAG_BROWSABLE)
                 }
                 is AudioFile -> {
-                    val description = audioFileStorage.createFileDescription(fileOrDir)
+                    val description = audioFileStorage.createAudioFileDescription(fileOrDir)
+                    MediaItem(description, MediaItem.FLAG_PLAYABLE)
+                }
+                is PlaylistFile -> {
+                    val description = audioFileStorage.createPlaylistFileDescription(fileOrDir)
                     MediaItem(description, MediaItem.FLAG_PLAYABLE)
                 }
                 else -> {

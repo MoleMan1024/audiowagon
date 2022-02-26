@@ -9,10 +9,12 @@ import android.content.Context
 import android.support.v4.media.MediaBrowserCompat.MediaItem
 import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 /**
  * An empty element in the browse tree (used for example when user tries tapping on "no entries" pseudo-item)
  */
+@ExperimentalCoroutinesApi
 class ContentHierarchyNone(
     context: Context,
     audioItemLibrary: AudioItemLibrary

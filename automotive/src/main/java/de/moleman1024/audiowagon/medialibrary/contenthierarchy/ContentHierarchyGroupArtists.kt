@@ -10,6 +10,7 @@ import android.support.v4.media.MediaBrowserCompat.MediaItem
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlin.math.ceil
 
 private const val TAG = "CHGroupArtists"
@@ -18,6 +19,7 @@ private val logger = Logger
 /**
  * A group containing artists in browse view
  */
+@ExperimentalCoroutinesApi
 class ContentHierarchyGroupArtists(id: ContentHierarchyID, context: Context, audioItemLibrary: AudioItemLibrary) :
     ContentHierarchyElement(id, context, audioItemLibrary) {
 

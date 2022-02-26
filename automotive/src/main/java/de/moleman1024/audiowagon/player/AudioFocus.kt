@@ -12,6 +12,7 @@ import android.media.AudioManager
 import android.os.Handler
 import android.os.Looper
 import de.moleman1024.audiowagon.log.Logger
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 private const val TAG = "AudioFocus"
 private val logger = Logger
@@ -21,6 +22,7 @@ private val logger = Logger
  * and https://source.android.com/devices/automotive
  * and https://developer.android.com/guide/topics/media-apps/audio-app/mediasession-callbacks
  */
+@ExperimentalCoroutinesApi
 class AudioFocus(context: Context) {
     private var audioManager: AudioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     private val handler = Handler(Looper.getMainLooper())

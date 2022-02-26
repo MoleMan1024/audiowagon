@@ -25,21 +25,21 @@ SPDX-License-Identifier: GPL-3.0-or-later
 	<string name="browse_tree_need_to_agree_legal_desc">Voir les réglages</string>
 	<string name="toast_indexing_started">Indexation USB en cours …</string>
 	<string name="toast_indexing_completed">Indexation USB terminée</string>
-	<string name="toast_no_next_track">Aucun titre suivant</string>
-	<string name="toast_no_prev_track">Aucun titre précédent</string>
-	<string name="toast_eject_completed">Clé USB éjectée, vous pouvez la débrancher en toute sécurité.</string>
-	<string name="toast_error">ERREUR: %1$s</string>
-	<string name="toast_error_audio_focus_denied">Impossible d\'accéder au focus audio</string>
-	<string name="toast_error_USB_init">Erreur de connexion USB</string>
-	<string name="toast_error_no_filesystem">Aucun système de fichiers pris en charge</string>
-	<string name="toast_error_library_creation_fail">Erreur de création de la bibliothèque</string>
-	<string name="toast_error_invalid_state">État invalide</string>
-	<string name="toast_error_IO">E/S</string>
-	<string name="toast_error_malformed_data">Données au mauvais format</string>
-	<string name="toast_error_timeout">Délai dépassé</string>
-	<string name="toast_error_not_supported">Non pris en charge</string>
-	<string name="toast_error_no_USB_device">Aucune clé USB</string>
-	<string name="toast_error_unknown">Inconnue</string>
+	<string name="no_next_track">Aucun titre suivant</string>
+	<string name="no_prev_track">Aucun titre précédent</string>
+	<string name="eject_completed">Clé USB éjectée, vous pouvez la débrancher en toute sécurité.</string>
+	<string name="error">ERREUR: %1$s</string>
+	<string name="error_audio_focus_denied">Impossible d\'accéder au focus audio</string>
+	<string name="error_USB_init">Erreur de connexion USB</string>
+	<string name="error_no_filesystem">Aucun système de fichiers pris en charge</string>
+	<string name="error_library_creation_fail">Erreur de création de la bibliothèque</string>
+	<string name="error_invalid_state">État invalide</string>
+	<string name="error_IO">E/S</string>
+	<string name="error_malformed_data">Données au mauvais format</string>
+	<string name="error_timeout">Délai dépassé</string>
+	<string name="error_not_supported">Non pris en charge</string>
+	<string name="error_no_USB_device">Aucune clé USB</string>
+	<string name="error_unknown">Inconnue</string>
 	<string name="notif_action_play">Écouter</string>
 	<string name="notif_action_pause">Pause</string>
 	<string name="notif_action_stop">Arrêter</string>
@@ -106,8 +106,8 @@ Project\n&#x2013; la bibliothèque libaums créée par Magnus Jahnen\n&#x2013; l
 sont créées par Google\n&#x2013; Firebase Crashlytics\n\nTextes de licence:\nwww.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/licenses/gpl-3.0.html</string>
 	<string name="legal_disclaimer_confirm_btn">Accepter</string>
 	<string name="legal_disclaimer_cancel_btn">Annuler</string>
-	<string name="toast_error_no_tracks">Aucun titre</string>
-	<string name="toast_error_not_enough_space_for_log">Pas assez d\'espace pour écrire le fichier journal.</string>
+	<string name="error_no_tracks">Aucun titre</string>
+	<string name="error_not_enough_space_for_log">Pas assez d\'espace pour écrire le fichier journal.</string>
 	<string name="setting_USB_status_too_many_files_in_dir">Trop de fichiers dans un répertoire, veuillez
 utiliser des sous-répertoires.</string>
 	<string name="setting_read_metadata">Lire les métadonnées</string>
@@ -116,7 +116,7 @@ utiliser des sous-répertoires.</string>
 	<string name="setting_delete_databases">Supprimer des bibliothèques</string>
 	<string name="setting_database_status_title">Bibliothèque</string>
 	<string name="setting_enable_replaygain">ReplayGain</string>
-	<string name="toast_searching_voice_input">Rechercher: \"%1$s\"</string>
+	<string name="searching_voice_input">Rechercher: \"%1$s\"</string>
 	<string name="setting_read_metadata_when_connected">Lorsque clé USB connecté</string>
 	<string name="setting_read_metadata_manual">Manuelle</string>
 	<string name="setting_read_metadata_off">Désactivé</string>
@@ -129,6 +129,6 @@ utiliser des sous-répertoires.</string>
 	<string name="setting_crash_reporting_title">Envoyer des rapports de plantage</string>
 	<string name="setting_crash_reporting_desc">Envoyer automatiquement des rapports de plantage au développeur pour
 l\'aider améliorer l\'application (nécessite une connexion Internet).</string>
-	<string name="toast_error_cannot_read_file">Impossible de lire le fichier: %1$s</string>
+	<string name="cannot_read_file">Impossible de lire le fichier: %1$s</string>
 	<string name="setting_website_title">Site Internet</string>
 </resources>
