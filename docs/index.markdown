@@ -21,7 +21,7 @@ This app will **play audio files** from an attached **USB flash drive** in cars 
     - **skip** forwards/backwards
     - **seek** forwards/backwards
     - **shuffle** and **repeat** mode
-- currently playing track shows **album art**
+- tracks and albums show **album art**
 - **compilation albums** are indicated (if marked as such in metadata)
 - **persistency**: remembers the last used playback queue and playback position
 - **search**: search for entries using the on-screen keyboard
@@ -29,10 +29,15 @@ This app will **play audio files** from an attached **USB flash drive** in cars 
 - [**ReplayGain**](https://en.wikipedia.org/wiki/ReplayGain) for volume normalization of tracks
 - [**gapless playback**](https://en.wikipedia.org/wiki/Gapless_playback) for FLAC files
 - support for **voice input**
+- **playlists** (**m3u**, **pls**, **xspf**) can be played back from file view
 
 ## Release notes
 
 Please see Github for a [list of changes for each version of the app](https://github.com/MoleMan1024/audiowagon/blob/master/CHANGELOG.md).
+
+⚠ 2022-03-31 ⚠: I have now gotten two reports where people have upgraded to the latest Android Automotive 11 in their
+cars (Volvo and Polestar update 2.0) and they say AudioWagon no longer works 😟 I am aware, I have no clue yet what they
+have done in that software for it to no longer work and I don't have the upgrade in my own car yet to confirm.
 
 ## Limitations
 
