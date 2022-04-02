@@ -12,6 +12,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.6] - 2022-04-02
+
+### Added
+
+- some users that have gotten a new Polestar / Volvo car software version 2.0 with Android Automotive OS 11 in workshops
+  have reported that USB drives are no longer detected. This is required for AudioWagon to work at all. I would like to
+  investigate this issue before the update is rolled out via OTA to many users mid of April. To investigate, I added a
+  possiblity to view the log file on screen via AudioWagon settings and tapping on the "version" field. It would be very
+  helpful if someone that has this issue could provide me some photos of the contents of this log window before
+  and after they plug in their USB drive, maybe there is an error message in there that will help me fix this 
+  [#68](https://github.com/MoleMan1024/audiowagon/issues/68)
+
 
 ## [1.5.0] - 2022-02-26
 
@@ -29,7 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Playlist files (.m3u, .pls and .xspf) that reference other files on the USB drive can now be played back from the 
+- Playlist files (.m3u, .pls and .xspf) that reference other files on the USB drive can now be played back from the
   file view. [#51](https://github.com/MoleMan1024/audiowagon/issues/51)
 
 
@@ -67,9 +79,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the skip previous buttons will go to the previous track in the playback queue. However when the currently playing
   track has already played more than 20 seconds, the previous buttons will now restart the track. This is more in-line
   with the behaviour in other media software [#45](https://github.com/MoleMan1024/audiowagon/issues/45)
-- the app has been extended to support album art in directories. The highest priority is the album art embedded in the 
-  audio file. If no such album art is found, the app will now look also for .jpg or .png in the same directory as the 
-  audio file with usual filenames (e.g. "front.jpg", "folder.png", "cover.jpg", "index.jpg", "albumart.jpg", etc.) 
+- the app has been extended to support album art in directories. The highest priority is the album art embedded in the
+  audio file. If no such album art is found, the app will now look also for .jpg or .png in the same directory as the
+  audio file with usual filenames (e.g. "front.jpg", "folder.png", "cover.jpg", "index.jpg", "albumart.jpg", etc.)
   [#36](https://github.com/MoleMan1024/audiowagon/issues/36)
 
 
@@ -103,8 +115,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - extended the option "Read metadata" with a "manual" setting. This allows you to index metadata of audio files on the
-  connected USB drive at your request only. The 
-  [FAQ was updated](https://moleman1024.github.io/audiowagon/faq.html#what-happens-during-indexing) with a section 
+  connected USB drive at your request only. The
+  [FAQ was updated](https://moleman1024.github.io/audiowagon/faq.html#what-happens-during-indexing) with a section
   explaining the behaviour. [#21](https://github.com/MoleMan1024/audiowagon/issues/21)
 
 ### Added
@@ -112,11 +124,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - added a setting to select the behaviour of the app when listening to audio and a route guidance voice prompt needs to
   be played. You can now select to either pause the audio (more suitable for audiobooks) or continue playing the audio
   at a lower volume (more suitable for music). [#24](https://github.com/MoleMan1024/audiowagon/issues/24)
-- I still see RemoteServiceExceptions in the Google Play Console but no user has reported any issue to me. That's why 
-  I added *Google Firebase Crashlytics* to the app now to see where exactly these crashes are coming from. This 
-  Crashlytics library will send more detailed error/crash information to me via internet. This setting is disabled by 
-  default for data privacy reasons, please see the 
-  [privacy policy](https://github.com/MoleMan1024/audiowagon/blob/master/PRIVACY_POLICY.md). You will also need to 
+- I still see RemoteServiceExceptions in the Google Play Console but no user has reported any issue to me. That's why
+  I added *Google Firebase Crashlytics* to the app now to see where exactly these crashes are coming from. This
+  Crashlytics library will send more detailed error/crash information to me via internet. This setting is disabled by
+  default for data privacy reasons, please see the
+  [privacy policy](https://github.com/MoleMan1024/audiowagon/blob/master/PRIVACY_POLICY.md). You will also need to
   re-accept the legal disclaimer.
 
 
@@ -124,7 +136,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- fixed an issue in 1.1.3 where number of characters for directory groups in browse view was not calculated 
+- fixed an issue in 1.1.3 where number of characters for directory groups in browse view was not calculated
   [#54](https://github.com/MoleMan1024/audiowagon/issues/54)
 
 
@@ -134,15 +146,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - avoid to extract ReplayGain from a track when such a track does not exist
 - AudioWagon will store the last playback position when you exit the app. However after reaching the end of a playback
-  queue and exiting the app, AudioWagon would still restore a previous playback state from somewhere earlier in the 
-  playback queue which was confusing. Now, when the playback queue ends (without repeat mode), the stored playback 
+  queue and exiting the app, AudioWagon would still restore a previous playback state from somewhere earlier in the
+  playback queue which was confusing. Now, when the playback queue ends (without repeat mode), the stored playback
   position will be cleared instead.
 
 ### Changed
 
 - create album art bitmaps based on the root hint size provided by MediaBrowser clients which should slightly improve
   memory consumption
-- calculate the possible number of characters based on screen resolution to be able to use more available screen space 
+- calculate the possible number of characters based on screen resolution to be able to use more available screen space
   for artist/album/track group names in the browse view
 - try once more to avoid the elusive RemoteServiceExceptions
 - improve robustness slightly when suspending to RAM
@@ -155,7 +167,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - A situation could occur where indexing was started multiple times in parallel which would mess up the internal
-  database. This is avoided now. [#46](https://github.com/MoleMan1024/audiowagon/issues/46), 
+  database. This is avoided now. [#46](https://github.com/MoleMan1024/audiowagon/issues/46),
   [#49](https://github.com/MoleMan1024/audiowagon/issues/49)
 - Depending on timing of certain events sometimes two USB permission popups could appear right after each other e.g.
   after entering the car. Now only one popup should be displayed. Related to [#46](https://github.com/MoleMan1024/audiowagon/issues/46)
@@ -166,10 +178,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - The app will now interpret the *album artist* field in the metadata of your music files. To make use of this feature
-  when updating from 1.0.1 or lower you will need to delete your database via the AudioWagon settings to force the app 
-  to re-create the database. [#22](https://github.com/MoleMan1024/audiowagon/issues/22) and 
-  [#1](https://github.com/MoleMan1024/audiowagon/issues/1). 
-  The behaviour has been documented in a 
+  when updating from 1.0.1 or lower you will need to delete your database via the AudioWagon settings to force the app
+  to re-create the database. [#22](https://github.com/MoleMan1024/audiowagon/issues/22) and
+  [#1](https://github.com/MoleMan1024/audiowagon/issues/1).
+  The behaviour has been documented in a
   [FAQ section](https://moleman1024.github.io/audiowagon/faq.html#why-do-my-compilation-albums-show-up-as-separate-albums).
 
 
@@ -210,9 +222,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- fix filesystem corruption due to issues in *libaums* library. This will also remove the limitation 
+- fix filesystem corruption due to issues in *libaums* library. This will also remove the limitation
   of having max 128 files per directory. The issue was a combination of ignoring data when reading long FAT cluster
-  chains as well as unintended writing to USB filesystem while reading from it in multiple threads 
+  chains as well as unintended writing to USB filesystem while reading from it in multiple threads
   [#37](https://github.com/MoleMan1024/audiowagon/issues/37)
 
 
