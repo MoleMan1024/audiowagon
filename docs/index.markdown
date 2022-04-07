@@ -11,12 +11,22 @@ This app will **play audio files** from an attached **USB flash drive** in cars 
 
 ## ⚠ 2022-04-06 ⚠ Important message
 
-It looks like **Polestar and Volvo have blocked access to USB mass storage devices in their car software 2.0** (unclear
-if this is a bug or they did it deliberately, I suspect the latter). You will *not* be able to use the app in cars using
-this software version. 
+**Polestar and Volvo have recently blocked access to USB mass storage devices in their car software 2.0**. You will
+*not* be able to use the app in cars using this software version. 
 
 I can't fix this, please complain to Polestar or Volvo if you have this issue and disagree with the fact that a feature 
 like playing music from USB (that was advertised in the original press release) is no longer possible.
+
+**2022-04-07:** Polestar has released a statement on this on their facebook group:
+
+> "The latest update (P2.0) introduces the latest Android Automotive OS to Polestar 2 (Android R). This has temporarily
+> limited the functionality available from the USB-C port in preparation for future functionality. This change is
+> expected to be updated in the next software update (P2.1) and we apologise for the inconvenience in the interim."
+
+So as software engineer my advice would be to still install the software update (software engineers do not assume 
+people skip updates, there might be more fixes than what is listed in the release notes) and for now use Bluetooth 
+audio player or streaming music and hope we get the functionality back with Polestar / Volvo car software 2.1 as stated
+above. I will see if I can come up with some alternative in the meantime.
 
 
 ![AudioWagon in car](/img/audiowagon.jpg)
