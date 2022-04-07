@@ -9,6 +9,16 @@ nav_order: 1
 This app will **play audio files** from an attached **USB flash drive** in cars equipped with **Android™ Automotive OS**
 (for example Polestar 2™, Volvo XC40 Recharge™, &hellip;)[^1].
 
+## ⚠ 2022-04-06 ⚠ Important message
+
+It looks like **Polestar and Volvo have blocked access to USB mass storage devices in their car software 2.0** (unclear
+if this is a bug or they did it deliberately, I suspect the latter). You will *not* be able to use the app in cars using
+this software version. 
+
+I can't fix this, please complain to Polestar or Volvo if you have this issue and disagree with the fact that a feature 
+like playing music from USB (that was advertised in the original press release) is no longer possible.
+
+
 ![AudioWagon in car](/img/audiowagon.jpg)
 
 ## Features
@@ -35,12 +45,9 @@ This app will **play audio files** from an attached **USB flash drive** in cars 
 
 Please see Github for a [list of changes for each version of the app](https://github.com/MoleMan1024/audiowagon/blob/master/CHANGELOG.md).
 
-⚠ 2022-03-31 ⚠: I have now gotten two reports where people have upgraded to the latest Android Automotive 11 in their
-cars (Volvo and Polestar update 2.0) and they say AudioWagon no longer works 😟 I am aware, I have no clue yet what they
-have done in that software for it to no longer work and I don't have the upgrade in my own car yet to confirm.
-
 ## Limitations
 
+- The app will no longer be able to access USB drives in Polestar / Volvo car software 2.0 (Android 11)
 - The app can *not* play back **.wma** files
 - *Some* people have reported issues when using the app with a **USB to micro SD card adapter** where no files could be
   played back and lots of error messages were shown. In such cases the adapter is probably not compatible with the
