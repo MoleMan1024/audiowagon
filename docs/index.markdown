@@ -28,6 +28,13 @@ people skip updates, there might be more fixes than what is listed in the releas
 audio player or streaming music and hope we get the functionality back with Polestar / Volvo car software 2.1 as stated
 above. I will see if I can come up with some alternative in the meantime.
 
+**2022-05-17:** Polestar has announced on Facebook that they did *not* fix the USB function in update P2.1 yet:
+
+> Our goal was to be able to reintroduce this [USB] functionality in P2.1. Unfortunately, this has been delayed. The 
+> functionality will be reintroduced in an upcoming software update. We're sorry for the inconvenience in the interim.
+
+😥 So let's wait for P2.2.
+
 
 ![AudioWagon in car](/img/audiowagon.jpg)
 
