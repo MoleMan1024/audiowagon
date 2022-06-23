@@ -36,7 +36,6 @@ open class USBAudioDataSource(
 
     @Synchronized
     override fun close() {
-        logger.verbose(TAG, "close(usbFile=$usbFile)")
         if (isClosed || hasError) {
             usbFile = null
             return
@@ -44,7 +43,6 @@ open class USBAudioDataSource(
         try {
             usbFile?.close()
             isClosed = true
-            logger.verbose(TAG, "closed usbFile=$usbFile")
             usbFile = null
         } catch (exc: IOException) {
             // If we rethrow this, it will trigger a fatal SIGABRT and the app will be restarted.

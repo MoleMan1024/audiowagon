@@ -47,10 +47,9 @@ class ContentHierarchyRootAlbums(
     override suspend fun getAudioItems(): List<AudioItem> {
         val items: MutableList<AudioItem> = mutableListOf()
         val repo = audioItemLibrary.getPrimaryRepository() ?: return emptyList()
-        // TODO: this will need improvements if we ever have multiple repositories in parallel,
-        //  albums/artists might overlap across storage locations
         items += repo.getAllAlbums()
-        return items.sortedBy { it.album.lowercase() }
+        // items are already sorted in database query
+        return items
     }
 
     private suspend fun getNumAlbums(): Int {

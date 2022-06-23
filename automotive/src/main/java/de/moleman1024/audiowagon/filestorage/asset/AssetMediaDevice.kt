@@ -10,7 +10,9 @@ import android.content.res.AssetManager
 import android.media.MediaDataSource
 import android.net.Uri
 import de.moleman1024.audiowagon.filestorage.AudioFile
+import de.moleman1024.audiowagon.filestorage.Directory
 import de.moleman1024.audiowagon.filestorage.MediaDevice
+import de.moleman1024.audiowagon.log.Logger
 import java.io.File
 
 
@@ -18,6 +20,8 @@ import java.io.File
  * NOTE: assets bundled with the app are only used to pass Google's automatic reviews which require some demo data
  */
 class AssetMediaDevice(private val assetManager: AssetManager) : MediaDevice {
+    override val TAG = "AssetMediaDevice"
+    override val logger = Logger
     val id: String = "assets"
     var isClosed: Boolean = false
 
@@ -34,6 +38,7 @@ class AssetMediaDevice(private val assetManager: AssetManager) : MediaDevice {
         }
         return files
     }
+
 
     override fun getDataSourceForURI(uri: Uri): MediaDataSource {
         return AssetAudioDataSource(getFileDescriptorFromURI(uri))
@@ -56,6 +61,11 @@ class AssetMediaDevice(private val assetManager: AssetManager) : MediaDevice {
 
     override fun getName(): String {
         return "AssetMediaDevice{id=$id}"
+    }
+
+    override fun getFileFromURI(uri: Uri): Any {
+        // this is not used in AssetStorageLocation
+        return Directory(Uri.parse(getRoot()))
     }
 
     fun close() {

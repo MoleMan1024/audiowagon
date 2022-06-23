@@ -10,7 +10,6 @@ import android.support.v4.media.MediaBrowserCompat.MediaItem
 import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.filestorage.AudioFile
 import de.moleman1024.audiowagon.filestorage.AudioFileStorage
-import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -35,7 +34,7 @@ class ContentHierarchySingleFile(
         val items: MutableList<AudioItem> = mutableListOf()
         val storageLocation = audioFileStorage.getPrimaryStorageLocation()
         val audioFile = AudioFile(Util.createURIForPath(storageLocation.storageID, id.path))
-        items += audioItemLibrary.createAudioItemForFile(audioFile)
+        items += AudioItemLibrary.createAudioItemForFile(audioFile)
         return items
     }
 

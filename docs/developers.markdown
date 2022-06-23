@@ -49,7 +49,7 @@ sdcard.path = C:\<path to SD card>.img
 
 ## How to install in car
 
-(draft: I might have forgotten some steps)
+(I might have forgotten some steps)
 
 The only way to get the app into the car right now is via *Google Play Store*. You will need to [sign up for a developer
 account](https://play.google.com/console/u/0/signup) (costs *15 USD*). Also note that you will *not* be able to connect
@@ -129,6 +129,15 @@ Some notes on this process:
   This change will go into `product.img`. But I think `adbd` will work without this change as well.
 - I needed to reduce the number of parallel jobs (`-j2` instead of `-j4`) to not run out of memory in my virtual
   machine
+- In `packages/modules/adb/daemon/main.cpp` you can set `auth_require = false;` always so you don't ever get an ADB USB
+  debugging permission popup.
+- When doing `adb sync vendor` in last step, note this is not for `vendor.img` but for `vendor/` directory that needs to
+  be uploaded to device as well. Without this the GUI scale is messed up (and you might not be able to click on *Accept*
+  when asked for USB debugging permissions, use trick above instead).
+- Alternatively: [procedure for a Raspberry Pi 4 and AAOS
+  11](https://medium.com/snapp-automotive/android-automotive-os-11-on-a-raspberry-pi-2abaa133f468) (for newer
+  Raspberry Pi 4B model it needs an updated `start4.elf` and `fixup4.dat` from e.g.
+  `2021-05-07-raspios-buster-armhf.zip`)
 
 Since you will want to use the USB port of the phone, you must switch `adbd` to work via Wi-Fi whenever you start up the
 phone. This can be done using these steps:

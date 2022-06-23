@@ -16,14 +16,14 @@ inline val MediaMetadataCompat.descriptionForLog
         stringBuilder.append("\"album\":\"" + getString(MediaMetadataCompat.METADATA_KEY_ALBUM) + "\" ,")
         stringBuilder.append("\"title\":\"" + getString(MediaMetadataCompat.METADATA_KEY_TITLE) + "\" ,")
         stringBuilder.append("\"trackNum\":" + getLong(MediaMetadataCompat.METADATA_KEY_TRACK_NUMBER) + ", ")
-        stringBuilder.append("\"genre\":\"" + getString(MediaMetadataCompat.METADATA_KEY_GENRE) + "\" ,")
+        stringBuilder.append("\"discNum\":" + getLong(MediaMetadataCompat.METADATA_KEY_DISC_NUMBER) + ", ")
         stringBuilder.append("\"year\":" + getLong(MediaMetadataCompat.METADATA_KEY_YEAR) + ", ")
         stringBuilder.append("\"duration\":" + getLong(MediaMetadataCompat.METADATA_KEY_DURATION) + ", ")
         stringBuilder.append("\"displayTitle\":\"" + getString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE) + "\", ")
         stringBuilder.append(
-            "\"displaySubtitle\":\"" + getString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE) + "\" ,"
+            "\"displaySubtitle\":\"" + getString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE) + "\", "
         )
-        stringBuilder.append("\"artURI\":\"" + getString(MediaMetadataCompat.METADATA_KEY_ART_URI) + "\" ,")
+        stringBuilder.append("\"artURI\":\"" + getString(MediaMetadataCompat.METADATA_KEY_ART_URI) + "\", ")
         stringBuilder.append("\"iconURI\":\"" + getString(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON_URI) + "\"}")
         return stringBuilder.toString()
     }

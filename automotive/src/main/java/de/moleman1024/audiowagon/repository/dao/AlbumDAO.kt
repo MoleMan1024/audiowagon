@@ -10,7 +10,7 @@ import androidx.room.Insert
 import androidx.room.Query
 import de.moleman1024.audiowagon.repository.MAX_DATABASE_SEARCH_ROWS
 import de.moleman1024.audiowagon.repository.entities.Album
-import de.moleman1024.audiowagon.repository.entities.AlbumFTS
+import de.moleman1024.audiowagon.repository.entities.AlbumGroup
 
 @Dao
 interface AlbumDAO {
@@ -18,7 +18,10 @@ interface AlbumDAO {
     @Insert
     fun insert(album: Album): Long
 
-    @Query("SELECT * FROM album ORDER BY name COLLATE NOCASE ASC")
+    @Insert
+    fun insertGroup(albumGroup: AlbumGroup): Long
+
+    @Query("SELECT * FROM album ORDER BY COALESCE(NULLIF(sortName,''), name) COLLATE NOCASE ASC")
     fun queryAll(): List<Album>
 
     @Query("SELECT * FROM album WHERE albumId = :albumId")
@@ -37,13 +40,15 @@ interface AlbumDAO {
     fun queryAlbumsByArtist(artistId: Long): List<Album>
 
     @Query(
-        "SELECT * FROM album WHERE albumId IN (SELECT albumId FROM album ORDER BY name COLLATE NOCASE ASC LIMIT " +
-                ":maxNumRows OFFSET :offsetRows) ORDER BY name COLLATE NOCASE ASC"
+        "SELECT * FROM album WHERE albumId IN (SELECT albumId FROM album ORDER BY " +
+                "COALESCE(NULLIF(sortName,''), name) COLLATE NOCASE ASC LIMIT " +
+                ":maxNumRows OFFSET :offsetRows) ORDER BY COALESCE(NULLIF(sortName,''), name) COLLATE NOCASE ASC"
     )
     fun queryAlbumsLimitOffset(maxNumRows: Int, offsetRows: Int): List<Album>
 
     @Query(
-        "SELECT * FROM album WHERE parentArtistId = :artistId ORDER BY name COLLATE NOCASE ASC LIMIT :maxNumRows " +
+        "SELECT * FROM album WHERE parentArtistId = :artistId ORDER BY " +
+                "COALESCE(NULLIF(sortName,''), name) COLLATE NOCASE ASC LIMIT :maxNumRows " +
                 "OFFSET :offsetRows"
     )
     fun queryAlbumsForArtistLimitOffset(maxNumRows: Int, offsetRows: Int, artistId: Long): List<Album>
@@ -54,8 +59,14 @@ interface AlbumDAO {
     @Query("SELECT COUNT(*) FROM album")
     fun queryNumAlbums(): Int
 
+    @Query("SELECT * FROM albumGroup WHERE albumGroupIndex = :groupIndex")
+    fun queryAlbumGroupByIndex(groupIndex: Int): AlbumGroup?
+
+    @Query("SELECT * FROM album WHERE albumArtURIString = :uriString")
+    fun queryAlbumByAlbumArt(uriString: String): Album?
+
     @Query(
-        "SELECT album.* FROM album JOIN albumfts ON album.name = albumfts.name WHERE albumfts MATCH :query " +
+        "SELECT DISTINCT album.* FROM album JOIN albumfts ON album.name = albumfts.name WHERE albumfts MATCH :query " +
                 "LIMIT $MAX_DATABASE_SEARCH_ROWS"
     )
     fun search(query: String): List<Album>
@@ -69,5 +80,8 @@ interface AlbumDAO {
 
     @Query("DELETE FROM album WHERE albumId = :albumId")
     fun deleteByID(albumId: Long)
+
+    @Query("DELETE FROM albumGroup")
+    fun deleteAllAlbumGroups()
 
 }

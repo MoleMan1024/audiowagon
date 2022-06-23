@@ -5,6 +5,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 package de.moleman1024.audiowagon.util
 
+import android.app.ActivityManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -12,6 +13,7 @@ import android.content.ServiceConnection
 import android.net.Uri
 import android.os.IBinder
 import android.support.v4.media.MediaBrowserCompat
+import android.support.v4.media.session.MediaControllerCompat
 import androidx.media.MediaBrowserServiceCompat
 import androidx.test.platform.app.InstrumentationRegistry
 import de.moleman1024.audiowagon.AudioBrowserService
@@ -27,7 +29,7 @@ class ServiceFixture {
     private val intent = Intent(
         MediaBrowserServiceCompat.SERVICE_INTERFACE, Uri.EMPTY, targetContext, AudioBrowserService::class.java
     )
-    private val connection = object: ServiceConnection {
+    private val connection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             Logger.debug(TAG, "onServiceConnected(name=$name, $service=$service)")
             isBound = true
@@ -40,6 +42,9 @@ class ServiceFixture {
     }
     lateinit var mediaBrowser: MediaBrowserCompat
     lateinit var audioBrowserService: AudioBrowserService
+    var mediaController: MediaControllerCompat? = null
+    val transportControls get() = mediaController?.transportControls
+    val playbackQueue get() = mediaController?.queue
 
     fun bind() {
         Logger.debug(TAG, "Binding service")
@@ -61,6 +66,9 @@ class ServiceFixture {
                     override fun onConnected() {
                         Logger.debug(TAG, "onConnected()")
                         audioBrowserService = AudioBrowserService.getInstance()
+                        audioBrowserService.sessionToken?.let {
+                            mediaController = MediaControllerCompat(targetContext, it)
+                        }
                     }
 
                     override fun onConnectionSuspended() {
@@ -112,8 +120,14 @@ class ServiceFixture {
         if (this::mediaBrowser.isInitialized) {
             mediaBrowser.disconnect()
         }
+        if (mediaController != null) {
+            mediaController = null
+        }
         unbindService()
         stopService()
+        Logger.debug(TAG, "Killing service")
+        val activityManager = targetContext.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        activityManager.killBackgroundProcesses("de.moleman1024.audiowagon")
         Logger.debug(TAG, "Shut down service fixture")
     }
 }

@@ -13,15 +13,13 @@ import de.moleman1024.audiowagon.filestorage.MediaDevice
 import de.moleman1024.audiowagon.log.Logger
 import java.io.File
 import java.io.IOException
-import java.lang.IllegalArgumentException
-
-private const val TAG = "SDCardMediaDevice"
-private val logger = Logger
 
 /**
  * NOTE: SD card support is only enabled in debug builds used in the Android emulator
  */
 class SDCardMediaDevice(val id: String, private val rootDir: String = "/") : MediaDevice {
+    override val TAG = "SDCardMediaDevice"
+    override val logger = Logger
     private val rootDirectory = File("/storage/${id}${rootDir}")
     var isClosed: Boolean = false
 
@@ -33,30 +31,6 @@ class SDCardMediaDevice(val id: String, private val rootDir: String = "/") : Med
 
     fun getRoot(): File {
         return rootDirectory
-    }
-
-    fun walkTopDown(rootDirectory: File): Sequence<File> = sequence {
-        val stack = ArrayDeque<Iterator<File>>()
-        val allFilesDirs = mutableMapOf<String, Unit>()
-        // this requires permission READ_EXTERNAL_STORAGE requested at runtime and legacy storage enabled in manifest
-        val filesAtRoot = rootDirectory.listFiles() ?: throw RuntimeException("No permission to list files on SD card")
-        stack.add(filesAtRoot.iterator())
-        while (stack.isNotEmpty()) {
-            if (stack.last().hasNext()) {
-                val fileOrDirectory = stack.last().next()
-                if (!allFilesDirs.containsKey(fileOrDirectory.absolutePath)) {
-                    allFilesDirs[fileOrDirectory.absolutePath] = Unit
-                    if (!fileOrDirectory.isDirectory) {
-                        logger.verbose(TAG, "Found file: ${fileOrDirectory.absolutePath}")
-                        yield(fileOrDirectory)
-                    } else {
-                        stack.add(fileOrDirectory.listFiles()!!.iterator())
-                    }
-                }
-            } else {
-                stack.removeLast()
-            }
-        }
     }
 
     fun getDirectoryContents(directoryURI: Uri): List<File> {
@@ -76,7 +50,7 @@ class SDCardMediaDevice(val id: String, private val rootDir: String = "/") : Med
     }
 
     @Synchronized
-    fun getFileFromURI(uri: Uri): File {
+    override fun getFileFromURI(uri: Uri): File {
         val audioFile = AudioFile(uri)
         val filePath = audioFile.path
         val file = File(filePath)

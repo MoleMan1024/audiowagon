@@ -16,5 +16,5 @@ import java.util.Date
  * metadata of the file has changed (e.g. updated MP3 tags)
  */
 data class AudioFile(override val uri: Uri = Uri.EMPTY): FileLike {
-    var lastModifiedDate: Date = Date(0)
+    override var lastModifiedDate: Date = Date(0)
 }

@@ -5,20 +5,21 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 package de.moleman1024.audiowagon.repository
 
-import androidx.room.Database
-import androidx.room.RoomDatabase
-import de.moleman1024.audiowagon.repository.dao.AlbumDAO
-import de.moleman1024.audiowagon.repository.dao.ArtistDAO
-import de.moleman1024.audiowagon.repository.dao.TrackDAO
+import androidx.room.*
+import de.moleman1024.audiowagon.repository.dao.*
 import de.moleman1024.audiowagon.repository.entities.*
 
 @Database(
-    entities = [Album::class, Artist::class, Track::class, AlbumFTS::class, ArtistFTS::class, TrackFTS::class],
+    entities = [Album::class, Artist::class, Track::class, Path::class, AlbumFTS::class, ArtistFTS::class,
+        TrackFTS::class, PathFTS::class, AlbumGroup::class, ArtistGroup::class, TrackGroup::class,
+        Status::class],
     exportSchema = true,
-    version = 1
+    version = 2,
 )
 abstract class AudioItemDatabase : RoomDatabase() {
     abstract fun albumDAO() : AlbumDAO
     abstract fun artistDAO() : ArtistDAO
     abstract fun trackDAO(): TrackDAO
+    abstract fun pathDAO(): PathDAO
+    abstract fun statusDAO(): StatusDAO
 }

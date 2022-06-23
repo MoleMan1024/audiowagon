@@ -30,9 +30,9 @@ import java.io.UnsupportedEncodingException
 import java.lang.IllegalArgumentException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.*
+import kotlin.collections.LinkedHashMap
 
-private const val TAG = "USBMediaDevice"
-private val logger = Logger
 private const val MINIMUM_FREE_SPACE_FOR_LOGGING_MB = 10
 const val LOG_DIRECTORY = "aw_logs"
 
@@ -48,6 +48,8 @@ private const val DEFAULT_FILESYSTEM_CHUNK_SIZE = 32768
 private const val MAX_NUM_FILEPATHS_TO_CACHE = 20
 
 class USBMediaDevice(private val context: Context, private val usbDevice: USBDevice): MediaDevice {
+    override val TAG = "USBMediaDevice"
+    override val logger = Logger
     private var fileSystem: FileSystem? = null
     private var serialNum: String = ""
     private var isSerialNumAvail: Boolean? = null
@@ -270,39 +272,45 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
     }
 
     /**
-     * Traverses files/directories depth-first
+     * Traverses files/directories breadth-first
      */
     fun walkTopDown(rootDirectory: UsbFile, scope: CoroutineScope): Sequence<UsbFile> = sequence {
-        val stack = ArrayDeque<Iterator<UsbFile>>()
+        val queue = LinkedList<UsbFile>()
         val allFilesDirs = mutableMapOf<String, Unit>()
-        recentFilepathToFileMap.clear()
-        stack.add(rootDirectory.listFiles().sortedBy { it.name }.iterator())
-        while (stack.isNotEmpty()) {
+        clearRecentFilepathToFileMap()
+        allFilesDirs[rootDirectory.absolutePath] = Unit
+        queue.add(rootDirectory)
+        while (queue.isNotEmpty()) {
             scope.ensureActive()
-            if (stack.last().hasNext()) {
-                val fileOrDirectory = stack.last().next()
-                if (!allFilesDirs.containsKey(fileOrDirectory.absolutePath)) {
-                    allFilesDirs[fileOrDirectory.absolutePath] = Unit
-                    assertFileSystemAvailable()
-                    if (!fileOrDirectory.isDirectory) {
-                        logger.verbose(TAG, "Found file: ${fileOrDirectory.absolutePath}")
-                        recentFilepathToFileMap[fileOrDirectory.absolutePath] = fileOrDirectory
+            val fileOrDirectory = queue.removeFirst()
+            assertFileSystemAvailable()
+            if (!fileOrDirectory.isDirectory) {
+                logger.verbose(TAG, "Found file: ${fileOrDirectory.absolutePath}")
+                recentFilepathToFileMap[fileOrDirectory.absolutePath] = fileOrDirectory
+                yield(fileOrDirectory)
+            } else {
+                if (fileOrDirectory.name.contains(Util.DIRECTORIES_TO_IGNORE_REGEX)) {
+                    logger.debug(TAG, "Ignoring directory: ${fileOrDirectory.name}")
+                } else {
+                    logger.debug(TAG, "Walking directory: ${fileOrDirectory.absolutePath}")
+                    recentFilepathToFileMap[fileOrDirectory.absolutePath] = fileOrDirectory
+                    yield(fileOrDirectory)
+                    for (subFileOrDir in fileOrDirectory.listFiles().sortedBy { it.name.lowercase() }) {
                         assertFileSystemAvailable()
-                        yield(fileOrDirectory)
-                    } else {
-                        assertFileSystemAvailable()
-                        if (fileOrDirectory.name.contains(Util.DIRECTORIES_TO_IGNORE_REGEX)) {
-                            logger.debug(TAG, "Ignoring directory: ${fileOrDirectory.name}")
-                        } else {
-                            logger.debug(TAG, "Walking directory: ${fileOrDirectory.absolutePath}")
-                            stack.add(fileOrDirectory.listFiles().sortedBy { it.name }.iterator())
+                        if (!allFilesDirs.containsKey(subFileOrDir.absolutePath)) {
+                            allFilesDirs[subFileOrDir.absolutePath] = Unit
+                            if (subFileOrDir.isDirectory) {
+                                logger.verbose(TAG, "Found directory: ${subFileOrDir.absolutePath}")
+                            }
+                            queue.add(subFileOrDir)
                         }
                     }
                 }
-            } else {
-                stack.removeLast()
             }
         }
+    }
+
+    fun clearRecentFilepathToFileMap() {
         recentFilepathToFileMap.clear()
     }
 
@@ -313,11 +321,12 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
     }
 
     fun getDirectoryContents(directoryURI: Uri): List<UsbFile> {
+        logger.verbose(TAG, "getDirectoryContents(directoryURI=$directoryURI)")
         val directory = getUSBFileFromURI(directoryURI)
         if (!directory.isDirectory) {
             throw IllegalArgumentException("Is not a directory: $directory")
         }
-        return directory.listFiles().sortedBy{ it.name }.toList()
+        return directory.listFiles().sortedBy { it.name }.toList()
     }
 
     override fun getName(): String {
@@ -366,16 +375,25 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
         return USBAudioCachedDataSource(getUSBFileFromURI(uri), fileSystem!!.chunkSize)
     }
 
+    override fun getFileFromURI(uri: Uri): Any {
+        return getUSBFileFromURI(uri)
+    }
+
     @Synchronized
     fun getUSBFileFromURI(uri: Uri): UsbFile {
         val audioFile = AudioFile(uri)
         val filePath = audioFile.path
         val usbFileFromCache: UsbFile? = recentFilepathToFileMap[filePath]
         if (usbFileFromCache != null) {
+            logger.verbose(TAG, "Found file/dir $uri in recentFilepathToFileMap: $usbFileFromCache")
             return usbFileFromCache
         }
-        // "search" in libaums is case-sensitive
-        return getRoot().search(filePath) ?: throw FileNotFoundException("USB file not found: $uri")
+        return if (filePath == "/") {
+            getRoot()
+        } else {
+            // changed libaums to not be case sensitive in search()
+            getRoot().search(filePath) ?: throw FileNotFoundException("USB file not found: $uri")
+        }
     }
 
     /**

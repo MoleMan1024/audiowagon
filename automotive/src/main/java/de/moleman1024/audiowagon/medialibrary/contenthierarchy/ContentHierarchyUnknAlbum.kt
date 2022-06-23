@@ -16,7 +16,6 @@ import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
 import de.moleman1024.audiowagon.medialibrary.RESOURCE_ROOT_URI
 import de.moleman1024.audiowagon.repository.AudioItemRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.yield
 
 private const val TAG = "CHUnknAlbum"
 private val logger = Logger
@@ -71,25 +70,28 @@ class ContentHierarchyUnknAlbum(
         val repo: AudioItemRepository = audioItemLibrary.getRepoForContentHierarchyID(id) ?: return mutableListOf()
         val tracks: List<AudioItem>
         try {
-            tracks = if (id.artistID > DATABASE_ID_UNKNOWN) {
-                repo.getTracksWithUnknAlbumForArtist(id.artistID)
+            val artistId = pickArtistOrAlbumArtistID()
+            tracks = if (artistId >= DATABASE_ID_UNKNOWN) {
+                repo.getTracksWithUnknAlbumForArtist(artistId)
             } else {
-                repo.getTracksWithUnknAlbumForArtist(DATABASE_ID_UNKNOWN)
+                repo.getTracksWithUnknAlbum()
             }
         } catch (exc: IllegalArgumentException) {
             logger.error(TAG, exc.toString())
             return mutableListOf()
         }
-        return tracks.sortedBy { it.title.lowercase() }
+        // tracks are already sorted in database query
+        return tracks
     }
 
     private suspend fun getNumTracks(): Int {
         val numTracks: Int
         val repo = audioItemLibrary.getPrimaryRepository() ?: return 0
-        numTracks = if (id.artistID > DATABASE_ID_UNKNOWN) {
-            repo.getNumTracksWithUnknAlbumForArtist(id.artistID)
+        val artistId = pickArtistOrAlbumArtistID()
+        numTracks = if (artistId >= DATABASE_ID_UNKNOWN) {
+            repo.getNumTracksWithUnknAlbumForArtist(artistId)
         } else {
-            repo.getNumTracksWithUnknAlbumForArtist(DATABASE_ID_UNKNOWN)
+            repo.getNumTracksWithUnknAlbum()
         }
         return numTracks
     }

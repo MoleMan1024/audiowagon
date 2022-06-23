@@ -1,0 +1,657 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 2,
+    "identityHash": "5a083d7d9f12f973637d6ad224f3ab45",
+    "entities": [
+      {
+        "tableName": "Album",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`albumId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `sortName` TEXT NOT NULL, `parentArtistId` INTEGER NOT NULL, `albumArtURIString` TEXT NOT NULL, `albumArtSourceURIString` TEXT NOT NULL, `hasFolderImage` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "albumId",
+            "columnName": "albumId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sortName",
+            "columnName": "sortName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parentArtistId",
+            "columnName": "parentArtistId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "albumArtURIString",
+            "columnName": "albumArtURIString",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "albumArtSourceURIString",
+            "columnName": "albumArtSourceURIString",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "hasFolderImage",
+            "columnName": "hasFolderImage",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "albumId"
+          ],
+          "autoGenerate": true
+        },
+        "indices": [
+          {
+            "name": "index_Album_name",
+            "unique": false,
+            "columnNames": [
+              "name"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_Album_name` ON `${TABLE_NAME}` (`name`)"
+          },
+          {
+            "name": "index_Album_sortName",
+            "unique": false,
+            "columnNames": [
+              "sortName"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_Album_sortName` ON `${TABLE_NAME}` (`sortName`)"
+          },
+          {
+            "name": "index_Album_parentArtistId",
+            "unique": false,
+            "columnNames": [
+              "parentArtistId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_Album_parentArtistId` ON `${TABLE_NAME}` (`parentArtistId`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "Artist",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`artistId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `sortName` TEXT NOT NULL, `isAlbumArtist` INTEGER NOT NULL, `isCompilationArtist` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "artistId",
+            "columnName": "artistId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sortName",
+            "columnName": "sortName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isAlbumArtist",
+            "columnName": "isAlbumArtist",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isCompilationArtist",
+            "columnName": "isCompilationArtist",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "artistId"
+          ],
+          "autoGenerate": true
+        },
+        "indices": [
+          {
+            "name": "index_Artist_name",
+            "unique": false,
+            "columnNames": [
+              "name"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_Artist_name` ON `${TABLE_NAME}` (`name`)"
+          },
+          {
+            "name": "index_Artist_sortName",
+            "unique": false,
+            "columnNames": [
+              "sortName"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_Artist_sortName` ON `${TABLE_NAME}` (`sortName`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "Track",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`trackId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `sortName` TEXT NOT NULL, `parentArtistId` INTEGER NOT NULL, `parentAlbumArtistId` INTEGER NOT NULL, `parentAlbumId` INTEGER NOT NULL, `trackNum` INTEGER NOT NULL, `discNum` INTEGER NOT NULL, `albumArtURIString` TEXT NOT NULL, `yearEpochTime` INTEGER NOT NULL, `uriString` TEXT NOT NULL, `lastModifiedEpochTime` INTEGER NOT NULL, `durationMS` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "trackId",
+            "columnName": "trackId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sortName",
+            "columnName": "sortName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parentArtistId",
+            "columnName": "parentArtistId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parentAlbumArtistId",
+            "columnName": "parentAlbumArtistId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parentAlbumId",
+            "columnName": "parentAlbumId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "trackNum",
+            "columnName": "trackNum",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "discNum",
+            "columnName": "discNum",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "albumArtURIString",
+            "columnName": "albumArtURIString",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "yearEpochTime",
+            "columnName": "yearEpochTime",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "uriString",
+            "columnName": "uriString",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastModifiedEpochTime",
+            "columnName": "lastModifiedEpochTime",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "durationMS",
+            "columnName": "durationMS",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "trackId"
+          ],
+          "autoGenerate": true
+        },
+        "indices": [
+          {
+            "name": "index_Track_name",
+            "unique": false,
+            "columnNames": [
+              "name"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_Track_name` ON `${TABLE_NAME}` (`name`)"
+          },
+          {
+            "name": "index_Track_sortName",
+            "unique": false,
+            "columnNames": [
+              "sortName"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_Track_sortName` ON `${TABLE_NAME}` (`sortName`)"
+          },
+          {
+            "name": "index_Track_parentArtistId",
+            "unique": false,
+            "columnNames": [
+              "parentArtistId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_Track_parentArtistId` ON `${TABLE_NAME}` (`parentArtistId`)"
+          },
+          {
+            "name": "index_Track_parentAlbumArtistId",
+            "unique": false,
+            "columnNames": [
+              "parentAlbumArtistId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_Track_parentAlbumArtistId` ON `${TABLE_NAME}` (`parentAlbumArtistId`)"
+          },
+          {
+            "name": "index_Track_parentAlbumId",
+            "unique": false,
+            "columnNames": [
+              "parentAlbumId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_Track_parentAlbumId` ON `${TABLE_NAME}` (`parentAlbumId`)"
+          },
+          {
+            "name": "index_Track_yearEpochTime",
+            "unique": false,
+            "columnNames": [
+              "yearEpochTime"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_Track_yearEpochTime` ON `${TABLE_NAME}` (`yearEpochTime`)"
+          },
+          {
+            "name": "index_Track_uriString",
+            "unique": false,
+            "columnNames": [
+              "uriString"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_Track_uriString` ON `${TABLE_NAME}` (`uriString`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "Path",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`pathId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `parentPathId` INTEGER NOT NULL, `parentPath` TEXT NOT NULL, `name` TEXT NOT NULL, `isDirectory` INTEGER NOT NULL, `lastModifiedEpochTime` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "pathId",
+            "columnName": "pathId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parentPathId",
+            "columnName": "parentPathId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parentPath",
+            "columnName": "parentPath",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isDirectory",
+            "columnName": "isDirectory",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastModifiedEpochTime",
+            "columnName": "lastModifiedEpochTime",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "pathId"
+          ],
+          "autoGenerate": true
+        },
+        "indices": [
+          {
+            "name": "index_Path_parentPathId",
+            "unique": false,
+            "columnNames": [
+              "parentPathId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_Path_parentPathId` ON `${TABLE_NAME}` (`parentPathId`)"
+          },
+          {
+            "name": "index_Path_parentPath",
+            "unique": false,
+            "columnNames": [
+              "parentPath"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_Path_parentPath` ON `${TABLE_NAME}` (`parentPath`)"
+          },
+          {
+            "name": "index_Path_name",
+            "unique": false,
+            "columnNames": [
+              "name"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_Path_name` ON `${TABLE_NAME}` (`name`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "ftsVersion": "FTS4",
+        "ftsOptions": {
+          "tokenizer": "simple",
+          "tokenizerArgs": [],
+          "contentTable": "Album",
+          "languageIdColumnName": "",
+          "matchInfo": "FTS4",
+          "notIndexedColumns": [],
+          "prefixSizes": [],
+          "preferredOrder": "ASC"
+        },
+        "contentSyncTriggers": [
+          "CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_AlbumFTS_BEFORE_UPDATE BEFORE UPDATE ON `Album` BEGIN DELETE FROM `AlbumFTS` WHERE `docid`=OLD.`rowid`; END",
+          "CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_AlbumFTS_BEFORE_DELETE BEFORE DELETE ON `Album` BEGIN DELETE FROM `AlbumFTS` WHERE `docid`=OLD.`rowid`; END",
+          "CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_AlbumFTS_AFTER_UPDATE AFTER UPDATE ON `Album` BEGIN INSERT INTO `AlbumFTS`(`docid`, `name`) VALUES (NEW.`rowid`, NEW.`name`); END",
+          "CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_AlbumFTS_AFTER_INSERT AFTER INSERT ON `Album` BEGIN INSERT INTO `AlbumFTS`(`docid`, `name`) VALUES (NEW.`rowid`, NEW.`name`); END"
+        ],
+        "tableName": "AlbumFTS",
+        "createSql": "CREATE VIRTUAL TABLE IF NOT EXISTS `${TABLE_NAME}` USING FTS4(`name` TEXT NOT NULL, content=`Album`)",
+        "fields": [
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [],
+          "autoGenerate": false
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "ftsVersion": "FTS4",
+        "ftsOptions": {
+          "tokenizer": "simple",
+          "tokenizerArgs": [],
+          "contentTable": "Artist",
+          "languageIdColumnName": "",
+          "matchInfo": "FTS4",
+          "notIndexedColumns": [],
+          "prefixSizes": [],
+          "preferredOrder": "ASC"
+        },
+        "contentSyncTriggers": [
+          "CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_ArtistFTS_BEFORE_UPDATE BEFORE UPDATE ON `Artist` BEGIN DELETE FROM `ArtistFTS` WHERE `docid`=OLD.`rowid`; END",
+          "CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_ArtistFTS_BEFORE_DELETE BEFORE DELETE ON `Artist` BEGIN DELETE FROM `ArtistFTS` WHERE `docid`=OLD.`rowid`; END",
+          "CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_ArtistFTS_AFTER_UPDATE AFTER UPDATE ON `Artist` BEGIN INSERT INTO `ArtistFTS`(`docid`, `name`) VALUES (NEW.`rowid`, NEW.`name`); END",
+          "CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_ArtistFTS_AFTER_INSERT AFTER INSERT ON `Artist` BEGIN INSERT INTO `ArtistFTS`(`docid`, `name`) VALUES (NEW.`rowid`, NEW.`name`); END"
+        ],
+        "tableName": "ArtistFTS",
+        "createSql": "CREATE VIRTUAL TABLE IF NOT EXISTS `${TABLE_NAME}` USING FTS4(`name` TEXT NOT NULL, content=`Artist`)",
+        "fields": [
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [],
+          "autoGenerate": false
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "ftsVersion": "FTS4",
+        "ftsOptions": {
+          "tokenizer": "simple",
+          "tokenizerArgs": [],
+          "contentTable": "Track",
+          "languageIdColumnName": "",
+          "matchInfo": "FTS4",
+          "notIndexedColumns": [],
+          "prefixSizes": [],
+          "preferredOrder": "ASC"
+        },
+        "contentSyncTriggers": [
+          "CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_TrackFTS_BEFORE_UPDATE BEFORE UPDATE ON `Track` BEGIN DELETE FROM `TrackFTS` WHERE `docid`=OLD.`rowid`; END",
+          "CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_TrackFTS_BEFORE_DELETE BEFORE DELETE ON `Track` BEGIN DELETE FROM `TrackFTS` WHERE `docid`=OLD.`rowid`; END",
+          "CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_TrackFTS_AFTER_UPDATE AFTER UPDATE ON `Track` BEGIN INSERT INTO `TrackFTS`(`docid`, `name`) VALUES (NEW.`rowid`, NEW.`name`); END",
+          "CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_TrackFTS_AFTER_INSERT AFTER INSERT ON `Track` BEGIN INSERT INTO `TrackFTS`(`docid`, `name`) VALUES (NEW.`rowid`, NEW.`name`); END"
+        ],
+        "tableName": "TrackFTS",
+        "createSql": "CREATE VIRTUAL TABLE IF NOT EXISTS `${TABLE_NAME}` USING FTS4(`name` TEXT NOT NULL, content=`Track`)",
+        "fields": [
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [],
+          "autoGenerate": false
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "ftsVersion": "FTS4",
+        "ftsOptions": {
+          "tokenizer": "simple",
+          "tokenizerArgs": [],
+          "contentTable": "Path",
+          "languageIdColumnName": "",
+          "matchInfo": "FTS4",
+          "notIndexedColumns": [],
+          "prefixSizes": [],
+          "preferredOrder": "ASC"
+        },
+        "contentSyncTriggers": [
+          "CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_PathFTS_BEFORE_UPDATE BEFORE UPDATE ON `Path` BEGIN DELETE FROM `PathFTS` WHERE `docid`=OLD.`rowid`; END",
+          "CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_PathFTS_BEFORE_DELETE BEFORE DELETE ON `Path` BEGIN DELETE FROM `PathFTS` WHERE `docid`=OLD.`rowid`; END",
+          "CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_PathFTS_AFTER_UPDATE AFTER UPDATE ON `Path` BEGIN INSERT INTO `PathFTS`(`docid`, `name`) VALUES (NEW.`rowid`, NEW.`name`); END",
+          "CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_PathFTS_AFTER_INSERT AFTER INSERT ON `Path` BEGIN INSERT INTO `PathFTS`(`docid`, `name`) VALUES (NEW.`rowid`, NEW.`name`); END"
+        ],
+        "tableName": "PathFTS",
+        "createSql": "CREATE VIRTUAL TABLE IF NOT EXISTS `${TABLE_NAME}` USING FTS4(`name` TEXT NOT NULL, content=`Path`)",
+        "fields": [
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [],
+          "autoGenerate": false
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "AlbumGroup",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`albumGroupIndex` INTEGER NOT NULL, `startAlbumId` INTEGER NOT NULL, `endAlbumId` INTEGER NOT NULL, PRIMARY KEY(`albumGroupIndex`))",
+        "fields": [
+          {
+            "fieldPath": "albumGroupIndex",
+            "columnName": "albumGroupIndex",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "startAlbumId",
+            "columnName": "startAlbumId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "endAlbumId",
+            "columnName": "endAlbumId",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "albumGroupIndex"
+          ],
+          "autoGenerate": false
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "ArtistGroup",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`artistGroupIndex` INTEGER NOT NULL, `startArtistId` INTEGER NOT NULL, `endArtistId` INTEGER NOT NULL, PRIMARY KEY(`artistGroupIndex`))",
+        "fields": [
+          {
+            "fieldPath": "artistGroupIndex",
+            "columnName": "artistGroupIndex",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "startArtistId",
+            "columnName": "startArtistId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "endArtistId",
+            "columnName": "endArtistId",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "artistGroupIndex"
+          ],
+          "autoGenerate": false
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "TrackGroup",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`trackGroupIndex` INTEGER NOT NULL, `startTrackId` INTEGER NOT NULL, `endTrackId` INTEGER NOT NULL, PRIMARY KEY(`trackGroupIndex`))",
+        "fields": [
+          {
+            "fieldPath": "trackGroupIndex",
+            "columnName": "trackGroupIndex",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "startTrackId",
+            "columnName": "startTrackId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "endTrackId",
+            "columnName": "endTrackId",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "trackGroupIndex"
+          ],
+          "autoGenerate": false
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "Status",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`storageID` TEXT NOT NULL, `wasCompletedOnce` INTEGER NOT NULL, PRIMARY KEY(`storageID`))",
+        "fields": [
+          {
+            "fieldPath": "storageID",
+            "columnName": "storageID",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wasCompletedOnce",
+            "columnName": "wasCompletedOnce",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "storageID"
+          ],
+          "autoGenerate": false
+        },
+        "indices": [],
+        "foreignKeys": []
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '5a083d7d9f12f973637d6ad224f3ab45')"
+    ]
+  }
+}

@@ -33,6 +33,8 @@ import android.app.Service
 import android.content.ComponentName
 import android.content.Intent
 import android.content.IntentFilter
+import android.net.Uri
+import android.os.Binder
 import android.os.Bundle
 import android.os.IBinder
 import android.support.v4.media.MediaBrowserCompat.MediaItem
@@ -50,7 +52,9 @@ import de.moleman1024.audiowagon.authorization.USBDevicePermissions
 import de.moleman1024.audiowagon.broadcast.PowerEventReceiver
 import de.moleman1024.audiowagon.exceptions.CannotRecoverUSBException
 import de.moleman1024.audiowagon.exceptions.MissingNotifChannelException
+import de.moleman1024.audiowagon.exceptions.NoChangesCancellationException
 import de.moleman1024.audiowagon.filestorage.*
+import de.moleman1024.audiowagon.filestorage.local.LocalFileSync
 import de.moleman1024.audiowagon.log.CrashReporting
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.*
@@ -90,8 +94,14 @@ const val CMD_SET_METADATAREAD_SETTING = "de.moleman1024.audiowagon.CMD_SET_META
 const val METADATAREAD_SETTING_KEY = "metadata_read_setting"
 const val CMD_READ_METADATA_NOW = "de.moleman1024.audiowagon.CMD_READ_METADATA_NOW"
 const val CMD_EJECT = "de.moleman1024.audiowagon.CMD_EJECT"
+const val CMD_SYNC_FILES = "de.moleman1024.audiowagon.CMD_SYNC_FILES"
+const val SYNC_FILES_URL_KEY = "sync_files_url"
 const val AUDIOFOCUS_SETTING_KEY = "audiofocus_setting"
+const val ALBUM_STYLE_KEY = "album_style"
+const val DATA_SOURCE_KEY = "data_source"
 const val CMD_SET_AUDIOFOCUS_SETTING = "de.moleman1024.audiowagon.CMD_SET_AUDIOFOCUS_SETTING"
+const val CMD_SET_ALBUM_STYLE_SETTING = "de.moleman1024.audiowagon.CMD_SET_ALBUM_STYLE_SETTING"
+const val CMD_SET_DATA_SOURCE_SETTING = "de.moleman1024.audiowagon.CMD_SET_DATA_SOURCE_SETTING"
 const val CMD_ENABLE_CRASH_REPORTING = "de.moleman1024.audiowagon.CMD_ENABLE_CRASH_REPORTING"
 const val CMD_DISABLE_CRASH_REPORTING = "de.moleman1024.audiowagon.CMD_DISABLE_CRASH_REPORTING"
 
@@ -120,6 +130,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     private lateinit var persistentStorage: PersistentStorage
     private lateinit var powerEventReceiver: PowerEventReceiver
     private lateinit var crashReporting: CrashReporting
+    private lateinit var localFileSync: LocalFileSync
     private var dispatcher: CoroutineDispatcher = Dispatchers.IO
     private var libraryCreationJob: Job? = null
     private var restoreFromPersistentJob: Job? = null
@@ -152,6 +163,8 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         ContentHierarchyElement.serialize(ContentHierarchyID(ContentHierarchyType.ROOT))
     // needs to be public for accessing logging from testcases
     val logger = Logger
+    private val binder = LocalBinder()
+    private var dataSourceSetting = DataSourceSetting.USB
 
     init {
         isShuttingDown = false
@@ -208,6 +221,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             servicePriority = ServicePriority.FOREGROUND
         }
         packageValidation = PackageValidation(this, R.xml.allowed_media_browser_callers)
+        localFileSync = LocalFileSync(lifecycleScope, dispatcher, crashReporting, applicationContext)
         lifecycleRegistry.currentState = Lifecycle.State.CREATED
         observeAudioFileStorage()
         observeAudioSessionStateChanges()
@@ -227,7 +241,6 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                     }
                 }
                 audioSession.stopPlayer()
-                // TODO: this needs to change to properly support multiple storages
                 allStorageIDs.forEach { onStorageLocationRemoved(it) }
                 return@add
             }
@@ -332,7 +345,8 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                 audioItemLibrary.cancelBuildLibrary()
                 cancelLibraryCreation()
                 when (event.value) {
-                    MetadataReadSetting.WHEN_USB_CONNECTED.name -> {
+                    MetadataReadSetting.WHEN_USB_CONNECTED.name,
+                    MetadataReadSetting.FILEPATHS_ONLY.name -> {
                         updateConnectedDevices()
                     }
                 }
@@ -344,6 +358,33 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                 cancelLibraryCreation()
                 updateConnectedDevices()
             }
+            SettingKey.ALBUM_STYLE_SETTING -> {
+                when (event.value) {
+                    AlbumStyleSetting.GRID.name -> {
+                        audioItemLibrary.albumArtStyleSetting = AlbumStyleSetting.GRID
+                    }
+                    AlbumStyleSetting.LIST.name -> {
+                        audioItemLibrary.albumArtStyleSetting = AlbumStyleSetting.LIST
+                    }
+                    else -> {
+                        throw RuntimeException("Invalid album style setting: ${event.value}")
+                    }
+                }
+            }
+            SettingKey.DATA_SOURCE_SETTING -> {
+                dataSourceSetting = when (event.value) {
+                    DataSourceSetting.LOCAL.name -> {
+                        DataSourceSetting.LOCAL
+                    }
+                    DataSourceSetting.USB.name -> {
+                        DataSourceSetting.USB
+                    }
+                    else -> {
+                        throw RuntimeException("Invalid data source setting: ${event.value}")
+                    }
+                }
+                notifyBrowserChildrenChangedAllLevels()
+            }
         }
     }
 
@@ -351,6 +392,13 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         when (event.action) {
             CustomAction.EJECT -> {
                 cancelAllJobs()
+            }
+            CustomAction.SYNC_FILES -> {
+                localFileSync.rootURL = event.syncURL
+                localFileSync.start()
+            }
+            CustomAction.DELETE_FILES -> {
+                TODO()
             }
         }
     }
@@ -507,15 +555,26 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         storageLocations.forEach { audioItemLibrary.initRepository(it.storageID) }
         val metadataReadSetting = getMetadataReadSettingEnum(this, logger, TAG)
         if (metadataReadSetting == MetadataReadSetting.WHEN_USB_CONNECTED
+            || metadataReadSetting == MetadataReadSetting.FILEPATHS_ONLY
             || (metadataReadSetting == MetadataReadSetting.MANUALLY && metadataReadNowRequested)
         ) {
             metadataReadNowRequested = false
-            val audioFileProducerChannel = audioFileStorage.indexStorageLocations(storageIDs)
-            audioItemLibrary.buildLibrary(audioFileProducerChannel) { notifyBrowserChildrenChangedAllLevels() }
+            val fileProducerChannel = audioFileStorage.indexStorageLocations(storageIDs)
+            try {
+                audioItemLibrary.buildLibrary(fileProducerChannel) { notifyBrowserChildrenChangedAllLevels() }
+            } catch (exc: CancellationException) {
+                if (exc is NoChangesCancellationException) {
+                    logger.warning(TAG, "Coroutine inside createLibraryFromStorages() cancelled because no changes")
+                } else {
+                    logger.warning(TAG, "Coroutine inside createLibraryFromStorages() was cancelled")
+                    throw exc
+                }
+            }
         }
         storageIDs.forEach {
             audioFileStorage.setIndexingStatus(it, IndexingStatus.COMPLETED)
         }
+        audioFileStorage.cleanAlbumArtCache()
         logger.info(TAG, "Audio library has been built for storages: $storageIDs")
     }
 
@@ -624,6 +683,9 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         if (intent?.action == ACTION_MEDIA_BUTTON) {
             lastServiceStartReason = ServiceStartStopReason.MEDIA_BUTTON
         }
+        if (intent?.action == ACTION_RESTART_SERVICE) {
+            servicePriority = ServicePriority.FOREGROUND_REQUESTED
+        }
         logger.debug(TAG, "servicePriority=$servicePriority, lastServiceStartReason=$lastServiceStartReason")
         if (intent?.component == ComponentName(this, this.javaClass)
             && intent.action != ACTION_MEDIA_BUTTON
@@ -664,7 +726,11 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
      */
     override fun onBind(intent: Intent?): IBinder? {
         logger.debug(TAG, "onBind(intent=$intent)")
-        return super.onBind(intent)
+        return if (intent?.action == AudioBrowserService::class.java.name) {
+            binder
+        } else {
+            super.onBind(intent)
+        }
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
@@ -722,7 +788,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             if (lastServiceStartReason in listOf(
                     ServiceStartStopReason.MEDIA_BUTTON,
                     ServiceStartStopReason.MEDIA_SESSION_CALLBACK,
-                    ServiceStartStopReason.SUSPEND_OR_SHUTDOWN
+                    ServiceStartStopReason.LIFECYCLE
                 )
             ) {
                 return false
@@ -777,7 +843,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         cancelAllJobs()
         audioSession.storePlaybackState()
         gui.shutdown()
-        stopService(ServiceStartStopReason.SUSPEND_OR_SHUTDOWN)
+        stopService(ServiceStartStopReason.LIFECYCLE)
         audioSession.shutdown()
         audioFileStorage.shutdown()
         audioItemLibrary.shutdown()
@@ -807,7 +873,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         audioSession.suspend()
         audioFileStorage.suspend()
         audioItemLibrary.suspend()
-        stopService(ServiceStartStopReason.SUSPEND_OR_SHUTDOWN)
+        stopService(ServiceStartStopReason.LIFECYCLE)
         logger.info(TAG, "end of suspend() reached")
     }
 
@@ -863,7 +929,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
      * Returning null will disconnect the client.
      */
     override fun onGetRoot(clientPackageName: String, clientUid: Int, rootHints: Bundle?): BrowserRoot? {
-        logger.debug(TAG, "onGetRoot($rootHints)")
+        logger.debug(TAG, "onGetRoot(clientPackageName=$clientPackageName, rootHints=$rootHints)")
         if (!packageValidation.isClientValid(clientPackageName, clientUid)) {
             logger.warning(TAG, "Client ${clientPackageName}(${clientUid}) could not be validated for browsing")
             return null
@@ -929,6 +995,10 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                 // this can happen when some client is still trying to access the path to a meanwhile deleted file
                 logger.warning(TAG, exc.message.toString())
                 result.sendResult(null)
+            } catch (exc: NoSuchElementException) {
+                // happens when USB drive is unplugged
+                logger.warning(TAG, exc.message.toString())
+                result.sendResult(null)
             } catch (exc: IOException) {
                 crashReporting.logMessages(logger.getLastLogLines(NUM_LOG_LINES_CRASH_REPORT))
                 crashReporting.recordException(exc)
@@ -951,6 +1021,11 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
 
     override fun onSearch(query: String, extras: Bundle?, result: Result<MutableList<MediaItem>>) {
         logger.debug(TAG, "onSearch(query='$query', extras=$extras)")
+        val metadataReadSetting = getMetadataReadSettingEnum(applicationContext, logger, TAG)
+        if (metadataReadSetting == MetadataReadSetting.OFF) {
+            result.sendResult(mutableListOf())
+            return
+        }
         result.detach()
         searchJob = launchInScopeSafely {
             val mediaItems: MutableList<MediaItem> = audioItemLibrary.searchMediaItems(query)
@@ -973,13 +1048,15 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                 logger.exception(TAG, "Uncaught exception (USB is OK)", throwable)
                 logger.flushToUSB()
                 try {
-                    audioFileStorage.shutdown()
+                    if (this::audioFileStorage.isInitialized) {
+                        audioFileStorage.shutdown()
+                    }
                 } catch (exc: Exception) {
                     logger.exceptionLogcatOnly(TAG, exc.message.toString(), exc)
                 }
             }
             try {
-                stopService(ServiceStartStopReason.SUSPEND_OR_SHUTDOWN)
+                stopService(ServiceStartStopReason.LIFECYCLE)
             } catch (exc: Exception) {
                 logger.exceptionLogcatOnly(TAG, exc.message.toString(), exc)
             }
@@ -1010,6 +1087,35 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         return Util.launchInScopeSafely(lifecycleScope, dispatcher, logger, TAG, crashReporting, func)
     }
 
+    fun getAlbumArtForURI(uri: Uri): ByteArray? {
+        if (lifecycleRegistry.currentState == Lifecycle.State.DESTROYED) {
+            return null
+        }
+        try {
+            return audioItemLibrary.getAlbumArtForArtURI(uri)
+        } catch (exc: FileNotFoundException) {
+            logger.warning(TAG, exc.message.toString())
+        } catch (exc: RuntimeException) {
+            if (!exc.message.toString().contains("Unknown storage id")) {
+                logger.exception(TAG, exc.message.toString(), exc)
+            }
+        } catch (exc: IOException) {
+            logger.exception(TAG, exc.message.toString(), exc)
+        }
+        return null
+    }
+
+    override fun onTrimMemory(level: Int) {
+        logger.debug(TAG, "onTrimMemory(level=$level)")
+        audioItemLibrary.clearAlbumArtCache()
+        audioFileStorage.cleanAlbumArtCache()
+        super.onTrimMemory(level)
+    }
+
+    inner class LocalBinder : Binder() {
+        fun getService(): AudioBrowserService = this@AudioBrowserService
+    }
+
     @VisibleForTesting(otherwise = VisibleForTesting.NONE)
     fun getAudioItemLibrary(): AudioItemLibrary {
         return audioItemLibrary
@@ -1034,9 +1140,19 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.NONE)
+    fun getAudioPlayerStatus(): AudioPlayerStatus {
+        return audioSession.getAudioPlayerStatus()
+    }
+
+    @VisibleForTesting(otherwise = VisibleForTesting.NONE)
     fun setMediaDeviceForTest(mediaDevice: MediaDevice) {
         audioFileStorage.mediaDevicesForTest.clear()
         audioFileStorage.mediaDevicesForTest.add(mediaDevice)
+    }
+
+    @VisibleForTesting(otherwise = VisibleForTesting.NONE)
+    fun setUseInMemoryDatabase() {
+        audioItemLibrary.useInMemoryDatabase = true
     }
 
 }

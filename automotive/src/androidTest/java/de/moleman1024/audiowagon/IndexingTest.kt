@@ -60,8 +60,8 @@ class IndexingTest {
             waitForIndexingTimeoutMS
         )
         Logger.debug(TAG, "Indexing is ongoing")
-        Thread.sleep(50)
-        Logger.debug(TAG, "Will cancel indexing now")
+        Thread.sleep(100)
+        Logger.debug(TAG, "Will re-index now")
         audioBrowserService.setMediaDeviceForTest(sdCardMediaDevice)
         audioBrowserService.updateConnectedDevices()
         val waitForCompletedTimeoutMS = 1000 * 20
@@ -71,7 +71,7 @@ class IndexingTest {
         )
         runBlocking {
             // The number of tracks in database was messed up when multiple indexing coroutines were running in
-            // parallel. Assert we have the correct amount now
+            // parallel. Assert we have the correct amount now that parallel coroutines are avoided
             Assert.assertEquals(6, audioBrowserService.getPrimaryRepo()?.getNumTracks())
         }
     }

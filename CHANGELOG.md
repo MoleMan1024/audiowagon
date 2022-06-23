@@ -12,6 +12,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0] - 2022-06-23
+
+This release contains some major new features. When upgrading you will be required to re-index metadata from your USB
+drives (if your were using that feature) because the database structure has changed significantly. If you find any
+issues, please [contact me](https://moleman1024.github.io/audiowagon/index.html#how-do-i-report-an-issue).
+
+### Fixed
+
+- audio files in .m3u playlists with relative path markers could not be played back. This has been fixed.
+  [#65](https://github.com/MoleMan1024/audiowagon/issues/65)
+- groups of items in large media libraries are now shown more quickly due to database redesign
+  [#38](https://github.com/MoleMan1024/audiowagon/issues/38)
+
+### Added
+
+- album art is now being shown for all tracks and albums when browsing
+- a setting was added to show album art in a larger grid view. This setting is enabled by default. Changing this setting
+  will only have an effect on next infotainment start or when restarting system app "Media Center"
+  [#57](https://github.com/MoleMan1024/audiowagon/issues/57)
+- the file view now supports playing back a whole directory hierarchy [#50](https://github.com/MoleMan1024/audiowagon/issues/50).
+  Also you can now search for files and directories [#34](https://github.com/MoleMan1024/audiowagon/issues/34). To use
+  these features metadata indexing must be turned on in the settings screen (using any setting other than "off")
+- articles (e.g. "The", "A") and some other symbols are now ignored when sorting media items. For example an entry like
+  "The Beatles" will no longer appear near other artists starting with letter "T" but will now appear near "B".
+  [#60](https://github.com/MoleMan1024/audiowagon/issues/60)
+- disc numbers in metadata are now being taken into account when sorting by track number.
+  [#62](https://github.com/MoleMan1024/audiowagon/issues/62)
+
+
 ## [1.5.6] - 2022-04-02
 
 ### Added
@@ -21,7 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   investigate this issue before the update is rolled out via OTA to many users mid of April. To investigate, I added a
   possiblity to view the log file on screen via AudioWagon settings and tapping on the "version" field. It would be very
   helpful if someone that has this issue could provide me some photos of the contents of this log window before
-  and after they plug in their USB drive, maybe there is an error message in there that will help me fix this 
+  and after they plug in their USB drive, maybe there is an error message in there that will help me fix this
   [#68](https://github.com/MoleMan1024/audiowagon/issues/68)
 
 

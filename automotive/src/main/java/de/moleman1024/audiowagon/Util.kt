@@ -5,6 +5,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 package de.moleman1024.audiowagon
 
+import android.app.ActivityManager
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.graphics.Insets
@@ -17,10 +18,7 @@ import android.view.WindowManager
 import android.view.WindowMetrics
 import com.github.mjdev.libaums.fs.UsbFile
 import de.moleman1024.audiowagon.exceptions.NoAudioItemException
-import de.moleman1024.audiowagon.filestorage.AudioFile
-import de.moleman1024.audiowagon.filestorage.FileLike
-import de.moleman1024.audiowagon.filestorage.PlaylistFile
-import de.moleman1024.audiowagon.filestorage.PlaylistType
+import de.moleman1024.audiowagon.filestorage.*
 import de.moleman1024.audiowagon.filestorage.usb.LOG_DIRECTORY
 import de.moleman1024.audiowagon.log.CrashReporting
 import de.moleman1024.audiowagon.log.Logger
@@ -36,6 +34,7 @@ import kotlin.math.floor
 
 class Util {
     companion object {
+        private val sortNameRegex = Regex("^((The|A|An) |¡|!|\\?|¿|\\.+|\\(|'|#|\")", RegexOption.IGNORE_CASE)
         val DIRECTORIES_TO_IGNORE_REGEX = ("(.RECYCLE\\.BIN" +
                 "|$LOG_DIRECTORY.*" +
                 "|System Volume Information" +
@@ -74,6 +73,30 @@ class Util {
             return "aw-" + URLEncoder.encode(volumeLabel.trim(), "UTF-8").replace("+", "_")
         }
 
+        /**
+         * Create a string with articles like "The", "A", removed. Will also remove some symbols at beginning of string
+         * (e.g. for "Green Day" - "¡Dos!"). This will be used for sorting entries in lists.
+         */
+        fun getSortNameOrBlank(name: String): String {
+            val nameReplaced = getSortName(name)
+            return if (name != nameReplaced) {
+                nameReplaced
+            } else {
+                ""
+            }
+        }
+
+        private fun getSortName(name: String): String {
+            return name.replace(sortNameRegex, "")
+                .replace(Regex("^ü"), "u")
+                .replace(Regex("^ä"), "a")
+                .replace(Regex("^ö"), "o")
+                .replace(Regex("^Ü"), "U")
+                .replace(Regex("^Ä"), "A")
+                .replace(Regex("^Ö"), "O")
+                .trim()
+        }
+
         fun createURIForPath(storageID: String, path: String): Uri {
             val builder: Uri.Builder = Uri.Builder()
             builder.scheme(URI_SCHEME).authority(storageID).appendEncodedPath(
@@ -84,6 +107,22 @@ class Util {
 
         fun getParentPath(pathStr: String): String {
             return File(pathStr).parent ?: throw RuntimeException("No parent directory for: $pathStr")
+        }
+
+        fun yearShortToEpochTime(year: Short): Long {
+            if (year < 0) {
+                return -1
+            }
+            val calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
+            calendar.clear()
+            calendar.set(year.toInt(), Calendar.JUNE, 1)
+            return calendar.timeInMillis
+        }
+
+        fun yearEpochTimeToShort(yearEpochTime: Long): Short {
+            val calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
+            calendar.time = Date(yearEpochTime)
+            return calendar.get(Calendar.YEAR).toShort()
         }
 
         fun sanitizeYear(yearString: String): String {
@@ -97,18 +136,31 @@ class Util {
             return yearSanitized
         }
 
-        fun determinePlayableFileType(file: File): FileLike? {
-            if (file.isDirectory) {
-                return null
-            }
-            return determinePlayableFileType(file.name)
+        fun createAudioFileFromFile(file: File, storageID: String): AudioFile {
+            val uri = createURIForPath(storageID, file.absolutePath)
+            val audioFile = AudioFile(uri)
+            audioFile.lastModifiedDate = Date(file.lastModified())
+            return audioFile
         }
 
-        fun determinePlayableFileType(usbFile: UsbFile): FileLike? {
-            if (usbFile.isDirectory || usbFile.isRoot) {
-                return null
+        fun determinePlayableFileType(file: Any): FileLike? {
+            when (file) {
+                is File -> {
+                    if (file.isDirectory) {
+                        return Directory()
+                    }
+                    return determinePlayableFileType(file.name)
+                }
+                is UsbFile -> {
+                    if (file.isDirectory || file.isRoot) {
+                        return Directory()
+                    }
+                    return determinePlayableFileType(file.name)
+                }
+                else -> {
+                    throw RuntimeException("Cannot determine playable file type of: $file")
+                }
             }
-            return determinePlayableFileType(usbFile.name)
         }
 
         fun guessContentType(fileName: String): String? {
@@ -183,9 +235,13 @@ class Util {
             return fileName.replace("#", "")
         }
 
+        fun createIDForAlbumArtForFile(path: String): Int {
+            return path.hashCode() and 0xFFFFFFF
+        }
+
         fun launchInScopeSafely(
             scope: CoroutineScope, dispatcher: CoroutineDispatcher,
-            logger: Logger, tag: String, crashReporting: CrashReporting, func: suspend (CoroutineScope) -> Unit
+            logger: Logger, tag: String, crashReporting: CrashReporting?, func: suspend (CoroutineScope) -> Unit
         ): Job {
             val exceptionHandler = CoroutineExceptionHandler { coroutineContext, exc ->
                 val msg = "$coroutineContext threw $exc"
@@ -201,23 +257,25 @@ class Util {
                     }
                     else -> {
                         logger.exception(tag, msg, exc)
-                        crashReporting.logMessage(msg)
-                        crashReporting.logMessages(logger.getLastLogLines(NUM_LOG_LINES_CRASH_REPORT))
-                        crashReporting.recordException(exc)
+                        crashReporting?.logMessage(msg)
+                        crashReporting?.logMessages(logger.getLastLogLines(NUM_LOG_LINES_CRASH_REPORT))
+                        crashReporting?.recordException(exc)
                     }
                 }
             }
-            return scope.launch(exceptionHandler + dispatcher) {
-                try {
-                    func(this)
-                } catch (exc: NoAudioItemException) {
-                    logger.exception(tag, exc.message.toString(), exc)
-                } catch (exc: CancellationException) {
-                    logger.warning(tag, "CancellationException (msg=${exc.message} exc=$exc)")
-                } catch (exc: Exception) {
-                    crashReporting.logMessages(logger.getLastLogLines(NUM_LOG_LINES_CRASH_REPORT))
-                    crashReporting.recordException(exc)
-                    logger.exception(tag, exc.message.toString(), exc)
+            return CoroutineScope(scope.coroutineContext + exceptionHandler + dispatcher).run {
+                launch {
+                    try {
+                        func(this)
+                    } catch (exc: NoAudioItemException) {
+                        logger.exception(tag, exc.message.toString(), exc)
+                    } catch (exc: CancellationException) {
+                        logger.warning(tag, "CancellationException (msg=${exc.message} exc=$exc)")
+                    } catch (exc: Exception) {
+                        crashReporting?.logMessages(logger.getLastLogLines(NUM_LOG_LINES_CRASH_REPORT))
+                        crashReporting?.recordException(exc)
+                        logger.exception(tag, exc.message.toString(), exc)
+                    }
                 }
             }
         }
@@ -275,6 +333,32 @@ class Util {
                 return -1
             }
             return floor(availablePixelsForText / avgLetterWidth).toInt()
+        }
+
+        private fun getAvailableMemory(context: Context): String {
+            val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+            val memory = ActivityManager.MemoryInfo().also { memoryInfo ->
+                activityManager.getMemoryInfo(memoryInfo)
+            }
+            return "availMem=${memory.availMem / 0x100000L} MB " +
+                    "totalMem=${memory.totalMem / 0x100000L} MB " +
+                    "threshold=${memory.threshold / 0x100000L} MB " +
+                    "lowMemory=${memory.lowMemory}"
+        }
+
+        private fun getAppMemory(): String {
+            val runtime: Runtime = Runtime.getRuntime()
+            val totalMemory = runtime.totalMemory() / 0x100000L
+            val freeMemory = runtime.freeMemory() / 0x100000L
+            val maxMemory = runtime.maxMemory() / 0x100000L
+            return "totalMemory=$totalMemory MB " +
+                    "freeMemory=$freeMemory MB " +
+                    "maxMemory=$maxMemory MB"
+        }
+
+        fun logMemory(context: Context, logger: Logger, tag: String) {
+            logger.debug(tag, "System memory: ${getAvailableMemory(context)}")
+            logger.debug(tag, "JVM memory: ${getAppMemory()}")
         }
 
     }

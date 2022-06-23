@@ -15,5 +15,13 @@ data class Album(
     @ColumnInfo(index = true)
     val name: String = "",
     @ColumnInfo(index = true)
-    val parentArtistId: Long = -1
+    val sortName: String = "",
+    @ColumnInfo(index = true)
+    val parentArtistId: Long = -1,
+    // The URI for the content provider to retrieve the album art
+    val albumArtURIString: String = "",
+    // The source of the album art. Can point to an audiofile (embedded album art) or to a .jpg in a directory
+    val albumArtSourceURIString: String = "",
+    // If the source of the album art is an image file, this will be true
+    val hasFolderImage: Boolean = false
 )

@@ -51,7 +51,7 @@ class ContentHierarchyFile(
             storageLocation.getDirectoryContentsPlayable(Directory(directoryURI)).sortedBy { it.name.lowercase() }
         directoryContents.filterIsInstance<AudioFile>().forEach {
             val audioFile = AudioFile(Util.createURIForPath(storageLocation.storageID, it.path))
-            items += audioItemLibrary.createAudioItemForFile(audioFile)
+            items += AudioItemLibrary.createAudioItemForFile(audioFile)
         }
         return items
     }

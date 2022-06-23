@@ -1,5 +1,7 @@
 package de.moleman1024.audiowagon.player
 
 enum class CustomAction {
-    EJECT
+    EJECT,
+    SYNC_FILES,
+    DELETE_FILES
 }

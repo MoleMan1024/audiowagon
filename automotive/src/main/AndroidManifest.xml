@@ -1,17 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-SPDX-FileCopyrightText: 2021 MoleMan1024 <moleman1024dev@gmail.com>
-SPDX-License-Identifier: GPL-3.0-or-later
--->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
 		xmlns:dist="http://schemas.android.com/apk/distribution"
 		xmlns:tools="http://schemas.android.com/tools"
 		package="de.moleman1024.audiowagon">
 
 	<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-	<!-- the app implicitly uses android.permission.INTERNET and android.permission.ACCESS_NETWORK_STATE for
-	Firebase Crashlytics -->
-
+	<!-- needed for Firebase Crashlytics and AudioBuggy -->
+	<uses-permission android:name="android.permission.INTERNET" />
+	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 	<uses-feature
 			android:name="android.hardware.type.automotive"
 			android:required="true" />
@@ -37,13 +33,15 @@ SPDX-License-Identifier: GPL-3.0-or-later
 	<application
 			android:allowBackup="false"
 			android:appCategory="audio"
+			android:directBootAware="true"
 			android:icon="@mipmap/ic_launcher"
 			android:label="@string/app_name"
+			android:requestLegacyExternalStorage="${requestLegacyExternalStorage}"
 			android:supportsRtl="false"
 			android:testOnly="false"
-			android:directBootAware="true"
-			android:requestLegacyExternalStorage="${requestLegacyExternalStorage}"
+			android:usesCleartextTraffic="${usesCleartextTraffic}"
 			android:theme="@style/AppTheme">
+
 		<meta-data
 				android:name="com.android.automotive"
 				android:resource="@xml/automotive_app_desc" />
@@ -57,7 +55,9 @@ SPDX-License-Identifier: GPL-3.0-or-later
 				android:name=".activities.LegalDisclaimerActivity"
 				android:label="@string/legal_disclaimer_title"
 				android:theme="@style/AppTheme" />
-
+		<activity
+				android:name=".activities.LogActivity"
+				android:exported="false" />
 		<activity
 				android:name=".activities.SettingsActivity"
 				android:exported="true"
@@ -67,21 +67,22 @@ SPDX-License-Identifier: GPL-3.0-or-later
 				<action android:name="android.intent.action.APPLICATION_PREFERENCES" />
 			</intent-filter>
 		</activity>
-
-		<!-- Does not work on AAOS in Polestar 2, works fine on Pixel 3 with AAOS. Setting
+		<!--
+ Does not work on AAOS in Polestar 2, works fine on Pixel 3 with AAOS. Setting
  	 		 distractionOptimized=true does not help either (also Play store automatic review does not like it when I
- 	 		 set that) -->
+ 	 		 set that)
+        -->
 		<activity
 				android:name=".activities.USBDummyActivity"
-				android:noHistory="true"
-				android:excludeFromRecents="true"
 				android:directBootAware="true"
+				android:excludeFromRecents="true"
 				android:exported="true"
-				android:label="@string/app_name"
+				android:noHistory="true"
 				android:theme="@style/TransparentTheme">
 			<intent-filter>
 				<action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
 			</intent-filter>
+
 			<meta-data
 					android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"
 					android:resource="@xml/device_filter" />
@@ -100,6 +101,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 				<action android:name="android.car.intent.action.PLAY_USB" />
 			</intent-filter>
 		</service>
+
 		<receiver
 				android:name="androidx.media.session.MediaButtonReceiver"
 				android:exported="true">
@@ -107,10 +109,12 @@ SPDX-License-Identifier: GPL-3.0-or-later
 				<action android:name="android.intent.action.MEDIA_BUTTON" />
 			</intent-filter>
 		</receiver>
+
 		<provider
 				android:name=".AlbumArtContentProvider"
 				android:authorities="de.moleman1024.audiowagon"
 				android:exported="true"
 				tools:ignore="ExportedContentProvider" />
 	</application>
+
 </manifest>

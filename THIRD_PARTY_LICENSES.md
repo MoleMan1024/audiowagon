@@ -35,4 +35,5 @@
 - [org.jetbrains.kotlinx:kotlinx-coroutines-test](https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-test/):
   Apache 2.0
 - [org.springframework](https://docs.spring.io/spring-framework/docs/current/reference/html/): Apache 2.0
-
+- [com.google.jimfs](https://github.com/google/jimfs): Apache 2.0
+- [mp3agic](https://github.com/mpatric/mp3agic): MIT

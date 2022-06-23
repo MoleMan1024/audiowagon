@@ -35,6 +35,8 @@ above. I will see if I can come up with some alternative in the meantime.
 
 😥 So let's wait for P2.2.
 
+**2022-06-23:** In Polestar/Volvo car version 2.2 they have fixed the USB functionality. Yay!
+
 
 ![AudioWagon in car](/img/audiowagon.jpg)
 
@@ -78,6 +80,8 @@ Please see Github for a [list of changes for each version of the app](https://gi
   - unknown brand USB-A to µSD adapter, black, with label "MjX R/C Technic", using a µSD card
   - unknown brand USB-C adapter, gray, with SD and µSD slot and LED, using another adapter SD to µSD, using a µSD card
     (this one could be fixed by removing the second unnecessary adapter)
+- The app will *not* work with Polestar/Volvo OTA car software version 2.0 nor 2.1. You will need the car software 
+  version 2.2 or higher (or 1.9 or lower).
 
 ## How to use
 

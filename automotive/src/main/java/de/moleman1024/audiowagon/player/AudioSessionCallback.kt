@@ -11,13 +11,14 @@ import android.os.ResultReceiver
 import android.provider.MediaStore
 import android.support.v4.media.session.MediaSessionCompat
 import de.moleman1024.audiowagon.*
+import de.moleman1024.audiowagon.filestorage.DataSourceSetting
+import de.moleman1024.audiowagon.filestorage.local.SYNC_FILES_URL_DEFAULT
 import de.moleman1024.audiowagon.log.CrashReporting
 import de.moleman1024.audiowagon.log.Logger
+import de.moleman1024.audiowagon.medialibrary.AlbumStyleSetting
 import de.moleman1024.audiowagon.medialibrary.AudioItemType
 import de.moleman1024.audiowagon.medialibrary.MetadataReadSetting
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.*
 
 private const val TAG = "AudioSessCB"
 private val logger = Logger
@@ -32,8 +33,9 @@ class AudioSessionCallback(
     private val dispatcher: CoroutineDispatcher,
     private val crashReporting: CrashReporting
 ) : MediaSessionCompat.Callback() {
-
     val observers = mutableListOf<(AudioSessionChange) -> Unit>()
+    var onSkipToNextJob: Job? = null
+    var onSkipToPreviousJob: Job? = null
 
     override fun onCommand(command: String, args: Bundle?, cb: ResultReceiver?) {
         logger.debug(TAG, "onCommand(command=$command,args=$args)")
@@ -79,12 +81,29 @@ class AudioSessionCallback(
             }
             CMD_SET_AUDIOFOCUS_SETTING -> {
                 val audioSessionChange = AudioSessionChange(AudioSessionChangeType.ON_SET_AUDIOFOCUS_SETTING)
-                audioSessionChange.audioFocusSetting = args?.getString(AUDIOFOCUS_SETTING_KEY,
-                    AudioFocusSetting.PAUSE.name).toString()
+                audioSessionChange.audioFocusSetting =
+                    args?.getString(AUDIOFOCUS_SETTING_KEY, AudioFocusSetting.PAUSE.name).toString()
+                notifyObservers(audioSessionChange)
+            }
+            CMD_SET_ALBUM_STYLE_SETTING -> {
+                val audioSessionChange = AudioSessionChange(AudioSessionChangeType.ON_SET_ALBUM_STYLE)
+                audioSessionChange.albumStyleSetting =
+                    args?.getString(ALBUM_STYLE_KEY, AlbumStyleSetting.GRID.name).toString()
+                notifyObservers(audioSessionChange)
+            }
+            CMD_SET_DATA_SOURCE_SETTING -> {
+                val audioSessionChange = AudioSessionChange(AudioSessionChangeType.ON_SET_DATA_SOURCE)
+                audioSessionChange.dataSourceSetting =
+                    args?.getString(DATA_SOURCE_KEY, DataSourceSetting.LOCAL.name).toString()
                 notifyObservers(audioSessionChange)
             }
             CMD_EJECT -> {
                 notifyObservers(AudioSessionChange(AudioSessionChangeType.ON_EJECT))
+            }
+            CMD_SYNC_FILES -> {
+                val audioSessionChange = AudioSessionChange(AudioSessionChangeType.ON_SYNC_FILES)
+                audioSessionChange.syncFilesURL = args?.getString(SYNC_FILES_URL_KEY, SYNC_FILES_URL_DEFAULT).toString()
+                notifyObservers(audioSessionChange)
             }
             else -> {
                 logger.warning(TAG, "Unhandled command: $command")
@@ -220,16 +239,30 @@ class AudioSessionCallback(
     override fun onSkipToNext() {
         logger.debug(TAG, "onSkipToNext()")
         super.onSkipToNext()
-        launchInScopeSafely {
+        runBlocking {
+            onSkipToNextJob?.cancelAndJoin()
+            onSkipToPreviousJob?.cancelAndJoin()
+        }
+        val audioSessionChange = AudioSessionChange(AudioSessionChangeType.ON_SKIP_TO_NEXT)
+        notifyObservers(audioSessionChange)
+        onSkipToNextJob = launchInScopeSafely {
             audioPlayer.skipNextTrack()
+            onSkipToNextJob = null
         }
     }
 
     override fun onSkipToPrevious() {
         logger.debug(TAG, "onSkipToPrevious()")
         super.onSkipToPrevious()
-        launchInScopeSafely {
+        runBlocking {
+            onSkipToNextJob?.cancelAndJoin()
+            onSkipToPreviousJob?.cancelAndJoin()
+        }
+        val audioSessionChange = AudioSessionChange(AudioSessionChangeType.ON_SKIP_TO_PREVIOUS)
+        notifyObservers(audioSessionChange)
+        onSkipToPreviousJob = launchInScopeSafely {
             audioPlayer.handlePrevious()
+            onSkipToPreviousJob = null
         }
     }
 
@@ -272,8 +305,8 @@ class AudioSessionCallback(
         super.onPrepareFromUri(uri, extras)
     }
 
-    private fun launchInScopeSafely(func: suspend (CoroutineScope) -> Unit) {
-        Util.launchInScopeSafely(scope, dispatcher, logger, TAG, crashReporting, func)
+    private fun launchInScopeSafely(func: suspend (CoroutineScope) -> Unit): Job {
+        return Util.launchInScopeSafely(scope, dispatcher, logger, TAG, crashReporting, func)
     }
 
     // we don't use onSetShuffleMode and onSetRepeatMode here because AAOS does not display the GUI icons for these

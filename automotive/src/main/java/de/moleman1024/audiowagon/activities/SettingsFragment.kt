@@ -13,6 +13,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.preference.*
 import de.moleman1024.audiowagon.*
 import de.moleman1024.audiowagon.R
+import de.moleman1024.audiowagon.filestorage.DataSourceSetting
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.MetadataReadSetting
 import de.moleman1024.audiowagon.repository.AUDIOITEM_REPO_DB_PREFIX
@@ -22,7 +23,6 @@ import java.io.FileNotFoundException
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.collections.HashSet
 
 private const val TAG = "SettingsFragm"
 private val logger = Logger
@@ -31,6 +31,8 @@ private const val PREF_DATABASE_STATUS = "databaseStatus"
 private const val PREF_DELETE_DATABASES = "deleteDatabases"
 private const val PREF_LEGAL_DISCLAIMER = "legalDisclaimer"
 private const val PREF_READ_METADATA_NOW = "readMetaDataNow"
+private const val PREF_SYNC_FILES = "syncFiles"
+private const val PREF_VERSION = "version"
 
 @ExperimentalCoroutinesApi
 class SettingsFragment : PreferenceFragmentCompat() {
@@ -72,6 +74,21 @@ class SettingsFragment : PreferenceFragmentCompat() {
                     val audioFocusSettingStr = SharedPrefs.getAudioFocusSetting(sharedPreferences)
                     (activity as SettingsActivity).setAudioFocusSetting(audioFocusSettingStr)
                 }
+                SHARED_PREF_ALBUM_STYLE -> {
+                    updateAlbumStyleList(sharedPreferences)
+                    val albumStyleStr = SharedPrefs.getAlbumStyleSetting(sharedPreferences)
+                    (activity as SettingsActivity).setAlbumStyleSetting(albumStyleStr)
+                }
+                SHARED_PREF_DATA_SOURCE -> {
+                    updateAlbumStyleList(sharedPreferences)
+                    updateReadMetadataList(sharedPreferences)
+                    updateReadMetadataNowButton(sharedPreferences)
+                    updateUSBAndEjectStatus(sharedPreferences)
+                    updateLogToUSB(sharedPreferences)
+                    updateSyncLocalFilesNowButton(sharedPreferences)
+                    val dataSourceStr = SharedPrefs.getDataSourceSetting(sharedPreferences)
+                    (activity as SettingsActivity).setDataSourceSetting(dataSourceStr)
+                }
                 else -> {
                     // ignore
                 }
@@ -105,9 +122,18 @@ class SettingsFragment : PreferenceFragmentCompat() {
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         logger.debug(TAG, "onCreatePreferences(rootKey=${rootKey})")
         setPreferencesFromResource(R.xml.preferences, rootKey)
+        setSummaryProviderDisplayAlbumSetting()
+        updateDataSource()
         updateFromSharedPrefs(preferenceManager.sharedPreferences)
         updateDatabaseStatus()
         updateDatabaseFiles()
+    }
+
+    private fun setSummaryProviderDisplayAlbumSetting() {
+        val pref = findPreference<ListPreference>(SHARED_PREF_ALBUM_STYLE)
+        pref?.summaryProvider = Preference.SummaryProvider<ListPreference> { preference ->
+            "${preference.entry}\n${context?.getString(R.string.setting_requires_media_center_restart)}"
+        }
     }
 
     private fun updateFromSharedPrefs(sharedPreferences: SharedPreferences?) {
@@ -117,14 +143,33 @@ class SettingsFragment : PreferenceFragmentCompat() {
         updateEqualizerPreset(sharedPreferences)
         updateReplayGainSwitch(sharedPreferences)
         updateAudioFocusList(sharedPreferences)
+        updateAlbumStyleList(sharedPreferences)
+        updateDataSourceList(sharedPreferences)
         updateReadMetadataList(sharedPreferences)
         updateReadMetadataNowButton(sharedPreferences)
+        updateSyncLocalFilesNowButton(sharedPreferences)
         updateUSBAndEjectStatus(sharedPreferences)
     }
 
+    private fun updateDataSource() {
+        val dataSourcePref = findPreference<ListPreference>(SHARED_PREF_DATA_SOURCE)
+        if (BuildConfig.ALLOW_LOCAL_FILES) {
+            dataSourcePref?.isVisible = true
+            return
+        }
+        dataSourcePref?.isVisible = false
+    }
+
     private fun updateLogToUSB(sharedPreferences: SharedPreferences?) {
+        val logToUSBPref = findPreference<SwitchPreferenceCompat>(SHARED_PREF_LOG_TO_USB)
+        if (isDataSourceLocal(sharedPreferences)) {
+            logToUSBPref?.isVisible = false
+            return
+        } else {
+            logToUSBPref?.isVisible = true
+        }
         val value = SharedPrefs.isLogToUSBEnabled(sharedPreferences)
-        findPreference<SwitchPreferenceCompat>(SHARED_PREF_LOG_TO_USB)?.isChecked = value
+        logToUSBPref?.isChecked = value
     }
 
     private fun updateCrashReporting(sharedPreferences: SharedPreferences?) {
@@ -154,13 +199,26 @@ class SettingsFragment : PreferenceFragmentCompat() {
     }
 
     private fun updateReadMetadataNowButton(sharedPreferences: SharedPreferences?) {
-        val usbStatusValue = SharedPrefs.getUSBStatusResID(sharedPreferences)
-        if (usbStatusValue in listOf(R.string.setting_USB_status_ejected, R.string.setting_USB_status_not_connected)) {
-            findPreference<Preference>(PREF_READ_METADATA_NOW)?.isEnabled = false
-            return
+        val dataSourceSetting = SharedPrefs.getDataSourceSetting(sharedPreferences)
+        if (dataSourceSetting == DataSourceSetting.USB.name) {
+            val usbStatusValue = SharedPrefs.getUSBStatusResID(sharedPreferences)
+            if (usbStatusValue in listOf(
+                    R.string.setting_USB_status_ejected,
+                    R.string.setting_USB_status_not_connected
+                )
+            ) {
+                findPreference<Preference>(PREF_READ_METADATA_NOW)?.isEnabled = false
+                return
+            }
+        } else {
+            findPreference<Preference>(PREF_READ_METADATA_NOW)?.isEnabled = true
         }
         val isMetadataReadSetToManual = isMetadataReadSetToManual(sharedPreferences)
         findPreference<Preference>(PREF_READ_METADATA_NOW)?.isEnabled = isMetadataReadSetToManual
+    }
+
+    private fun updateSyncLocalFilesNowButton(sharedPreferences: SharedPreferences?) {
+        findPreference<Preference>(PREF_SYNC_FILES)?.isVisible = isDataSourceLocal(sharedPreferences)
     }
 
     private fun isMetadataReadSetToManual(sharedPreferences: SharedPreferences?): Boolean {
@@ -171,6 +229,16 @@ class SettingsFragment : PreferenceFragmentCompat() {
     private fun updateAudioFocusList(sharedPreferences: SharedPreferences?) {
         val audioFocusSetting = SharedPrefs.getAudioFocusSetting(sharedPreferences)
         findPreference<ListPreference>(SHARED_PREF_AUDIOFOCUS)?.value = audioFocusSetting
+    }
+
+    private fun updateAlbumStyleList(sharedPreferences: SharedPreferences?) {
+        val albumStyleSetting = SharedPrefs.getAlbumStyleSetting(sharedPreferences)
+        findPreference<ListPreference>(SHARED_PREF_ALBUM_STYLE)?.value = albumStyleSetting
+    }
+
+    private fun updateDataSourceList(sharedPreferences: SharedPreferences?) {
+        val dataSourceSetting = SharedPrefs.getDataSourceSetting(sharedPreferences)
+        findPreference<ListPreference>(SHARED_PREF_DATA_SOURCE)?.value = dataSourceSetting
     }
 
     private fun updateUSBAndEjectStatus(sharedPreferences: SharedPreferences?) {
@@ -186,8 +254,17 @@ class SettingsFragment : PreferenceFragmentCompat() {
             logger.warning(TAG, "text is null")
             return
         }
-        val pref = findPreference<Preference>(SHARED_PREF_USB_STATUS)
-        pref?.summary = text
+        val usbStatusPref = findPreference<Preference>(SHARED_PREF_USB_STATUS)
+        val ejectPref = findPreference<Preference>(PREF_EJECT)
+        if (isDataSourceLocal(sharedPreferences)) {
+            usbStatusPref?.isVisible = false
+            ejectPref?.isVisible = false
+            return
+        } else {
+            usbStatusPref?.isVisible = true
+            ejectPref?.isVisible = true
+        }
+        usbStatusPref?.summary = text
         if (value in listOf(R.string.setting_USB_status_ejected, R.string.setting_USB_status_not_connected)) {
             disableSettingsThatNeedUSBDrive()
         } else {
@@ -304,6 +381,11 @@ class SettingsFragment : PreferenceFragmentCompat() {
         return File(writeHeadLogFilePath).exists()
     }
 
+    private fun isDataSourceLocal(sharedPreferences: SharedPreferences?): Boolean {
+        val dataSourceSettingStr = SharedPrefs.getDataSourceSetting(sharedPreferences)
+        return dataSourceSettingStr == DataSourceSetting.LOCAL.name
+    }
+
     private fun updateDatabaseStatus() {
         val pref = findPreference<Preference>(PREF_DATABASE_STATUS)
         try {
@@ -378,8 +460,14 @@ class SettingsFragment : PreferenceFragmentCompat() {
                         (activity as SettingsActivity).disableReplayGain()
                     }
                 }
+                SHARED_PREF_DATA_SOURCE -> {
+                    (activity as SettingsActivity).eject()
+                }
                 PREF_DELETE_DATABASES -> {
                     updateDatabaseFiles()
+                }
+                PREF_VERSION -> {
+                    (activity as SettingsActivity).showLog()
                 }
             }
         } catch (exc: RuntimeException) {

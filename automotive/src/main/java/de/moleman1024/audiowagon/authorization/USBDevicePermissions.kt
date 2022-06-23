@@ -9,6 +9,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.hardware.usb.UsbManager
+import android.os.Build
 import de.moleman1024.audiowagon.filestorage.usb.USBMediaDevice
 import de.moleman1024.audiowagon.log.Logger
 
@@ -37,7 +38,11 @@ class USBDevicePermissions(private val context: Context) {
      */
     fun requestPermissionForDevice(device: USBMediaDevice) {
         val requestCode = 0
-        val flags = 0
+        val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            PendingIntent.FLAG_MUTABLE
+        } else {
+            0
+        }
         val intent = Intent(ACTION_USB_PERMISSION_CHANGE)
         val intentBroadcast = PendingIntent.getBroadcast(context, requestCode, intent, flags)
         logger.debug(TAG, "Requesting permission to access device: $device")

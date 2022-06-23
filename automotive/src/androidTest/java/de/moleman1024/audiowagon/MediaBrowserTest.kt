@@ -13,14 +13,10 @@ import de.moleman1024.audiowagon.util.MediaBrowserTraversal
 import de.moleman1024.audiowagon.util.ServiceFixture
 import de.moleman1024.audiowagon.util.TestUtils
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import org.junit.After
-import org.junit.Before
-import org.junit.Test
-import org.junit.Assert
+import org.junit.*
 
 private const val TAG = "MediaBrowserTest"
-// TODO: this timing will change if database was previously indexed or not
-private const val TIMEOUT_MS_LIBRARY_CREATION = 40 * 1000
+private const val TIMEOUT_MS_LIBRARY_CREATION = 90 * 1000
 // this SD card image needs to contain directories for each of our test modules
 const val SD_CARD_ID = "1404-9F0B"
 private const val ROOT_DIR = "/many_files"
@@ -31,33 +27,40 @@ private val SD_CARD_ID_WITH_ROOT = "$SD_CARD_ID${ROOT_DIR.replace("/","_")}"
 @ExperimentalCoroutinesApi
 class MediaBrowserTest {
 
-    private lateinit var serviceFixture: ServiceFixture
-    private lateinit var browser: MediaBrowserCompat
+    companion object {
+        private lateinit var serviceFixture: ServiceFixture
+        private lateinit var browser: MediaBrowserCompat
 
-    @Before
-    fun setUp() {
-        Logger.debug(TAG, "setUp()")
-        serviceFixture = ServiceFixture()
-        browser = serviceFixture.createMediaBrowser()
-        browser.connect()
-        val audioBrowserService = serviceFixture.waitForAudioBrowserService()
-        // TODO: find a way to provide .img files, too big for repository
-        val sdCardMediaDevice = SDCardMediaDevice(SD_CARD_ID, ROOT_DIR)
-        audioBrowserService.setMediaDeviceForTest(sdCardMediaDevice)
-        audioBrowserService.updateConnectedDevices()
-        TestUtils.waitForTrueOrFail(
-            { audioBrowserService.getIndexingStatus().any { it == IndexingStatus.COMPLETED } },
-            TIMEOUT_MS_LIBRARY_CREATION
-        )
-        Logger.info(TAG, "Indexing was completed")
-    }
+        @BeforeClass
+        @JvmStatic
+        fun setUp() {
+            Logger.debug(TAG, "setUp()")
+            serviceFixture = ServiceFixture()
+            browser = serviceFixture.createMediaBrowser()
+            browser.connect()
+            val audioBrowserService = serviceFixture.waitForAudioBrowserService()
+            // use in-memory database to speed-up tests
+            audioBrowserService.setUseInMemoryDatabase()
+            // TODO: find a way to provide .img files, too big for repository
+            val sdCardMediaDevice = SDCardMediaDevice(SD_CARD_ID, ROOT_DIR)
+            audioBrowserService.setMediaDeviceForTest(sdCardMediaDevice)
+            audioBrowserService.updateConnectedDevices()
+            // this will take a minute or so
+            TestUtils.waitForTrueOrFail(
+                { audioBrowserService.getIndexingStatus().any { it == IndexingStatus.COMPLETED } },
+                TIMEOUT_MS_LIBRARY_CREATION
+            )
+            Logger.info(TAG, "Indexing was completed")
+        }
 
-    @After
-    fun tearDown() {
-        Logger.debug(TAG, "tearDown()")
-        browser.unsubscribe(browser.root)
-        browser.disconnect()
-        serviceFixture.shutdown()
+        @AfterClass
+        @JvmStatic
+        fun tearDown() {
+            Logger.debug(TAG, "tearDown()")
+            browser.unsubscribe(browser.root)
+            browser.disconnect()
+            serviceFixture.shutdown()
+        }
     }
 
     @Test
@@ -66,13 +69,16 @@ class MediaBrowserTest {
         val artistsRoot = "{\"type\":\"ROOT_ARTISTS\"}"
         traversal.start(artistsRoot)
         val unknownArtist = "{\"type\":\"ARTIST\",\"storage\":\"$SD_CARD_ID_WITH_ROOT\",\"art\":-1}"
-        Assert.assertEquals(listOf(unknownArtist), traversal.hierarchy[artistsRoot])
+        Assert.assertEquals(unknownArtist, traversal.hierarchy[artistsRoot]?.get(0)?.mediaId)
         Assert.assertEquals(
             listOf(
                 "{\"type\":\"ALL_TRACKS_FOR_ARTIST\",\"storage\":\"$SD_CARD_ID_WITH_ROOT\",\"art\":-1}",
                 "{\"type\":\"UNKNOWN_ALBUM\",\"storage\":\"$SD_CARD_ID_WITH_ROOT\",\"art\":-1,\"alb\":-1}"
             ),
-            traversal.hierarchy[unknownArtist]
+            listOf(
+                traversal.hierarchy[unknownArtist]?.get(0)?.mediaId,
+                traversal.hierarchy[unknownArtist]?.get(1)?.mediaId
+            )
         )
         Assert.assertEquals(
             400,
@@ -96,7 +102,7 @@ class MediaBrowserTest {
         val albumsRoot = "{\"type\":\"ROOT_ALBUMS\"}"
         traversal.start(albumsRoot)
         val unknownAlbum = "{\"type\":\"UNKNOWN_ALBUM\",\"storage\":\"$SD_CARD_ID_WITH_ROOT\",\"alb\":-1}"
-        Assert.assertEquals(listOf(unknownAlbum), traversal.hierarchy[albumsRoot])
+        Assert.assertEquals(unknownAlbum, traversal.hierarchy[albumsRoot]?.get(0)?.mediaId)
         Assert.assertEquals(7, traversal.hierarchy[unknownAlbum]?.size)
         Assert.assertEquals(
             400,
@@ -115,7 +121,7 @@ class MediaBrowserTest {
         val traversal = MediaBrowserTraversal(browser)
         val tracksRoot = "{\"type\":\"ROOT_TRACKS\"}"
         traversal.start(tracksRoot)
-        Assert.assertEquals("{\"type\":\"SHUFFLE_ALL_TRACKS\"}", traversal.hierarchy[tracksRoot]?.get(0))
+        Assert.assertEquals("{\"type\":\"SHUFFLE_ALL_TRACKS\"}", traversal.hierarchy[tracksRoot]?.get(0)?.mediaId)
         Assert.assertEquals(8, traversal.hierarchy[tracksRoot]?.size)
         Assert.assertEquals(400, traversal.hierarchy["{\"type\":\"TRACK_GROUP\",\"trkGrp\":5}"]?.size)
         Assert.assertEquals(240, traversal.hierarchy["{\"type\":\"TRACK_GROUP\",\"trkGrp\":6}"]?.size)
@@ -126,10 +132,10 @@ class MediaBrowserTest {
         val traversal = MediaBrowserTraversal(browser)
         val filesRoot = "{\"type\":\"ROOT_FILES\"}"
         traversal.start(filesRoot)
-        Assert.assertEquals(12, traversal.hierarchy[filesRoot]?.size)
+        Assert.assertEquals(13, traversal.hierarchy[filesRoot]?.size)
         Assert.assertEquals(
             "{\"type\":\"DIRECTORY\",\"path\":\"/storage/$SD_CARD_ID$ROOT_DIR/ARTIST_2\"}",
-            traversal.hierarchy[filesRoot]?.get(2)
+            traversal.hierarchy[filesRoot]?.get(3)?.mediaId
         )
     }
 
@@ -138,7 +144,7 @@ class MediaBrowserTest {
         val traversal = MediaBrowserTraversal(browser)
         val directoryRoot = "{\"type\":\"DIRECTORY\",\"path\":\"/storage/$SD_CARD_ID$ROOT_DIR/ARTIST_0\"}"
         traversal.start(directoryRoot)
-        Assert.assertEquals(10, traversal.hierarchy[directoryRoot]?.size)
+        Assert.assertEquals(11, traversal.hierarchy[directoryRoot]?.size)
     }
 
     /**
@@ -149,7 +155,7 @@ class MediaBrowserTest {
         val traversal = MediaBrowserTraversal(browser)
         val directoryRoot = "{\"type\":\"DIRECTORY\",\"path\":\"/storage/$SD_CARD_ID$ROOT_DIR/dirWithManyFiles\"}"
         traversal.start(directoryRoot)
-        Assert.assertEquals(2, traversal.hierarchy[directoryRoot]?.size)
+        Assert.assertEquals(3, traversal.hierarchy[directoryRoot]?.size)
     }
 
 }

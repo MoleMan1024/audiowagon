@@ -20,6 +20,7 @@ private val logger = Logger
 private const val TAG = "PlaylistFileResolver"
 private const val UTF8_BOM = "\uFEFF"
 private val WINDOWS_ROOT_BACKSLASH_REGEX = Regex("^([A-Za-z]:)?\\\\")
+private val WINDOWS_SEPARATORS_REGEX = Regex("\\\\(?=\\S)")
 private val PLS_FILE_PREFIX = Regex("^File[0-9]+=")
 private val XSPF_PREFIX = Regex("^file:///[A-Za-z]:")
 private val IP_PREFIX = Regex("^(https?|rtsp)://")
@@ -27,8 +28,7 @@ private val IP_PREFIX = Regex("^(https?|rtsp)://")
 @ExperimentalCoroutinesApi
 class PlaylistFileResolver(
     private val playlistFileUri: Uri,
-    private val audioFileStorage: AudioFileStorage,
-    private val audioLibrary: AudioItemLibrary
+    private val audioFileStorage: AudioFileStorage
 ) {
     private val inputStream: InputStream = audioFileStorage.getInputStream(playlistFileUri)
 
@@ -68,7 +68,7 @@ class PlaylistFileResolver(
                 convertPathToAudioItem(pathInPlaylist.toString())
             } else {
                 val parentDir = Util.getParentPath(GeneralFile(playlistFileUri).path)
-                convertPathToAudioItem("$parentDir/$pathInPlaylist")
+                convertPathToAudioItem(Paths.get("$parentDir/$pathInPlaylist").normalize().toString())
             }
             audioItems.add(audioItem)
         }
@@ -130,7 +130,7 @@ class PlaylistFileResolver(
         logger.debug(TAG, "Converted path: $path")
         val uri = Util.createURIForPath(audioFileStorage.getPrimaryStorageLocation().storageID, path)
         val audioFile = AudioFile(uri)
-        return audioLibrary.createAudioItemForFile(audioFile)
+        return AudioItemLibrary.createAudioItemForFile(audioFile)
     }
 
     private fun removeBOM(line: String): String {
@@ -143,8 +143,9 @@ class PlaylistFileResolver(
     private fun convertWindowsPathToLinuxPath(path: String): String {
         var pathConverted: String = path
         if (WINDOWS_ROOT_BACKSLASH_REGEX.find(pathConverted) != null) {
-            pathConverted = pathConverted.replace(WINDOWS_ROOT_BACKSLASH_REGEX, "/").replace("\\", "/")
+            pathConverted = pathConverted.replace(WINDOWS_ROOT_BACKSLASH_REGEX, "/")
         }
+        pathConverted = pathConverted.replace(WINDOWS_SEPARATORS_REGEX, "/")
         return pathConverted
     }
 

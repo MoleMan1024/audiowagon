@@ -37,7 +37,8 @@ class ContentHierarchyArtist(
         if (!hasTooManyItems(numAlbums)) {
             val albums = getAudioItems()
             val pseudoCompilationArtistID: Long? = audioItemLibrary.getPseudoCompilationArtistID()
-            val isVariousArtists = pseudoCompilationArtistID == id.artistID
+            val isVariousArtists = (pseudoCompilationArtistID == id.artistID
+                    || pseudoCompilationArtistID == id.albumArtistID)
             if (albums.isNotEmpty() && !isVariousArtists) {
                 items += createPseudoPlayAllItem()
             }
@@ -72,18 +73,18 @@ class ContentHierarchyArtist(
         val repo: AudioItemRepository = audioItemLibrary.getRepoForContentHierarchyID(id) ?: return mutableListOf()
         val albums: List<AudioItem>
         try {
-            albums = repo.getAlbumsForArtist(id.artistID)
+            albums = repo.getAlbumsForArtist(pickArtistOrAlbumArtistID())
         } catch (exc: IllegalArgumentException) {
             logger.error(TAG, exc.toString())
             return listOf()
         }
-        return albums.sortedBy { it.album.lowercase() }
+        return albums.sortedWith(compareBy({ it.sortName.lowercase() }, { it.album.lowercase() }))
     }
 
     private suspend fun getNumAlbums(): Int {
         var numAlbums = 0
         val repo = audioItemLibrary.getPrimaryRepository() ?: return 0
-        numAlbums += repo.getNumAlbumsBasedOnTracksArtist(id.artistID)
+        numAlbums += repo.getNumAlbumsBasedOnTracksArtist(pickArtistOrAlbumArtistID())
         return numAlbums
     }
 

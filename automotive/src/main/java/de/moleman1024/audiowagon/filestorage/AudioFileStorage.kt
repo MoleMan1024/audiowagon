@@ -13,8 +13,11 @@ import androidx.annotation.VisibleForTesting
 import de.moleman1024.audiowagon.*
 import de.moleman1024.audiowagon.authorization.SDCardDevicePermissions
 import de.moleman1024.audiowagon.authorization.USBDevicePermissions
+import de.moleman1024.audiowagon.exceptions.NoSuchDeviceException
 import de.moleman1024.audiowagon.filestorage.asset.AssetMediaDevice
 import de.moleman1024.audiowagon.filestorage.asset.AssetStorageLocation
+import de.moleman1024.audiowagon.filestorage.local.LocalFileMediaDevice
+import de.moleman1024.audiowagon.filestorage.local.LocalFileStorageLocation
 import de.moleman1024.audiowagon.filestorage.sd.SDCardAudioDataSource
 import de.moleman1024.audiowagon.filestorage.sd.SDCardMediaDevice
 import de.moleman1024.audiowagon.filestorage.sd.SDCardStorageLocation
@@ -27,13 +30,10 @@ import de.moleman1024.audiowagon.medialibrary.RESOURCE_ROOT_URI
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyElement
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyID
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyType
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.channels.produce
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.io.InputStream
@@ -41,6 +41,7 @@ import java.io.InputStream
 private const val TAG = "AudioFileStor"
 private val logger = Logger
 private const val SD_CARD_ID = "1404-9F0B"
+private const val MAX_NUM_ALBUM_ART_DIRS_TO_CACHE = 100
 
 /**
  * This class manages storage locations and provides functions to index them for audio files
@@ -63,16 +64,30 @@ open class AudioFileStorage(
     private var dataSources = mutableListOf<MediaDataSource>()
     private val dataSourcesMutex = Mutex()
     private var isSuspended = false
-    private val audioFileProducerChannels = mutableListOf<ReceiveChannel<AudioFile>>()
+    private val fileProducerChannels = mutableListOf<ReceiveChannel<FileLike>>()
     val storageObservers = mutableListOf<(StorageChange) -> Unit>()
     val mediaDevicesForTest = mutableListOf<MediaDevice>()
+    private val recentDirToAlbumArtMap = DirectoryToAlbumArtMapCache()
+    private class DirectoryToAlbumArtMapCache : LinkedHashMap<String, FileLike?>() {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, FileLike?>?): Boolean {
+            return size > MAX_NUM_ALBUM_ART_DIRS_TO_CACHE
+        }
+    }
 
     init {
+        cleanAlbumArtCache()
         initUSBObservers()
-        initAssetsForEmulator()
+        try {
+            initAssetsForEmulator()
+        } catch (exc: NoSuchDeviceException) {
+            logger.exception(TAG, exc.message.toString(), exc)
+        }
     }
 
     private fun initUSBObservers() {
+        if (SharedPrefs.getDataSourceSettingEnum(context, logger, TAG) != DataSourceSetting.USB) {
+            return
+        }
         usbDeviceConnections.registerForUSBIntents()
         usbDeviceConnections.deviceObservers.add { deviceChange ->
             if (deviceChange.error.isNotBlank()) {
@@ -154,6 +169,9 @@ open class AudioFileStorage(
             is AssetMediaDevice -> {
                 AssetStorageLocation(device)
             }
+            is LocalFileMediaDevice -> {
+                LocalFileStorageLocation(device)
+            }
             else -> {
                 throw RuntimeException("Unhandled device type when creating storage location: $device")
             }
@@ -191,8 +209,19 @@ open class AudioFileStorage(
     }
 
     fun updateConnectedDevices() {
-        usbDeviceConnections.updateConnectedDevices()
-        if (Util.isDebugBuild(context)) {
+        val dataSourceSetting = SharedPrefs.getDataSourceSettingEnum(context, logger, TAG)
+        val isDebugBuild = Util.isDebugBuild(context)
+        val isInEmulator = Util.isRunningInEmulator()
+        if (dataSourceSetting == DataSourceSetting.USB) {
+            usbDeviceConnections.updateConnectedDevices()
+        } else if (dataSourceSetting == DataSourceSetting.LOCAL) {
+            if (!isDebugBuild && isInEmulator) {
+                // release build in emulator uses assets storage only
+            } else {
+                addDevice(LocalFileMediaDevice(context))
+            }
+        }
+        if (isDebugBuild) {
             val sdCardDevicePermissions = SDCardDevicePermissions(context)
             if (!sdCardDevicePermissions.isPermitted()) {
                 logger.warning(TAG, "We do not yet have permission to access an SD card")
@@ -202,7 +231,8 @@ open class AudioFileStorage(
                 addDevice(it)
             }
         } else {
-            if (Util.isRunningInEmulator()) {
+            if (isInEmulator) {
+                // release builds in emulator is likely how Google is testing the app during Play Store approval
                 mediaDevicesForTest.forEach {
                     addDevice(it)
                 }
@@ -214,27 +244,27 @@ open class AudioFileStorage(
      * Traverses all files/directories in all storages and produces a list of audio files
      */
     @ExperimentalCoroutinesApi
-    fun indexStorageLocations(storageIDs: List<String>): ReceiveChannel<AudioFile> {
+    fun indexStorageLocations(storageIDs: List<String>): ReceiveChannel<FileLike> {
         if (!storageIDs.all { isStorageIDKnown(it) }) {
             throw RuntimeException("Unknown storage id(s) given in: $storageIDs")
         }
-        audioFileProducerChannels.clear()
+        fileProducerChannels.clear()
         storageIDs.forEach {
-            logger.debug(TAG, "Creating audio file producer channel for storage: $it")
+            logger.debug(TAG, "Creating file producer channel for storage: $it")
             val storageLoc = getStorageLocationForID(it)
             val rootDirectory = Directory(storageLoc.getRootURI())
-            val audioFileChannel = storageLoc.indexAudioFiles(rootDirectory, scope)
+            val fileChannel = storageLoc.indexAudioFiles(rootDirectory, scope, dispatcher)
             storageLoc.indexingStatus = IndexingStatus.INDEXING
-            audioFileProducerChannels.add(audioFileChannel)
+            fileProducerChannels.add(fileChannel)
         }
-        logger.debug(TAG, "Merging audio file producer channels: $audioFileProducerChannels")
+        logger.debug(TAG, "Merging file producer channels: $fileProducerChannels")
         // read about coroutines scope/context: https://elizarov.medium.com/coroutine-context-and-scope-c8b255d59055
         return scope.produce(dispatcher) {
-            audioFileProducerChannels.forEach { channel ->
+            fileProducerChannels.forEach { channel ->
                 channel.consumeEach {
                     logger.verbose(TAG, "Channel produced audiofile: $it")
                     if (isClosedForSend) {
-                        logger.error(TAG, "Audio file producer channel was closed")
+                        logger.error(TAG, "File producer channel was closed")
                         return@consumeEach
                     }
                     send(it)
@@ -243,15 +273,16 @@ open class AudioFileStorage(
         }
     }
 
-    fun cancelIndexing() {
+    fun cancelIndexing(cause: CancellationException? = null) {
+        logger.debug(TAG, "cancelIndexing()")
         audioFileStorageLocations.forEach {
             it.cancelIndexAudioFiles()
         }
-        audioFileProducerChannels.forEach {
+        fileProducerChannels.forEach {
             logger.debug(TAG, "Cancelling audio file producer channel: $it")
-            it.cancel()
+            it.cancel(cause)
         }
-        audioFileProducerChannels.clear()
+        fileProducerChannels.clear()
     }
 
     private fun isStorageIDKnown(storageID: String): Boolean {
@@ -367,13 +398,16 @@ open class AudioFileStorage(
 
     fun shutdown() {
         logger.debug(TAG, "shutdown()")
-        usbDeviceConnections.unregisterForUSBIntents()
+        if (SharedPrefs.getDataSourceSettingEnum(context, logger, TAG) == DataSourceSetting.USB) {
+            usbDeviceConnections.unregisterForUSBIntents()
+        }
         closeDataSources()
         audioFileStorageLocations.forEach {
             it.cancelIndexAudioFiles()
             it.close()
         }
         audioFileStorageLocations.clear()
+        cleanAlbumArtCache()
     }
 
     fun suspend() {
@@ -384,6 +418,7 @@ open class AudioFileStorage(
             it.close()
         }
         audioFileStorageLocations.clear()
+        cleanAlbumArtCache()
         usbDeviceConnections.isSuspended = true
         isSuspended = true
     }
@@ -421,7 +456,6 @@ open class AudioFileStorage(
         contentHierarchyID.path = file.uri.path.toString()
         val builder = MediaDescriptionCompat.Builder().apply {
             setTitle(file.name)
-            // TODO: filesize in subtitle?
             setIconUri(Uri.parse(
                 RESOURCE_ROOT_URI
                     + context.resources.getResourceEntryName(R.drawable.baseline_insert_drive_file_24)))
@@ -439,7 +473,6 @@ open class AudioFileStorage(
         contentHierarchyID.path = directory.uri.path.toString()
         val builder = MediaDescriptionCompat.Builder().apply {
             setTitle(directory.name)
-            // TODO: num entries in subtitle?
             setIconUri(Uri.parse(
                 RESOURCE_ROOT_URI
                         + context.resources.getResourceEntryName(R.drawable.baseline_folder_24)))
@@ -467,10 +500,14 @@ open class AudioFileStorage(
         return audioFileStorageLocations.isNotEmpty()
     }
 
-    fun getAlbumArtInDirectoryForURI(uri: Uri): ByteArray? {
-        var albumArtBytes: ByteArray? = null
+    fun getAlbumArtFileInDirectoryForURI(uri: Uri): FileLike? {
         val directory = Util.getParentPath(AudioFile(uri).path)
         logger.debug(TAG, "Looking for album art in directory: $directory")
+        if (recentDirToAlbumArtMap.containsKey(directory)) {
+            val albumArtInCache = recentDirToAlbumArtMap[directory]
+            logger.debug(TAG, "Returning album art for $directory from cache: ${albumArtInCache?.uri}")
+            return albumArtInCache
+        }
         val storageLocation = getStorageLocationForURI(uri)
         val directoryURI = Util.createURIForPath(storageLocation.storageID, directory)
         val directoryContents: List<FileLike> = storageLocation.getDirectoryContents(Directory(directoryURI))
@@ -479,11 +516,17 @@ open class AudioFileStorage(
         val albumArtFile = imageFiles.firstOrNull {
             it.name.matches(Regex("^(cover|folder|front|index|albumart.*|art\\.).*", RegexOption.IGNORE_CASE))
         }
-        if (albumArtFile != null) {
-            logger.debug(TAG, "Found album art file: $albumArtFile")
-            albumArtBytes = storageLocation.getByteArrayForURI(albumArtFile.uri)
-        }
-        return albumArtBytes
+        recentDirToAlbumArtMap[directory] = albumArtFile
+        return albumArtFile
+    }
+
+    fun cleanAlbumArtCache() {
+        recentDirToAlbumArtMap.clear()
+    }
+
+    fun getByteArrayForURI(uri: Uri): ByteArray {
+        val storageLocation = getStorageLocationForURI(uri)
+        return storageLocation.getByteArrayForURI(uri)
     }
 
     fun getInputStream(uri: Uri): InputStream {

@@ -20,6 +20,8 @@ data class ContentHierarchyID(
     // artist/album"
     @SerialName("art")
     var artistID: Long = -99
+    @SerialName("albArt")
+    var albumArtistID: Long = -99
     @SerialName("alb")
     var albumID: Long = -99
     @SerialName("trkGrp")
@@ -34,6 +36,7 @@ data class ContentHierarchyID(
 
     override fun toString(): String {
         return "ContentHierarchyID(type=$type, storage=$storageID, trk=$trackID, art=$artistID, " +
+                "albArt=$albumArtistID, " +
                 "alb=$albumID, trkGrp=$trackGroupIndex, artGrp=$artistGroupIndex, " +
                 "albGrp=$albumGroupIndex, path=$path, dirGrp=$directoryGroupIndex)"
     }

@@ -5,4 +5,6 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 package de.moleman1024.audiowagon.player
 
-data class CustomActionEvent(val action: CustomAction)
+data class CustomActionEvent(val action: CustomAction) {
+    var syncURL: String = ""
+}

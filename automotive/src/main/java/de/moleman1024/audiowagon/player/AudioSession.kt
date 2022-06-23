@@ -11,30 +11,25 @@ import android.content.Context
 import android.content.Intent
 import android.media.MediaPlayer
 import android.net.Uri
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
+import androidx.annotation.VisibleForTesting
 import androidx.media.session.MediaButtonReceiver
 import de.moleman1024.audiowagon.*
-import de.moleman1024.audiowagon.broadcast.*
-import de.moleman1024.audiowagon.exceptions.CannotReadFileException
-import de.moleman1024.audiowagon.exceptions.DriveAlmostFullException
-import de.moleman1024.audiowagon.exceptions.MissingEffectsException
-import de.moleman1024.audiowagon.exceptions.NoItemsInQueueException
+import de.moleman1024.audiowagon.exceptions.*
 import de.moleman1024.audiowagon.filestorage.AudioFile
 import de.moleman1024.audiowagon.filestorage.AudioFileStorage
 import de.moleman1024.audiowagon.log.CrashReporting
 import de.moleman1024.audiowagon.log.Logger
-import de.moleman1024.audiowagon.medialibrary.AudioItem
-import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
-import de.moleman1024.audiowagon.medialibrary.AudioItemType
+import de.moleman1024.audiowagon.medialibrary.*
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyElement
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyID
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyType
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.DATABASE_ID_UNKNOWN
-import de.moleman1024.audiowagon.medialibrary.descriptionForLog
 import de.moleman1024.audiowagon.persistence.PersistentPlaybackState
 import de.moleman1024.audiowagon.persistence.PersistentStorage
 import kotlinx.coroutines.*
@@ -100,10 +95,13 @@ class AudioSession(
         // to send play/pause button event: "adb shell input keyevent 85"
         val mediaButtonIntent = Intent(Intent.ACTION_MEDIA_BUTTON)
         mediaButtonIntent.setClass(context, MediaButtonReceiver::class.java)
-        // TODO: unclear which is the correct mutability flag to use
-        //  https://developer.android.com/reference/android/app/PendingIntent#FLAG_MUTABLE
+        val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            PendingIntent.FLAG_MUTABLE
+        } else {
+            0
+        }
         val pendingMediaBtnIntent: PendingIntent = PendingIntent.getBroadcast(
-            context, REQUEST_CODE, mediaButtonIntent, 0
+            context, REQUEST_CODE, mediaButtonIntent, flags
         )
         audioSessionCallback = AudioSessionCallback(audioPlayer, scope, dispatcher, crashReporting)
         mediaSession = MediaSessionCompat(context, SESSION_TAG).apply {
@@ -276,7 +274,8 @@ class AudioSession(
                 MediaPlayer.MEDIA_ERROR_MALFORMED,
                 MediaPlayer.MEDIA_ERROR_TIMED_OUT,
                 MediaPlayer.MEDIA_ERROR_UNSUPPORTED,
-                PlaybackStateCompat.ERROR_CODE_END_OF_QUEUE
+                PlaybackStateCompat.ERROR_CODE_END_OF_QUEUE,
+                PlaybackStateCompat.ERROR_CODE_APP_ERROR
             )
         ) {
             // no need to recover from this error
@@ -291,6 +290,8 @@ class AudioSession(
         initPlaybackState()
         launchInScopeSafely("reInitAfterError()") {
             audioPlayer.reInitAfterError()
+            crashReporting.logMessages(logger.getLastLogLines(NUM_LOG_LINES_CRASH_REPORT))
+            crashReporting.recordException(AudioPlayerException("errorCode=$errorCode"))
         }
     }
 
@@ -330,6 +331,7 @@ class AudioSession(
                                 audioItem = audioItemLibrary.extractMetadataFrom(audioFile)
                                 audioItem.id = ContentHierarchyElement.serialize(contentHierarchyID)
                                 audioItem.uri = audioFile.uri
+                                audioItem.albumArtURI = AudioMetadataMaker.createURIForAlbumArtForFile(audioFile.path)
                             }
                             else -> {
                                 throw IllegalArgumentException("Invalid content hierarchy: $contentHierarchyID")
@@ -338,15 +340,13 @@ class AudioSession(
                         it.ensureActive()
                         val metadata: MediaMetadataCompat = audioItemLibrary.createMetadataForItem(audioItem)
                         it.ensureActive()
-                        val albumArtBytes = audioItemLibrary.getAlbumArtForItem(audioItem)
-                        AlbumArtContentProvider.setAlbumArtByteArray(albumArtBytes)
                         extractAndSetReplayGain(audioItem)
                         setCurrentQueueItem(
                             MediaSessionCompat.QueueItem(metadata.description, queueChange.currentItem.queueId)
                         )
                         setMediaSessionMetadata(metadata)
                     } catch (exc: FileNotFoundException) {
-                        logger.exception(TAG, exc.message.toString(), exc)
+                        logger.exception(TAG, "observePlaybackQueue(): ${exc.message.toString()}", exc)
                         var fileName: String = context.getString(R.string.error_unknown)
                         if (audioFile != null) {
                             fileName = audioFile.name
@@ -543,8 +543,17 @@ class AudioSession(
                     }
                 }
                 AudioSessionChangeType.ON_SKIP_TO_QUEUE_ITEM -> {
+                    runBlocking(dispatcher) {
+                        onPlayFromMediaIDJob?.cancelAndJoin()
+                    }
                     launchInScopeSafely(audioSessionChange.type.name) {
                         audioPlayer.playFromQueueID(audioSessionChange.queueID)
+                    }
+                }
+                AudioSessionChangeType.ON_SKIP_TO_NEXT,
+                AudioSessionChangeType.ON_SKIP_TO_PREVIOUS -> {
+                    runBlocking(dispatcher) {
+                        onPlayFromMediaIDJob?.cancelAndJoin()
                     }
                 }
                 AudioSessionChangeType.ON_STOP -> {
@@ -596,21 +605,13 @@ class AudioSession(
                         val currentTrackID = getCurrentTrackID()
                         if (currentTrackID.isNotBlank()) {
                             val contentHierarchyID = ContentHierarchyElement.deserialize(currentTrackID)
-                            val audioItem = when (contentHierarchyID.type) {
-                                ContentHierarchyType.TRACK -> {
-                                    logger.debug(TAG, "getAudioItemForTrack($contentHierarchyID)")
-                                    audioItemLibrary.getAudioItemForTrack(contentHierarchyID)
-                                }
-                                ContentHierarchyType.FILE -> {
-                                    logger.debug(TAG, "getAudioItemForFile($contentHierarchyID)")
-                                    audioItemLibrary.getAudioItemForFile(contentHierarchyID)
-                                }
-                                else -> {
-                                    logger.error(TAG, "Cannot handle type: $contentHierarchyID")
-                                    return@launchInScopeSafely
-                                }
+                            try {
+                                val audioItem = getAudioItemForContentHierarchyType(contentHierarchyID)
+                                extractAndSetReplayGain(audioItem)
+                            } catch (exc: IllegalArgumentException) {
+                                logger.error(TAG, "Cannot handle type: $contentHierarchyID")
+                                return@launchInScopeSafely
                             }
-                            extractAndSetReplayGain(audioItem)
                         }
                         try {
                             audioPlayer.enableReplayGain()
@@ -651,9 +652,29 @@ class AudioSession(
                         audioFocus.setBehaviour(audioSessionChange.audioFocusSetting)
                     }
                 }
+                AudioSessionChangeType.ON_SET_ALBUM_STYLE -> {
+                    notifyObservers(
+                        SettingChangeEvent(SettingKey.ALBUM_STYLE_SETTING, audioSessionChange.albumStyleSetting)
+                    )
+                }
+                AudioSessionChangeType.ON_SET_DATA_SOURCE -> {
+                    notifyObservers(
+                        SettingChangeEvent(SettingKey.DATA_SOURCE_SETTING, audioSessionChange.dataSourceSetting)
+                    )
+                }
+                AudioSessionChangeType.ON_SYNC_FILES -> {
+                    val action = CustomActionEvent(CustomAction.SYNC_FILES)
+                    action.syncURL = audioSessionChange.syncFilesURL
+                    notifyObservers(action)
+                }
+                AudioSessionChangeType.ON_DELETE_FILES -> {
+                    val action = CustomActionEvent(CustomAction.DELETE_FILES)
+                    notifyObservers(action)
+                }
                 AudioSessionChangeType.ON_EJECT -> {
                     audioFocusChangeListener.lastUserRequestedStateChange = AudioSessionChangeType.ON_STOP
                     launchInScopeSafely(audioSessionChange.type.name) {
+                        Util.logMemory(context, logger, TAG)
                         notifyObservers(CustomActionEvent(CustomAction.EJECT))
                         storePlaybackState()
                         audioPlayer.prepareForEject()
@@ -673,6 +694,21 @@ class AudioSession(
                 }
             }
         }
+    }
+
+    private suspend fun getAudioItemForContentHierarchyType(contentHierarchyID: ContentHierarchyID): AudioItem {
+        val audioItem = when (contentHierarchyID.type) {
+            ContentHierarchyType.TRACK -> {
+                audioItemLibrary.getAudioItemForTrack(contentHierarchyID)
+            }
+            ContentHierarchyType.FILE -> {
+                audioItemLibrary.getAudioItemForFile(contentHierarchyID)
+            }
+            else -> {
+                throw IllegalArgumentException("Unhandled content hiearchy type: $contentHierarchyID")
+            }
+        }
+        return audioItem
     }
 
     private fun handleOnPlay() {
@@ -795,6 +831,7 @@ class AudioSession(
                     ContentHierarchyElement.deserialize(it.id).trackID == contentHierarchyID.trackID
                 }
                 if (contentHierarchyID.artistID <= DATABASE_ID_UNKNOWN
+                    && contentHierarchyID.albumArtistID <= DATABASE_ID_UNKNOWN
                     && contentHierarchyID.albumID <= DATABASE_ID_UNKNOWN
                 ) {
                     // User tapped on an entry in track view, we are playing a random selection of tracks afterwards.
@@ -859,18 +896,7 @@ class AudioSession(
             try {
                 scope.ensureActive()
                 val contentHierarchyID = ContentHierarchyElement.deserialize(contentHierarchyIDStr)
-                // TODO: same lines at 470
-                val audioItem = when (contentHierarchyID.type) {
-                    ContentHierarchyType.TRACK -> {
-                        audioItemLibrary.getAudioItemForTrack(contentHierarchyID)
-                    }
-                    ContentHierarchyType.FILE -> {
-                        audioItemLibrary.getAudioItemForFile(contentHierarchyID)
-                    }
-                    else -> {
-                        throw IllegalArgumentException("Unhandled content hiearchy type: $contentHierarchyID")
-                    }
-                }
+                val audioItem = getAudioItemForContentHierarchyType(contentHierarchyID)
                 val description = audioItemLibrary.createAudioItemDescription(audioItem)
                 val queueItem = MediaSessionCompat.QueueItem(description, index.toLong())
                 queue.add(queueItem)
@@ -912,6 +938,9 @@ class AudioSession(
             audioPlayer.notifyPlayerStatusChange()
         } catch (exc: NoItemsInQueueException) {
             logger.warning(TAG, "No items in play queue")
+        } catch (exc: FileNotFoundException) {
+            logger.exception(TAG, "prepareFromPersistent(): ${exc.message.toString()}", exc)
+            return
         }
         if (onPlayCalledBeforeUSBReady) {
             onPlayCalledBeforeUSBReady = false
@@ -1141,6 +1170,11 @@ class AudioSession(
 
     fun getNotification(): Notification {
         return audioSessionNotifications.getNotification()
+    }
+
+    @VisibleForTesting(otherwise = VisibleForTesting.NONE)
+    fun getAudioPlayerStatus(): AudioPlayerStatus {
+        return audioPlayer.playerStatus
     }
 
     // TODO: split file, too long

@@ -8,7 +8,9 @@ package de.moleman1024.audiowagon
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.preference.PreferenceManager
+import de.moleman1024.audiowagon.filestorage.DataSourceSetting
 import de.moleman1024.audiowagon.log.Logger
+import de.moleman1024.audiowagon.medialibrary.AlbumStyleSetting
 import de.moleman1024.audiowagon.medialibrary.MetadataReadSetting
 import de.moleman1024.audiowagon.player.AudioFocusSetting
 import de.moleman1024.audiowagon.player.EqualizerPreset
@@ -22,7 +24,13 @@ const val SHARED_PREF_ENABLE_EQUALIZER = "enableEqualizer"
 const val SHARED_PREF_EQUALIZER_PRESET = "equalizerPreset"
 const val SHARED_PREF_ENABLE_REPLAYGAIN = "enableReplayGain"
 const val SHARED_PREF_AUDIOFOCUS = "audioFocus"
+const val SHARED_PREF_ALBUM_STYLE = "albumStyle"
+const val SHARED_PREF_DATA_SOURCE = "dataSource"
 const val SHARED_PREF_CRASH_REPORTING = "crashReporting"
+const val SHARED_PREF_SYNC_STATUS = "syncStatus"
+const val SHARED_PREF_SYNC_NUM_FILES_COPIED = "syncNumFilesCopied"
+const val SHARED_PREF_SYNC_NUM_FILES_TOTAL = "syncNumFilesTotal"
+const val SHARED_PREF_SYNC_STORAGE_SPACE = "syncStorageSpace"
 val SHARED_PREF_EQUALIZER_PRESET_DEFAULT = EqualizerPreset.LESS_BASS.name
 
 class SharedPrefs {
@@ -118,6 +126,50 @@ class SharedPrefs {
             AudioFocusSetting.PAUSE.name
         }
 
+        fun getAlbumStyleSetting(context: Context): String {
+            return getAlbumStyleSetting(getDefaultSharedPreferences(context))
+        }
+
+        fun getAlbumStyleSetting(sharedPreferences: SharedPreferences?): String {
+            return sharedPreferences?.getString(SHARED_PREF_ALBUM_STYLE, AlbumStyleSetting.GRID.name) ?:
+            AlbumStyleSetting.GRID.name
+        }
+
+        fun getAlbumStyleSettingEnum(context: Context, logger: Logger, tag: String): AlbumStyleSetting {
+            val albumStyleSettingStr = getAlbumStyleSetting(context)
+            var albumStyleSetting: AlbumStyleSetting = AlbumStyleSetting.GRID
+            try {
+                albumStyleSetting = AlbumStyleSetting.valueOf(albumStyleSettingStr)
+            } catch (exc: IllegalArgumentException) {
+                logger.exception(tag, exc.message.toString(), exc)
+            }
+            return albumStyleSetting
+        }
+
+        fun getDataSourceSetting(context: Context): String {
+            return getDataSourceSetting(getDefaultSharedPreferences(context))
+        }
+
+        fun getDataSourceSetting(sharedPreferences: SharedPreferences?): String {
+            if (!BuildConfig.ALLOW_LOCAL_FILES) {
+                // when feature is turned off, ignore shared preference
+                return DataSourceSetting.USB.name
+            }
+            return sharedPreferences?.getString(SHARED_PREF_DATA_SOURCE, DataSourceSetting.USB.name) ?:
+            DataSourceSetting.USB.name
+        }
+
+        fun getDataSourceSettingEnum(context: Context, logger: Logger, tag: String): DataSourceSetting {
+            val dataSourceSettingStr = getDataSourceSetting(context)
+            var dataSourceSetting: DataSourceSetting = DataSourceSetting.USB
+            try {
+                dataSourceSetting = DataSourceSetting.valueOf(dataSourceSettingStr)
+            } catch (exc: IllegalArgumentException) {
+                logger.exception(tag, exc.message.toString(), exc)
+            }
+            return dataSourceSetting
+        }
+
         fun isLogToUSBEnabled(context: Context): Boolean {
             return isLogToUSBEnabled(getDefaultSharedPreferences(context))
         }
@@ -153,5 +205,54 @@ class SharedPrefs {
         private fun getDefaultSharedPreferences(context: Context): SharedPreferences {
             return PreferenceManager.getDefaultSharedPreferences(context)
         }
+
+        fun getSyncStatus(sharedPreferences: SharedPreferences?): String {
+            return sharedPreferences?.getString(SHARED_PREF_SYNC_STATUS, "") ?: ""
+        }
+
+        fun setSyncStatus(context: Context, status: String) {
+            setSyncStatus(getDefaultSharedPreferences(context), status)
+        }
+
+        fun setSyncStatus(sharedPreferences: SharedPreferences?, status: String) {
+            sharedPreferences?.edit()?.putString(SHARED_PREF_SYNC_STATUS, status)?.apply()
+        }
+
+        fun getSyncNumFilesCopied(sharedPreferences: SharedPreferences?): Int {
+            return sharedPreferences?.getInt(SHARED_PREF_SYNC_NUM_FILES_COPIED, 0) ?: 0
+        }
+
+        fun setSyncNumFilesCopied(context: Context, numFiles: Int) {
+            setSyncNumFilesCopied(getDefaultSharedPreferences(context), numFiles)
+        }
+
+        fun setSyncNumFilesCopied(sharedPreferences: SharedPreferences?, numFiles: Int) {
+            sharedPreferences?.edit()?.putInt(SHARED_PREF_SYNC_NUM_FILES_COPIED, numFiles)?.apply()
+        }
+
+        fun getSyncNumFilesTotal(sharedPreferences: SharedPreferences?): Int {
+            return sharedPreferences?.getInt(SHARED_PREF_SYNC_NUM_FILES_TOTAL, -1) ?: -1
+        }
+
+        fun setSyncNumFilesTotal(context: Context, numFiles: Int) {
+            setSyncNumFilesTotal(getDefaultSharedPreferences(context), numFiles)
+        }
+
+        fun setSyncNumFilesTotal(sharedPreferences: SharedPreferences?, numFiles: Int) {
+            sharedPreferences?.edit()?.putInt(SHARED_PREF_SYNC_NUM_FILES_TOTAL, numFiles)?.apply()
+        }
+
+        fun getSyncFreeSpace(sharedPreferences: SharedPreferences?): String {
+            return sharedPreferences?.getString(SHARED_PREF_SYNC_STORAGE_SPACE, "")?: ""
+        }
+
+        fun setSyncFreeSpace(context: Context, freeSpace: String) {
+            setSyncFreeSpace(getDefaultSharedPreferences(context), freeSpace)
+        }
+
+        fun setSyncFreeSpace(sharedPreferences: SharedPreferences?, freeSpace: String) {
+            sharedPreferences?.edit()?.putString(SHARED_PREF_SYNC_STORAGE_SPACE, freeSpace)?.apply()
+        }
+
     }
 }

@@ -20,18 +20,13 @@ Sorry, I don't know why that happens. It works fine on the mobile phone that I u
 maker probably put some extra security in the car that will always trigger this permission dialog popup. I would need
 help from the car maker or Google to improve this.
 
-**More technical details for car maker**: At least in Polestar 2 it looks like 
-[car-usb-handler](https://android.googlesource.com/platform/packages/services/Car/+/refs/tags/android-10.0.0_r40/car-usb-handler) 
-is not included in the build, Polestar/Volvo team please consider adding it, I think the permission would then be stored
-across reboots which would make the few thousand users this app has very happy.
-
 ### What is the eject button for?
 
 The eject button will make sure that the USB drive is not in use when you unplug it. Press it while the infotainment
 system is still on and wait for the popup to appear, then you can safely unplug your USB drive.
 
 If you do not follow this procedure, and unplug the USB drive while it is still in use, the app could crash or the data
-on your USB drive might be damaged. 
+on your USB drive might be damaged.
 
 ### Why is my USB drive not recognized?
 
@@ -71,17 +66,25 @@ the settings screen using the option "Read metadata":
   that file. If not, it will take the information from the database. Thus this process should be much quicker than the
   first time. However it can still take multiple seconds with large music libraries.
 
-  This setting is recommend when you don't have a lot of audio files on your USB drive.
+  This setting is recommended when you don't have a lot of audio files on your USB drive.
 
-- **Manually**: Similar to above, but you have to start the indexing process by hand. You should do this whenever you 
+- **Manually**: Similar to above, but you have to start the indexing process by hand. You should do this whenever you
   change files on the USB drive. You can start the indexing using the option "Read metadata now" in the settings screen.
 
   This setting is recommended when you have many audio files on your USB drive but you do not change them very often.
 
-- **Off**: With this setting metadata will *not* be extracted from audio files. You will not be able to navigate nor
-  search by track, album, artist. You can only browse by directory or file. 
+- **File paths only**: With this setting only the file paths on the USB drive will be indexed, no other metadata. This
+  setting will allow you to use "Play all" in any directory.
 
-  This setting is recommended when many audio files on your USB drive do not have any/correct metadata.
+  This setting is recommended when you don't care about metadata but still would like to play all files in a directory
+  hierarchy.
+
+- **Off**: With this setting metadata will *not* be extracted from audio files. You will not be able to navigate nor
+  search by track, album, artist. You can only browse by directory or file and you can only play files found in a single
+  directory.
+
+  This setting is recommended when many audio files on your USB drive do not have any/correct metadata or you never
+  want to wait for indexing.
 
 ### Why do my compilation albums show up as separate albums?
 
@@ -118,12 +121,12 @@ As an example consider this album containing some song covers for the artist "Mi
 
 ![album artist list](/img/album_artist_list.jpg)
 
-It is *not* tagged as a compilation, the *album artist* is "Mirah" and the *artist* is the one that covered the song. 
+It is *not* tagged as a compilation, the *album artist* is "Mirah" and the *artist* is the one that covered the song.
 
-The AudioWagon app will react the following way based on feature request 
+The AudioWagon app will react the following way based on feature request
 [#22](https://github.com/MoleMan1024/audiowagon/issues/22):
 - In the **artist view** the *album artist* will be shown
-- In the **album view** the *album artist* will be shown 
+- In the **album view** the *album artist* will be shown
 
   ![album artist](/img/album_artist.jpg)
 - In the **track view** the original *artist* will be shown
@@ -149,7 +152,7 @@ When you add more than 400 tracks/albums/artists they will be shown using *group
 ![album groups](/img/album_groups.jpg)
 
 This is necessary because Android cannot deal with lists which are extremely long. Also it will be annoying to
-scroll through such long lists. 
+scroll through such long lists.
 
 Each group contains 400 entries and is based on the names of the
 tracks/albums/artists inside. Tapping on one entry will show those 400 tracks/albums/artists in a new list (in this
@@ -166,20 +169,20 @@ drive. That should remove this warning message.
 
 ### Files on my USB drive were deleted!
 
-This usually means the FAT32 filesystem was damaged somehow. I am trying my best to avoid this situation, if you 
-encounter this in a recent version of the app, please send a bug report. Here are some things you can try if this 
+This usually means the FAT32 filesystem was damaged somehow. I am trying my best to avoid this situation, if you
+encounter this in a recent version of the app, please send a bug report. Here are some things you can try if this
 happens to you:
 
 - First of all do not store any important data on the USB drive other than audio files. Keep a copy of those files on
   your PC
 - Update the app to version 0.6.1 or higher, there was an issue in earlier versions that could cause this corruption
 - Try using a different USB drive (flash memory can wear out after some years)
-- Try putting less data on the USB drive 
+- Try putting less data on the USB drive
 - Make sure to always properly eject the USB drive before unplugging it. Do not assume that if the infotainment screen
   is off it is safe to unplug the USB drive. Like on your phone, even with the screen off the Android system might still
   be running.
 
-You might be able to recover some of your data using e.g. Windows *chkdsk* tool. You should re-format the USB drive 
+You might be able to recover some of your data using e.g. Windows *chkdsk* tool. You should re-format the USB drive
 afterwards to make sure it is in a clean state.
 
 
@@ -188,7 +191,7 @@ afterwards to make sure it is in a clean state.
 ### Is there a limitation on the number of files the app can handle?
 
 There is a theoretical limit of about 160000 tracks. However you might observe other issues before you reach that many
-tracks (see above) and you will go mad due to the loading time 😉. 
+tracks (see above) and you will go mad due to the loading time 😉.
 
 Also before you try to go there, ask yourself how many tracks you really need on your journey. 10000 tracks with an
 average of 3 minutes each is already more than 20 days of music to listen to.
@@ -248,7 +251,7 @@ built into certain car models.
 
 ### I want to thank you, do you accept donations?
 
-I am fine, thanks. If you really want to give something in return, please put it towards a good cause, for example 
+I am fine, thanks. If you really want to give something in return, please put it towards a good cause, for example
 to protect the environment (reforestation, solar power, right-to-repair, local projects, etc.).
 
 *Update Nov 2021:* Oh wow, people are actually doing this and notifying me, this is amazing! 😄

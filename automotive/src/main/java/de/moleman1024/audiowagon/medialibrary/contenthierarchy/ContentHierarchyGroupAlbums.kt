@@ -17,7 +17,7 @@ private const val TAG = "ChGroupAlbums"
 private val logger = Logger
 
 /**
- * A group containing albums in browse view
+ * One group of max 400 albums in browse view
  */
 @ExperimentalCoroutinesApi
 class ContentHierarchyGroupAlbums(id: ContentHierarchyID, context: Context, audioItemLibrary: AudioItemLibrary) :
@@ -38,22 +38,22 @@ class ContentHierarchyGroupAlbums(id: ContentHierarchyID, context: Context, audi
 
     override suspend fun getAudioItems(): List<AudioItem> {
         val repo = audioItemLibrary.getPrimaryRepository() ?: return emptyList()
-        val numAlbumGroups: Int = if (id.artistID < 0) {
+        val numAlbumGroups: Int = if (id.albumArtistID < 0) {
             ceil(repo.getNumAlbums().toDouble() / CONTENT_HIERARCHY_MAX_NUM_ITEMS).toInt()
         } else {
-            ceil(repo.getNumAlbumsBasedOnTracksArtist(id.artistID).toDouble() / CONTENT_HIERARCHY_MAX_NUM_ITEMS).toInt()
+            ceil(repo.getNumAlbumsBasedOnTracksArtist(id.albumArtistID).toDouble() / CONTENT_HIERARCHY_MAX_NUM_ITEMS).toInt()
         }
         if (id.albumGroupIndex >= numAlbumGroups || id.albumGroupIndex < 0) {
             logger.error(TAG, "Group index ${id.albumGroupIndex} does not fit for $numAlbumGroups album groups")
             return emptyList()
         }
-        return if (id.artistID < 0) {
+        return if (id.albumArtistID < 0) {
             repo.getAlbumsLimitOffset(
                 CONTENT_HIERARCHY_MAX_NUM_ITEMS, CONTENT_HIERARCHY_MAX_NUM_ITEMS * id.albumGroupIndex
             )
         } else {
             repo.getAlbumsForArtistLimitOffset(
-                CONTENT_HIERARCHY_MAX_NUM_ITEMS, CONTENT_HIERARCHY_MAX_NUM_ITEMS * id.albumGroupIndex, id.artistID
+                CONTENT_HIERARCHY_MAX_NUM_ITEMS, CONTENT_HIERARCHY_MAX_NUM_ITEMS * id.albumGroupIndex, id.albumArtistID
             )
         }
     }

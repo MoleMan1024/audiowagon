@@ -10,11 +10,13 @@ import android.net.Uri
 import android.support.v4.media.MediaBrowserCompat.MediaItem
 import android.support.v4.media.MediaDescriptionCompat
 import de.moleman1024.audiowagon.R
+import de.moleman1024.audiowagon.SharedPrefs
 import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.filestorage.*
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
+import de.moleman1024.audiowagon.medialibrary.MetadataReadSetting
 import de.moleman1024.audiowagon.medialibrary.RESOURCE_ROOT_URI
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 
@@ -35,11 +37,41 @@ class ContentHierarchyDirectory(
 
     override suspend fun getMediaItems(): List<MediaItem> {
         val directoryContents = getDirectoryContents()
-        return if (!hasTooManyItems(directoryContents.size)) {
-            createFileLikeMediaItemsForDir(directoryContents, audioFileStorage)
-        } else {
-            createGroups(directoryContents)
+        val filesDirs = mutableListOf<MediaItem>()
+        if (directoryContents.isNotEmpty()) {
+            val metadataReadSetting = SharedPrefs.getMetadataReadSettingEnum(context, logger, TAG)
+            if (metadataReadSetting != MetadataReadSetting.OFF && !audioItemLibrary.isBuildingLibrary) {
+                val storageLocation = audioFileStorage.getPrimaryStorageLocation()
+                val directoryURI = Util.createURIForPath(storageLocation.storageID, id.path.removePrefix("/"))
+                val anyFileFound = audioItemLibrary.getFilesInDirRecursive(directoryURI, 1).isNotEmpty()
+                if (anyFileFound) {
+                    filesDirs += createPseudoPlayAllItem()
+                }
+            }
         }
+        return if (!hasTooManyItems(directoryContents.size)) {
+            filesDirs += createFileLikeMediaItemsForDir(directoryContents, audioFileStorage)
+            filesDirs
+        } else {
+            filesDirs += createGroups(directoryContents)
+            filesDirs
+        }
+    }
+
+    /**
+     * Creates pseudo [MediaItem] to play all files in this directory recursively
+     */
+    private fun createPseudoPlayAllItem(): MediaItem {
+        val playAllFilesForDirectoryID = id
+        playAllFilesForDirectoryID.type = ContentHierarchyType.ALL_FILES_FOR_DIRECTORY
+        val description = MediaDescriptionCompat.Builder().apply {
+            setMediaId(serialize(playAllFilesForDirectoryID))
+            setTitle(context.getString(R.string.browse_tree_pseudo_play_all))
+            setIconUri(
+                Uri.parse(RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.baseline_playlist_play_24))
+            )
+        }.build()
+        return MediaItem(description, MediaItem.FLAG_PLAYABLE)
     }
 
     fun createGroups(directoryContents: List<FileLike>): MutableList<MediaItem> {
@@ -71,8 +103,8 @@ class ContentHierarchyDirectory(
             val lastAudioFileInGroup = AudioFile(
                 Util.createURIForPath(storageLocation.storageID, directoryContents[offsetEnd].path)
             )
-            val firstItemInGroup: AudioItem = audioItemLibrary.createAudioItemForFile(firstAudioFileInGroup)
-            val lastItemInGroup: AudioItem = audioItemLibrary.createAudioItemForFile(lastAudioFileInGroup)
+            val firstItemInGroup: AudioItem = AudioItemLibrary.createAudioItemForFile(firstAudioFileInGroup)
+            val lastItemInGroup: AudioItem = AudioItemLibrary.createAudioItemForFile(lastAudioFileInGroup)
             groupContentHierarchyID.directoryGroupIndex = groupIndex
             val description = MediaDescriptionCompat.Builder().apply {
                 setTitle(
@@ -102,8 +134,9 @@ class ContentHierarchyDirectory(
         }
         val directoryURI = Util.createURIForPath(storageLocation.storageID, id.path.removePrefix("/"))
         val directoryContents = storageLocation.getDirectoryContentsPlayable(Directory(directoryURI))
+        // do not ignore articles using sortName here, that is only done for artists/albums/tracks
         return directoryContents.filter { !it.name.matches(Util.DIRECTORIES_TO_IGNORE_REGEX) }
-            .sortedBy { it.name.lowercase() }
+            .sortedWith(compareBy { it.name.lowercase() })
     }
 
 }

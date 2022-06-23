@@ -6,7 +6,9 @@ SPDX-License-Identifier: GPL-3.0-or-later
 package de.moleman1024.audiowagon.medialibrary.contenthierarchy
 
 import android.content.Context
+import android.os.Bundle
 import android.support.v4.media.MediaBrowserCompat.MediaItem
+import de.moleman1024.audiowagon.medialibrary.AlbumStyleSetting
 import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -26,8 +28,12 @@ class ContentHierarchyRootArtists(
         val numArtists = getNumArtists()
         if (!hasTooManyItems(numArtists)) {
             val audioItems = getAudioItems()
+            var extras: Bundle? = null
+            if (audioItemLibrary.albumArtStyleSetting == AlbumStyleSetting.GRID) {
+                extras = generateExtrasBrowsableGridItems()
+            }
             for (artist in audioItems) {
-                val description = audioItemLibrary.createAudioItemDescription(artist)
+                val description = audioItemLibrary.createAudioItemDescription(artist, extras = extras)
                 items += MediaItem(description, artist.browsPlayableFlags)
             }
         } else {
@@ -47,14 +53,14 @@ class ContentHierarchyRootArtists(
     override suspend fun getAudioItems(): List<AudioItem> {
         val items: MutableList<AudioItem> = mutableListOf()
         val repo = audioItemLibrary.getPrimaryRepository() ?: return emptyList()
-        items += repo.getAllArtists()
-        return items.sortedBy { it.artist.lowercase() }
+        items += repo.getAllAlbumAndCompilationArtists()
+        return items
     }
 
     suspend fun getNumArtists(): Int {
         var numArtists = 0
         val repo = audioItemLibrary.getPrimaryRepository() ?: return 0
-        numArtists += repo.getNumArtists()
+        numArtists += repo.getNumAlbumAndCompilationArtists()
         return numArtists
     }
 

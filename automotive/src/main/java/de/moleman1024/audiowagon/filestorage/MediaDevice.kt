@@ -7,10 +7,54 @@ package de.moleman1024.audiowagon.filestorage
 
 import android.media.MediaDataSource
 import android.net.Uri
+import de.moleman1024.audiowagon.Util
+import de.moleman1024.audiowagon.log.Logger
+import kotlinx.coroutines.CoroutineScope
+import java.io.File
+import java.util.*
 
 interface MediaDevice {
+   @Suppress("PropertyName")
+   val TAG: String
+   val logger: Logger
+
    fun getDataSourceForURI(uri: Uri): MediaDataSource
    fun getBufferedDataSourceForURI(uri: Uri): MediaDataSource
    fun getID(): String
    fun getName(): String
+   fun getFileFromURI(uri: Uri): Any
+
+   /**
+    * Traverses files/directories. Default implementation uses java.io.File API
+    */
+   fun walkTopDown(rootDirectory: Any): Sequence<Any> = sequence {
+      val queue = LinkedList<File>()
+      val allFilesDirs = mutableMapOf<String, Unit>()
+      allFilesDirs[(rootDirectory as File).absolutePath] = Unit
+      queue.add(rootDirectory)
+      while (queue.isNotEmpty()) {
+         val fileOrDirectory = queue.removeFirst()
+         if (!fileOrDirectory.isDirectory) {
+            logger.verbose(TAG, "Found file: ${fileOrDirectory.absolutePath}")
+            yield(fileOrDirectory)
+         } else {
+            if (fileOrDirectory.name.contains(Util.DIRECTORIES_TO_IGNORE_REGEX)) {
+               logger.debug(TAG, "Ignoring directory: ${fileOrDirectory.name}")
+            } else {
+               logger.debug(TAG, "Walking directory: ${fileOrDirectory.absolutePath}")
+               yield(fileOrDirectory)
+               for (subFileOrDir in fileOrDirectory.listFiles()?.sortedBy { it.name.lowercase() }!!) {
+                  if (!allFilesDirs.containsKey(subFileOrDir.absolutePath)) {
+                     allFilesDirs[subFileOrDir.absolutePath] = Unit
+                     if (subFileOrDir.isDirectory) {
+                        logger.verbose(TAG, "Found directory: ${subFileOrDir.absolutePath}")
+                     }
+                     queue.add(subFileOrDir)
+                  }
+               }
+            }
+         }
+      }
+   }
+
 }

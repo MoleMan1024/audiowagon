@@ -4,134 +4,140 @@ SPDX-FileCopyrightText: 2021 MoleMan1024 <moleman1024dev@gmail.com>
 SPDX-License-Identifier: GPL-3.0-or-later
 -->
 <resources>
-	<string name="app_name">AudioWagon</string>
-	<string name="queue_title">Wiedergabeliste</string>
-	<string name="search_group_tracks">Titel</string>
-	<string name="search_group_artists">Künstler</string>
-	<string name="search_group_albums">Alben</string>
-	<string name="browse_tree_category_tracks">Titel</string>
-	<string name="browse_tree_category_artists">Künstler</string>
-	<string name="browse_tree_category_albums">Alben</string>
-	<string name="browse_tree_pseudo_track_shuffle_all">In zufälliger Reihenfolge abspielen</string>
-	<string name="browse_tree_pseudo_play_all">Alle abspielen</string>
-	<string name="browse_tree_unknown_album">Unbekanntes Album</string>
-	<string name="browse_tree_unknown_artist">Unbekannter Künstler</string>
-	<string name="browse_tree_various_artists">Verschiedene Künstler</string>
-	<string name="browse_tree_no_entries_title">Keine Audiodateien</string>
-	<string name="browse_tree_no_usb_drive">Bitte USB-Stick einstecken</string>
-	<string name="browse_tree_usb_drive_ejected">USB-Stick wurde ausgeworfen oder konnte nicht gelesen werden</string>
-	<string name="browse_tree_need_to_agree_legal_title">Rechtlichen Hinweisen nicht zugestimmt</string>
-	<string name="browse_tree_need_to_agree_legal_desc">Siehe Einstellungen</string>
-	<string name="toast_indexing_started">USB-Stick wird eingelesen …</string>
-	<string name="toast_indexing_completed">Einlesen von USB-Stick erfolgreich</string>
-	<string name="no_next_track">Kein nächster Titel</string>
-	<string name="no_prev_track">Kein vorheriger Titel</string>
-	<string name="eject_completed">USB-Stick wurde ausgeworfen, er kann jetzt abgesteckt werden</string>
-	<string name="error">FEHLER: %1$s</string>a
-	<string name="error_audio_focus_denied">Audiofokus nicht erhalten</string>
-	<string name="error_USB_init">Fehler bei Verbindung zum USB-Stick</string>
-	<string name="error_no_filesystem">Kein unterstütztes Dateisystem</string>
-	<string name="error_library_creation_fail">Erzeugen der Datenbank fehlgeschlagen</string>
-	<string name="error_invalid_state">Falscher Zustand</string>
-	<string name="error_IO">I/O Fehler</string>
-	<string name="error_malformed_data">Daten im falschen Format</string>
-	<string name="error_timeout">Zeitüberschreitung</string>
-	<string name="error_not_supported">Nicht unterstützt</string>
-	<string name="error_no_USB_device">Kein USB-Stick</string>
-	<string name="error_unknown">Unbekannt</string>
-	<string name="notif_action_play">Abspielen</string>
-	<string name="notif_action_pause">Pause</string>
-	<string name="notif_action_stop">Stop</string>
-	<string name="notif_action_next">Nächster</string>
-	<string name="notif_action_prev">Vorheriger</string>
-	<string name="notif_channel_name">Benachrichtigungen von AudioWagon</string>
-	<string name="notif_channel_desc">Benachrichtigungskanal von AudioWagon</string>
-	<string name="notif_channel_name_indexing">Benachrichtigungen zum Einlesen von AudioWagon</string>
-	<string name="notif_channel_desc_indexing">Benachrichtigungskanal zum Einlesen von AudioWagon</string>
-	<string name="notif_indexing_title">USB-Einlese-Status</string>
-	<string name="notif_indexing_text_in_progress">Läuft …</string>
-	<string name="notif_indexing_text_in_progress_num_items">Einträge gefunden: %1$d …</string>
-	<string name="notif_indexing_text_completed">Fertig</string>
-	<string name="action_shuffle_turn_on">Zufallswiedergabe an</string>
-	<string name="action_shuffle_turn_off">Zufallswiedergabe aus</string>
-	<string name="action_repeat_turn_on">Wiederholen an</string>
-	<string name="action_repeat_turn_off">Wiederholen aus</string>
-	<string name="action_eject">Auswerfen</string>
-	<string name="settings_title">Einstellungen</string>
-	<string name="setting_enable_equalizer_title">Equalizer</string>
-	<string name="setting_sound_category_title">Klang</string>
-	<string name="setting_equalizer_preset_title">Equalizer Profil</string>
-	<string name="equalizer_preset_less_bass">Weniger Bass</string>
-	<string name="equalizer_preset_more_bass">Mehr Bass</string>
-	<string name="equalizer_preset_less_treble">Weniger Höhen</string>
-	<string name="equalizer_preset_more_treble">Mehr Höhen</string>
-	<string name="equalizer_preset_P2">P2</string>
-	<string name="equalizer_preset_P2_plus">P2+</string>
-	<string name="equalizer_preset_V_shape">V-förmig</string>
-	<string name="setting_general_category_title">Allgemein</string>
-	<string name="setting_log_to_USB_title">Logdateien auf USB-Stick schreiben</string>
-	<!-- since some persons already consider USB to be an outdated technology, we should address our users formally
-	(i.e. "Sie") they are likely millennials or older ;-) -->
-	<string name="setting_log_to_USB_desc">Wenn Sie einen Fehler in der App melden, geben Sie diese Logdateien bitte
+    <string name="app_name">AudioWagon</string>
+    <string name="queue_title">Wiedergabeliste</string>
+    <string name="search_group_tracks">Titel</string>
+    <string name="search_group_artists">Künstler</string>
+    <string name="search_group_albums">Alben</string>
+    <string name="search_group_files">Dateien</string>
+    <string name="browse_tree_category_tracks">Titel</string>
+    <string name="browse_tree_category_artists">Künstler</string>
+    <string name="browse_tree_category_albums">Alben</string>
+    <string name="browse_tree_pseudo_track_shuffle_all">In zufälliger Reihenfolge abspielen</string>
+    <string name="browse_tree_pseudo_play_all">Alle abspielen</string>
+    <string name="browse_tree_unknown_album">Unbekanntes Album</string>
+    <string name="browse_tree_unknown_artist">Unbekannter Künstler</string>
+    <string name="browse_tree_various_artists">Verschiedene Künstler</string>
+    <string name="browse_tree_no_entries_title">Keine Audiodateien</string>
+    <string name="browse_tree_no_usb_drive">Bitte USB-Stick einstecken</string>
+    <string name="browse_tree_usb_drive_ejected">USB-Stick wurde ausgeworfen oder konnte nicht gelesen werden</string>
+    <string name="browse_tree_need_to_agree_legal_title">Rechtlichen Hinweisen nicht zugestimmt</string>
+    <string name="browse_tree_need_to_agree_legal_desc">Siehe Einstellungen</string>
+    <string name="toast_indexing_started">USB-Stick wird eingelesen …</string>
+    <string name="toast_indexing_completed">Einlesen von USB-Stick erfolgreich</string>
+    <string name="no_next_track">Kein nächster Titel</string>
+    <string name="no_prev_track">Kein vorheriger Titel</string>
+    <string name="eject_completed">USB-Stick wurde ausgeworfen, er kann jetzt abgesteckt werden</string>
+    <string name="error">FEHLER: %1$s</string>a
+    <string name="error_audio_focus_denied">Audiofokus nicht erhalten</string>
+    <string name="error_USB_init">Fehler bei Verbindung zum USB-Stick</string>
+    <string name="error_no_filesystem">Kein unterstütztes Dateisystem</string>
+    <string name="error_library_creation_fail">Erzeugen der Datenbank fehlgeschlagen</string>
+    <string name="error_invalid_state">Falscher Zustand</string>
+    <string name="error_IO">I/O Fehler</string>
+    <string name="error_malformed_data">Daten im falschen Format</string>
+    <string name="error_timeout">Zeitüberschreitung</string>
+    <string name="error_not_supported">Nicht unterstützt</string>
+    <string name="error_no_USB_device">Kein USB-Stick</string>
+    <string name="error_unknown">Unbekannter Fehler</string>
+    <string name="notif_action_play">Abspielen</string>
+    <string name="notif_action_pause">Pause</string>
+    <string name="notif_action_stop">Stop</string>
+    <string name="notif_action_next">Nächster</string>
+    <string name="notif_action_prev">Vorheriger</string>
+    <string name="notif_channel_name">Benachrichtigungen von AudioWagon</string>
+    <string name="notif_channel_desc">Benachrichtigungskanal von AudioWagon</string>
+    <string name="notif_channel_name_indexing">Benachrichtigungen zum Einlesen von AudioWagon</string>
+    <string name="notif_channel_desc_indexing">Benachrichtigungskanal zum Einlesen von AudioWagon</string>
+    <string name="notif_indexing_title">USB-Einlese-Status</string>
+    <string name="notif_indexing_text_in_progress">Läuft …</string>
+    <string name="notif_indexing_text_in_progress_num_items">Einträge gefunden: %1$d …</string>
+    <string name="notif_indexing_text_completed">Fertig</string>
+    <string name="action_shuffle_turn_on">Zufallswiedergabe an</string>
+    <string name="action_shuffle_turn_off">Zufallswiedergabe aus</string>
+    <string name="action_repeat_turn_on">Wiederholen an</string>
+    <string name="action_repeat_turn_off">Wiederholen aus</string>
+    <string name="action_eject">Auswerfen</string>
+    <string name="settings_title">Einstellungen</string>
+    <string name="setting_enable_equalizer_title">Equalizer</string>
+    <string name="setting_sound_category_title">Klang</string>
+    <string name="setting_equalizer_preset_title">Equalizer Profil</string>
+    <string name="equalizer_preset_less_bass">Weniger Bass</string>
+    <string name="equalizer_preset_more_bass">Mehr Bass</string>
+    <string name="equalizer_preset_less_treble">Weniger Höhen</string>
+    <string name="equalizer_preset_more_treble">Mehr Höhen</string>
+    <string name="equalizer_preset_P2">P2</string>
+    <string name="equalizer_preset_P2_plus">P2+</string>
+    <string name="equalizer_preset_V_shape">V-förmig</string>
+    <string name="setting_general_category_title">Allgemein</string>
+    <string name="setting_log_to_USB_title">Logdateien auf USB-Stick schreiben</string>
+    <!-- since some persons already consider USB to be an outdated technology, we should address our users formally
+    (i.e. "Sie") they are likely millennials or older ;-) -->
+    <string name="setting_log_to_USB_desc">Wenn Sie einen Fehler in der App melden, geben Sie diese Logdateien bitte
 an den Entwickler.</string>
-	<string name="setting_USB_status_title">USB Status</string>
-	<string name="setting_USB_status_ok">OK</string>
-	<string name="setting_USB_status_not_connected">Nicht verbunden</string>
-	<string name="setting_USB_status_unknown">Unbekannt. Versuchen Sie den USB-Stick neu einzustecken oder starten Sie
+    <string name="setting_USB_status_title">USB Status</string>
+    <string name="setting_USB_status_ok">OK</string>
+    <string name="setting_USB_status_not_connected">Nicht verbunden</string>
+    <string name="setting_USB_status_unknown">Unbekannt. Versuchen Sie den USB-Stick neu einzustecken oder starten Sie
 Android neu</string>
-	<string name="setting_USB_status_connected_no_permission">Verbunden. Berechtigung fehlt</string>
-	<string name="setting_USB_status_error">Schreib-/Lesefehler, versuchen Sie den USB-Stick neu einzustecken oder
+    <string name="setting_USB_status_connected_no_permission">Verbunden. Berechtigung fehlt</string>
+    <string name="setting_USB_status_error">Schreib-/Lesefehler, versuchen Sie den USB-Stick neu einzustecken oder
 reparieren/formatieren Sie ihn (FAT32)</string>
-	<string name="setting_USB_status_ejected">Ausgeworfen. Sie können den USB-Stick jetzt sicher abstecken</string>
-	<string name="setting_USB_status_not_compatible">Nicht kompatibel. Bitte formatieren Sie Ihren USB-Stick im FAT32
+    <string name="setting_USB_status_ejected">Ausgeworfen. Sie können den USB-Stick jetzt sicher abstecken</string>
+    <string name="setting_USB_status_not_compatible">Nicht kompatibel. Bitte formatieren Sie Ihren USB-Stick im FAT32
 Dateisystem</string>
-	<string name="setting_show_legal_disclaimer_title">Rechtliche Hinweise anzeigen</string>
-	<string name="setting_show_legal_disclaimer_desc">Sie müssen den rechtlichen Hinweisen zustimmen, bevor Sie
+    <string name="setting_show_legal_disclaimer_title">Rechtliche Hinweise anzeigen</string>
+    <string name="setting_show_legal_disclaimer_desc">Sie müssen den rechtlichen Hinweisen zustimmen, bevor Sie
 die App benutzen</string>
-	<string name="setting_version">Version</string>
-	<string name="legal_disclaimer_title">AudioWagon: Rechtliche Hinweise</string>
-	<string name="legal_disclaimer_distraction_heading">Ablenkung des Fahrers</string>
-	<string name="legal_disclaimer_distraction_text">Sie verpflichten sich zur Einhaltung aller anwendbaren
+    <string name="setting_version">Version</string>
+    <string name="legal_disclaimer_title">AudioWagon: Rechtliche Hinweise</string>
+    <string name="legal_disclaimer_distraction_heading">Ablenkung des Fahrers</string>
+    <string name="legal_disclaimer_distraction_text">Sie verpflichten sich zur Einhaltung aller anwendbaren
 bundesstaatlichen, staatlichen und lokalen Gesetze bezüglich Ablenkung im Straßenverkehr sowie Verwendung von
 Fahrzeug-Infotainment-Systemen während der Benutzung dieser Software.\nVerwenden Sie diese Software nur wenn das
 Verkehrsgeschehen es gefahrlos erlaubt.</string>
-	<string name="legal_disclaimer_liability_heading">Garantie / Haftungsausschluß</string>
-	<string name="legal_disclaimer_liability_text">Diese Software wird ohne ausdrückliche oder implizierte Garantie
+    <string name="legal_disclaimer_liability_heading">Garantie / Haftungsausschluß</string>
+    <string name="legal_disclaimer_liability_text">Diese Software wird ohne ausdrückliche oder implizierte Garantie
 bereitgestellt. In keinem Fall können die Autoren für irgendwelche Schäden, die durch die Benutzung dieser Software
 entstanden sind, haftbar gemacht werden.</string>
-	<string name="legal_disclaimer_license_heading">Lizenzen</string>
-	<string name="legal_disclaimer_license_text">Diese Software ist lizenziert unter GPLv3. Entwickelt von MoleMan1024</string>
-	<string name="legal_disclaimer_third_party_licenses_heading">Lizenzen von Drittanbietern</string>
-	<string name="legal_disclaimer_third_party_licenses_text">Diese App verwendet Software aus folgenden anderen
+    <string name="legal_disclaimer_license_heading">Lizenzen</string>
+    <string name="legal_disclaimer_license_text">Diese Software ist lizenziert unter GPLv3. Entwickelt von MoleMan1024</string>
+    <string name="legal_disclaimer_third_party_licenses_heading">Lizenzen von Drittanbietern</string>
+    <string name="legal_disclaimer_third_party_licenses_text">Diese App verwendet Software aus folgenden anderen
 Quellen, alle lizenziert unter Apache 2.0:\n\n&#x2013; verschiedene Bibliotheken, entwickelt vom Android Open Source
 Project\n&#x2013; die libaums Bibliothek, entwickelt von Magnus Jahnen\n&#x2013; Material Design
 Vektorgrafiken, entwickelt von Google\n&#x2013; Firebase Crashlytics\n\nLizenzvereinbarungen:\nwww.apache.org/licenses/LICENSE-2.0
 \nwww.gnu.org/licenses/gpl-3.0.html</string>
-	<string name="legal_disclaimer_confirm_btn">Zustimmen</string>
-	<string name="legal_disclaimer_cancel_btn">Abbrechen</string>
-	<string name="error_no_tracks">Keine Titel</string>
-	<string name="error_not_enough_space_for_log">Zu wenig freier Speicherplatz für Logdatei</string>
-	<string name="setting_USB_status_too_many_files_in_dir">Zu viele Dateien in einem Verzeichnis, bitte verwenden
+    <string name="legal_disclaimer_confirm_btn">Zustimmen</string>
+    <string name="legal_disclaimer_cancel_btn">Abbrechen</string>
+    <string name="error_no_tracks">Keine Titel</string>
+    <string name="error_not_enough_space_for_log">Zu wenig freier Speicherplatz für Logdatei</string>
+    <string name="setting_USB_status_too_many_files_in_dir">Zu viele Dateien in einem Verzeichnis, bitte verwenden
 Sie Unterverzeichnisse.</string>
-	<string name="browse_tree_category_files">Dateien</string>
-	<string name="setting_library_category_title">Medien</string>
-	<string name="setting_read_metadata">Metadaten auslesen</string>
-	<string name="setting_delete_databases">Datenbanken löschen</string>
-	<string name="setting_database_status_title">Datenbank</string>
-	<string name="setting_enable_replaygain">ReplayGain</string>
-	<string name="searching_voice_input">Suche nach: \"%1$s\"</string>
-	<string name="setting_read_metadata_when_connected">Wenn USB-Stick verbunden</string>
-	<string name="setting_read_metadata_manual">Manuell</string>
-	<string name="setting_read_metadata_off">Aus</string>
-	<string name="setting_read_metadata_start_now">Jetzt Metadaten auslesen</string>
-	<string name="browse_tree_metadata_not_yet_indexed_title">Metadata noch nicht ausgelesen</string>
-	<string name="browse_tree_metadata_not_yet_indexed_desc">Siehe Einstellungen</string>
-	<string name="setting_audiofocus_behavior">Verhalten bei Routenführung</string>
-	<string name="setting_audiofocus_pause">Pause</string>
-	<string name="setting_audiofocus_duck">Lautstärke senken</string>
-	<string name="setting_crash_reporting_title">Fehlerberichte senden</string>
-	<string name="setting_crash_reporting_desc">Fehler automatisch an den Entwickler senden, um die App zu
+    <string name="browse_tree_category_files">Dateien</string>
+    <string name="setting_library_category_title">Medien</string>
+    <string name="setting_read_metadata">Metadaten auslesen</string>
+    <string name="setting_delete_databases">Datenbanken löschen</string>
+    <string name="setting_database_status_title">Datenbank</string>
+    <string name="setting_enable_replaygain">ReplayGain</string>
+    <string name="searching_voice_input">Suche nach: \"%1$s\"</string>
+    <string name="setting_read_metadata_when_connected">Wenn USB-Stick verbunden</string>
+    <string name="setting_read_metadata_manual">Manuell</string>
+    <string name="setting_read_metadata_filepaths_only">Nur Dateipfade</string>
+    <string name="setting_read_metadata_off">Aus</string>
+    <string name="setting_read_metadata_start_now">Jetzt Metadaten auslesen</string>
+    <string name="browse_tree_metadata_not_yet_indexed_title">Metadata noch nicht ausgelesen</string>
+    <string name="browse_tree_metadata_not_yet_indexed_desc">Siehe Einstellungen</string>
+    <string name="setting_audiofocus_behavior">Verhalten bei Routenführung</string>
+    <string name="setting_audiofocus_pause">Pause</string>
+    <string name="setting_audiofocus_duck">Lautstärke senken</string>
+    <string name="setting_crash_reporting_title">Fehlerberichte senden</string>
+    <string name="setting_crash_reporting_desc">Fehler automatisch an den Entwickler senden, um die App zu
 verbessern (benötigt Internetverbindung).</string>
-	<string name="cannot_read_file">Datei konnte nicht gelesen werden: %1$s</string>
-	<string name="setting_website_title">Webseite</string>
+    <string name="cannot_read_file">Datei konnte nicht gelesen werden: %1$s</string>
+    <string name="setting_website_title">Webseite</string>
+    <string name="setting_album_display">Zeige Alben als</string>
+    <string name="setting_album_display_grid">Raster</string>
+    <string name="setting_album_display_list">Liste</string>
+    <string name="setting_requires_media_center_restart">(Änderung erfordert Neustart der \"Media Center\" App)</string>
 </resources>

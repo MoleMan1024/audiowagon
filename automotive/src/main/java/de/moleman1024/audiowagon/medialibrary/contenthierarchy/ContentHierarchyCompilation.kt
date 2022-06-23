@@ -70,7 +70,7 @@ class ContentHierarchyCompilation(
         val repo: AudioItemRepository = audioItemLibrary.getRepoForContentHierarchyID(id) ?: return mutableListOf()
         val tracks: List<AudioItem>
         try {
-            tracks = repo.getTracksForAlbumAndArtist(id.albumID, id.artistID)
+            tracks = repo.getTracksForAlbumAndArtist(id.albumID, pickArtistOrAlbumArtistID())
         } catch (exc: IllegalArgumentException) {
             logger.error(TAG, exc.toString())
             return mutableListOf()
@@ -81,7 +81,7 @@ class ContentHierarchyCompilation(
     private suspend fun getNumTracks(): Int {
         var numTracks = 0
         val repo = audioItemLibrary.getPrimaryRepository() ?: return 0
-        numTracks += repo.getNumTracksForAlbumAndArtist(id.albumID, id.artistID)
+        numTracks += repo.getNumTracksForAlbumAndArtist(id.albumID, pickArtistOrAlbumArtistID())
         return numTracks
     }
 

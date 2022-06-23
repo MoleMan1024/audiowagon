@@ -12,5 +12,9 @@ data class Artist(
     @PrimaryKey(autoGenerate = true)
     val artistId: Long = 0,
     @ColumnInfo(index = true)
-    val name: String = ""
+    val name: String = "",
+    @ColumnInfo(index = true)
+    val sortName: String = "",
+    var isAlbumArtist: Boolean = false,
+    var isCompilationArtist: Boolean = false
 )

@@ -17,7 +17,7 @@ private const val TAG = "CHGroupTracks"
 private val logger = Logger
 
 /**
- * Group of tracks in browse view
+ * One group of max 400 tracks in browse view
  */
 @ExperimentalCoroutinesApi
 class ContentHierarchyGroupTracks(id: ContentHierarchyID, context: Context, audioItemLibrary: AudioItemLibrary) :
@@ -38,12 +38,12 @@ class ContentHierarchyGroupTracks(id: ContentHierarchyID, context: Context, audi
 
     override suspend fun getAudioItems(): List<AudioItem> {
         val repo = audioItemLibrary.getPrimaryRepository() ?: return emptyList()
-        val numTracks = if (id.artistID >= 0 && id.albumID >= 0) {
-            repo.getNumTracksForAlbumAndArtist(id.albumID, id.artistID)
+        val numTracks = if (id.albumID >= 0 && id.albumArtistID >= 0) {
+            repo.getNumTracksForAlbumAndArtist(id.albumID, id.albumArtistID)
         } else if (id.albumID >= 0) {
             repo.getNumTracksForAlbum(id.albumID)
-        } else if (id.artistID >= 0) {
-            repo.getNumTracksForArtist(id.artistID)
+        } else if (id.albumArtistID >= 0) {
+            repo.getNumTracksForArtist(id.albumArtistID)
         } else {
             repo.getNumTracks()
         }
@@ -52,20 +52,20 @@ class ContentHierarchyGroupTracks(id: ContentHierarchyID, context: Context, audi
             logger.error(TAG, "Group index ${id.trackGroupIndex} does not fit for $numTrackGroups track groups")
             return emptyList()
         }
-        return if (id.artistID >= 0 && id.albumID >= 0) {
+        return if (id.albumID >= 0 && id.albumArtistID >= 0) {
             repo.getTracksForArtistAlbumLimitOffset(
                 CONTENT_HIERARCHY_MAX_NUM_ITEMS, CONTENT_HIERARCHY_MAX_NUM_ITEMS * id.trackGroupIndex,
-                id.artistID, id.albumID
+                id.albumArtistID, id.albumID
             )
         } else if (id.albumID >= 0) {
             repo.getTracksForAlbumLimitOffset(
                 CONTENT_HIERARCHY_MAX_NUM_ITEMS, CONTENT_HIERARCHY_MAX_NUM_ITEMS * id.trackGroupIndex,
                 id.albumID
             )
-        } else if (id.artistID >= 0) {
+        } else if (id.albumArtistID >= 0) {
             repo.getTracksForArtistLimitOffset(
                 CONTENT_HIERARCHY_MAX_NUM_ITEMS, CONTENT_HIERARCHY_MAX_NUM_ITEMS * id.trackGroupIndex,
-                id.artistID
+                id.albumArtistID
             )
         } else {
             repo.getTracksLimitOffset(

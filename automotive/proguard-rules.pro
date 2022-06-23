@@ -33,3 +33,7 @@
 -keepclassmembers class <1>.<2> {
   <1>.<2>$Companion Companion;
 }
+# only referenced via preferences .xml, counts as unused class, avoid that it is stripped
+-keep class de.moleman1024.audiowagon.activities.SyncFilesFragment {
+    *;
+}

@@ -8,15 +8,12 @@ package de.moleman1024.audiowagon.medialibrary.contenthierarchy
 import android.content.Context
 import android.support.v4.media.MediaBrowserCompat.MediaItem
 import de.moleman1024.audiowagon.Util
-import de.moleman1024.audiowagon.filestorage.*
-import de.moleman1024.audiowagon.log.Logger
+import de.moleman1024.audiowagon.filestorage.AudioFileStorage
+import de.moleman1024.audiowagon.filestorage.PlaylistFile
 import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
 import de.moleman1024.audiowagon.medialibrary.PlaylistFileResolver
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-
-private const val TAG = "CHPlaylist"
-private val logger = Logger
 
 /**
  * A file in the browse view
@@ -37,7 +34,7 @@ class ContentHierarchyPlaylist(
     override suspend fun getAudioItems(): List<AudioItem> {
         val storageLocation = audioFileStorage.getPrimaryStorageLocation()
         val playlistFile = PlaylistFile(Util.createURIForPath(storageLocation.storageID, id.path))
-        val playlistFileResolver = PlaylistFileResolver(playlistFile.uri, audioFileStorage, audioItemLibrary)
+        val playlistFileResolver = PlaylistFileResolver(playlistFile.uri, audioFileStorage)
         return playlistFileResolver.parseForAudioItems()
     }
 

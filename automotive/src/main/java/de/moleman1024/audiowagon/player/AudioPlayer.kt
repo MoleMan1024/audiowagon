@@ -12,6 +12,7 @@ import android.net.Uri
 import android.os.PersistableBundle
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
+import androidx.annotation.VisibleForTesting
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.SharedPrefs
 import de.moleman1024.audiowagon.Util
@@ -55,7 +56,8 @@ class AudioPlayer(
 ) {
     // currentMediaPlayer shall point to currently playing media player
     private var currentMediaPlayer: MediaPlayer? = null
-    private var playerStatus: AudioPlayerStatus = AudioPlayerStatus(PlaybackStateCompat.STATE_NONE)
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    var playerStatus: AudioPlayerStatus = AudioPlayerStatus(PlaybackStateCompat.STATE_NONE)
     // TODO: turn this into another class with two instances?
     private var mediaPlayerFlip: MediaPlayer? = null
     private var mediaPlayerFlipState: AudioPlayerState = AudioPlayerState.IDLE
@@ -74,6 +76,7 @@ class AudioPlayer(
     private val playbackQueue = PlaybackQueue(dispatcher)
     private val playerStatusDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
     private var setupNextPlayerJob: Job? = null
+    private var onCompletionJob: Job? = null
     private var numFilesNotFound: Int = 0
 
     init {
@@ -133,7 +136,11 @@ class AudioPlayer(
     private suspend fun setCompletionListener(mediaPlayer: MediaPlayer?) {
         mediaPlayer?.setOnCompletionListener { completedMediaPlayer ->
             logger.debug(TAG, "onCompletion($mediaPlayer)")
-            launchInScopeSafely {
+            onCompletionJob = launchInScopeSafely {
+                if (isErrorInAnyMediaPlayer()) {
+                    return@launchInScopeSafely
+                }
+                yield()
                 setState(completedMediaPlayer, AudioPlayerState.PLAYBACK_COMPLETED)
                 logger.debug(TAG, "Metrics: ${getMetrics()}")
                 if (playbackQueue.hasEnded()) {
@@ -144,6 +151,7 @@ class AudioPlayer(
                     return@launchInScopeSafely
                 }
                 cancelSetupNextPlayerJob()
+                yield()
                 playbackQueue.incrementIndex()
                 currentMediaPlayer = getNextPlayer()
                 notifyPlayerStatusChange()
@@ -152,13 +160,23 @@ class AudioPlayer(
                     setupNextPlayer()
                 } catch (exc: IOException) {
                     logger.exception(TAG, exc.message.toString(), exc)
-                    playerStatus.errorCode = PlaybackStateCompat.ERROR_CODE_APP_ERROR
+                    playerStatus.errorCode = PlaybackStateCompat.ERROR_CODE_UNKNOWN_ERROR
                     playerStatus.errorMsg = "Could not set next player"
                     playerStatus.playbackState = PlaybackStateCompat.STATE_ERROR
                     notifyPlayerStatusChange()
                 }
             }
         }
+    }
+
+    private suspend fun isErrorInAnyMediaPlayer(): Boolean {
+        if (getState(mediaPlayerFlip) == AudioPlayerState.ERROR) {
+            return true
+        }
+        if (getState(mediaPlayerFlop) == AudioPlayerState.ERROR) {
+            return true
+        }
+        return false
     }
 
     private suspend fun setInfoListener(mediaPlayer: MediaPlayer?) {
@@ -183,9 +201,11 @@ class AudioPlayer(
             logger.debug(TAG, "onError(player=$player,what=$what,extra=$extra")
             launchInScopeSafely {
                 if (isRecoveringFromIOError) {
-                    logger.warning(TAG, "Recovery from previous error in progress")
+                    logger.warning(TAG, "Error recovery still in progress")
                     return@launchInScopeSafely
                 }
+                cancelOnCompletionJob()
+                setState(player, AudioPlayerState.ERROR)
                 playerStatus.errorCode = what
                 when (what) {
                     MEDIA_ERROR_INVALID_STATE ->
@@ -211,8 +231,6 @@ class AudioPlayer(
                     playerStatus.errorMsg += " ($extra)"
                 }
                 playerStatus.playbackState = PlaybackStateCompat.STATE_ERROR
-                logger.error(TAG, "Error in player $player: $playerStatus")
-                setState(player, AudioPlayerState.ERROR)
                 notifyPlayerStatusChange()
             }
             return@setOnErrorListener true
@@ -523,14 +541,18 @@ class AudioPlayer(
         audioFocus.release()
     }
 
-    suspend fun notifyPlayerStatusChange() {
+    suspend fun notifyPlayerStatusChange(status: AudioPlayerStatus? = null) {
         if (isRecoveringFromIOError) {
-            logger.warning(TAG, "Recovery from previous error still in progress")
+            logger.warning(TAG, "Error recovery is still in progress")
             return
         }
-        playerStatus.positionInMilliSec = getCurrentPositionMilliSec()
-        playerStatus.queueItemID = playbackQueue.getCurrentItem()?.queueId ?: -1
-        notifyPlayerStatus(playerStatus)
+        if (status == null) {
+            playerStatus.positionInMilliSec = getCurrentPositionMilliSec()
+            playerStatus.queueItemID = playbackQueue.getCurrentItem()?.queueId ?: -1
+            notifyPlayerStatus(playerStatus)
+        } else {
+            notifyPlayerStatus(status)
+        }
     }
 
     @Suppress("RedundantSuspendModifier")
@@ -540,6 +562,7 @@ class AudioPlayer(
         val exceptionHandler = CoroutineExceptionHandler { coroutineContext, exc ->
             logger.exception(TAG, "$coroutineContext threw ${exc.message}", exc)
         }
+        logger.debug(TAG, "notifyPlayerStatus(): $status")
         scope.launch(exceptionHandler + playerStatusDispatcher) {
             playerStatusObservers.forEach { it(status) }
         }
@@ -576,10 +599,16 @@ class AudioPlayer(
             } catch (exc: FileNotFoundException) {
                 // If file is missing, try next file in queue. This can happen if audio item library does not match
                 // the USB filesystem (e.g. due to manual indexing)
+                val status = AudioPlayerStatus(PlaybackStateCompat.STATE_BUFFERING)
+                status.errorCode = PlaybackStateCompat.ERROR_CODE_APP_ERROR
+                val audioFile = AudioFile(uri)
+                status.errorMsg = context.getString(R.string.cannot_read_file, audioFile.name)
+                notifyPlayerStatusChange(status)
                 numFilesNotFound += 1
                 if (numFilesNotFound < 5) {
                     logger.debug(TAG, "File not found, trying to play next item in queue instead: ${AudioFile(uri).name}")
                     delay(4000)
+                    logger.debug(TAG, "Skipping next track after delay for file not found")
                     skipNextTrack()
                 } else {
                     logger.error(TAG, "Too many files not found, update metadata or check your playlist")
@@ -625,6 +654,8 @@ class AudioPlayer(
                 mediaDataSource = getDataSourceForURI(uri)
             } catch (exc: UnsupportedOperationException) {
                 return@withContext
+            } catch (exc: FileNotFoundException) {
+                throw exc
             } catch (exc: IOException) {
                 logger.exception(TAG, "I/O exception when getting media data source", exc)
                 // TODO: handle this better
@@ -686,6 +717,16 @@ class AudioPlayer(
         }
         logger.debug(TAG, "cancelSetupNextPlayerJob()")
         setupNextPlayerJob?.cancelAndJoin()
+        setupNextPlayerJob = null
+    }
+
+    private suspend fun cancelOnCompletionJob() {
+        if (onCompletionJob == null) {
+            return
+        }
+        logger.debug(TAG, "cancelOnCompletionJob()")
+        onCompletionJob?.cancelAndJoin()
+        onCompletionJob = null
     }
 
     private suspend fun onPreparedNextPlayer(mediaPlayer: MediaPlayer?) {
@@ -702,6 +743,8 @@ class AudioPlayer(
             logger.exception(TAG, "Exception setting next media player $mediaPlayer for current " +
                     "media player: $currentMediaPlayer", exc)
         }
+        // check for available memory once in a while
+        Util.logMemory(context, logger, TAG)
     }
 
     @Suppress("RedundantSuspendModifier")
@@ -782,7 +825,7 @@ class AudioPlayer(
             return audioFileStorage.getBufferedDataSourceForURI(uri)
         } catch (exc: UnsupportedOperationException) {
             logger.exception(TAG, "Cannot get data source for URI: $uri", exc)
-            playerStatus.errorCode = PlaybackStateCompat.ERROR_CODE_APP_ERROR
+            playerStatus.errorCode = PlaybackStateCompat.ERROR_CODE_UNKNOWN_ERROR
             playerStatus.errorMsg = "No datasource"
             playerStatus.playbackState = PlaybackStateCompat.STATE_ERROR
             notifyPlayerStatusChange()
@@ -819,6 +862,7 @@ class AudioPlayer(
     }
 
     private suspend fun releaseAllPlayers() {
+        logger.debug(TAG, "releaseAllPlayers()")
         mediaPlayerFlip?.release()
         setState(mediaPlayerFlip, AudioPlayerState.END)
         mediaPlayerFlop?.release()
@@ -841,6 +885,8 @@ class AudioPlayer(
 
     suspend fun reInitAfterError() {
         withContext(dispatcher) {
+            logger.debug(TAG, "reInitAfterError()")
+            delay(4000)
             isRecoveringFromIOError = true
             reInitAllPlayers()
             isRecoveringFromIOError = false
@@ -851,6 +897,7 @@ class AudioPlayer(
     private suspend fun reInitAllPlayers() {
         withContext(dispatcher) {
             cancelSetupNextPlayerJob()
+            // depending on error the player might continue playing buffered data for some time. We can't stop it
             resetAllPlayers()
             releaseAllPlayers()
             initMediaPlayers()

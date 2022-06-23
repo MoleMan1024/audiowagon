@@ -11,7 +11,6 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
-import de.moleman1024.audiowagon.AlbumArtContentProvider
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.SharedPrefs
 import de.moleman1024.audiowagon.authorization.ACTION_USB_PERMISSION_CHANGE
@@ -269,7 +268,6 @@ class USBDeviceConnections(
             val deviceChange = DeviceChange(error = errorMsg)
             notifyObservers(deviceChange)
         } finally {
-            AlbumArtContentProvider.setAlbumArtByteArray(null)
             device.closeMassStorageFilesystem()
             removeConnectedUSBDevice(device)
             usbDevicePermissions.removeDevice(device)

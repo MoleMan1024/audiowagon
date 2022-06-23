@@ -5,20 +5,19 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 package de.moleman1024.audiowagon
 
-import android.content.ContentProvider
-import android.content.ContentValues
-import android.content.Context
+import android.content.*
 import android.database.Cursor
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.drawable.Drawable
 import android.net.Uri
-import android.os.Handler
-import android.os.Looper
-import android.os.ParcelFileDescriptor
-import android.os.ProxyFileDescriptorCallback
+import android.os.*
 import android.os.storage.StorageManager
 import androidx.core.content.res.ResourcesCompat
 import de.moleman1024.audiowagon.log.Logger
+import de.moleman1024.audiowagon.medialibrary.ART_URI_PART
+import de.moleman1024.audiowagon.medialibrary.ART_URI_PART_ALBUM
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import java.io.ByteArrayOutputStream
 import java.lang.Integer.min
 import java.nio.ByteBuffer
@@ -27,47 +26,33 @@ import java.nio.ByteBuffer
 private const val TAG = "AlbumArtContentProv"
 private val logger = Logger
 const val AUTHORITY = "de.moleman1024.audiowagon"
-const val TRACK_ART_PATH = "trackArt"
+const val DEFAULT_JPEG_QUALITY_PERCENTAGE = 60
 
 /**
  * See https://developer.android.com/guide/topics/providers/content-provider-creating
- * Very "minimal" content provider that will just return one image currently stored in a byte buffer. On each track
- * change this buffer is updated with a new album art image (or with the default "music note" icon image)
  */
+@ExperimentalCoroutinesApi
 class AlbumArtContentProvider : ContentProvider() {
-    private var defaultAlbumArtBitmap: Bitmap? = null
+    private var defaultAlbumArtAlbums: ByteArray = ByteArray(1)
+    private var defaultAlbumArtTracks: ByteArray = ByteArray(1)
+    private var audioBrowserService: AudioBrowserService? = null
+    // we use a local binder connection to access the album art via AudioBrowserService. Because it is local in the
+    // same process the binder RPC size restrictions do not apply
+    private val connection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            Logger.debug(TAG, "onServiceConnected(name=$name, $service=$service)")
+            val binder = service as AudioBrowserService.LocalBinder
+            audioBrowserService = binder.getService()
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            Logger.debug(TAG, "onServiceDisconnected(name=$name)")
+            audioBrowserService = null
+        }
+    }
 
     companion object {
-        private var albumArtBuf: ByteBuffer? = null
-        private var defaultAlbumArtByteArray: ByteArray = ByteArray(1)
-        private var albumArtPixels: Int = 400
-        private var useDefaultAlbumArt = true
-
-        @Synchronized
-        fun getAlbumArtByteBuffer(): ByteBuffer? {
-            return albumArtBuf
-        }
-
-        @Synchronized
-        fun setAlbumArtByteArray(albumArtByteArray: ByteArray?) {
-            if (albumArtByteArray == null) {
-                useDefaultAlbumArt = true
-                // no album art given, use the default
-                albumArtBuf = if (defaultAlbumArtByteArray.size > 1) {
-                    ByteBuffer.wrap(defaultAlbumArtByteArray)
-                } else {
-                    null
-                }
-                return
-            }
-            useDefaultAlbumArt = false
-            albumArtBuf = ByteBuffer.wrap(albumArtByteArray)
-        }
-
-        @Synchronized
-        fun setDefaultAlbumArtByteArray(imageByteArray: ByteArray) {
-            defaultAlbumArtByteArray = imageByteArray
-        }
+        private var albumArtPixels: Int = 256
 
         @Synchronized
         fun getAlbumArtSizePixels(): Int {
@@ -85,43 +70,22 @@ class AlbumArtContentProvider : ContentProvider() {
         return true
     }
 
-    /**
-     * We create a default album art bitmap instead of using the vector drawable icon directly, the latter does not
-     * seem to update the album art on Polestar 2 main view
-     */
-    private fun createDefaultAlbumArt() {
-        val drawable =
-            context?.resources?.let { ResourcesCompat.getDrawable(it, R.drawable.music_note_black_48dp, null) }
-        val albumArtNumPixels = getAlbumArtSizePixels()
-        logger.debug(TAG, "Creating default album art with size: $albumArtNumPixels")
-        val bitmap = Bitmap.createBitmap(albumArtNumPixels, albumArtNumPixels, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(bitmap)
-        drawable?.setBounds(0, 0, canvas.width, canvas.height)
-        drawable?.draw(canvas)
-        // TODO: similar code as in getArtForAudioItem()
-        val stream = ByteArrayOutputStream()
-        val quality = 90
-        defaultAlbumArtBitmap = bitmap
-        // TODO: I am getting some warnings in log on Pixel 3 XL AAOS that this takes some time
-        defaultAlbumArtBitmap?.compress(Bitmap.CompressFormat.JPEG, quality, stream)
-        defaultAlbumArtByteArray = stream.toByteArray()
-        setDefaultAlbumArtByteArray(defaultAlbumArtByteArray)
-    }
-
-    /**
-     * We always provide whatever is currently stored in the album art byte buffer above
-     */
     override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor? {
-        logger.debug(TAG, "openFile(uri=$uri)")
         if (context == null) {
             return null
         }
-        if (defaultAlbumArtBitmap == null) {
-            createDefaultAlbumArt()
-            if (useDefaultAlbumArt) {
-                setAlbumArtByteArray(null)
+        init()
+        var albumArtByteArray = defaultAlbumArtTracks
+        if (uri.toString().contains("$ART_URI_PART/$ART_URI_PART_ALBUM")) {
+            albumArtByteArray = defaultAlbumArtAlbums
+        }
+        if (audioBrowserService != null) {
+            val resolvedAlbumArt = audioBrowserService?.getAlbumArtForURI(uri)
+            if (resolvedAlbumArt != null) {
+                albumArtByteArray = resolvedAlbumArt
             }
         }
+        val albumArtBuf = ByteBuffer.wrap(albumArtByteArray)
         val storageManager = context?.getSystemService(Context.STORAGE_SERVICE) as StorageManager
         val handler = Handler(Looper.getMainLooper())
         return storageManager.openProxyFileDescriptor(
@@ -129,13 +93,11 @@ class AlbumArtContentProvider : ContentProvider() {
             object : ProxyFileDescriptorCallback() {
 
                 override fun onGetSize(): Long {
-                    val byteBuf = getAlbumArtByteBuffer() ?: return 0
-                    return byteBuf.array().size.toLong()
+                    return albumArtBuf.array().size.toLong()
                 }
 
                 override fun onRead(offset: Long, size: Int, data: ByteArray?): Int {
-                    val albumArtBuf = getAlbumArtByteBuffer()
-                    if (albumArtBuf == null || albumArtBuf.limit() <= 0) {
+                    if (albumArtBuf.limit() <= 0) {
                         return 0
                     }
                     if (data == null) {
@@ -149,19 +111,60 @@ class AlbumArtContentProvider : ContentProvider() {
                 }
 
                 override fun hashCode(): Int {
-                    val albumArtBuf = getAlbumArtByteBuffer()
-                    if (albumArtBuf == null || albumArtBuf.limit() <= 0) {
+                    if (albumArtBuf.limit() <= 0) {
                         return 0
                     }
                     return albumArtBuf.hashCode()
                 }
 
                 override fun onRelease() {
-                    albumArtBuf?.rewind()
+                    albumArtBuf.rewind()
                 }
             },
             handler
         )
+    }
+
+    @Synchronized
+    private fun init() {
+        if (audioBrowserService == null) {
+            val intent =
+                Intent(AudioBrowserService::class.java.name, Uri.EMPTY, context, AudioBrowserService::class.java)
+            context?.bindService(intent, connection, Context.BIND_AUTO_CREATE)
+        }
+        if (defaultAlbumArtAlbums.size <= 1) {
+            val drawable =
+                context?.resources?.let { ResourcesCompat.getDrawable(it, R.drawable.baseline_album_24, null) }
+            if (drawable != null) {
+                defaultAlbumArtAlbums = createDefaultAlbumArt(drawable)
+            }
+        }
+        if (defaultAlbumArtTracks.size <= 1) {
+            val drawable =
+                context?.resources?.let { ResourcesCompat.getDrawable(it, R.drawable.music_note_black_48dp, null) }
+            if (drawable != null) {
+                defaultAlbumArtTracks = createDefaultAlbumArt(drawable)
+            }
+        }
+    }
+
+    /**
+     * We create a default album art bitmap instead of using the vector drawable icon directly, the latter does not
+     * seem to update the album art on Polestar 2 main view
+     */
+    @Synchronized
+    private fun createDefaultAlbumArt(drawable: Drawable): ByteArray {
+        val albumArtNumPixels = getAlbumArtSizePixels()
+        logger.debug(TAG, "Creating default album art with size: $albumArtNumPixels")
+        val bitmap = Bitmap.createBitmap(albumArtNumPixels, albumArtNumPixels, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        drawable.setBounds(0, 0, canvas.width, canvas.height)
+        drawable.draw(canvas)
+        val stream = ByteArrayOutputStream()
+        val quality = DEFAULT_JPEG_QUALITY_PERCENTAGE
+        // TODO: I am getting some warnings in log on Pixel 3 XL AAOS that this takes some time
+        bitmap?.compress(Bitmap.CompressFormat.JPEG, quality, stream)
+        return stream.toByteArray()
     }
 
     // some default implementations that are required for content providers but that do nothing

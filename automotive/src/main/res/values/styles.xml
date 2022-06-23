@@ -4,24 +4,24 @@ SPDX-FileCopyrightText: 2021 MoleMan1024 <moleman1024dev@gmail.com>
 SPDX-License-Identifier: GPL-3.0-or-later
 -->
 <resources>
-	<!-- we use "NoActionBar" here because we use custom Material action bar in activity_settings.xml -->
-	<style name="AppTheme" parent="Theme.AppCompat.NoActionBar">
-		<!-- this color is used for seek bar during playback for example -->
-		<item name="colorAccent">@color/colorAccent</item>
-		<item name="android:textSize">@dimen/car_body1_size</item>
-	</style>
+    <!-- we use "NoActionBar" here because we use custom Material action bar in activity_settings.xml -->
+    <style name="AppTheme" parent="Theme.AppCompat.NoActionBar">
+        <!-- this color is used for seek bar during playback for example -->
+        <item name="colorAccent">@color/colorAccent</item>
+        <item name="android:textSize">@dimen/car_body1_size</item>
+    </style>
 
-	<style name="MyToolbar" parent="Widget.MaterialComponents.Toolbar">
-		<item name="android:textSize">@dimen/car_headline1_size</item>
-	</style>
+    <style name="MyToolbar" parent="Widget.MaterialComponents.Toolbar">
+        <item name="android:textSize">@dimen/car_headline1_size</item>
+    </style>
 
-	<!-- used for dummy USB activity that shall not appear on screen -->
-	<style name="TransparentTheme" parent="Theme.AppCompat">
-		<item name="android:backgroundDimEnabled">false</item>
-		<item name="android:windowBackground">@android:color/transparent</item>
-		<item name="android:windowContentOverlay">@null</item>
-		<item name="android:windowIsFloating">true</item>
-		<item name="android:windowIsTranslucent">true</item>
-		<item name="android:windowNoTitle">true</item>
-	</style>
+    <!-- used for dummy USB activity that shall not appear on screen -->
+    <style name="TransparentTheme" parent="Theme.AppCompat">
+        <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
 </resources>

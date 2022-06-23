@@ -9,17 +9,13 @@ import android.media.MediaDataSource
 import android.net.Uri
 import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.Util.Companion.determinePlayableFileType
-import de.moleman1024.audiowagon.filestorage.*
+import de.moleman1024.audiowagon.filestorage.AudioFileStorageLocation
+import de.moleman1024.audiowagon.filestorage.Directory
+import de.moleman1024.audiowagon.filestorage.FileLike
+import de.moleman1024.audiowagon.filestorage.IndexingStatus
 import de.moleman1024.audiowagon.log.Logger
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.channels.produce
-import java.io.File
 import java.io.InputStream
-import java.net.URLConnection
-import java.util.*
 
 
 /**
@@ -34,44 +30,8 @@ class SDCardStorageLocation(override val device: SDCardMediaDevice) : AudioFileS
     override var isDetached: Boolean = false
     override var isIndexingCancelled: Boolean = false
 
-    @ExperimentalCoroutinesApi
-    override fun indexAudioFiles(directory: Directory, scope: CoroutineScope): ReceiveChannel<AudioFile> {
-        logger.debug(TAG, "indexAudioFiles(directory=$directory, ${device.getName()})")
-        val startDirectory = device.getFileFromURI(directory.uri)
-        return scope.produce {
-            // TODO: similar code to USBDeviceStorageLocation
-            try {
-                for (file in device.walkTopDown(startDirectory)) {
-                    if (isIndexingCancelled) {
-                        logger.debug(TAG, "Cancel indexAudioFiles()")
-                        break
-                    }
-                    val fileType = determinePlayableFileType(file)
-                    if (fileType == null) {
-                        logger.debug(TAG, "Skipping unsupported file: $file")
-                        continue
-                    }
-                    if (fileType !is AudioFile) {
-                        continue
-                    }
-                    val audioFile = createAudioFileFromFile(file)
-                    send(audioFile)
-                }
-            } catch (exc: CancellationException) {
-                logger.warning(TAG, "Coroutine for indexAudioFiles() was cancelled")
-            } catch (exc: RuntimeException) {
-                logger.exception(TAG, exc.message.toString(), exc)
-            } finally {
-                isIndexingCancelled = false
-            }
-        }
-    }
-
-    private fun createAudioFileFromFile(file: File): AudioFile {
-        val uri = Util.createURIForPath(storageID, file.absolutePath)
-        val audioFile = AudioFile(uri)
-        audioFile.lastModifiedDate = Date(file.lastModified())
-        return audioFile
+    override fun walkTopDown(startDirectory: Any, scope: CoroutineScope): Sequence<Any> {
+        return device.walkTopDown(startDirectory)
     }
 
     override fun getDirectoryContents(directory: Directory): List<FileLike> {
@@ -83,7 +43,7 @@ class SDCardStorageLocation(override val device: SDCardMediaDevice) : AudioFileS
             } else {
                 val fileType = determinePlayableFileType(file)
                 if (fileType != null) {
-                    val audioFile = createAudioFileFromFile(file)
+                    val audioFile = Util.createAudioFileFromFile(file, storageID)
                     itemsInDir.add(audioFile)
                 }
             }

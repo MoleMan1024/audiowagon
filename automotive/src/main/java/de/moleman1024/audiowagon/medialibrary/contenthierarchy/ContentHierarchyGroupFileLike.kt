@@ -15,7 +15,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 
 /**
- * Group of files/directories in browse view
+ * One group of max 400 files/directories in browse view
  */
 @ExperimentalCoroutinesApi
 class ContentHierarchyGroupFileLike(

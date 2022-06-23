@@ -37,7 +37,8 @@ class ContentHierarchyAllTracksForAlbum(
             logger.error(TAG, exc.toString())
             return mutableListOf()
         }
-        return tracks.sortedWith(compareBy({ it.discNum }, { it.trackNum }))
+        // tracks have been sorted in database query
+        return tracks
     }
 
 }

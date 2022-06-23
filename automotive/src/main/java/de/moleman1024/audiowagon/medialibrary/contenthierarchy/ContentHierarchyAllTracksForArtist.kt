@@ -32,12 +32,24 @@ class ContentHierarchyAllTracksForArtist(
         val repo: AudioItemRepository = audioItemLibrary.getRepoForContentHierarchyID(id) ?: return mutableListOf()
         val tracks: List<AudioItem>
         try {
-            tracks = repo.getTracksForArtist(id.artistID)
+            val id = if (id.artistID >= DATABASE_ID_UNKNOWN) {
+                id.artistID
+            } else {
+                id.albumArtistID
+            }
+            tracks = repo.getTracksForArtist(id)
         } catch (exc: IllegalArgumentException) {
             logger.error(TAG, exc.toString())
             return mutableListOf()
         }
-        return tracks.sortedWith(compareBy({ it.album.lowercase() }, { it.trackNum }, { it.title.lowercase() }))
+        return tracks.sortedWith(
+            compareBy(
+                { it.album.lowercase() },
+                { it.discNum },
+                { it.trackNum },
+                { it.sortName.lowercase() },
+                { it.title.lowercase() })
+        )
     }
 
 }

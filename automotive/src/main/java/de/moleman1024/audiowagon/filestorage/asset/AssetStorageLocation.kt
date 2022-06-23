@@ -10,11 +10,7 @@ import android.net.Uri
 import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.filestorage.*
 import de.moleman1024.audiowagon.log.Logger
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.channels.produce
 import java.io.InputStream
 import java.util.*
 
@@ -32,21 +28,8 @@ class AssetStorageLocation(override val device: AssetMediaDevice) : AudioFileSto
     override var isDetached: Boolean = false
     override var isIndexingCancelled: Boolean = false
 
-    @ExperimentalCoroutinesApi
-    override fun indexAudioFiles(directory: Directory, scope: CoroutineScope): ReceiveChannel<AudioFile> {
-        logger.debug(TAG, "indexAudioFiles(directory=$directory, ${device.getName()})")
-        // TODO: use directory
-        return scope.produce {
-            try {
-                send(createTestAudioFile())
-            } catch (exc: CancellationException) {
-                logger.warning(TAG, "Coroutine for indexAudioFiles() was cancelled")
-            } catch (exc: RuntimeException) {
-                logger.exception(TAG, exc.message.toString(), exc)
-            } finally {
-                isIndexingCancelled = false
-            }
-        }
+    override fun walkTopDown(startDirectory: Any, scope: CoroutineScope): Sequence<Any> {
+        return sequenceOf(createTestAudioFile())
     }
 
     override fun getDirectoryContents(directory: Directory): List<FileLike> {

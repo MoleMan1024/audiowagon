@@ -12,6 +12,10 @@ plugins {
 	id "com.google.firebase.crashlytics"
 }
 
+// We only need this feature for Android 11 in Polestar/Volvo cars with 2.0 where USB is blocked.
+// Feature is turned off by default because it is not that user friendly and was not fully implemented
+def allowLocalFiles = false
+
 android {
 	compileSdkVersion rootProject.compileSdkVersion
 
@@ -20,17 +24,19 @@ android {
 		applicationId "de.moleman1024.audiowagon"
 		minSdkVersion rootProject.minSdkVersion
 		targetSdkVersion rootProject.targetSdkVersion
-		versionCode 150
-		versionName "1.5.0"
+		versionCode 200
+		versionName "2.0.0"
 		resValue "string", "VERSION_NAME", versionName
 		testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 		signingConfig signingConfigs.debug
 		manifestPlaceholders["requestLegacyExternalStorage"] = "false"
+		manifestPlaceholders["usesCleartextTraffic"] = allowLocalFiles.toString()
 		javaCompileOptions {
 			annotationProcessorOptions {
 				arguments += ["room.schemaLocation": "$projectDir/schemas".toString()]
 			}
 		}
+		buildConfigField "boolean", "ALLOW_LOCAL_FILES", allowLocalFiles.toString()
 	}
 
 	buildTypes {
@@ -48,6 +54,11 @@ android {
 		}
 	}
 
+	sourceSets {
+		// for testing Android Room database migrations
+		getByName("androidTest").assets.srcDir("$projectDir/schemas")
+	}
+
 	packagingOptions {
 		exclude "META-INF/spring.factories"
 		exclude "META-INF/spring.handlers"
@@ -62,14 +73,14 @@ dependencies {
 	def androidx_test_version = "1.4.0"
 	def kotlinx_serialization_version = "1.3.0"
 	def mockito_version = "3.11.1"
-	def room_version = "2.4.1"
+	def room_version = "2.4.2"
 
-	implementation "com.google.android.material:material:1.5.0"
+	implementation "com.google.android.material:material:1.6.1"
 	implementation "androidx.preference:preference-ktx:1.2.0"
-	implementation "androidx.media:media:1.5.0"
-	implementation "androidx.appcompat:appcompat:1.4.1"
+	implementation "androidx.media:media:1.6.0"
+	implementation "androidx.appcompat:appcompat:1.4.2"
 	implementation "androidx.room:room-runtime:$room_version"
-	implementation "androidx.constraintlayout:constraintlayout:2.1.3"
+	implementation "androidx.constraintlayout:constraintlayout:2.1.4"
 	kapt "androidx.room:room-compiler:$room_version"
 	implementation "androidx.room:room-ktx:$room_version"
 	implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.2"
@@ -78,7 +89,7 @@ dependencies {
 	implementation "org.jetbrains.kotlinx:kotlinx-serialization-core:$kotlinx_serialization_version"
 	implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinx_serialization_version"
 	implementation files("libs/libaums-0.8.2.aar")
-	implementation "com.google.firebase:firebase-crashlytics-ktx:18.2.8"
+	implementation "com.google.firebase:firebase-crashlytics-ktx:18.2.11"
 	implementation "org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.4.1"
 
 	// junit4 for local unit tests
@@ -98,4 +109,8 @@ dependencies {
 	androidTestImplementation "org.mockito:mockito-android:$mockito_version"
 	androidTestImplementation "org.springframework:spring-context:5.3.8"
 	androidTestImplementation "org.springframework:spring-test:5.3.8"
+	androidTestImplementation "androidx.room:room-testing:2.4.2"
+	// in-memory filesystem to easily create different mocked USB drives in testcases
+	androidTestImplementation "com.google.jimfs:jimfs:1.2"
+	androidTestImplementation files("libs/mp3agic-0.9.2-SNAPSHOT.jar")
 }

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+SPDX-FileCopyrightText: 2021 MoleMan1024 <moleman1024dev@gmail.com>
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+    <EditTextPreference
+            app:key="syncURL"
+            app:title="URL of AudioBuggy"
+            app:defaultValue="http://192.168.1.42:8080"
+            app:useSimpleSummaryProvider="true" />
+    <Preference
+            app:key="syncFilesNow"
+            app:persistent="false"
+            app:selectable="true"
+            app:title="@string/sync_files_button_sync" />
+    <Preference
+            app:key="syncStatus"
+            app:persistent="false"
+            app:selectable="false"
+            app:title="@string/sync_files_status" />
+    <Preference
+            app:key="syncNumFilesTotal"
+            app:persistent="false"
+            app:selectable="false"
+            app:title="@string/sync_files_num_files" />
+    <Preference
+            app:key="syncNumFilesCopied"
+            app:persistent="false"
+            app:selectable="false"
+            app:title="@string/sync_files_num_copied_files" />
+    <Preference
+            app:key="syncStorageSpace"
+            app:persistent="false"
+            app:selectable="false"
+            app:title="@string/sync_files_storage_space" />
+    <Preference
+            app:key="deleteFilesNow"
+            app:persistent="false"
+            app:selectable="true"
+            app:title="@string/sync_files_delete_button" />
+</PreferenceScreen>

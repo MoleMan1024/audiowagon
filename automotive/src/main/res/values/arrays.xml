@@ -4,40 +4,58 @@ SPDX-FileCopyrightText: 2021 MoleMan1024 <moleman1024dev@gmail.com>
 SPDX-License-Identifier: GPL-3.0-or-later
 -->
 <resources>
-	<string-array name="equalizer_presets">
-		<item>@string/equalizer_preset_less_bass</item>
-		<item>@string/equalizer_preset_more_bass</item>
-		<item>@string/equalizer_preset_less_treble</item>
-		<item>@string/equalizer_preset_more_treble</item>
-		<item>@string/equalizer_preset_P2</item>
-		<item>@string/equalizer_preset_P2_plus</item>
-		<item>@string/equalizer_preset_V_shape</item>
-	</string-array>
-	<string-array name="equalizer_preset_values">
-		<item>LESS_BASS</item>
-		<item>MORE_BASS</item>
-		<item>LESS_HIGHS</item>
-		<item>MORE_HIGHS</item>
-		<item>P2</item>
-		<item>P2_PLUS</item>
-		<item>V_SHAPE</item>
-	</string-array>
-	<string-array name="read_metadata_settings">
-		<item>@string/setting_read_metadata_when_connected</item>
-		<item>@string/setting_read_metadata_manual</item>
-		<item>@string/setting_read_metadata_off</item>
-	</string-array>
-	<string-array name="read_metadata_settings_values">
-		<item>WHEN_USB_CONNECTED</item>
-		<item>MANUALLY</item>
-		<item>OFF</item>
-	</string-array>
-	<string-array name="audiofocus_settings">
-		<item>@string/setting_audiofocus_pause</item>
-		<item>@string/setting_audiofocus_duck</item>
-	</string-array>
-	<string-array name="audiofocus_settings_values">
-		<item>PAUSE</item>
-		<item>DUCK</item>
-	</string-array>
+    <string-array name="equalizer_presets">
+        <item>@string/equalizer_preset_less_bass</item>
+        <item>@string/equalizer_preset_more_bass</item>
+        <item>@string/equalizer_preset_less_treble</item>
+        <item>@string/equalizer_preset_more_treble</item>
+        <item>@string/equalizer_preset_P2</item>
+        <item>@string/equalizer_preset_P2_plus</item>
+        <item>@string/equalizer_preset_V_shape</item>
+    </string-array>
+    <string-array name="equalizer_preset_values">
+        <item>LESS_BASS</item>
+        <item>MORE_BASS</item>
+        <item>LESS_HIGHS</item>
+        <item>MORE_HIGHS</item>
+        <item>P2</item>
+        <item>P2_PLUS</item>
+        <item>V_SHAPE</item>
+    </string-array>
+    <string-array name="read_metadata_settings">
+        <item>@string/setting_read_metadata_when_connected</item>
+        <item>@string/setting_read_metadata_manual</item>
+        <item>@string/setting_read_metadata_filepaths_only</item>
+        <item>@string/setting_read_metadata_off</item>
+    </string-array>
+    <string-array name="read_metadata_settings_values">
+        <item>WHEN_USB_CONNECTED</item>
+        <item>MANUALLY</item>
+        <item>FILEPATHS_ONLY</item>
+        <item>OFF</item>
+    </string-array>
+    <string-array name="audiofocus_settings">
+        <item>@string/setting_audiofocus_pause</item>
+        <item>@string/setting_audiofocus_duck</item>
+    </string-array>
+    <string-array name="audiofocus_settings_values">
+        <item>PAUSE</item>
+        <item>DUCK</item>
+    </string-array>
+    <string-array name="album_display_settings">
+        <item>@string/setting_album_display_grid</item>
+        <item>@string/setting_album_display_list</item>
+    </string-array>
+    <string-array name="album_display_settings_values">
+        <item>GRID</item>
+        <item>LIST</item>
+    </string-array>
+    <string-array name="datasource_settings">
+        <item>@string/setting_datasource_usb</item>
+        <item>@string/setting_datasource_local</item>
+    </string-array>
+    <string-array name="datasource_settings_values">
+        <item>USB</item>
+        <item>LOCAL</item>
+    </string-array>
 </resources>

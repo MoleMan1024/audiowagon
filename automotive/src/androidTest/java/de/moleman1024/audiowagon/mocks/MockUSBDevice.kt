@@ -10,13 +10,12 @@ import android.content.Context
 import android.os.Parcel
 import android.os.Parcelable
 import com.github.mjdev.libaums.fs.FileSystem
-import com.github.mjdev.libaums.fs.UsbFile
-import com.github.mjdev.libaums.partition.PartitionTypes
 import de.moleman1024.audiowagon.filestorage.usb.USBDevice
 import de.moleman1024.audiowagon.filestorage.usb.USBDeviceConfig
 import de.moleman1024.audiowagon.filestorage.usb.USBEndpoint
 import de.moleman1024.audiowagon.filestorage.usb.USBInterface
-import java.nio.ByteBuffer
+
+private const val TAG = "MockUSBDevice"
 
 class MockUSBDevice(
     override var configurationCount: Int = 1,
@@ -31,6 +30,7 @@ class MockUSBDevice(
 ) : USBDevice, Parcelable {
     var hasPermission = true
     var endpointToggle = false
+    var fileSystem = InMemoryFileSystem()
 
     override fun requestPermission(intent: PendingIntent) {
         // no op
@@ -83,102 +83,15 @@ class MockUSBDevice(
         }
     }
 
-    override fun initFilesystem(context: Context): FileSystem? {
-        return object : FileSystem {
-            override val capacity: Long
-                get() = freeSpace + occupiedSpace
-            override val chunkSize: Int
-                get() = 4096
-            override val freeSpace: Long
-                get() = 1024 * 1024
-            override val occupiedSpace: Long
-                get() = 1024 * 8
-            override val rootDirectory: UsbFile
-                get() = getRootDir()
-            override val type: Int
-                get() = PartitionTypes.FAT32
-            override val volumeLabel: String
-                get() = "mock_volume_label"
-        }
-    }
-
-    fun getRootDir(): UsbFile {
-        return object : UsbFile {
-            override val absolutePath: String
-                get() = "/"
-            override val isDirectory: Boolean
-                get() = true
-            override val isRoot: Boolean
-                get() = true
-            override var length: Long
-                get() = 0
-                set(value) {}
-            override var name: String
-                get() = "rootDir"
-                set(value) {}
-            override val parent: UsbFile?
-                get() = null
-
-            override fun close() {
-                // no op
-            }
-
-            override fun createDirectory(name: String): UsbFile {
-                TODO()
-            }
-
-            override fun createFile(name: String): UsbFile {
-                TODO()
-            }
-
-            override fun createdAt(): Long {
-                return 0L
-            }
-
-            override fun delete() {
-                // no op
-            }
-
-            override fun flush() {
-                // no op
-            }
-
-            override fun lastAccessed(): Long {
-                return 0L
-            }
-
-            override fun lastModified(): Long {
-                return 0L
-            }
-
-            override fun list(): Array<String> {
-                return arrayOf()
-            }
-
-            override fun listFiles(): Array<UsbFile> {
-                return arrayOf()
-            }
-
-            override fun moveTo(destination: UsbFile) {
-                // no op
-            }
-
-            override fun read(offset: Long, destination: ByteBuffer) {
-                // no op
-            }
-
-            override fun search(path: String): UsbFile? {
-                return null
-            }
-
-            override fun write(offset: Long, source: ByteBuffer) {
-                // no op
-            }
-        }
+    override fun initFilesystem(context: Context): FileSystem {
+        fileSystem.init()
+        usbDeviceToFileSystemMap[hashCode().toString()] = fileSystem
+        return fileSystem
     }
 
     override fun close() {
-
+        usbDeviceToFileSystemMap.remove(hashCode().toString())
+        fileSystem.close()
     }
 
     override fun describeContents(): Int {
@@ -198,11 +111,13 @@ class MockUSBDevice(
     }
 
     companion object {
+        val usbDeviceToFileSystemMap = mutableMapOf<String, InMemoryFileSystem>()
+
         @Suppress("unused")
         @JvmField
         val CREATOR: Parcelable.Creator<MockUSBDevice> = object : Parcelable.Creator<MockUSBDevice> {
             override fun createFromParcel(source: Parcel?): MockUSBDevice {
-                return MockUSBDevice(
+                val mockUSBDevice = MockUSBDevice(
                     configurationCount = source!!.readInt(),
                     deviceClass = source.readInt(),
                     deviceName = source.readString().toString(),
@@ -213,6 +128,10 @@ class MockUSBDevice(
                     vendorId = source.readInt(),
                     serialNumber = source.readString()
                 )
+                if (usbDeviceToFileSystemMap.containsKey(mockUSBDevice.hashCode().toString())) {
+                    mockUSBDevice.fileSystem = usbDeviceToFileSystemMap[mockUSBDevice.hashCode().toString()]!!
+                }
+                return mockUSBDevice
             }
 
             override fun newArray(size: Int): Array<MockUSBDevice> {
@@ -221,4 +140,37 @@ class MockUSBDevice(
 
         }
     }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as MockUSBDevice
+
+        if (configurationCount != other.configurationCount) return false
+        if (deviceClass != other.deviceClass) return false
+        if (deviceName != other.deviceName) return false
+        if (interfaceCount != other.interfaceCount) return false
+        if (manufacturerName != other.manufacturerName) return false
+        if (productId != other.productId) return false
+        if (productName != other.productName) return false
+        if (vendorId != other.vendorId) return false
+        if (serialNumber != other.serialNumber) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = configurationCount
+        result = 31 * result + deviceClass
+        result = 31 * result + deviceName.hashCode()
+        result = 31 * result + interfaceCount
+        result = 31 * result + (manufacturerName?.hashCode() ?: 0)
+        result = 31 * result + productId
+        result = 31 * result + (productName?.hashCode() ?: 0)
+        result = 31 * result + vendorId
+        result = 31 * result + (serialNumber?.hashCode() ?: 0)
+        return result
+    }
+
 }

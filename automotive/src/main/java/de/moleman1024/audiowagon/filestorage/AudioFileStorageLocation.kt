@@ -7,14 +7,17 @@ package de.moleman1024.audiowagon.filestorage
 
 import android.media.MediaDataSource
 import android.net.Uri
-import com.github.mjdev.libaums.fs.UsbFile
+import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.log.Logger
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.produce
 import java.io.File
 import java.io.InputStream
-import java.net.URLConnection
+import java.util.*
 
 interface AudioFileStorageLocation {
     @Suppress("PropertyName")
@@ -27,7 +30,68 @@ interface AudioFileStorageLocation {
     var isIndexingCancelled: Boolean
 
     @ExperimentalCoroutinesApi
-    fun indexAudioFiles(directory: Directory, scope: CoroutineScope): ReceiveChannel<AudioFile>
+    fun indexAudioFiles(
+        directory: Directory,
+        scope: CoroutineScope,
+        dispatcher: CoroutineDispatcher
+    ): ReceiveChannel<FileLike> {
+        logger.debug(TAG, "indexAudioFiles(directory=$directory, ${device.getName()})")
+        val startDirectory = device.getFileFromURI(directory.uri)
+        return scope.produce(dispatcher) {
+            try {
+                for (file in walkTopDown(startDirectory, this)) {
+                    if (isIndexingCancelled) {
+                        logger.debug(TAG, "Cancel indexAudioFiles()")
+                        break
+                    }
+                    val fileType = Util.determinePlayableFileType(file)
+                    if (fileType == null) {
+                        logger.debug(TAG, "Skipping unsupported file: $file")
+                        continue
+                    }
+                    when (fileType) {
+                        is PlaylistFile -> {
+                            // skip playlists, we don't need them indexed in media library
+                            continue
+                        }
+                        is Directory -> {
+                            send(createDirectoryFromFileInIndex(file))
+                        }
+                        is AudioFile -> {
+                            send(createAudioFileFromFileInIndex(file))
+                        }
+                    }
+                }
+            } catch (exc: CancellationException) {
+                logger.warning(TAG, "Coroutine for indexAudioFiles() was cancelled")
+            } catch (exc: RuntimeException) {
+                logger.exception(TAG, exc.message.toString(), exc)
+            } finally {
+                isIndexingCancelled = false
+                postIndexAudioFiles()
+            }
+        }
+    }
+
+    fun walkTopDown(startDirectory: Any, scope: CoroutineScope): Sequence<Any>
+
+    fun createDirectoryFromFileInIndex(file: Any): FileLike {
+        file as File
+        val uri = Util.createURIForPath(storageID, file.absolutePath)
+        val dir = Directory(uri)
+        dir.lastModifiedDate = Date(file.lastModified())
+        return dir
+    }
+
+    fun createAudioFileFromFileInIndex(file: Any): FileLike {
+        file as File
+        return Util.createAudioFileFromFile(file, storageID)
+    }
+
+    fun postIndexAudioFiles() {
+        // no op
+    }
+
     fun getDataSourceForURI(uri: Uri): MediaDataSource
     fun getBufferedDataSourceForURI(uri: Uri): MediaDataSource
     fun getByteArrayForURI(uri: Uri): ByteArray
@@ -54,6 +118,7 @@ interface AudioFileStorageLocation {
      * Cancels an ongoing indexing pipeline
      */
     fun cancelIndexAudioFiles() {
+        logger.debug(TAG, "cancelIndexAudioFiles()")
         if (indexingStatus == IndexingStatus.INDEXING) {
             logger.debug(TAG, "Cancelling ongoing audio file indexing")
             isIndexingCancelled = true

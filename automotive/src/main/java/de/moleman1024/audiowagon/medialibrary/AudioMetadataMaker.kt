@@ -10,13 +10,15 @@ import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.support.v4.media.MediaMetadataCompat
-import de.moleman1024.audiowagon.*
+import de.moleman1024.audiowagon.AUTHORITY
+import de.moleman1024.audiowagon.AlbumArtContentProvider
+import de.moleman1024.audiowagon.DEFAULT_JPEG_QUALITY_PERCENTAGE
+import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.filestorage.AudioFile
 import de.moleman1024.audiowagon.filestorage.AudioFileStorage
 import de.moleman1024.audiowagon.filestorage.usb.USBAudioDataSource
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyElement
-import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyID
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyType
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import java.io.ByteArrayOutputStream
@@ -25,6 +27,10 @@ import java.io.IOException
 private const val TAG = "AudioMetadataMaker"
 private val logger = Logger
 const val RESOURCE_ROOT_URI = "android.resource://de.moleman1024.audiowagon/drawable/"
+const val ART_URI_PART = "art"
+const val ART_URI_PART_ALBUM = "album"
+const val ART_URI_PART_TRACK = "track"
+const val ART_URI_PART_FILE = "file"
 
 /**
  * Extract metadata from audio files.
@@ -55,7 +61,6 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
         val artist: String? = metadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)
         val album: String? = metadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM)
         val title: String? = metadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)
-        val genre: String? = metadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_GENRE)
         val trackNum: Short? = extractTrackNumFromMetadata(metadataRetriever)
         val discNum: Short? = extractDiscNumFromMetadata(metadataRetriever)
         val year: Short? = extractYearFromMetadata(metadataRetriever)
@@ -87,7 +92,6 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
         } else {
             audioItemForMetadata.title = audioFile.name.trim()
         }
-        genre?.let { audioItemForMetadata.genre = it.trim() }
         trackNum?.let { audioItemForMetadata.trackNum = it }
         discNum?.let { audioItemForMetadata.discNum = it }
         year?.let { audioItemForMetadata.year = it }
@@ -128,9 +132,11 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
 
     private fun extractDiscNumFromMetadata(metadataRetriever: MediaMetadataRetriever): Short? {
         var discNum: Short? = null
-        val discNumAsString: String =
+        var discNumAsString: String =
             metadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DISC_NUMBER) ?: return null
         try {
+            // sometimes this is returned as e.g. "1/1" (one out of one discs), remove that
+            discNumAsString = discNumAsString.replace("(CD|/.*)".toRegex(), "").trim()
             if (discNumAsString.isBlank()) {
                 return discNum
             }
@@ -179,9 +185,6 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
             if (audioItem.discNum >= 0) {
                 putLong(MediaMetadataCompat.METADATA_KEY_DISC_NUMBER, audioItem.discNum.toLong())
             }
-            if (audioItem.genre.isNotBlank()) {
-                putString(MediaMetadataCompat.METADATA_KEY_GENRE, audioItem.genre)
-            }
             if (audioItem.year >= 0) {
                 putLong(MediaMetadataCompat.METADATA_KEY_YEAR, audioItem.year.toLong())
             }
@@ -211,27 +214,16 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
                     throw AssertionError("createMetadataForItem() not supported for: $contentHierarchyID")
                 }
             }
-            // This icon will be shown in the "Now Playing" widget
-            // We need to always adapt the ID of the album art to produce different content URIs even though we only
-            // store the album art for a single track (i.e. the current track). If we re-use the same ID always the
-            // media browser GUI client will cache the first album art and never change it
-            val albumArtContentUri = createURIForAlbumArt(contentHierarchyID)
-            putString(MediaMetadataCompat.METADATA_KEY_ART_URI, albumArtContentUri.toString())
-            putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON_URI, albumArtContentUri.toString())
+            // The METADATA_KEY_DISPLAY_ICON_URI will be shown in the "Now Playing" widget
+            putString(MediaMetadataCompat.METADATA_KEY_ART_URI, audioItem.albumArtURI.toString())
+            putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON_URI, audioItem.albumArtURI.toString())
         }.build()
-    }
-
-    private fun createURIForAlbumArt(contentHierarchyID: ContentHierarchyID): Uri? {
-        val idForAlbumArt =
-            if (contentHierarchyID.type == ContentHierarchyType.FILE) contentHierarchyID.path.hashCode()
-            else contentHierarchyID.trackID
-        return Uri.parse("content://$AUTHORITY/$TRACK_ART_PATH/${idForAlbumArt}")
     }
 
     fun getEmbeddedAlbumArtForAudioItem(audioItem: AudioItem): ByteArray? {
         val metadataRetriever = MediaMetadataRetriever()
         val mediaDataSource = audioFileStorage.getDataSourceForURI(audioItem.uri)
-        logger.debug(TAG, "Retrieving embedded image")
+        logger.verbose(TAG, "Retrieving embedded image")
         metadataRetriever.setDataSource(mediaDataSource)
         val embeddedImage = metadataRetriever.embeddedPicture ?: return null
         metadataRetriever.close()
@@ -241,14 +233,16 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
     fun resizeAlbumArt(albumArtBytes: ByteArray): ByteArray? {
         val resizedBitmap: Bitmap?
         try {
-            logger.debug(TAG, "Decoding image")
+            logger.verbose(TAG, "Decoding image")
             val decodedBitmap = BitmapFactory.decodeByteArray(albumArtBytes, 0, albumArtBytes.size) ?: return null
-            logger.debug(TAG, "Scaling image")
+            logger.verbose(TAG, "Scaling image")
             val widthHeightForResize = AlbumArtContentProvider.getAlbumArtSizePixels()
             resizedBitmap =
                 if (decodedBitmap.width < widthHeightForResize || decodedBitmap.height < widthHeightForResize) {
                     decodedBitmap
                 } else {
+                    // TODO: try inSampleSize e.g. see
+                    //  https://stackoverflow.com/questions/25719620/how-to-solve-java-lang-outofmemoryerror-trouble-in-android
                     Bitmap.createScaledBitmap(decodedBitmap, widthHeightForResize, widthHeightForResize, false)
                 }
         } catch (exc: NullPointerException) {
@@ -256,11 +250,26 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
             return null
         }
         val stream = ByteArrayOutputStream()
-        logger.debug(TAG, "Compressing resized image")
-        val quality = 90
+        logger.verbose(TAG, "Compressing resized image")
+        val quality = DEFAULT_JPEG_QUALITY_PERCENTAGE
         // TODO: I am getting some warnings in log on Pixel 3 XL AAOS that this takes some time
         resizedBitmap?.compress(Bitmap.CompressFormat.JPEG, quality, stream) ?: return null
         return stream.toByteArray()
+    }
+
+    companion object {
+        fun createURIForAlbumArtForAlbum(id: Int): Uri {
+            return Uri.parse("content://$AUTHORITY/$ART_URI_PART/$ART_URI_PART_ALBUM/${id}")
+        }
+
+        fun createURIForAlbumArtForTrack(id: Int): Uri {
+            return Uri.parse("content://$AUTHORITY/$ART_URI_PART/$ART_URI_PART_TRACK/${id}")
+        }
+
+        fun createURIForAlbumArtForFile(path: String): Uri {
+            val pathEncoded = Uri.encode(path)
+            return Uri.parse("content://$AUTHORITY/$ART_URI_PART/$ART_URI_PART_FILE${pathEncoded}")
+        }
     }
 
 }

@@ -40,6 +40,15 @@ class ContentHierarchyRootFiles(
             return items
         }
         val directoryContents = getDirectoryContents()
+        if (directoryContents.isNotEmpty()) {
+            val metadataReadSetting = SharedPrefs.getMetadataReadSettingEnum(context, logger, TAG)
+            if (metadataReadSetting != MetadataReadSetting.OFF && !audioItemLibrary.isBuildingLibrary) {
+                val numPathsInRepo = audioItemLibrary.getPrimaryRepository()?.getNumPaths() ?: 0
+                if (numPathsInRepo > 0) {
+                    items += createPseudoPlayAllItem()
+                }
+            }
+        }
         if (!hasTooManyItems(directoryContents.size)) {
             items += createFileLikeMediaItemsForDir(directoryContents, audioFileStorage)
         } else {
@@ -53,10 +62,32 @@ class ContentHierarchyRootFiles(
         return items
     }
 
+    /**
+     * Creates pseudo [MediaItem] to play all files in this directory recursively
+     */
+    private fun createPseudoPlayAllItem(): MediaItem {
+        val playAllFilesForDirectoryID = id
+        playAllFilesForDirectoryID.type = ContentHierarchyType.ALL_FILES_FOR_DIRECTORY
+        val description = MediaDescriptionCompat.Builder().apply {
+            setMediaId(serialize(playAllFilesForDirectoryID))
+            setTitle(context.getString(R.string.browse_tree_pseudo_play_all))
+            setIconUri(
+                Uri.parse(RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.baseline_playlist_play_24))
+            )
+        }.build()
+        return MediaItem(description, MediaItem.FLAG_PLAYABLE)
+    }
+
     private fun createPseudoNoEntriesItem(): MediaItem {
+        val dataSourceSetting = SharedPrefs.getDataSourceSettingEnum(context, logger, TAG)
         val numConnectedDevices = audioFileStorage.getNumConnectedDevices()
         var title = context.getString(R.string.browse_tree_no_entries_title)
-        var subtitle = context.getString(R.string.browse_tree_no_usb_drive)
+        var subtitle: String
+        subtitle = if (dataSourceSetting == DataSourceSetting.USB) {
+            context.getString(R.string.browse_tree_no_usb_drive)
+        } else {
+            context.getString(R.string.browse_tree_ask_sync_files)
+        }
         if (numConnectedDevices > 0) {
             if (SharedPrefs.isLegalDisclaimerAgreed(context)) {
                 subtitle = context.getString(R.string.browse_tree_usb_drive_ejected)

@@ -16,7 +16,7 @@ data class AudioItem(
     var album: String = "",
     // will use the filename if no title in metadata
     var title: String = "",
-    var genre: String = "",
+    var sortName: String = "",
     var trackNum: Short = -1,
     var discNum: Short = -1,
     var year: Short = -1,

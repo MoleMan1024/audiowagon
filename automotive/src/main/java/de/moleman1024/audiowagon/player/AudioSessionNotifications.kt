@@ -12,6 +12,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.os.Build
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import androidx.core.app.NotificationCompat
@@ -119,8 +120,12 @@ class AudioSessionNotifications(
     }
 
     private fun createNotificationAction(action: String, icon: IconCompat, stringID: Int): NotificationCompat.Action {
-        val intent =
-            PendingIntent.getBroadcast(context, REQUEST_CODE, Intent(action), PendingIntent.FLAG_UPDATE_CURRENT)
+        val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            PendingIntent.FLAG_MUTABLE
+        } else {
+            0
+        }
+        val intent = PendingIntent.getBroadcast(context, REQUEST_CODE, Intent(action), flags)
         return NotificationCompat.Action.Builder(icon, context.getString(stringID), intent).build()
     }
 

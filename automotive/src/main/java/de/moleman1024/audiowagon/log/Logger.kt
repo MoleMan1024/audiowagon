@@ -10,9 +10,7 @@ import android.util.Log.getStackTraceString
 import androidx.annotation.VisibleForTesting
 import com.github.mjdev.libaums.fs.UsbFile
 import com.github.mjdev.libaums.fs.UsbFileOutputStream
-import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import java.io.BufferedOutputStream
 import java.io.IOException
 import java.time.LocalDateTime
@@ -32,9 +30,10 @@ object Logger : LoggerInterface {
     private var chunkSize: Int = 32768
     private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")
     private var isStoreLogs = false
-    private const val maxBufferLines: Int = 2000
+    private const val maxBufferLines: Int = 1000
     private val buffer = mutableListOf<String>()
     private val dispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
+    private val observers = mutableListOf<(String) -> Unit>()
     @VisibleForTesting(otherwise = VisibleForTesting.NONE)
     private val storedLogs = Collections.synchronizedList<String>(mutableListOf())
 
@@ -130,9 +129,10 @@ object Logger : LoggerInterface {
     }
 
     override fun exception(tag: String?, msg: String, exc: Throwable) {
-        Log.e(tag, msg, exc)
-        val stackTrace = getStackTraceString(exc)
-        storeLogLine("$msg $stackTrace")
+        val stackTrace = exc.stackTraceToString()
+        val logLine = "$msg\n$stackTrace"
+        Log.e(tag, logLine)
+        storeLogLine(logLine)
         logToUSBOrBuffer(LoggerInterface.LogLevel.ERROR, tag, msg, stackTrace)
         flushToUSB()
     }
@@ -143,7 +143,8 @@ object Logger : LoggerInterface {
      */
     override fun exceptionLogcatOnly(tag: String?, msg: String, exc: Throwable) {
         Log.e(tag, msg, exc)
-        storeLogLine(msg + " " + getStackTraceString(exc))
+        val logLine = msg + " " + getStackTraceString(exc)
+        storeLogLine(logLine)
     }
 
     override fun info(tag: String?, msg: String) {
@@ -169,8 +170,9 @@ object Logger : LoggerInterface {
         }
         val timestamp = LocalDateTime.now().format(formatter)
         val threadID = android.os.Process.myTid()
+        val formattedLogLine = formatLogLine(timestamp, level, threadID, tag, msg)
+        notifyObservers(formattedLogLine)
         runBlocking(dispatcher) {
-            val formattedLogLine = formatLogLine(timestamp, level, threadID, tag, msg)
             if (buffer.size > maxBufferLines) {
                 buffer.removeAt(0)
             }
@@ -241,5 +243,20 @@ object Logger : LoggerInterface {
             storedLogs.add(line)
         }
     }
+
+    private fun notifyObservers(line: String) {
+        observers.forEach { it(line) }
+    }
+
+    fun addObserver(func: (String) -> Unit) {
+        debug(TAG, "Adding observer")
+        observers.add(func)
+    }
+
+    fun removeObserver(func: (String) -> Unit) {
+        debug(TAG, "Removing observer")
+        observers.remove(func)
+    }
+
 
 }

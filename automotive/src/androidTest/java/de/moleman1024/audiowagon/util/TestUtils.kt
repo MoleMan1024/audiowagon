@@ -7,10 +7,18 @@ package de.moleman1024.audiowagon.util
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.content.res.AssetManager
+import android.support.v4.media.session.PlaybackStateCompat
 import androidx.test.platform.app.InstrumentationRegistry
+import de.moleman1024.audiowagon.AudioBrowserService
+import de.moleman1024.audiowagon.filestorage.IndexingStatus
 import de.moleman1024.audiowagon.log.Logger
+import de.moleman1024.audiowagon.player.AudioPlayerStatus
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.Assert
 import java.io.File
+import java.io.FileOutputStream
+
 
 private const val TAG = "TestUtils"
 
@@ -26,14 +34,51 @@ object TestUtils {
         }
     }
 
+    @ExperimentalCoroutinesApi
+    fun waitForIndexingCompleted(audioBrowserService: AudioBrowserService, timeoutMS: Int = 1000 * 10) {
+        waitForTrueOrFail(
+            { audioBrowserService.getIndexingStatus().any { it == IndexingStatus.COMPLETED } },
+            timeoutMS
+        )
+    }
+
+    @ExperimentalCoroutinesApi
+    fun waitForAudioPlayerState(state: Int, audioBrowserService: AudioBrowserService, timeoutMS: Int = 1000 * 10) {
+        waitForTrueOrFail({ audioBrowserService.getAudioPlayerStatus().playbackState == state }, timeoutMS)
+    }
+
     fun deleteDatabaseDirectory() {
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val databasesDir = File(context?.dataDir.toString() + "/databases")
+        val databasesDir = getDatabaseDirectory()
         databasesDir.listFiles()?.forEach {
             Logger.debug(TAG, "Deleting: $it")
             it.delete()
         }
         databasesDir.delete()
+    }
+
+    fun getDatabaseDirectory(): File {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        return File(context?.dataDir.toString() + "/databases")
+    }
+
+    fun copyAssetToDatbaseDirectory(context: Context, assetFileName: File, outFileName: String) {
+        Logger.debug(TAG, "Copying to database directory: $assetFileName")
+        val databasesDir = getDatabaseDirectory()
+        val assetManager: AssetManager = context.assets
+        val assetFile = assetManager.open(assetFileName.name)
+        if (!databasesDir.exists()) {
+            databasesDir.mkdirs()
+        }
+        val outFile = File("$databasesDir/$outFileName")
+        val outStream = FileOutputStream(outFile)
+        val buffer = ByteArray(1024)
+        var read: Int
+        while (assetFile.read(buffer).also { read = it } != -1) {
+            outStream.write(buffer, 0, read)
+        }
+        assetFile.close()
+        outStream.flush()
+        outStream.close()
     }
 
     fun createSharedPrefsVersion110(context: Context): SharedPreferences {

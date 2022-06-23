@@ -17,22 +17,25 @@ import org.junit.runners.Suite
 // TODO: test no permission for serial number(?)
 // TODO: test turning on logging without agreed legal disclaimer
 // TODO: test #12 filenames with percent signs
-// TODO: test onPlay during initilization is latched for later
+// TODO: test onPlay during initialization is latched for later
 // TODO: test #44 order of items returned in some SQL queries
 // TODO: test that we avoid duplicate tracks when creating random playback queue
 // TODO: measure memory again, see where I use too much: others 15MB, Code 15MB, Stack 0.08MB, Graphics 7 MB, Native
 //  23 MB, Java 7MB
-
 
 @ExperimentalCoroutinesApi
 @RunWith(Suite::class)
 @Suite.SuiteClasses(
     AudioBrowserServiceTest::class,
     AudioItemLibraryTest::class,
-    DatabaseTest::class,
+    RepositoryTest::class,
     IndexingTest::class,
-    MediaBrowserTest::class,
     SettingsFragmentTest::class,
     SharedPrefsTest::class,
+    DatabaseMigrationTest::class,
+    DatabaseTest::class,
+    MediaSearchTest::class,
+    PlaybackTest::class,
+    MediaBrowserTest::class,
 )
 class InstrumentedTestSuite

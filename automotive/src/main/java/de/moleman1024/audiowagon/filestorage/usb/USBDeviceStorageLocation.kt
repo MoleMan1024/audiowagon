@@ -13,13 +13,10 @@ import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.Util.Companion.determinePlayableFileType
 import de.moleman1024.audiowagon.filestorage.*
 import de.moleman1024.audiowagon.log.Logger
-import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.channels.produce
+import kotlinx.coroutines.CoroutineScope
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.util.*
-import kotlin.RuntimeException
 
 class USBDeviceStorageLocation(override val device: USBMediaDevice) : AudioFileStorageLocation {
     override val TAG = "USBDevStorLoc"
@@ -30,37 +27,27 @@ class USBDeviceStorageLocation(override val device: USBMediaDevice) : AudioFileS
     override var isDetached: Boolean = false
     override var isIndexingCancelled: Boolean = false
 
-    @ExperimentalCoroutinesApi
-    override fun indexAudioFiles(directory: Directory, scope: CoroutineScope): ReceiveChannel<AudioFile> {
-        logger.debug(TAG, "indexAudioFiles(directory=$directory, ${device.getName()})")
-        val startDirectory = device.getUSBFileFromURI(directory.uri)
-        return scope.produce {
-            try {
-                for (usbFile in device.walkTopDown(startDirectory, this)) {
-                    if (isIndexingCancelled) {
-                        logger.debug(TAG, "Cancel indexAudioFiles()")
-                        break
-                    }
-                    val fileType = determinePlayableFileType(usbFile)
-                    if (fileType == null) {
-                        logger.debug(TAG, "Skipping unsupported file: $usbFile")
-                        continue
-                    }
-                    if (fileType !is AudioFile) {
-                        // skip playlists, we don't need them indexed in media library
-                        continue
-                    }
-                    val audioFile = createAudioFileFromUSBFile(usbFile)
-                    send(audioFile)
-                }
-            } catch (exc: CancellationException) {
-                logger.warning(TAG, "Coroutine for indexAudioFiles() was cancelled")
-            } catch (exc: RuntimeException) {
-                logger.exception(TAG, exc.message.toString(), exc)
-            } finally {
-                isIndexingCancelled = false
-            }
+    override fun walkTopDown(startDirectory: Any, scope: CoroutineScope): Sequence<Any> {
+        return device.walkTopDown(startDirectory as UsbFile, scope)
+    }
+
+    override fun createDirectoryFromFileInIndex(file: Any): FileLike {
+        val usbFile = file as UsbFile
+        val uri = Util.createURIForPath(storageID, usbFile.absolutePath)
+        val dir = Directory(uri)
+        // libaums does not support extracting lastModifiedDate from root directory
+        if (dir.path != "/") {
+            dir.lastModifiedDate = Date(usbFile.lastModified())
         }
+        return dir
+    }
+
+    override fun createAudioFileFromFileInIndex(file: Any): FileLike {
+        return createAudioFileFromUSBFile(file as UsbFile)
+    }
+
+    override fun postIndexAudioFiles() {
+        device.clearRecentFilepathToFileMap()
     }
 
     private fun createAudioFileFromUSBFile(usbFile: UsbFile): AudioFile {

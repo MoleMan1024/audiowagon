@@ -15,10 +15,10 @@
 .idea/dictionaries
 .idea/gradle.xml
 .idea/libraries
-.idea/modules.xml
+**/.idea/modules.xml
 .idea/navEditor.xml
-.idea/vcs.xml
-.idea/workspace.xml
+**/.idea/vcs.xml
+**/.idea/workspace.xml
 .navigation
 Thumbs.db
 /assets/
@@ -39,7 +39,7 @@ output.json
 release/
 venv/
 tools/generate_files/.idea
-.idea/misc.xml
+**/.idea/misc.xml
 docs/Gemfile.lock
 google-services.json
 .idea/deploymentTargetDropDown.xml

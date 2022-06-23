@@ -1,188 +1,213 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!--
+<?xml version="1.0" encoding="utf-8"?><!--
 SPDX-FileCopyrightText: 2021 MoleMan1024 <moleman1024dev@gmail.com>
 SPDX-License-Identifier: GPL-3.0-or-later
 -->
 <resources>
-	<!-- The name of the app -->
-	<string name="app_name">AudioWagon</string>
-	<!-- The title of the playback queue (a list of tracks to be played back; this is NOT a user-defined playlist). 
-	It does not seem to appear in the car -->
-	<string name="queue_title">Play queue</string>
-	<!-- When clicking on the magnifying glass to enter the search mode there are 3 headings shown depending on the
-	found items: Tracks/Artists/Albums. If possible do not translate "track" to sth like "song", the audio file could
-	also contain an	audiobook or podcast -->
-	<string name="search_group_tracks">Tracks</string>
-	<string name="search_group_artists">Artists</string>
-	<string name="search_group_albums">Albums</string>
-	<!-- The "browse tree" is the main view when starting the app -->
-	<!-- There are 4 categories at the top the user can pick from to select media items: Tracks/Albums/Artists/Files -->
-	<string name="browse_tree_category_tracks">Tracks</string>
-	<string name="browse_tree_category_artists">Artists</string>
-	<string name="browse_tree_category_albums">Albums</string>
-	<!-- The tracks category contains a "fake" entry, when pressed, all tracks will be played back in shuffled order -->
-	<string name="browse_tree_pseudo_track_shuffle_all">Shuffle all</string>
-	<!-- When "Play all" is pressed, all items for the currently shown album or artist will be played back -->
-	<string name="browse_tree_pseudo_play_all">Play all</string>
-	<!-- When the metadata inside the audio file does not contain information, the album or artist is shown as
-	"Unknown" when browsing -->
-	<string name="browse_tree_unknown_album">Unknown album</string>
-	<string name="browse_tree_unknown_artist">Unknown artist</string>
-	<!-- Albums that are marked in the metadata as compilations will show the artist "Various artists" -->
-	<string name="browse_tree_various_artists">Various artists</string>
-	<!-- Some "fake" entries shown in the main browse view e.g. when no USB stick is connected yet -->
-	<string name="browse_tree_no_entries_title">No audio files</string>
-	<string name="browse_tree_no_usb_drive">Plug in a USB drive</string>
-	<string name="browse_tree_usb_drive_ejected">USB drive ejected or could not be read</string>
-	<string name="browse_tree_need_to_agree_legal_title">Legal disclaimer not agreed</string>
-	<string name="browse_tree_need_to_agree_legal_desc">Check the settings</string>
-	<!-- We use unicode symbols here to avoid the complex linguistic implications in multiple languages for the
-	wordings "artists"/"tracks" together with numbers. No need to translate. -->
-	<string name="browse_tree_num_albums_num_tracks" translatable="false">%1$d &#x1F4BF; &#x2B1D; %2$d &#x1D160;</string>
-	<string name="toast_indexing_started">USB indexing started …</string>
-	<string name="toast_indexing_completed">USB indexing completed</string>
-	<!-- If there is no next/previous track in the current playlist that the user can skip forward/backward to -->
-	<string name="no_next_track">No next track</string>
-	<string name="no_prev_track">No previous track</string>
-	<string name="eject_completed">USB device ejected, it is safe to unplug it</string>
-	<!-- please translate only the "ERROR:" part in front, keep the variable placeholder as-is -->
-	<string name="error">ERROR: %1$s</string>
-	<!-- We assume "USB" is the same in all languages -->
-	<string name="error_USB" translatable="false">USB: %1$s</string>
-	<!-- Error messages -->
-	<!-- The app needs to receive "audio focus" before it can play back any audio. The app will lose "audio focus"
-	for example when a navigation route guidance is being read out or when a phone call is ongoing. -->
-	<string name="error_audio_focus_denied">Could not get audio focus</string>
-	<string name="error_USB_init">Error in connection to USB drive</string>
-	<string name="error_no_filesystem">No supported filesystem</string>
-	<string name="error_library_creation_fail">Library creation failed</string>
-	<!-- "state" refers to the state the software is in -->
-	<string name="error_invalid_state">Invalid state</string>
-	<!-- These error strings will be prefixed with the toast_error above, e.g. "ERROR: Timeout" -->
-	<!-- "I/O" means "Input/Output" -->
-	<string name="error_IO">I/O error</string>
-	<string name="error_malformed_data">Malformed data</string>
-	<string name="error_timeout">Timeout</string>
-	<string name="error_not_supported">Not supported</string>
-	<string name="error_no_USB_device">No USB device</string>
-	<string name="error_unknown">Unknown</string>
-	<!-- Names for the playback actions. These are not shown in the car. -->
-	<string name="notif_action_play">Play</string>
-	<string name="notif_action_pause">Pause</string>
-	<string name="notif_action_stop">Stop</string>
-	<!-- Names for actions to skip to next or previous track. Usually not shown on screen, we use icons -->
-	<string name="notif_action_next">Next</string>
-	<string name="notif_action_prev">Previous</string>
-	<!-- Names and descriptions for the notification channels, these may appear in Android settings. -->
-	<string name="notif_channel_name">AudioWagon notifications</string>
-	<string name="notif_channel_desc">AudioWagon notification channel</string>
-	<string name="notif_channel_name_indexing">AudioWagon indexing notifications</string>
-	<string name="notif_channel_desc_indexing">AudioWagon indexing notification channel</string>
-	<!-- Notifications will appear e.g. in Polestar 2 in a pull-down drawer at the top of the screen (indicated by an
-	 orange line) -->
-	<string name="notif_indexing_title">USB indexing status</string>
-	<string name="notif_indexing_text_in_progress">In progress …</string>
-	<!-- This text is also shown as a "fake" media item on the main view when USB indexing is ongoing. The usage of
-	the colon should avoid any dependency of the cardinal number on the noun "item" -->
-	<string name="notif_indexing_text_in_progress_num_items">Found items: %1$d …</string>
-	<string name="notif_indexing_text_completed">Completed</string>
-	<!-- Names for "special" actions. We use icons, so these are not shown in the car. -->
-	<string name="action_shuffle_turn_on">Shuffle on</string>
-	<string name="action_shuffle_turn_off">Shuffle off</string>
-	<string name="action_repeat_turn_on">Repeat on</string>
-	<string name="action_repeat_turn_off">Repeat off</string>
-	<string name="action_eject">Eject</string>
-	<!-- The settings screen -->
-	<string name="settings_title">Settings</string>
-	<string name="setting_enable_equalizer_title">Equalizer</string>
-	<string name="setting_sound_category_title">Sound</string>
-	<string name="setting_equalizer_preset_title">Equalizer preset</string>
-	<string name="equalizer_preset_less_bass">Less bass</string>
-	<string name="equalizer_preset_more_bass">More bass</string>
-	<string name="equalizer_preset_less_treble">Less treble</string>
-	<string name="equalizer_preset_more_treble">More treble</string>
-	<!-- These are equalizer presets intended for the Polestar 2 car. Do not mention the name "Polestar" to avoid
-	trademark issues. -->
-	<string name="equalizer_preset_P2">P2</string>
-	<string name="equalizer_preset_P2_plus">P2+</string>
-	<!-- This refers to the shape of the equalizer bands where the bass is increased, the middle is normal, and the
-	highs are increased. It is shaped like the letter V -->
-	<string name="equalizer_preset_V_shape">V-shape</string>
-	<string name="setting_general_category_title">General</string>
-	<string name="setting_log_to_USB_title">Write log files to USB drive</string>
-	<!-- The user is adressed directly here ("you"). Use a formal form if applicable in your language. -->
-	<string name="setting_log_to_USB_desc">Give these log files to the developer when you create a bug report.</string>
-	<string name="setting_USB_status_title">USB status</string>
-	<string name="setting_USB_status_ok">OK</string>
-	<string name="setting_USB_status_not_connected">Not connected</string>
-	<string name="setting_USB_status_unknown">Unknown. Try to re-attach USB drive or restart Android</string>
-	<string name="setting_USB_status_connected_no_permission">Connected. No permission</string>
-	<string name="setting_USB_status_error">Read/write error, try to re-attach USB drive or repair/reformat (FAT32)
+    <!-- The name of the app -->
+    <string name="app_name">AudioWagon</string>
+    <!-- The title of the playback queue (a list of tracks to be played back; this is NOT a user-defined playlist).
+    It does not seem to appear in the car -->
+    <string name="queue_title">Play queue</string>
+    <!-- When clicking on the magnifying glass to enter the search mode there are 3 headings shown depending on the
+    found items: Tracks/Artists/Albums. If possible do not translate "track" to sth like "song", the audio file could
+    also contain an	audiobook or podcast -->
+    <string name="search_group_tracks">Tracks</string>
+    <string name="search_group_artists">Artists</string>
+    <string name="search_group_albums">Albums</string>
+    <string name="search_group_files">Files</string>
+    <!-- The "browse tree" is the main view when starting the app -->
+    <!-- There are 4 categories at the top the user can pick from to select media items: Tracks/Albums/Artists/Files -->
+    <string name="browse_tree_category_tracks">Tracks</string>
+    <string name="browse_tree_category_artists">Artists</string>
+    <string name="browse_tree_category_albums">Albums</string>
+    <!-- The tracks category contains a "fake" entry, when pressed, all tracks will be played back in shuffled order -->
+    <string name="browse_tree_pseudo_track_shuffle_all">Shuffle all</string>
+    <!-- When "Play all" is pressed, all items for the currently shown album or artist will be played back -->
+    <string name="browse_tree_pseudo_play_all">Play all</string>
+    <!-- When the metadata inside the audio file does not contain information, the album or artist is shown as
+    "Unknown" when browsing -->
+    <string name="browse_tree_unknown_album">Unknown album</string>
+    <string name="browse_tree_unknown_artist">Unknown artist</string>
+    <!-- Albums that are marked in the metadata as compilations will show the artist "Various artists" -->
+    <string name="browse_tree_various_artists">Various artists</string>
+    <!-- Some "fake" entries shown in the main browse view e.g. when no USB stick is connected yet -->
+    <string name="browse_tree_no_entries_title">No audio files</string>
+    <string name="browse_tree_no_usb_drive">Plug in a USB drive</string>
+    <string name="browse_tree_usb_drive_ejected">USB drive ejected or could not be read</string>
+    <string name="browse_tree_need_to_agree_legal_title">Legal disclaimer not agreed</string>
+    <string name="browse_tree_need_to_agree_legal_desc">Check the settings</string>
+    <!-- We use unicode symbols here to avoid the complex linguistic implications in multiple languages for the
+    wordings "artists"/"tracks" together with numbers. No need to translate. -->
+    <string name="browse_tree_num_albums_num_tracks" translatable="false">%1$d &#x1F4BF; &#x2B1D; %2$d &#x1D160;</string>
+    <string name="toast_indexing_started">USB indexing started …</string>
+    <string name="toast_indexing_completed">USB indexing completed</string>
+    <!-- If there is no next/previous track in the current playlist that the user can skip forward/backward to -->
+    <string name="no_next_track">No next track</string>
+    <string name="no_prev_track">No previous track</string>
+    <string name="eject_completed">USB device ejected, it is safe to unplug it</string>
+    <!-- please translate only the "ERROR:" part in front, keep the variable placeholder as-is -->
+    <string name="error">ERROR: %1$s</string>
+    <!-- We assume "USB" is the same in all languages -->
+    <string name="error_USB" translatable="false">USB: %1$s</string>
+    <!-- Error messages -->
+    <!-- The app needs to receive "audio focus" before it can play back any audio. The app will lose "audio focus"
+    for example when a navigation route guidance is being read out or when a phone call is ongoing. -->
+    <string name="error_audio_focus_denied">Could not get audio focus</string>
+    <string name="error_USB_init">Error in connection to USB drive</string>
+    <string name="error_no_filesystem">No supported filesystem</string>
+    <string name="error_library_creation_fail">Library creation failed</string>
+    <!-- "state" refers to the state the software is in -->
+    <string name="error_invalid_state">Invalid state</string>
+    <!-- These error strings will be prefixed with the toast_error above, e.g. "ERROR: Timeout" -->
+    <!-- "I/O" means "Input/Output" -->
+    <string name="error_IO">I/O error</string>
+    <string name="error_malformed_data">Malformed data</string>
+    <string name="error_timeout">Timeout</string>
+    <string name="error_not_supported">Not supported</string>
+    <string name="error_no_USB_device">No USB device</string>
+    <string name="error_unknown">Unknown error</string>
+    <!-- Names for the playback actions. These are not shown in the car. -->
+    <string name="notif_action_play">Play</string>
+    <string name="notif_action_pause">Pause</string>
+    <string name="notif_action_stop">Stop</string>
+    <!-- Names for actions to skip to next or previous track. Usually not shown on screen, we use icons -->
+    <string name="notif_action_next">Next</string>
+    <string name="notif_action_prev">Previous</string>
+    <!-- Names and descriptions for the notification channels, these may appear in Android settings. -->
+    <string name="notif_channel_name">AudioWagon notifications</string>
+    <string name="notif_channel_desc">AudioWagon notification channel</string>
+    <string name="notif_channel_name_indexing">AudioWagon indexing notifications</string>
+    <string name="notif_channel_desc_indexing">AudioWagon indexing notification channel</string>
+    <!-- Notifications will appear e.g. in Polestar 2 in a pull-down drawer at the top of the screen (indicated by an
+     orange line) -->
+    <string name="notif_indexing_title">USB indexing status</string>
+    <string name="notif_indexing_text_in_progress">In progress …</string>
+    <!-- This text is also shown as a "fake" media item on the main view when USB indexing is ongoing. The usage of
+    the colon should avoid any dependency of the cardinal number on the noun "item" -->
+    <string name="notif_indexing_text_in_progress_num_items">Found items: %1$d …</string>
+    <string name="notif_indexing_text_completed">Completed</string>
+    <!-- Names for "special" actions. We use icons, so these are not shown in the car. -->
+    <string name="action_shuffle_turn_on">Shuffle on</string>
+    <string name="action_shuffle_turn_off">Shuffle off</string>
+    <string name="action_repeat_turn_on">Repeat on</string>
+    <string name="action_repeat_turn_off">Repeat off</string>
+    <string name="action_eject">Eject</string>
+    <!-- The settings screen -->
+    <string name="settings_title">Settings</string>
+    <string name="setting_enable_equalizer_title">Equalizer</string>
+    <string name="setting_sound_category_title">Sound</string>
+    <string name="setting_equalizer_preset_title">Equalizer preset</string>
+    <string name="equalizer_preset_less_bass">Less bass</string>
+    <string name="equalizer_preset_more_bass">More bass</string>
+    <string name="equalizer_preset_less_treble">Less treble</string>
+    <string name="equalizer_preset_more_treble">More treble</string>
+    <!-- These are equalizer presets intended for the Polestar 2 car. Do not mention the name "Polestar" to avoid
+    trademark issues. -->
+    <string name="equalizer_preset_P2">P2</string>
+    <string name="equalizer_preset_P2_plus">P2+</string>
+    <!-- This refers to the shape of the equalizer bands where the bass is increased, the middle is normal, and the
+    highs are increased. It is shaped like the letter V -->
+    <string name="equalizer_preset_V_shape">V-shape</string>
+    <string name="setting_general_category_title">General</string>
+    <string name="setting_log_to_USB_title">Write log files to USB drive</string>
+    <!-- The user is adressed directly here ("you"). Use a formal form if applicable in your language. -->
+    <string name="setting_log_to_USB_desc">Give these log files to the developer when you create a bug report.</string>
+    <string name="setting_USB_status_title">USB status</string>
+    <string name="setting_USB_status_ok">OK</string>
+    <string name="setting_USB_status_not_connected">Not connected</string>
+    <string name="setting_USB_status_unknown">Unknown. Try to re-attach USB drive or restart Android</string>
+    <string name="setting_USB_status_connected_no_permission">Connected. No permission</string>
+    <string name="setting_USB_status_error">Read/write error, try to re-attach USB drive or repair/reformat (FAT32)
 if that fails</string>
-	<string name="setting_USB_status_ejected">Ejected. You can now safely remove the USB drive</string>
-	<string name="setting_USB_status_not_compatible">Not compatible. Please format your USB drive using FAT32
+    <string name="setting_USB_status_ejected">Ejected. You can now safely remove the USB drive</string>
+    <string name="setting_USB_status_not_compatible">Not compatible. Please format your USB drive using FAT32
 filesystem</string>
-	<string name="setting_show_legal_disclaimer_title">Show legal disclaimer</string>
-	<string name="setting_show_legal_disclaimer_desc">You need to agree to the legal disclaimer before using the app.</string>
-	<string name="setting_version">Version</string>
-	<!-- The legal disclaimer screen -->
-	<string name="legal_disclaimer_title">AudioWagon: Legal disclaimer</string>
-	<string name="legal_disclaimer_distraction_heading">Driver distraction</string>
-	<!-- This is the first longer text. Use \n for line breaks in similar places as in the original. -->
-	<string name="legal_disclaimer_distraction_text">You agree to comply with all applicable federal,
+    <string name="setting_show_legal_disclaimer_title">Show legal disclaimer</string>
+    <string name="setting_show_legal_disclaimer_desc">You need to agree to the legal disclaimer before using the app.</string>
+    <string name="setting_version">Version</string>
+    <!-- The legal disclaimer screen -->
+    <string name="legal_disclaimer_title">AudioWagon: Legal disclaimer</string>
+    <string name="legal_disclaimer_distraction_heading">Driver distraction</string>
+    <!-- This is the first longer text. Use \n for line breaks in similar places as in the original. -->
+    <string name="legal_disclaimer_distraction_text">You agree to comply with all applicable federal,
 state and local laws regarding driver distraction and operation of in-vehicle infotainment systems while using this
 software.\nUse this software only when traffic conditions permit to do so safely.</string>
-	<string name="legal_disclaimer_liability_heading">Warranty / Liability</string>
-	<!-- This liability disclaimer is taken from zlib license, translations might be available online -->
-	<string name="legal_disclaimer_liability_text">This software is provided \"as-is\", without any express or
+    <string name="legal_disclaimer_liability_heading">Warranty / Liability</string>
+    <!-- This liability disclaimer is taken from zlib license, translations might be available online -->
+    <string name="legal_disclaimer_liability_text">This software is provided \"as-is\", without any express or
 implied warranty. In no event will the authors be held liable for any damages arising from the use of this software.</string>
-	<string name="legal_disclaimer_license_heading">License</string>
-	<string name="legal_disclaimer_license_text">This software is licensed under GPLv3.\nCreated by MoleMan1024</string>
-	<string name="legal_disclaimer_third_party_licenses_heading">3rd party licenses</string>
-	<!-- &#x2013; are bullet markers -->
-	<string name="legal_disclaimer_third_party_licenses_text">This app uses content from the following other
+    <string name="legal_disclaimer_license_heading">License</string>
+    <string name="legal_disclaimer_license_text">This software is licensed under GPLv3.\nCreated by MoleMan1024</string>
+    <string name="legal_disclaimer_third_party_licenses_heading">3rd party licenses</string>
+    <!-- &#x2013; are bullet markers -->
+    <string name="legal_disclaimer_third_party_licenses_text">This app uses content from the following other
 creators, all licensed under Apache 2.0:\n\n&#x2013; various libraries created by the Android Open Source
 Project\n&#x2013; the libaums library created by Magnus Jahnen\n&#x2013; Material design vector icons created by Google
 \n&#x2013; Firebase Crashlytics\n\nLicense texts:\nwww.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/licenses/gpl-3.0.html
-	</string>
-	<string name="legal_disclaimer_confirm_btn">Agree</string>
-	<string name="legal_disclaimer_cancel_btn">Cancel</string>
-	<string name="error_no_tracks">No tracks</string>
-	<string name="error_not_enough_space_for_log">Not enough space to write log file</string>
-	<!-- This string is no longer used, no need to translate it -->
-	<string name="setting_USB_status_too_many_files_in_dir">Too many files in a directory, please use
+    </string>
+    <string name="legal_disclaimer_confirm_btn">Agree</string>
+    <string name="legal_disclaimer_cancel_btn">Cancel</string>
+    <string name="error_no_tracks">No tracks</string>
+    <string name="error_not_enough_space_for_log">Not enough space to write log file</string>
+    <!-- This string is no longer used, no need to translate it -->
+    <string name="setting_USB_status_too_many_files_in_dir">Too many files in a directory, please use
 subdirectories</string>
-	<string name="browse_tree_category_files">Files</string>
-	<!-- more entries in the settings screen: the car-internal databases can be deleted (e.g. if a USB stick is no
-	longer used) to save some space -->
-	<string name="setting_library_category_title">Media</string>
-	<string name="setting_read_metadata">Read metadata</string>
-	<string name="setting_delete_databases">Delete databases</string>
-	<string name="setting_database_status_title">Database</string>
-	<!-- ReplayGain is a technology to make audio files of different genres play back in a similar volume level
-	( https://en.wikipedia.org/wiki/ReplayGain ) -->
-	<string name="setting_enable_replaygain">ReplayGain</string>
-	<!-- The search query based on the recognized voice input will be shown to the user in a toast message -->
-	<string name="searching_voice_input">Searching for: \"%1$s\"</string>
-	<!-- even more entries in the settings screen: how/when to index audio files on USB stick -->
-	<string name="setting_read_metadata_when_connected">When USB drive connected</string>
-	<string name="setting_read_metadata_manual">Manually</string>
-	<string name="setting_read_metadata_off">Off</string>
-	<string name="setting_read_metadata_start_now">Read metadata now</string>
-	<!-- This is shown in the browse view when Metadata indexing is set to "manual" mode, a USB stick is connected
-	but nothing was indexed yet -->
-	<string name="browse_tree_metadata_not_yet_indexed_title">Metadata not yet indexed</string>
-	<string name="browse_tree_metadata_not_yet_indexed_desc">Check the settings</string>
-	<!-- even more entries in the settings screen: the behaviour of the app when a route guidance TTS prompt is
-	played back -->
-	<string name="setting_audiofocus_behavior">Behaviour during route guidance</string>
-	<string name="setting_audiofocus_pause">Pause</string>
-	<string name="setting_audiofocus_duck">Lower volume</string>
-	<!-- setting for automatic sending of crash reports to developer -->
-	<string name="setting_crash_reporting_title">Send crash reports</string>
-	<string name="setting_crash_reporting_desc">Automatically send crash reports to the developer to help
+    <string name="browse_tree_category_files">Files</string>
+    <!-- more entries in the settings screen: the car-internal databases can be deleted (e.g. if a USB stick is no
+    longer used) to save some space -->
+    <string name="setting_library_category_title">Media</string>
+    <string name="setting_read_metadata">Read metadata</string>
+    <string name="setting_delete_databases">Delete databases</string>
+    <string name="setting_database_status_title">Database</string>
+    <!-- ReplayGain is a technology to make audio files of different genres play back in a similar volume level
+    ( https://en.wikipedia.org/wiki/ReplayGain ) -->
+    <string name="setting_enable_replaygain">ReplayGain</string>
+    <!-- The search query based on the recognized voice input will be shown to the user in a toast message -->
+    <string name="searching_voice_input">Searching for: \"%1$s\"</string>
+    <!-- even more entries in the settings screen: how/when to index audio files on USB stick -->
+    <string name="setting_read_metadata_when_connected">When USB drive connected</string>
+    <string name="setting_read_metadata_manual">Manually</string>
+    <string name="setting_read_metadata_filepaths_only">File paths only</string>
+    <string name="setting_read_metadata_off">Off</string>
+    <string name="setting_read_metadata_start_now">Read metadata now</string>
+    <!-- This is shown in the browse view when Metadata indexing is set to "manual" mode, a USB stick is connected
+    but nothing was indexed yet -->
+    <string name="browse_tree_metadata_not_yet_indexed_title">Metadata not yet indexed</string>
+    <string name="browse_tree_metadata_not_yet_indexed_desc">Check the settings</string>
+    <!-- even more entries in the settings screen: the behaviour of the app when a route guidance TTS prompt is
+    played back -->
+    <string name="setting_audiofocus_behavior">Behaviour during route guidance</string>
+    <string name="setting_audiofocus_pause">Pause</string>
+    <string name="setting_audiofocus_duck">Lower volume</string>
+    <!-- setting for automatic sending of crash reports to developer -->
+    <string name="setting_crash_reporting_title">Send crash reports</string>
+    <string name="setting_crash_reporting_desc">Automatically send crash reports to the developer to help
 improve the app (requires internet connection).</string>
-	<string name="cannot_read_file">File could not be read: %1$s</string>
-	<string name="setting_website_title">Website</string>
-	<string name="setting_website_desc" translatable="false">moleman1024.github.io/audiowagon</string>
+    <string name="cannot_read_file">File could not be read: %1$s</string>
+    <string name="setting_website_title">Website</string>
+    <string name="setting_website_desc" translatable="false">moleman1024.github.io/audiowagon</string>
+    <!-- setting that controls if albums are shown in a grid with larger album art or in a list -->
+    <string name="setting_album_display">Show albums as</string>
+    <string name="setting_album_display_grid">Grid</string>
+    <string name="setting_album_display_list">List</string>
+    <string name="setting_requires_media_center_restart">(any change requires restart of \"Media Center\" app)</string>
+    <!-- start of settings for local data sources (not fully implemented, feature will be removed when USB is working
+     again, no need to translate) -->
+    <string name="setting_datasource" translatable="false">Data source</string>
+    <string name="setting_datasource_local" translatable="false">Local files</string>
+    <string name="setting_datasource_usb" translatable="false">USB</string>
+    <string name="setting_sync_files_now" translatable="false">Synchronize files with AudioBuggy</string>
+    <string name="browse_tree_ask_sync_files" translatable="false">Synchronize files with AudioBuggy first</string>
+    <string name="setting_sync_url_hint" translatable="false">URL of AudioBuggy</string>
+    <string name="fragment_name_sync_files" translatable="false">Synchronize files with AudioBuggy</string>
+    <string name="sync_files_button_sync" translatable="false">Synchronize now</string>
+    <string name="sync_files_delete_button" translatable="false">Delete all local audio files</string>
+    <string name="sync_files_num_copied_files" translatable="false">Files copied to car</string>
+    <string name="sync_files_num_files" translatable="false">Files to copy from AudioBuggy</string>
+    <string name="sync_files_status" translatable="false">Status</string>
+    <string name="sync_status_idle" translatable="false">Idle</string>
+    <string name="sync_status_syncing" translatable="false">Syncing</string>
+    <string name="sync_status_done" translatable="false">Done</string>
+    <string name="sync_files_storage_space" translatable="false">Occupied storage space</string>
+    <string name="sync_status_error_connection" translatable="false">Connection error</string>
 </resources>

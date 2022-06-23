@@ -5,9 +5,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 package de.moleman1024.audiowagon
 
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleObserver
-import androidx.lifecycle.OnLifecycleEvent
+import androidx.lifecycle.*
 import androidx.test.platform.app.InstrumentationRegistry.getInstrumentation
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.util.ServiceFixture
@@ -74,11 +72,11 @@ class AudioBrowserServiceTest {
         val audioBrowserService = serviceFixture.createAudioBrowserService()
         var isDestroyed = false
         getInstrumentation().runOnMainSync {
-            audioBrowserService.lifecycle.addObserver(object : LifecycleObserver {
-                @Suppress("unused")
-                @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
-                fun onDestroyed() {
-                    isDestroyed = true
+            audioBrowserService.lifecycle.addObserver(object : LifecycleEventObserver {
+                override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
+                    if (event == Lifecycle.Event.ON_DESTROY) {
+                        isDestroyed = true
+                    }
                 }
             })
         }

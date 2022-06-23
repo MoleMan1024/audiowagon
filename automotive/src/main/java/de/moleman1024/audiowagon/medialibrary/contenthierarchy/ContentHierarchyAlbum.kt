@@ -6,8 +6,8 @@ SPDX-License-Identifier: GPL-3.0-or-later
 package de.moleman1024.audiowagon.medialibrary.contenthierarchy
 
 import android.content.Context
-import android.support.v4.media.MediaBrowserCompat.MediaItem
 import android.net.Uri
+import android.support.v4.media.MediaBrowserCompat.MediaItem
 import android.support.v4.media.MediaDescriptionCompat
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.log.Logger
@@ -73,22 +73,19 @@ class ContentHierarchyAlbum(
         val tracks: List<AudioItem>
         try {
             val pseudoCompilationArtistID: Long? = repo.getPseudoCompilationArtistID()
-            val isVariousArtistsAlbum = pseudoCompilationArtistID == id.artistID
-            tracks = if (id.artistID < 0 || isVariousArtistsAlbum) {
+            val isVariousArtistsAlbum = pseudoCompilationArtistID == id.albumArtistID
+                    || pseudoCompilationArtistID == id.artistID
+            tracks = if (id.albumArtistID < 0 || isVariousArtistsAlbum) {
                 repo.getTracksForAlbum(id.albumID)
             } else {
-                repo.getTracksForAlbumAndArtist(id.albumID, id.artistID)
+                repo.getTracksForAlbumAndArtist(id.albumID, id.albumArtistID)
             }
         } catch (exc: IllegalArgumentException) {
             logger.error(TAG, exc.toString())
             return mutableListOf()
         }
-        return if (id.albumID != DATABASE_ID_UNKNOWN) {
-            tracks.sortedWith(compareBy({ it.discNum }, { it.trackNum }))
-        } else {
-            // unknown album collects all kinds of tracks, makes no sense to sort them by track number
-            tracks.sortedBy { it.title.lowercase() }
-        }
+        // tracks have been sorted already in database query
+        return tracks
     }
 
     private suspend fun getNumTracks(): Int {

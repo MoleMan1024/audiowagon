@@ -10,11 +10,20 @@ import androidx.room.*
 @Entity
 data class Path(
     @PrimaryKey(autoGenerate = true)
-    val id: Long = 0,
-    val childIds: MutableList<Long> = mutableListOf(),
-    // URI of file or directory
+    val pathId: Long = 0,
     @ColumnInfo(index = true)
-    val parentURIString: String = "",
-    // name of file or directory
-    val name: String = ""
-)
+    val parentPathId: Long = -1,
+    @ColumnInfo(index = true)
+    val parentPath: String = "/",
+    @ColumnInfo(index = true)
+    val name: String = "",
+    var isDirectory: Boolean = false,
+    val lastModifiedEpochTime: Long = -1
+) {
+    val absolutePath: String
+        get() = if (parentPath != "/") {
+            "${parentPath}/${name}"
+        } else {
+            "/${name}"
+        }
+}

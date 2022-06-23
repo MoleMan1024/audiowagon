@@ -6,5 +6,5 @@ enum class ServiceStartStopReason(val level: Int) {
     INDEXING(1),
     MEDIA_BUTTON(2),
     MEDIA_SESSION_CALLBACK(3),
-    SUSPEND_OR_SHUTDOWN(4)
+    LIFECYCLE(4)
 }

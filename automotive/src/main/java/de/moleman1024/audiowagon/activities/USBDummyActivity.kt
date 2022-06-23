@@ -53,7 +53,7 @@ class USBDummyActivity : AppCompatActivity() {
     override fun onStart() {
         logger.debug(TAG, "onStart()")
         super.onStart()
-        startService(Intent(ACTION_RESTART_SERVICE, Uri.EMPTY, this, AudioBrowserService::class.java))
+        startForegroundService(Intent(ACTION_RESTART_SERVICE, Uri.EMPTY, this, AudioBrowserService::class.java))
         if (!SharedPrefs.isLegalDisclaimerAgreed(this)) {
             showLegalDisclaimer()
         }

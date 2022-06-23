@@ -11,7 +11,9 @@ import android.support.v4.media.MediaBrowserCompat.MediaItem
 import android.support.v4.media.MediaDescriptionCompat
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.SharedPrefs
+import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.filestorage.AudioFileStorage
+import de.moleman1024.audiowagon.filestorage.DataSourceSetting
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
@@ -81,20 +83,21 @@ class ContentHierarchyRootTracks(
     }
 
     private fun createPseudoNoEntriesItem(): MediaItem {
+        val dataSourceSetting = SharedPrefs.getDataSourceSettingEnum(context, logger, TAG)
         val numConnectedDevices = audioFileStorage.getNumConnectedDevices()
         var title = context.getString(R.string.browse_tree_no_entries_title)
-        var subtitle = context.getString(R.string.browse_tree_no_usb_drive)
+        var subtitle: String
+        subtitle = if (dataSourceSetting == DataSourceSetting.USB) {
+            context.getString(R.string.browse_tree_no_usb_drive)
+        } else {
+            context.getString(R.string.browse_tree_ask_sync_files)
+        }
         if (numConnectedDevices > 0) {
             if (SharedPrefs.isLegalDisclaimerAgreed(context)) {
                 if (audioFileStorage.areAnyStoragesAvail()) {
-                    val metadataReadSettingStr = SharedPrefs.getMetadataReadSetting(context)
-                    var metadataReadSetting: MetadataReadSetting = MetadataReadSetting.WHEN_USB_CONNECTED
-                    try {
-                        metadataReadSetting = MetadataReadSetting.valueOf(metadataReadSettingStr)
-                    } catch (exc: IllegalArgumentException) {
-                        logger.exception(TAG, exc.message.toString(), exc)
-                    }
-                    if (metadataReadSetting == MetadataReadSetting.MANUALLY) {
+                    val metadataReadSetting = SharedPrefs.getMetadataReadSettingEnum(context, logger, TAG)
+                    if (metadataReadSetting == MetadataReadSetting.MANUALLY
+                        || metadataReadSetting == MetadataReadSetting.FILEPATHS_ONLY) {
                         title = context.getString(R.string.browse_tree_metadata_not_yet_indexed_title)
                         subtitle = context.getString(R.string.browse_tree_metadata_not_yet_indexed_desc)
                     } else {
@@ -121,28 +124,12 @@ class ContentHierarchyRootTracks(
         return MediaItem(description, MediaItem.FLAG_BROWSABLE)
     }
 
-    private fun createPseudoFoundXItems(): MediaItem {
-        logger.debug(TAG, "Showing pseudo MediaItem 'Found <num> items ...'")
-        val numItemsFoundText = context.getString(
-            R.string.notif_indexing_text_in_progress_num_items,
-            audioItemLibrary.numFilesSeenWhenBuildingLibrary
-        )
-        val description = MediaDescriptionCompat.Builder().apply {
-            setMediaId(serialize(ContentHierarchyID(ContentHierarchyType.NONE)))
-            setTitle(context.getString(R.string.notif_indexing_text_in_progress))
-            setSubtitle(numItemsFoundText)
-            setIconUri(
-                Uri.parse(RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.baseline_sync_24))
-            )
-        }.build()
-        return MediaItem(description, MediaItem.FLAG_BROWSABLE)
-    }
-
     override suspend fun getAudioItems(): List<AudioItem> {
         val items: MutableList<AudioItem> = mutableListOf()
         val repo = audioItemLibrary.getPrimaryRepository() ?: return emptyList()
         items += repo.getAllTracks()
-        return items.sortedBy { it.title.lowercase() }
+        // items are sorted already in database query
+        return items
     }
 
     private suspend fun getNumTracks(): Int {

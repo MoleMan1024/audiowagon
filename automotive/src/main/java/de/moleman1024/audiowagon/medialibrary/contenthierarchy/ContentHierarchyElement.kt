@@ -7,12 +7,15 @@ package de.moleman1024.audiowagon.medialibrary.contenthierarchy
 
 import android.content.Context
 import android.net.Uri
+import android.os.Bundle
 import android.support.v4.media.MediaBrowserCompat.MediaItem
 import android.support.v4.media.MediaDescriptionCompat
+import androidx.media.utils.MediaConstants
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.filestorage.*
 import de.moleman1024.audiowagon.log.Logger
+import de.moleman1024.audiowagon.medialibrary.AlbumStyleSetting
 import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
 import de.moleman1024.audiowagon.medialibrary.RESOURCE_ROOT_URI
@@ -55,6 +58,15 @@ abstract class ContentHierarchyElement(
         fun serialize(id: ContentHierarchyID): String {
             return Json.encodeToString(id)
         }
+
+        fun generateExtrasBrowsableGridItems(): Bundle {
+            val extras = Bundle()
+            extras.putInt(
+                MediaConstants.DESCRIPTION_EXTRAS_KEY_CONTENT_STYLE_BROWSABLE,
+                MediaConstants.DESCRIPTION_EXTRAS_VALUE_CONTENT_STYLE_GRID_ITEM
+            )
+            return extras
+        }
     }
 
     fun hasTooManyItems(numItems: Int): Boolean {
@@ -85,9 +97,14 @@ abstract class ContentHierarchyElement(
         val groups = mutableListOf<MediaItem>()
         var offset = 0
         val repo = audioItemLibrary.getPrimaryRepository() ?: return groups
-        val lastGroupIndex = numItems / CONTENT_HIERARCHY_MAX_NUM_ITEMS
-        for (groupIndex in 0 .. lastGroupIndex) {
-            val offsetRows = if (groupIndex < lastGroupIndex) {
+        var extras: Bundle? = null
+        if (audioItemLibrary.albumArtStyleSetting == AlbumStyleSetting.GRID) {
+            extras = generateExtrasBrowsableGridItems()
+        }
+        // TODO: partially duplicated code with createGroupsForType
+        val numGroups = numItems / CONTENT_HIERARCHY_MAX_NUM_ITEMS
+        for (groupIndex in 0 .. numGroups) {
+            val offsetRows = if (groupIndex < numGroups) {
                 offset + CONTENT_HIERARCHY_MAX_NUM_ITEMS - 1
             } else {
                 offset + (numItems % CONTENT_HIERARCHY_MAX_NUM_ITEMS) - 1
@@ -113,25 +130,45 @@ abstract class ContentHierarchyElement(
                         lastItemInGroup =
                             repo.getTracksForArtistLimitOffset(1, offsetRows, groupContentHierarchyID.artistID)
                     } else {
-                        // TODO: this is quite slow: 4.5 sec for 30k tracks in total, maybe cache it?
-                        firstItemInGroup = repo.getTracksLimitOffset(1, offset)
-                        lastItemInGroup = repo.getTracksLimitOffset(1, offsetRows)
+                        val firstLastItemInGroup = repo.getTrackGroup(groupIndex)
+                        firstItemInGroup = listOf(firstLastItemInGroup.first)
+                        lastItemInGroup = listOf(firstLastItemInGroup.second)
+                        if (firstLastItemInGroup.first.uri == Uri.EMPTY
+                            || firstLastItemInGroup.second.uri == Uri.EMPTY) {
+                            logger.warning(TAG, "No tracks in group, fallback to slow method")
+                            firstItemInGroup = repo.getTracksLimitOffset(1, offset)
+                            lastItemInGroup = repo.getTracksLimitOffset(1, offsetRows)
+                        }
                     }
                 }
                 ContentHierarchyType.ALBUM_GROUP -> {
-                    if (groupContentHierarchyID.artistID < 0) {
-                        firstItemInGroup = repo.getAlbumsLimitOffset(1, offset)
-                        lastItemInGroup = repo.getAlbumsLimitOffset(1, offsetRows)
+                    if (groupContentHierarchyID.albumArtistID < 0) {
+                        val firstLastItemInGroup = repo.getAlbumGroup(groupIndex)
+                        firstItemInGroup = listOf(firstLastItemInGroup.first)
+                        lastItemInGroup = listOf(firstLastItemInGroup.second)
+                        if (firstLastItemInGroup.first.uri == Uri.EMPTY
+                            || firstLastItemInGroup.second.uri== Uri.EMPTY) {
+                            logger.warning(TAG, "No albums in group, fallback to slow method")
+                            firstItemInGroup = repo.getAlbumsLimitOffset(1, offset)
+                            lastItemInGroup = repo.getAlbumsLimitOffset(1, offsetRows)
+                        }
                     } else {
                         firstItemInGroup =
-                            repo.getAlbumsForArtistLimitOffset(1, offset, groupContentHierarchyID.artistID)
+                            repo.getAlbumsForArtistLimitOffset(1, offset, groupContentHierarchyID.albumArtistID)
                         lastItemInGroup =
-                            repo.getAlbumsForArtistLimitOffset(1, offsetRows, groupContentHierarchyID.artistID)
+                            repo.getAlbumsForArtistLimitOffset(1, offsetRows, groupContentHierarchyID.albumArtistID)
                     }
                 }
                 ContentHierarchyType.ARTIST_GROUP -> {
-                    firstItemInGroup = repo.getArtistsLimitOffset(1, offset)
-                    lastItemInGroup = repo.getArtistsLimitOffset(1, offsetRows)
+                    val firstLastItemInGroup = repo.getArtistGroup(groupIndex)
+                    firstItemInGroup = listOf(firstLastItemInGroup.first)
+                    lastItemInGroup = listOf(firstLastItemInGroup.second)
+                    if (firstLastItemInGroup.first.uri == Uri.EMPTY
+                        || firstLastItemInGroup.second.uri== Uri.EMPTY) {
+                        logger.warning(TAG, "No artists in group, fallback to slow method")
+                        firstItemInGroup = repo.getArtistsLimitOffset(1, offset)
+                        lastItemInGroup = repo.getArtistsLimitOffset(1, offsetRows)
+                    }
                 }
                 else -> throw AssertionError("createGroups() not supported for type: ${groupContentHierarchyID.type}")
             }
@@ -154,12 +191,12 @@ abstract class ContentHierarchyElement(
                 ContentHierarchyType.ALBUM_GROUP -> {
                     firstItemTitle = firstItemInGroup[0].album
                     lastItemTitle = lastItemInGroup[0].album
-                    iconID = R.drawable.baseline_workspaces_24
+                    iconID = R.drawable.baseline_burst_mode_24
                     groupContentHierarchyID.albumGroupIndex = groupIndex
                 }
                 ContentHierarchyType.ARTIST_GROUP -> {
-                    firstItemTitle = firstItemInGroup[0].artist
-                    lastItemTitle = lastItemInGroup[0].artist
+                    firstItemTitle = firstItemInGroup[0].albumArtist.ifBlank { firstItemInGroup[0].artist }
+                    lastItemTitle = lastItemInGroup[0].albumArtist.ifBlank { lastItemInGroup[0].artist }
                     iconID = R.drawable.baseline_recent_actors_24
                     groupContentHierarchyID.artistGroupIndex = groupIndex
                 }
@@ -174,6 +211,9 @@ abstract class ContentHierarchyElement(
                 )
                 setIconUri(Uri.parse(RESOURCE_ROOT_URI + context.resources.getResourceEntryName(iconID)))
                 setMediaId(serialize(groupContentHierarchyID))
+                if (groupContentHierarchyID.type == ContentHierarchyType.ALBUM_GROUP) {
+                    setExtras(extras)
+                }
             }.build()
             groups += MediaItem(description, MediaItem.FLAG_BROWSABLE)
             offset += CONTENT_HIERARCHY_MAX_NUM_ITEMS
@@ -207,4 +247,36 @@ abstract class ContentHierarchyElement(
         }
         return items
     }
+
+    protected fun createPseudoFoundXItems(): MediaItem {
+        logger.debug(TAG, "Showing pseudo MediaItem 'Found <num> items ...'")
+        val numItemsFoundText = context.getString(
+            R.string.notif_indexing_text_in_progress_num_items,
+            audioItemLibrary.numFilesSeenWhenBuildingLibrary
+        )
+        val description = MediaDescriptionCompat.Builder().apply {
+            setMediaId(serialize(ContentHierarchyID(ContentHierarchyType.NONE)))
+            setTitle(context.getString(R.string.notif_indexing_text_in_progress))
+            setSubtitle(numItemsFoundText)
+            setIconUri(
+                Uri.parse(RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.baseline_sync_24))
+            )
+        }.build()
+        return MediaItem(description, MediaItem.FLAG_BROWSABLE)
+    }
+
+    protected fun pickArtistOrAlbumArtistID(): Long {
+        return when {
+            id.artistID >= DATABASE_ID_UNKNOWN -> {
+                id.artistID
+            }
+            id.albumArtistID >= DATABASE_ID_UNKNOWN -> {
+                id.albumArtistID
+            }
+            else -> {
+                DATABASE_ID_UNKNOWN
+            }
+        }
+    }
+
 }
