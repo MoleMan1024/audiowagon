@@ -9,35 +9,6 @@ nav_order: 1
 This app will **play audio files** from an attached **USB flash drive** in cars equipped with **Android™ Automotive OS**
 (for example Polestar 2™, Volvo XC40 Recharge™, &hellip;)[^1].
 
-## ⚠ 2022-04-06 ⚠ Important message
-
-**Polestar and Volvo have recently blocked access to USB mass storage devices in their car software 2.0**. You will
-*not* be able to use the app in cars using this software version. 
-
-I can't fix this, please complain to Polestar or Volvo if you have this issue and disagree with the fact that a feature 
-like playing music from USB (that was advertised in the original press release) is no longer possible.
-
-**2022-04-07:** Polestar has released a statement on this on their facebook group:
-
-> "The latest update (P2.0) introduces the latest Android Automotive OS to Polestar 2 (Android R). This has temporarily
-> limited the functionality available from the USB-C port in preparation for future functionality. This change is
-> expected to be updated in the next software update (P2.1) and we apologise for the inconvenience in the interim."
-
-So as software engineer my advice would be to still install the software update (software engineers do not assume 
-people skip updates, there might be more fixes than what is listed in the release notes) and for now use Bluetooth 
-audio player or streaming music and hope we get the functionality back with Polestar / Volvo car software 2.1 as stated
-above. I will see if I can come up with some alternative in the meantime.
-
-**2022-05-17:** Polestar has announced on Facebook that they did *not* fix the USB function in update P2.1 yet:
-
-> Our goal was to be able to reintroduce this [USB] functionality in P2.1. Unfortunately, this has been delayed. The 
-> functionality will be reintroduced in an upcoming software update. We're sorry for the inconvenience in the interim.
-
-😥 So let's wait for P2.2.
-
-**2022-06-23:** In Polestar/Volvo car version 2.2 they have fixed the USB functionality. Yay!
-
-
 ![AudioWagon in car](/img/audiowagon.jpg)
 
 ## Features
@@ -66,7 +37,8 @@ Please see Github for a [list of changes for each version of the app](https://gi
 
 ## Limitations
 
-- The app will no longer be able to access USB drives in Polestar / Volvo car software 2.0 (Android 11)
+- The app will *not* work with Polestar/Volvo OTA car software version 2.0 nor 2.1. You will need the car software 
+  version 2.2 or higher (or 1.9 or lower).
 - The app can *not* play back **.wma** files
 - *Some* people have reported issues when using the app with a **USB to micro SD card adapter** where no files could be
   played back and lots of error messages were shown. In such cases the adapter is probably not compatible with the
@@ -80,8 +52,6 @@ Please see Github for a [list of changes for each version of the app](https://gi
   - unknown brand USB-A to µSD adapter, black, with label "MjX R/C Technic", using a µSD card
   - unknown brand USB-C adapter, gray, with SD and µSD slot and LED, using another adapter SD to µSD, using a µSD card
     (this one could be fixed by removing the second unnecessary adapter)
-- The app will *not* work with Polestar/Volvo OTA car software version 2.0 nor 2.1. You will need the car software 
-  version 2.2 or higher (or 1.9 or lower).
 
 ## How to use
 
