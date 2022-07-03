@@ -7,7 +7,6 @@ package de.moleman1024.audiowagon.filestorage.asset
 
 import android.content.res.AssetFileDescriptor
 import android.media.MediaDataSource
-import de.moleman1024.audiowagon.log.Logger
 import java.io.InputStream
 import kotlin.math.min
 

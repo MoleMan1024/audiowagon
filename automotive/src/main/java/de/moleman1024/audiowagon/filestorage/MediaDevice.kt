@@ -9,7 +9,6 @@ import android.media.MediaDataSource
 import android.net.Uri
 import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.log.Logger
-import kotlinx.coroutines.CoroutineScope
 import java.io.File
 import java.util.*
 

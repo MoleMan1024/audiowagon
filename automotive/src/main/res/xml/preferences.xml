@@ -40,14 +40,6 @@ SPDX-License-Identifier: GPL-3.0-or-later
             app:title="@string/setting_library_category_title"
             app:icon="@drawable/baseline_library_music_24">
         <ListPreference
-                app:key="dataSource"
-                app:title="@string/setting_datasource"
-                app:persistent="true"
-                app:defaultValue="USB"
-                app:useSimpleSummaryProvider="true"
-                app:entries="@array/datasource_settings"
-                app:entryValues="@array/datasource_settings_values" />
-        <ListPreference
                 app:key="albumStyle"
                 app:title="@string/setting_album_display"
                 app:persistent="true"
@@ -68,12 +60,6 @@ SPDX-License-Identifier: GPL-3.0-or-later
                 app:persistent="false"
                 app:selectable="true"
                 app:title="@string/setting_read_metadata_start_now" />
-        <Preference
-                app:key="syncFiles"
-                app:persistent="false"
-                app:selectable="true"
-                app:fragment="de.moleman1024.audiowagon.activities.SyncFilesFragment"
-                app:title="@string/setting_sync_files_now" />
         <Preference
                 app:key="databaseStatus"
                 app:persistent="false"

@@ -53,7 +53,8 @@ class AudioItemLibrary(
     private val audioFileStorage: AudioFileStorage,
     val scope: CoroutineScope,
     private val dispatcher: CoroutineDispatcher,
-    private val gui: GUI
+    private val gui: GUI,
+    private val sharedPrefs: SharedPrefs
 ) {
     private val metadataMaker = AudioMetadataMaker(audioFileStorage)
     val storageToRepoMap = mutableMapOf<String, AudioItemRepository>()
@@ -67,7 +68,7 @@ class AudioItemLibrary(
             return size > MAX_NUM_ALBUM_ART_TO_CACHE
         }
     }
-    var albumArtStyleSetting: AlbumStyleSetting = SharedPrefs.getAlbumStyleSettingEnum(context, logger, TAG)
+    var albumArtStyleSetting: AlbumStyleSetting = sharedPrefs.getAlbumStyleSettingEnum(context, logger, TAG)
     var useInMemoryDatabase: Boolean = false
 
     fun initRepository(storageID: String) {
@@ -110,7 +111,7 @@ class AudioItemLibrary(
      */
     @ExperimentalCoroutinesApi
     suspend fun buildLibrary(channel: ReceiveChannel<FileLike>, callback: () -> Unit) {
-        val metadataReadSetting = SharedPrefs.getMetadataReadSettingEnum(context, logger, TAG)
+        val metadataReadSetting = sharedPrefs.getMetadataReadSettingEnum(context, logger, TAG)
         val isReadAudioFileMetadata =
             metadataReadSetting in listOf(MetadataReadSetting.WHEN_USB_CONNECTED, MetadataReadSetting.MANUALLY)
         isBuildingLibrary = true
@@ -291,10 +292,10 @@ class AudioItemLibrary(
     private fun createContentHierarchyElementForID(contentHierarchyID: ContentHierarchyID): ContentHierarchyElement {
         return when (contentHierarchyID.type) {
             ContentHierarchyType.NONE -> ContentHierarchyNone(context, this)
-            ContentHierarchyType.ROOT -> ContentHierarchyRoot(context, this)
+            ContentHierarchyType.ROOT -> ContentHierarchyRoot(context, this, sharedPrefs)
             ContentHierarchyType.SHUFFLE_ALL_TRACKS -> ContentHierarchyShuffleAllTracks(context, this)
-            ContentHierarchyType.ROOT_TRACKS -> ContentHierarchyRootTracks(context, this, audioFileStorage)
-            ContentHierarchyType.ROOT_FILES -> ContentHierarchyRootFiles(context, this, audioFileStorage)
+            ContentHierarchyType.ROOT_TRACKS -> ContentHierarchyRootTracks(context, this, audioFileStorage, sharedPrefs)
+            ContentHierarchyType.ROOT_FILES -> ContentHierarchyRootFiles(context, this, audioFileStorage, sharedPrefs)
             ContentHierarchyType.ROOT_ALBUMS -> ContentHierarchyRootAlbums(context, this)
             ContentHierarchyType.ROOT_ARTISTS -> ContentHierarchyRootArtists(context, this)
             ContentHierarchyType.TRACK -> ContentHierarchyTrack(contentHierarchyID, context, this)
@@ -304,14 +305,14 @@ class AudioItemLibrary(
             ContentHierarchyType.ARTIST -> ContentHierarchyArtist(contentHierarchyID, context, this)
             ContentHierarchyType.FILE -> ContentHierarchyFile(contentHierarchyID, context, this, audioFileStorage)
             ContentHierarchyType.DIRECTORY -> ContentHierarchyDirectory(
-                contentHierarchyID, context, this, audioFileStorage
+                contentHierarchyID, context, this, audioFileStorage, sharedPrefs
             )
             ContentHierarchyType.PLAYLIST -> ContentHierarchyPlaylist(contentHierarchyID, context, this, audioFileStorage)
             ContentHierarchyType.TRACK_GROUP -> ContentHierarchyGroupTracks(contentHierarchyID, context, this)
             ContentHierarchyType.ALBUM_GROUP -> ContentHierarchyGroupAlbums(contentHierarchyID, context, this)
             ContentHierarchyType.ARTIST_GROUP -> ContentHierarchyGroupArtists(contentHierarchyID, context, this)
             ContentHierarchyType.FILELIKE_GROUP -> ContentHierarchyGroupFileLike(
-                contentHierarchyID, context, this, audioFileStorage
+                contentHierarchyID, context, this, audioFileStorage, sharedPrefs
             )
             ContentHierarchyType.ALL_TRACKS_FOR_ARTIST -> ContentHierarchyAllTracksForArtist(
                 contentHierarchyID, context, this

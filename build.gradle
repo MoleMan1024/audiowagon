@@ -3,34 +3,34 @@ SPDX-FileCopyrightText: 2021 MoleMan1024 <moleman1024dev@gmail.com>
 SPDX-License-Identifier: GPL-3.0-or-later
 */
 buildscript {
-	ext {
-		minSdkVersion = 29
-		compileSdkVersion = 31
-		targetSdkVersion = 30
-		// upgrading to 1.7.0 gives some weird Room warnings
-		kotlin_version = "1.6.10"
-	}
-	repositories {
-		google()
-		mavenCentral()
-		gradlePluginPortal()
-	}
-	dependencies {
-		classpath 'com.android.tools.build:gradle:7.1.3'
-		classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-		// Firebase Crashlytics requires this
-		classpath "com.google.gms:google-services:4.3.10"
-		classpath "com.google.firebase:firebase-crashlytics-gradle:2.9.0"
-	}
+    ext {
+        minSdkVersion = 29
+        compileSdkVersion = 31
+        targetSdkVersion = 30
+        // upgrading to 1.7.0 gives some weird Room warnings
+        kotlin_version = "1.6.10"
+    }
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:7.1.3'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        // Firebase Crashlytics requires this
+        classpath "com.google.gms:google-services:4.3.10"
+        classpath "com.google.firebase:firebase-crashlytics-gradle:2.9.0"
+    }
 }
 
 allprojects {
-	repositories {
-		google()
-		mavenCentral()
-	}
+    repositories {
+        google()
+        mavenCentral()
+    }
 }
 
 task clean(type: Delete) {
-	delete rootProject.buildDir
+    delete rootProject.buildDir
 }

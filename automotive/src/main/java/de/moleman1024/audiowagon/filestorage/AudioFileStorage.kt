@@ -16,8 +16,6 @@ import de.moleman1024.audiowagon.authorization.USBDevicePermissions
 import de.moleman1024.audiowagon.exceptions.NoSuchDeviceException
 import de.moleman1024.audiowagon.filestorage.asset.AssetMediaDevice
 import de.moleman1024.audiowagon.filestorage.asset.AssetStorageLocation
-import de.moleman1024.audiowagon.filestorage.local.LocalFileMediaDevice
-import de.moleman1024.audiowagon.filestorage.local.LocalFileStorageLocation
 import de.moleman1024.audiowagon.filestorage.sd.SDCardAudioDataSource
 import de.moleman1024.audiowagon.filestorage.sd.SDCardMediaDevice
 import de.moleman1024.audiowagon.filestorage.sd.SDCardStorageLocation
@@ -54,12 +52,13 @@ open class AudioFileStorage(
     private val context: Context,
     private val scope: CoroutineScope,
     private val dispatcher: CoroutineDispatcher,
-    usbDevicePermissions: USBDevicePermissions
+    usbDevicePermissions: USBDevicePermissions,
+    private val sharedPrefs: SharedPrefs
 ) {
     // TODO: this was originally intended to support multiple storage locations, but we only allow a single one now
     private val audioFileStorageLocations: MutableList<AudioFileStorageLocation> = mutableListOf()
     private var usbDeviceConnections: USBDeviceConnections = USBDeviceConnections(
-        context, scope, dispatcher, usbDevicePermissions
+        context, scope, dispatcher, usbDevicePermissions, sharedPrefs
     )
     private var dataSources = mutableListOf<MediaDataSource>()
     private val dataSourcesMutex = Mutex()
@@ -85,9 +84,6 @@ open class AudioFileStorage(
     }
 
     private fun initUSBObservers() {
-        if (SharedPrefs.getDataSourceSettingEnum(context, logger, TAG) != DataSourceSetting.USB) {
-            return
-        }
         usbDeviceConnections.registerForUSBIntents()
         usbDeviceConnections.deviceObservers.add { deviceChange ->
             if (deviceChange.error.isNotBlank()) {
@@ -122,7 +118,7 @@ open class AudioFileStorage(
             logger.debug(TAG, "initAssetsForEmulator()")
             try {
                 // agree to the legal disclaimer automatically in case this is automatically reviewed
-                SharedPrefs.setLegalDisclaimerAgreed(context)
+                sharedPrefs.setLegalDisclaimerAgreed(context)
                 val assetManager = context.assets
                 val assetMediaDevice = AssetMediaDevice(assetManager)
                 mediaDevicesForTest.add(assetMediaDevice)
@@ -169,9 +165,6 @@ open class AudioFileStorage(
             is AssetMediaDevice -> {
                 AssetStorageLocation(device)
             }
-            is LocalFileMediaDevice -> {
-                LocalFileStorageLocation(device)
-            }
             else -> {
                 throw RuntimeException("Unhandled device type when creating storage location: $device")
             }
@@ -209,18 +202,9 @@ open class AudioFileStorage(
     }
 
     fun updateConnectedDevices() {
-        val dataSourceSetting = SharedPrefs.getDataSourceSettingEnum(context, logger, TAG)
         val isDebugBuild = Util.isDebugBuild(context)
         val isInEmulator = Util.isRunningInEmulator()
-        if (dataSourceSetting == DataSourceSetting.USB) {
-            usbDeviceConnections.updateConnectedDevices()
-        } else if (dataSourceSetting == DataSourceSetting.LOCAL) {
-            if (!isDebugBuild && isInEmulator) {
-                // release build in emulator uses assets storage only
-            } else {
-                addDevice(LocalFileMediaDevice(context))
-            }
-        }
+        usbDeviceConnections.updateConnectedDevices()
         if (isDebugBuild) {
             val sdCardDevicePermissions = SDCardDevicePermissions(context)
             if (!sdCardDevicePermissions.isPermitted()) {
@@ -398,9 +382,7 @@ open class AudioFileStorage(
 
     fun shutdown() {
         logger.debug(TAG, "shutdown()")
-        if (SharedPrefs.getDataSourceSettingEnum(context, logger, TAG) == DataSourceSetting.USB) {
-            usbDeviceConnections.unregisterForUSBIntents()
-        }
+        usbDeviceConnections.unregisterForUSBIntents()
         closeDataSources()
         audioFileStorageLocations.forEach {
             it.cancelIndexAudioFiles()

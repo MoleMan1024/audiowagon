@@ -7,22 +7,15 @@ package de.moleman1024.audiowagon.activities
 
 import android.content.ComponentName
 import android.content.Intent
-import android.net.Uri
-import android.os.Build
 import android.os.Bundle
-import android.os.Environment
-import android.provider.MediaStore
 import android.support.v4.media.MediaBrowserCompat
 import android.support.v4.media.session.MediaControllerCompat
-import androidx.activity.result.IntentSenderRequest
-import androidx.activity.result.contract.ActivityResultContracts.StartIntentSenderForResult
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import de.moleman1024.audiowagon.*
 import de.moleman1024.audiowagon.authorization.SDCardDevicePermissions
-import de.moleman1024.audiowagon.filestorage.local.DOWNLOAD_DIRECTORY
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 
@@ -55,11 +48,7 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
         }
     }
     private var sdCardDevicePermissions: SDCardDevicePermissions? = null
-    private val deleteResultLauncher = registerForActivityResult(StartIntentSenderForResult()) { result ->
-        if (result.resultCode == RESULT_OK) {
-            logger.debug(TAG, "User has agreed to delete all local audio files")
-        }
-    }
+    private val sharedPrefs = SharedPrefs()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -127,13 +116,6 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
         mediaController.sendCommand(CMD_SET_ALBUM_STYLE_SETTING, bundle, null)
     }
 
-    fun setDataSourceSetting(dataSourceStr: String) {
-        assertMediaControllerInitialized()
-        val bundle = Bundle()
-        bundle.putString(DATA_SOURCE_KEY, dataSourceStr)
-        mediaController.sendCommand(CMD_SET_DATA_SOURCE_SETTING, bundle, null)
-    }
-
     fun enableEqualizer() {
         assertMediaControllerInitialized()
         mediaController.sendCommand(CMD_ENABLE_EQUALIZER, null, null)
@@ -169,13 +151,6 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
     fun showLog() {
         val showLogIntent = Intent(this, LogActivity::class.java)
         startActivity(showLogIntent)
-    }
-
-    fun syncFiles(url: String?) {
-        assertMediaControllerInitialized()
-        val bundle = Bundle()
-        bundle.putString(SYNC_FILES_URL_KEY, url)
-        mediaController.sendCommand(CMD_SYNC_FILES, bundle, null)
     }
 
     private fun assertMediaControllerInitialized() {
@@ -233,42 +208,8 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
         return true
     }
 
-    fun deleteFiles() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-            throw RuntimeException("Bulk deletion of audio files not available until Android 11")
-        }
-        val deletionCandidates = getAllAudioFileURIsForDeletion()
-        if (deletionCandidates.isEmpty()) {
-            logger.debug("TAG", "Nothing to delete")
-            return
-        }
-        val deleteRequest = MediaStore.createDeleteRequest(applicationContext.contentResolver, deletionCandidates)
-        val senderRequest = IntentSenderRequest.Builder(deleteRequest).setFillInIntent(null)
-            .setFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION, 0).build()
-        deleteResultLauncher.launch(senderRequest)
-    }
-
-    private fun getAllAudioFileURIsForDeletion(): List<Uri> {
-        val collection = MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
-        val projection = arrayOf(MediaStore.Audio.Media._ID, MediaStore.Audio.Media.RELATIVE_PATH)
-        val selection =
-            "${MediaStore.Audio.Media.RELATIVE_PATH} LIKE '${Environment.DIRECTORY_DOWNLOADS}/$DOWNLOAD_DIRECTORY/%'"
-        val sortOrder = "${MediaStore.Audio.Media.RELATIVE_PATH} ASC"
-        val uriList = mutableListOf<Uri>()
-        applicationContext.contentResolver.query(
-            collection,
-            projection,
-            selection,
-            null,
-            sortOrder
-        )?.use { cursor ->
-            while (cursor.moveToNext()) {
-                val id = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID))
-                val uri = Uri.parse("${MediaStore.Audio.Media.EXTERNAL_CONTENT_URI}/${id}")
-                uriList.add(uri)
-            }
-        }
-        return uriList
+    fun getSharedPrefs(): SharedPrefs {
+        return sharedPrefs
     }
 
 }

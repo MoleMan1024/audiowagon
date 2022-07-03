@@ -18,6 +18,7 @@ import java.io.ByteArrayOutputStream
 import java.io.FileInputStream
 import java.io.InputStream
 
+// not used right now
 class LocalFileStorageLocation(override val device: LocalFileMediaDevice) : AudioFileStorageLocation {
     override val TAG = "LocalFileStorLoc"
     override val logger = Logger

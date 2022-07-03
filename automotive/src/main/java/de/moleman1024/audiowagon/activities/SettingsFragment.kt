@@ -13,7 +13,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.preference.*
 import de.moleman1024.audiowagon.*
 import de.moleman1024.audiowagon.R
-import de.moleman1024.audiowagon.filestorage.DataSourceSetting
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.MetadataReadSetting
 import de.moleman1024.audiowagon.repository.AUDIOITEM_REPO_DB_PREFIX
@@ -31,7 +30,6 @@ private const val PREF_DATABASE_STATUS = "databaseStatus"
 private const val PREF_DELETE_DATABASES = "deleteDatabases"
 private const val PREF_LEGAL_DISCLAIMER = "legalDisclaimer"
 private const val PREF_READ_METADATA_NOW = "readMetaDataNow"
-private const val PREF_SYNC_FILES = "syncFiles"
 private const val PREF_VERSION = "version"
 
 @ExperimentalCoroutinesApi
@@ -57,8 +55,8 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 }
                 SHARED_PREF_EQUALIZER_PRESET -> {
                     updateEqualizerPreset(sharedPreferences)
-                    val eqPreset = SharedPrefs.getEQPreset(sharedPreferences)
-                    (activity as SettingsActivity).updateEqualizerPreset(eqPreset)
+                    val eqPreset = getSharedPrefs().getEQPreset(sharedPreferences)
+                    getParentSettingsActivity().updateEqualizerPreset(eqPreset)
                 }
                 SHARED_PREF_ENABLE_REPLAYGAIN -> {
                     updateReplayGainSwitch(sharedPreferences)
@@ -66,28 +64,18 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 SHARED_PREF_READ_METADATA -> {
                     updateReadMetadataList(sharedPreferences)
                     updateReadMetadataNowButton(sharedPreferences)
-                    val metadataReadSettingStr = SharedPrefs.getMetadataReadSetting(sharedPreferences)
-                    (activity as SettingsActivity).setMetadataReadSetting(metadataReadSettingStr)
+                    val metadataReadSettingStr = getSharedPrefs().getMetadataReadSetting(sharedPreferences)
+                    getParentSettingsActivity().setMetadataReadSetting(metadataReadSettingStr)
                 }
                 SHARED_PREF_AUDIOFOCUS -> {
                     updateAudioFocusList(sharedPreferences)
-                    val audioFocusSettingStr = SharedPrefs.getAudioFocusSetting(sharedPreferences)
-                    (activity as SettingsActivity).setAudioFocusSetting(audioFocusSettingStr)
+                    val audioFocusSettingStr = getSharedPrefs().getAudioFocusSetting(sharedPreferences)
+                    getParentSettingsActivity().setAudioFocusSetting(audioFocusSettingStr)
                 }
                 SHARED_PREF_ALBUM_STYLE -> {
                     updateAlbumStyleList(sharedPreferences)
-                    val albumStyleStr = SharedPrefs.getAlbumStyleSetting(sharedPreferences)
-                    (activity as SettingsActivity).setAlbumStyleSetting(albumStyleStr)
-                }
-                SHARED_PREF_DATA_SOURCE -> {
-                    updateAlbumStyleList(sharedPreferences)
-                    updateReadMetadataList(sharedPreferences)
-                    updateReadMetadataNowButton(sharedPreferences)
-                    updateUSBAndEjectStatus(sharedPreferences)
-                    updateLogToUSB(sharedPreferences)
-                    updateSyncLocalFilesNowButton(sharedPreferences)
-                    val dataSourceStr = SharedPrefs.getDataSourceSetting(sharedPreferences)
-                    (activity as SettingsActivity).setDataSourceSetting(dataSourceStr)
+                    val albumStyleStr = getSharedPrefs().getAlbumStyleSetting(sharedPreferences)
+                    getParentSettingsActivity().setAlbumStyleSetting(albumStyleStr)
                 }
                 else -> {
                     // ignore
@@ -123,7 +111,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
         logger.debug(TAG, "onCreatePreferences(rootKey=${rootKey})")
         setPreferencesFromResource(R.xml.preferences, rootKey)
         setSummaryProviderDisplayAlbumSetting()
-        updateDataSource()
         updateFromSharedPrefs(preferenceManager.sharedPreferences)
         updateDatabaseStatus()
         updateDatabaseFiles()
@@ -144,105 +131,75 @@ class SettingsFragment : PreferenceFragmentCompat() {
         updateReplayGainSwitch(sharedPreferences)
         updateAudioFocusList(sharedPreferences)
         updateAlbumStyleList(sharedPreferences)
-        updateDataSourceList(sharedPreferences)
         updateReadMetadataList(sharedPreferences)
         updateReadMetadataNowButton(sharedPreferences)
-        updateSyncLocalFilesNowButton(sharedPreferences)
         updateUSBAndEjectStatus(sharedPreferences)
-    }
-
-    private fun updateDataSource() {
-        val dataSourcePref = findPreference<ListPreference>(SHARED_PREF_DATA_SOURCE)
-        if (BuildConfig.ALLOW_LOCAL_FILES) {
-            dataSourcePref?.isVisible = true
-            return
-        }
-        dataSourcePref?.isVisible = false
     }
 
     private fun updateLogToUSB(sharedPreferences: SharedPreferences?) {
         val logToUSBPref = findPreference<SwitchPreferenceCompat>(SHARED_PREF_LOG_TO_USB)
-        if (isDataSourceLocal(sharedPreferences)) {
-            logToUSBPref?.isVisible = false
-            return
-        } else {
-            logToUSBPref?.isVisible = true
-        }
-        val value = SharedPrefs.isLogToUSBEnabled(sharedPreferences)
+        logToUSBPref?.isVisible = true
+        val value = getSharedPrefs().isLogToUSBEnabled(sharedPreferences)
         logToUSBPref?.isChecked = value
     }
 
     private fun updateCrashReporting(sharedPreferences: SharedPreferences?) {
-        val value = SharedPrefs.isCrashReportingEnabled(sharedPreferences)
+        val value = getSharedPrefs().isCrashReportingEnabled(sharedPreferences)
         findPreference<SwitchPreferenceCompat>(SHARED_PREF_CRASH_REPORTING)?.isChecked = value
     }
 
     private fun updateEqualizerSwitch(sharedPreferences: SharedPreferences?) {
-        val value = SharedPrefs.isEQEnabled(sharedPreferences)
+        val value = getSharedPrefs().isEQEnabled(sharedPreferences)
         findPreference<SwitchPreferenceCompat>(SHARED_PREF_ENABLE_EQUALIZER)?.isChecked = value
         findPreference<ListPreference>(SHARED_PREF_EQUALIZER_PRESET)?.isEnabled = value
     }
 
     private fun updateEqualizerPreset(sharedPreferences: SharedPreferences?) {
-        val eqPreset = SharedPrefs.getEQPreset(sharedPreferences)
+        val eqPreset = getSharedPrefs().getEQPreset(sharedPreferences)
         findPreference<ListPreference>(SHARED_PREF_EQUALIZER_PRESET)?.value = eqPreset
     }
 
     private fun updateReplayGainSwitch(sharedPreferences: SharedPreferences?) {
-        val value = SharedPrefs.isReplayGainEnabled(sharedPreferences)
+        val value = getSharedPrefs().isReplayGainEnabled(sharedPreferences)
         findPreference<SwitchPreferenceCompat>(SHARED_PREF_ENABLE_REPLAYGAIN)?.isChecked = value
     }
 
     private fun updateReadMetadataList(sharedPreferences: SharedPreferences?) {
-        val metadataReadSetting = SharedPrefs.getMetadataReadSetting(sharedPreferences)
+        val metadataReadSetting = getSharedPrefs().getMetadataReadSetting(sharedPreferences)
         findPreference<ListPreference>(SHARED_PREF_READ_METADATA)?.value = metadataReadSetting
     }
 
     private fun updateReadMetadataNowButton(sharedPreferences: SharedPreferences?) {
-        val dataSourceSetting = SharedPrefs.getDataSourceSetting(sharedPreferences)
-        if (dataSourceSetting == DataSourceSetting.USB.name) {
-            val usbStatusValue = SharedPrefs.getUSBStatusResID(sharedPreferences)
-            if (usbStatusValue in listOf(
-                    R.string.setting_USB_status_ejected,
-                    R.string.setting_USB_status_not_connected
-                )
-            ) {
-                findPreference<Preference>(PREF_READ_METADATA_NOW)?.isEnabled = false
-                return
-            }
-        } else {
-            findPreference<Preference>(PREF_READ_METADATA_NOW)?.isEnabled = true
+        val usbStatusValue = getSharedPrefs().getUSBStatusResID(sharedPreferences)
+        if (usbStatusValue in listOf(
+                R.string.setting_USB_status_ejected,
+                R.string.setting_USB_status_not_connected
+            )
+        ) {
+            findPreference<Preference>(PREF_READ_METADATA_NOW)?.isEnabled = false
+            return
         }
         val isMetadataReadSetToManual = isMetadataReadSetToManual(sharedPreferences)
         findPreference<Preference>(PREF_READ_METADATA_NOW)?.isEnabled = isMetadataReadSetToManual
     }
 
-    private fun updateSyncLocalFilesNowButton(sharedPreferences: SharedPreferences?) {
-        findPreference<Preference>(PREF_SYNC_FILES)?.isVisible = isDataSourceLocal(sharedPreferences)
-    }
-
     private fun isMetadataReadSetToManual(sharedPreferences: SharedPreferences?): Boolean {
-        val metadataReadSetting = SharedPrefs.getMetadataReadSetting(sharedPreferences)
+        val metadataReadSetting = getSharedPrefs().getMetadataReadSetting(sharedPreferences)
         return metadataReadSetting == MetadataReadSetting.MANUALLY.name
     }
 
     private fun updateAudioFocusList(sharedPreferences: SharedPreferences?) {
-        val audioFocusSetting = SharedPrefs.getAudioFocusSetting(sharedPreferences)
+        val audioFocusSetting = getSharedPrefs().getAudioFocusSetting(sharedPreferences)
         findPreference<ListPreference>(SHARED_PREF_AUDIOFOCUS)?.value = audioFocusSetting
     }
 
     private fun updateAlbumStyleList(sharedPreferences: SharedPreferences?) {
-        val albumStyleSetting = SharedPrefs.getAlbumStyleSetting(sharedPreferences)
+        val albumStyleSetting = getSharedPrefs().getAlbumStyleSetting(sharedPreferences)
         findPreference<ListPreference>(SHARED_PREF_ALBUM_STYLE)?.value = albumStyleSetting
     }
 
-    private fun updateDataSourceList(sharedPreferences: SharedPreferences?) {
-        val dataSourceSetting = SharedPrefs.getDataSourceSetting(sharedPreferences)
-        findPreference<ListPreference>(SHARED_PREF_DATA_SOURCE)?.value = dataSourceSetting
-    }
-
     private fun updateUSBAndEjectStatus(sharedPreferences: SharedPreferences?) {
-        val value = SharedPrefs.getUSBStatusResID(sharedPreferences)
+        val value = getSharedPrefs().getUSBStatusResID(sharedPreferences)
         var text = context?.getString(R.string.setting_USB_status_unknown)
         try {
             text = context?.getString(value)
@@ -256,14 +213,8 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
         val usbStatusPref = findPreference<Preference>(SHARED_PREF_USB_STATUS)
         val ejectPref = findPreference<Preference>(PREF_EJECT)
-        if (isDataSourceLocal(sharedPreferences)) {
-            usbStatusPref?.isVisible = false
-            ejectPref?.isVisible = false
-            return
-        } else {
-            usbStatusPref?.isVisible = true
-            ejectPref?.isVisible = true
-        }
+        usbStatusPref?.isVisible = true
+        ejectPref?.isVisible = true
         usbStatusPref?.summary = text
         if (value in listOf(R.string.setting_USB_status_ejected, R.string.setting_USB_status_not_connected)) {
             disableSettingsThatNeedUSBDrive()
@@ -381,11 +332,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
         return File(writeHeadLogFilePath).exists()
     }
 
-    private fun isDataSourceLocal(sharedPreferences: SharedPreferences?): Boolean {
-        val dataSourceSettingStr = SharedPrefs.getDataSourceSetting(sharedPreferences)
-        return dataSourceSettingStr == DataSourceSetting.LOCAL.name
-    }
-
     private fun updateDatabaseStatus() {
         val pref = findPreference<Preference>(PREF_DATABASE_STATUS)
         try {
@@ -418,20 +364,21 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
     override fun onPreferenceTreeClick(preference: Preference): Boolean {
         logger.debug(TAG, "onPreferenceTreeClick(preference=$preference)")
+        val settingsActivity = getParentSettingsActivity()
         try {
             when (preference.key) {
                 SHARED_PREF_LOG_TO_USB -> {
                     if ((preference as SwitchPreferenceCompat).isChecked) {
-                        (activity as SettingsActivity).enableLogToUSB()
+                        settingsActivity.enableLogToUSB()
                     } else {
-                        (activity as SettingsActivity).disableLogToUSB()
+                        settingsActivity.disableLogToUSB()
                     }
                 }
                 SHARED_PREF_CRASH_REPORTING -> {
                     if((preference as SwitchPreferenceCompat).isChecked) {
-                        (activity as SettingsActivity).enableCrashReporting()
+                        settingsActivity.enableCrashReporting()
                     } else {
-                        (activity as SettingsActivity).disableCrashReporting()
+                        settingsActivity.disableCrashReporting()
                     }
                 }
                 PREF_LEGAL_DISCLAIMER -> {
@@ -439,35 +386,32 @@ class SettingsFragment : PreferenceFragmentCompat() {
                     startActivity(showLegalDisclaimerIntent)
                 }
                 PREF_EJECT -> {
-                    (activity as SettingsActivity).eject()
+                    settingsActivity.eject()
                 }
                 PREF_READ_METADATA_NOW -> {
-                    (activity as SettingsActivity).readMetadataNow()
+                    settingsActivity.readMetadataNow()
                 }
                 SHARED_PREF_ENABLE_EQUALIZER -> {
                     if ((preference as SwitchPreferenceCompat).isChecked) {
                         findPreference<ListPreference>(SHARED_PREF_EQUALIZER_PRESET)?.isEnabled = true
-                        (activity as SettingsActivity).enableEqualizer()
+                        settingsActivity.enableEqualizer()
                     } else {
                         findPreference<ListPreference>(SHARED_PREF_EQUALIZER_PRESET)?.isEnabled = false
-                        (activity as SettingsActivity).disableEqualizer()
+                        settingsActivity.disableEqualizer()
                     }
                 }
                 SHARED_PREF_ENABLE_REPLAYGAIN -> {
                     if ((preference as SwitchPreferenceCompat).isChecked) {
-                        (activity as SettingsActivity).enableReplayGain()
+                        settingsActivity.enableReplayGain()
                     } else {
-                        (activity as SettingsActivity).disableReplayGain()
+                        settingsActivity.disableReplayGain()
                     }
-                }
-                SHARED_PREF_DATA_SOURCE -> {
-                    (activity as SettingsActivity).eject()
                 }
                 PREF_DELETE_DATABASES -> {
                     updateDatabaseFiles()
                 }
                 PREF_VERSION -> {
-                    (activity as SettingsActivity).showLog()
+                    settingsActivity.showLog()
                 }
             }
         } catch (exc: RuntimeException) {
@@ -486,6 +430,19 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 val switch = (preference as SwitchPreferenceCompat)
                 switch.isChecked = !switch.isChecked
             }
+        }
+    }
+
+    private fun getParentSettingsActivity(): SettingsActivity {
+        return activity as SettingsActivity
+    }
+
+    private fun getSharedPrefs(): SharedPrefs {
+        return if (activity is SettingsActivity) {
+            getParentSettingsActivity().getSharedPrefs()
+        } else {
+            // used by test cases
+            SharedPrefs()
         }
     }
 }

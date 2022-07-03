@@ -45,7 +45,8 @@ class USBDeviceConnections(
     private val context: Context,
     val scope: CoroutineScope,
     private val dispatcher: CoroutineDispatcher,
-    private val usbDevicePermissions: USBDevicePermissions
+    private val usbDevicePermissions: USBDevicePermissions,
+    private val sharedPrefs: SharedPrefs
 ) {
     val deviceObservers = mutableListOf<(DeviceChange) -> Unit>()
     private var isLogToUSB = false
@@ -119,7 +120,7 @@ class USBDeviceConnections(
     }
 
     init {
-        val logToUSBPreference = SharedPrefs.isLogToUSBEnabled(context)
+        val logToUSBPreference = sharedPrefs.isLogToUSBEnabled(context)
         if (logToUSBPreference) {
             isLogToUSB = true
         }
@@ -200,12 +201,12 @@ class USBDeviceConnections(
 
     fun updateUSBStatusInSettings(resID: Int) {
         logger.debug(TAG, "updateUSBStatusInSettings(resID=$resID)")
-        val currentID = SharedPrefs.getUSBStatusResID(context)
+        val currentID = sharedPrefs.getUSBStatusResID(context)
         if (currentID == resID) {
             logger.debug(TAG, "updateUSBStatusInSettings(): currentID=$currentID")
             return
         }
-        SharedPrefs.setUSBStatusResID(context, resID)
+        sharedPrefs.setUSBStatusResID(context, resID)
     }
 
     /**

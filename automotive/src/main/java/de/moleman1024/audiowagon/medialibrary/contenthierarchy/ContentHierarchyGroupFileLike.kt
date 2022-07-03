@@ -7,6 +7,7 @@ package de.moleman1024.audiowagon.medialibrary.contenthierarchy
 
 import android.content.Context
 import android.support.v4.media.MediaBrowserCompat.MediaItem
+import de.moleman1024.audiowagon.SharedPrefs
 import de.moleman1024.audiowagon.filestorage.AudioFileStorage
 import de.moleman1024.audiowagon.filestorage.FileLike
 import de.moleman1024.audiowagon.medialibrary.AudioItem
@@ -22,7 +23,8 @@ class ContentHierarchyGroupFileLike(
     id: ContentHierarchyID,
     context: Context,
     audioItemLibrary: AudioItemLibrary,
-    private val audioFileStorage: AudioFileStorage
+    private val audioFileStorage: AudioFileStorage,
+    private val sharedPrefs: SharedPrefs
 ) :
     ContentHierarchyElement(id, context, audioItemLibrary) {
 
@@ -36,7 +38,8 @@ class ContentHierarchyGroupFileLike(
     }
 
     private fun getDirectoryContents(): List<FileLike> {
-        val contentHierarchyDirectory = ContentHierarchyDirectory(id, context, audioItemLibrary, audioFileStorage)
+        val contentHierarchyDirectory =
+            ContentHierarchyDirectory(id, context, audioItemLibrary, audioFileStorage, sharedPrefs)
         val directoryContents = contentHierarchyDirectory.getDirectoryContents()
         if (directoryContents.isEmpty()) {
             return listOf()

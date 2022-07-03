@@ -31,7 +31,8 @@ class ContentHierarchyDirectory(
     id: ContentHierarchyID,
     context: Context,
     audioItemLibrary: AudioItemLibrary,
-    private val audioFileStorage: AudioFileStorage
+    private val audioFileStorage: AudioFileStorage,
+    private val sharedPrefs: SharedPrefs
 ) :
     ContentHierarchyElement(id, context, audioItemLibrary) {
 
@@ -39,7 +40,7 @@ class ContentHierarchyDirectory(
         val directoryContents = getDirectoryContents()
         val filesDirs = mutableListOf<MediaItem>()
         if (directoryContents.isNotEmpty()) {
-            val metadataReadSetting = SharedPrefs.getMetadataReadSettingEnum(context, logger, TAG)
+            val metadataReadSetting = sharedPrefs.getMetadataReadSettingEnum(context, logger, TAG)
             if (metadataReadSetting != MetadataReadSetting.OFF && !audioItemLibrary.isBuildingLibrary) {
                 val storageLocation = audioFileStorage.getPrimaryStorageLocation()
                 val directoryURI = Util.createURIForPath(storageLocation.storageID, id.path.removePrefix("/"))

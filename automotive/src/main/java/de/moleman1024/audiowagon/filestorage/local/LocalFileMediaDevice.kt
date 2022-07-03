@@ -56,7 +56,7 @@ class LocalFileMediaDevice(private val context: Context) : MediaDevice {
         }
         val externalFilesPath = context.getExternalFilesDir(null)
         rootPath = Regex("^(.*)/Android.*").find(externalFilesPath.toString())?.groupValues?.get(1) ?: ""
-        rootPath +=  "/${Environment.DIRECTORY_DOWNLOADS}/${DOWNLOAD_DIRECTORY}"
+        rootPath +=  "/${Environment.DIRECTORY_DOWNLOADS}"
         logger.debug(TAG, "Using rootPath: $rootPath")
         return rootPath
     }

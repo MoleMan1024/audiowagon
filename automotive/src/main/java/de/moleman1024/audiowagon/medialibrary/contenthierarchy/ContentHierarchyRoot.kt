@@ -7,10 +7,8 @@ package de.moleman1024.audiowagon.medialibrary.contenthierarchy
 
 import android.content.Context
 import android.net.Uri
-import android.os.Bundle
 import android.support.v4.media.MediaBrowserCompat.MediaItem
 import android.support.v4.media.MediaDescriptionCompat
-import androidx.media.utils.MediaConstants
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.SharedPrefs
 import de.moleman1024.audiowagon.log.Logger
@@ -25,7 +23,7 @@ private val logger = Logger
  */
 @ExperimentalCoroutinesApi
 class ContentHierarchyRoot(
-    context: Context, audioItemLibrary: AudioItemLibrary
+    context: Context, audioItemLibrary: AudioItemLibrary, private val sharedPrefs: SharedPrefs
 ) :
     ContentHierarchyElement(ContentHierarchyID(ContentHierarchyType.ROOT), context, audioItemLibrary) {
     data class CategoryData(val contentHierarchyID: ContentHierarchyID) {
@@ -36,7 +34,7 @@ class ContentHierarchyRoot(
     override suspend fun getMediaItems(): List<MediaItem> {
         val items: MutableList<MediaItem> = mutableListOf()
         val categories = mutableListOf<CategoryData>()
-        val metadataReadSetting = SharedPrefs.getMetadataReadSettingEnum(context, logger, TAG)
+        val metadataReadSetting = sharedPrefs.getMetadataReadSettingEnum(context, logger, TAG)
         val albumCategoryTitle = R.string.browse_tree_category_albums
         if (metadataReadSetting !in listOf(MetadataReadSetting.OFF, MetadataReadSetting.FILEPATHS_ONLY)) {
             val tracksCategory = CategoryData(ContentHierarchyID(ContentHierarchyType.ROOT_TRACKS))

@@ -12,6 +12,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+## [2.0.1] - 2022-07-03
+
+### Fixed
+
+- avoid a RuntimeException during service initialization in certain cases
+
+
 ## [2.0.0] - 2022-06-23
 
 This release contains some major new features. When upgrading you will be required to re-index metadata from your USB

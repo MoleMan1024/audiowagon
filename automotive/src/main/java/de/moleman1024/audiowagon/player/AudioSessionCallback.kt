@@ -11,8 +11,6 @@ import android.os.ResultReceiver
 import android.provider.MediaStore
 import android.support.v4.media.session.MediaSessionCompat
 import de.moleman1024.audiowagon.*
-import de.moleman1024.audiowagon.filestorage.DataSourceSetting
-import de.moleman1024.audiowagon.filestorage.local.SYNC_FILES_URL_DEFAULT
 import de.moleman1024.audiowagon.log.CrashReporting
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.AlbumStyleSetting
@@ -91,19 +89,8 @@ class AudioSessionCallback(
                     args?.getString(ALBUM_STYLE_KEY, AlbumStyleSetting.GRID.name).toString()
                 notifyObservers(audioSessionChange)
             }
-            CMD_SET_DATA_SOURCE_SETTING -> {
-                val audioSessionChange = AudioSessionChange(AudioSessionChangeType.ON_SET_DATA_SOURCE)
-                audioSessionChange.dataSourceSetting =
-                    args?.getString(DATA_SOURCE_KEY, DataSourceSetting.LOCAL.name).toString()
-                notifyObservers(audioSessionChange)
-            }
             CMD_EJECT -> {
                 notifyObservers(AudioSessionChange(AudioSessionChangeType.ON_EJECT))
-            }
-            CMD_SYNC_FILES -> {
-                val audioSessionChange = AudioSessionChange(AudioSessionChangeType.ON_SYNC_FILES)
-                audioSessionChange.syncFilesURL = args?.getString(SYNC_FILES_URL_KEY, SYNC_FILES_URL_DEFAULT).toString()
-                notifyObservers(audioSessionChange)
             }
             else -> {
                 logger.warning(TAG, "Unhandled command: $command")

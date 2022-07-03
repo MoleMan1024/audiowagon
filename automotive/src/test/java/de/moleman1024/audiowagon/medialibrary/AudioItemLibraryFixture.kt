@@ -7,6 +7,7 @@ package de.moleman1024.audiowagon.medialibrary
 
 import android.content.Context
 import de.moleman1024.audiowagon.GUI
+import de.moleman1024.audiowagon.SharedPrefs
 import de.moleman1024.audiowagon.filestorage.AudioFileStorage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -20,5 +21,17 @@ class AudioItemLibraryFixture {
     val mockAudioFileStorage = Mockito.mock(AudioFileStorage::class.java)
     val scope = TestCoroutineScope()
     val mockGUI = Mockito.mock(GUI::class.java)
-    val audioItemLibrary = AudioItemLibrary(context, mockAudioFileStorage, scope, dispatcher, mockGUI)
+    val sharedPrefs = Mockito.mock(SharedPrefs::class.java)
+    var audioItemLibrary: AudioItemLibrary
+
+    /**
+     * https://stackoverflow.com/questions/49148801/mock-object-in-android-unit-test-with-kotlin-any-gives-null
+     * Returns Mockito.any() as nullable type to avoid java.lang.IllegalStateException when null is returned.
+     */
+    private fun <T> any(): T = Mockito.any()
+
+    init {
+        Mockito.`when`(sharedPrefs.getAlbumStyleSetting(this.any<Context>())).thenReturn(AlbumStyleSetting.GRID.name)
+        audioItemLibrary = AudioItemLibrary(context, mockAudioFileStorage, scope, dispatcher, mockGUI, sharedPrefs)
+    }
 }

@@ -216,8 +216,8 @@ object Logger : LoggerInterface {
         return "%s [%-8s][%-5d][%-20s] %s\n".format(timestamp, level.name, threadID, tag, msg)
     }
 
-    fun getLastLogLines(numLines: Int): List<String> {
-        return buffer.takeLast(numLines)
+    fun getLastLogLines(numLines: Int): List<String> = runBlocking(dispatcher) {
+        return@runBlocking buffer.takeLast(numLines)
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.NONE)

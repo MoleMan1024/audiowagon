@@ -9,13 +9,11 @@ import android.media.MediaDataSource
 import android.net.Uri
 import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.log.Logger
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.produce
 import java.io.File
+import java.io.IOException
 import java.io.InputStream
 import java.util.*
 
@@ -37,7 +35,19 @@ interface AudioFileStorageLocation {
     ): ReceiveChannel<FileLike> {
         logger.debug(TAG, "indexAudioFiles(directory=$directory, ${device.getName()})")
         val startDirectory = device.getFileFromURI(directory.uri)
-        return scope.produce(dispatcher) {
+        val exceptionHandler = CoroutineExceptionHandler { _, exc ->
+            when (exc) {
+                is IOException -> {
+                    logger.exception(TAG, "I/O exception in indexAudioFiles()", exc)
+                }
+                else -> {
+                    logger.exception(TAG, "Exception in indexAudioFiles()", exc)
+                }
+            }
+            isIndexingCancelled = false
+            postIndexAudioFiles()
+        }
+        return scope.produce(dispatcher + exceptionHandler) {
             try {
                 for (file in walkTopDown(startDirectory, this)) {
                     if (isIndexingCancelled) {

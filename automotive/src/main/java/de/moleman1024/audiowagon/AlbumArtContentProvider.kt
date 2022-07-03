@@ -70,6 +70,14 @@ class AlbumArtContentProvider : ContentProvider() {
         return true
     }
 
+    override fun shutdown() {
+        logger.debug(TAG, "shutdown()")
+        if (audioBrowserService != null) {
+            context?.unbindService(connection)
+        }
+        super.shutdown()
+    }
+
     override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor? {
         if (context == null) {
             return null

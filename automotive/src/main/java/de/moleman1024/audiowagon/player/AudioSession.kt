@@ -59,7 +59,8 @@ class AudioSession(
     val scope: CoroutineScope,
     private val dispatcher: CoroutineDispatcher,
     private val persistentStorage: PersistentStorage,
-    private val crashReporting: CrashReporting
+    private val crashReporting: CrashReporting,
+    private val sharedPrefs: SharedPrefs
 ) {
     private var mediaSession: MediaSessionCompat
     private var audioSessionCallback: AudioSessionCallback
@@ -72,7 +73,10 @@ class AudioSession(
     private val mediaSessionDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
     private var lastContentHierarchyIDPlayed: String = ""
     private val audioFocus: AudioFocus = AudioFocus(context)
-    private val audioPlayer: AudioPlayer = AudioPlayer(audioFileStorage, audioFocus, scope, context, crashReporting)
+    private val audioPlayer: AudioPlayer = AudioPlayer(
+        audioFileStorage, audioFocus, scope, context, crashReporting,
+        sharedPrefs
+    )
     private val audioSessionNotifications =
         AudioSessionNotifications(context, scope, dispatcher, audioPlayer, crashReporting)
     private val audioFocusChangeListener: AudioFocusChangeCallback =
@@ -116,7 +120,7 @@ class AudioSession(
         sessionToken = mediaSession.sessionToken
         initPlaybackState()
         audioSessionNotifications.init(mediaSession)
-        extractReplayGain = SharedPrefs.isReplayGainEnabled(context)
+        extractReplayGain = sharedPrefs.isReplayGainEnabled(context)
         observePlaybackStatus()
         observePlaybackQueue()
         observeSessionCallbacks()
@@ -125,7 +129,7 @@ class AudioSession(
     private fun initAudioFocus() {
         audioFocus.audioFocusChangeListener = audioFocusChangeListener
         try {
-            val audioFocusSettingStr = SharedPrefs.getAudioFocusSetting(context)
+            val audioFocusSettingStr = sharedPrefs.getAudioFocusSetting(context)
             audioFocus.setBehaviour(audioFocusSettingStr)
         } catch (exc: IllegalArgumentException) {
             logger.exception(TAG, exc.message.toString(), exc)
@@ -381,7 +385,7 @@ class AudioSession(
         } catch (exc: MissingEffectsException) {
             val replayGainName = context.getString(R.string.setting_enable_replaygain)
             showError(replayGainName)
-            SharedPrefs.setReplayGainEnabled(context, false)
+            sharedPrefs.setReplayGainEnabled(context, false)
             extractReplayGain = false
         } catch (exc: Exception) {
             logger.exception(TAG, exc.message.toString(), exc)
@@ -588,7 +592,7 @@ class AudioSession(
                         try {
                             audioPlayer.enableEqualizer()
                         } catch (exc: MissingEffectsException) {
-                            SharedPrefs.setEQEnabled(context, false)
+                            sharedPrefs.setEQEnabled(context, false)
                             showError(context.getString(R.string.error_invalid_state))
                             throw exc
                         }
@@ -616,7 +620,7 @@ class AudioSession(
                         try {
                             audioPlayer.enableReplayGain()
                         } catch (exc: MissingEffectsException) {
-                            SharedPrefs.setReplayGainEnabled(context, false)
+                            sharedPrefs.setReplayGainEnabled(context, false)
                             showError(context.getString(R.string.error_invalid_state))
                             throw exc
                         }
@@ -656,20 +660,6 @@ class AudioSession(
                     notifyObservers(
                         SettingChangeEvent(SettingKey.ALBUM_STYLE_SETTING, audioSessionChange.albumStyleSetting)
                     )
-                }
-                AudioSessionChangeType.ON_SET_DATA_SOURCE -> {
-                    notifyObservers(
-                        SettingChangeEvent(SettingKey.DATA_SOURCE_SETTING, audioSessionChange.dataSourceSetting)
-                    )
-                }
-                AudioSessionChangeType.ON_SYNC_FILES -> {
-                    val action = CustomActionEvent(CustomAction.SYNC_FILES)
-                    action.syncURL = audioSessionChange.syncFilesURL
-                    notifyObservers(action)
-                }
-                AudioSessionChangeType.ON_DELETE_FILES -> {
-                    val action = CustomActionEvent(CustomAction.DELETE_FILES)
-                    notifyObservers(action)
                 }
                 AudioSessionChangeType.ON_EJECT -> {
                     audioFocusChangeListener.lastUserRequestedStateChange = AudioSessionChangeType.ON_STOP

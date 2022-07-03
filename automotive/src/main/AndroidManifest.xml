@@ -1,120 +1,124 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-		xmlns:dist="http://schemas.android.com/apk/distribution"
-		xmlns:tools="http://schemas.android.com/tools"
-		package="de.moleman1024.audiowagon">
+        xmlns:dist="http://schemas.android.com/apk/distribution"
+        xmlns:tools="http://schemas.android.com/tools"
+        package="de.moleman1024.audiowagon">
 
-	<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-	<!-- needed for Firebase Crashlytics and AudioBuggy -->
-	<uses-permission android:name="android.permission.INTERNET" />
-	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-	<uses-feature
-			android:name="android.hardware.type.automotive"
-			android:required="true" />
-	<uses-feature
-			android:name="android.hardware.wifi"
-			android:required="false" />
-	<uses-feature
-			android:name="android.hardware.screen.portrait"
-			android:required="false" />
-	<uses-feature
-			android:name="android.hardware.screen.landscape"
-			android:required="false" />
-	<uses-feature
-			android:name="android.hardware.usb.host"
-			android:required="true" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <!-- The app implicitly uses android.permission.INTERNET and android.permission.ACCESS_NETWORK_STATE for
+    Firebase Crashlytics -->
 
-	<queries>
-		<intent>
-			<action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
-		</intent>
-	</queries>
+    <uses-feature
+            android:name="android.hardware.type.automotive"
+            android:required="true" />
+    <uses-feature
+            android:name="android.hardware.wifi"
+            android:required="false" />
+    <uses-feature
+            android:name="android.hardware.screen.portrait"
+            android:required="false" />
+    <uses-feature
+            android:name="android.hardware.screen.landscape"
+            android:required="false" />
+    <uses-feature
+            android:name="android.hardware.usb.host"
+            android:required="true" />
 
-	<application
-			android:allowBackup="false"
-			android:appCategory="audio"
-			android:directBootAware="true"
-			android:icon="@mipmap/ic_launcher"
-			android:label="@string/app_name"
-			android:requestLegacyExternalStorage="${requestLegacyExternalStorage}"
-			android:supportsRtl="false"
-			android:testOnly="false"
-			android:usesCleartextTraffic="${usesCleartextTraffic}"
-			android:theme="@style/AppTheme">
+    <queries>
+        <intent>
+            <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
+        </intent>
+    </queries>
 
-		<meta-data
-				android:name="com.android.automotive"
-				android:resource="@xml/automotive_app_desc" />
-		<meta-data
-				android:name="firebase_crashlytics_collection_enabled"
-				android:value="false" />
+    <application
+            android:allowBackup="false"
+            android:appCategory="audio"
+            android:directBootAware="true"
+            android:icon="@mipmap/ic_launcher"
+            android:label="@string/app_name"
+            android:requestLegacyExternalStorage="${requestLegacyExternalStorage}"
+            android:supportsRtl="false"
+            android:testOnly="false"
+            android:theme="@style/AppTheme">
 
-		<dist:module dist:instant="true" />
+        <meta-data
+                android:name="com.android.automotive"
+                android:resource="@xml/automotive_app_desc" />
+        <meta-data
+                android:name="firebase_crashlytics_collection_enabled"
+                android:value="false" />
 
-		<activity
-				android:name=".activities.LegalDisclaimerActivity"
-				android:label="@string/legal_disclaimer_title"
-				android:theme="@style/AppTheme" />
-		<activity
-				android:name=".activities.LogActivity"
-				android:exported="false" />
-		<activity
-				android:name=".activities.SettingsActivity"
-				android:exported="true"
-				android:label="@string/settings_title"
-				android:theme="@style/AppTheme">
-			<intent-filter>
-				<action android:name="android.intent.action.APPLICATION_PREFERENCES" />
-			</intent-filter>
-		</activity>
-		<!--
- Does not work on AAOS in Polestar 2, works fine on Pixel 3 with AAOS. Setting
- 	 		 distractionOptimized=true does not help either (also Play store automatic review does not like it when I
- 	 		 set that)
+        <dist:module dist:instant="true" />
+
+        <activity
+                android:name=".activities.LegalDisclaimerActivity"
+                android:label="@string/legal_disclaimer_title"
+                android:theme="@style/AppTheme" />
+        <activity
+                android:name=".activities.LogActivity"
+                android:exported="false" />
+        <activity
+                android:name=".activities.SettingsActivity"
+                android:exported="true"
+                android:label="@string/settings_title"
+                android:theme="@style/AppTheme">
+            <intent-filter>
+                <action android:name="android.intent.action.APPLICATION_PREFERENCES" />
+            </intent-filter>
+        </activity>
+
+        <!--
+            We should receive permission automatically using this intent filter and dummy activity, see
+            https://developer.android.com/guide/topics/connectivity/usb/host#permission-d
+            https://developer.android.com/guide/topics/connectivity/usb/host#using-intents
+
+            Does not work on AAOS in Polestar 2, works fine on Pixel 3 with AAOS. Setting
+            distractionOptimized=true does not help either (also Play store automatic review does not like it when I
+            set that)
         -->
-		<activity
-				android:name=".activities.USBDummyActivity"
-				android:directBootAware="true"
-				android:excludeFromRecents="true"
-				android:exported="true"
-				android:noHistory="true"
-				android:theme="@style/TransparentTheme">
-			<intent-filter>
-				<action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
-			</intent-filter>
+        <activity
+                android:name=".activities.USBDummyActivity"
+                android:directBootAware="true"
+                android:excludeFromRecents="true"
+                android:exported="true"
+                android:noHistory="true"
+                android:theme="@style/TransparentTheme">
+            <intent-filter>
+                <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
+            </intent-filter>
 
-			<meta-data
-					android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"
-					android:resource="@xml/device_filter" />
-		</activity>
+            <meta-data
+                    android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"
+                    android:resource="@xml/device_filter" />
+        </activity>
 
-		<service
-				android:name=".AudioBrowserService"
-				android:enabled="true"
-				android:exported="true"
-				android:foregroundServiceType="mediaPlayback"
-				android:label="@string/app_name"
-				tools:ignore="ExportedService">
-			<intent-filter>
-				<action android:name="android.media.browse.MediaBrowserService" />
-				<action android:name="android.intent.action.MEDIA_BUTTON" />
-				<action android:name="android.car.intent.action.PLAY_USB" />
-			</intent-filter>
-		</service>
+        <service
+                android:name=".AudioBrowserService"
+                android:enabled="true"
+                android:exported="true"
+                android:foregroundServiceType="mediaPlayback"
+                android:label="@string/app_name"
+                tools:ignore="ExportedService">
+            <intent-filter>
+                <action android:name="android.media.browse.MediaBrowserService" />
+                <action android:name="android.intent.action.MEDIA_BUTTON" />
+                <action android:name="android.car.intent.action.PLAY_USB" />
+            </intent-filter>
+        </service>
 
-		<receiver
-				android:name="androidx.media.session.MediaButtonReceiver"
-				android:exported="true">
-			<intent-filter>
-				<action android:name="android.intent.action.MEDIA_BUTTON" />
-			</intent-filter>
-		</receiver>
+        <receiver
+                android:name="androidx.media.session.MediaButtonReceiver"
+                android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MEDIA_BUTTON" />
+            </intent-filter>
+        </receiver>
 
-		<provider
-				android:name=".AlbumArtContentProvider"
-				android:authorities="de.moleman1024.audiowagon"
-				android:exported="true"
-				tools:ignore="ExportedContentProvider" />
-	</application>
+        <provider
+                android:name=".AlbumArtContentProvider"
+                android:authorities="de.moleman1024.audiowagon"
+                android:exported="true"
+                tools:ignore="ExportedContentProvider" />
+    </application>
 
 </manifest>

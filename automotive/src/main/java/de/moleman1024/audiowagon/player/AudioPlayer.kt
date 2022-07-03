@@ -52,7 +52,8 @@ class AudioPlayer(
     private val audioFocus: AudioFocus,
     private val scope: CoroutineScope,
     private val context: Context,
-    private val crashReporting: CrashReporting
+    private val crashReporting: CrashReporting,
+    private val sharedPrefs: SharedPrefs
 ) {
     // currentMediaPlayer shall point to currently playing media player
     private var currentMediaPlayer: MediaPlayer? = null
@@ -111,7 +112,7 @@ class AudioPlayer(
             logger.debug(TAG, "Init effects for audio session ID: ${mediaPlayerFlop?.audioSessionId}")
             Effects(it)
         }
-        val equalizerPresetPreference = SharedPrefs.getEQPreset(context)
+        val equalizerPresetPreference = sharedPrefs.getEQPreset(context)
         equalizerPresetPreference.let {
             try {
                 val equalizerPreset = EqualizerPreset.valueOf(it)
@@ -121,12 +122,12 @@ class AudioPlayer(
                 logger.exception(TAG, "Could not convert preference value to equalizer preset", exc)
             }
         }
-        val enableEQPreference = SharedPrefs.isEQEnabled(context)
+        val enableEQPreference = sharedPrefs.isEQEnabled(context)
         if (enableEQPreference) {
             effectsFlip?.enableEQ()
             effectsFlop?.enableEQ()
         }
-        val enableReplayGainPreference = SharedPrefs.isReplayGainEnabled(context)
+        val enableReplayGainPreference = sharedPrefs.isReplayGainEnabled(context)
         if (enableReplayGainPreference) {
             effectsFlip?.enableGain()
             effectsFlop?.enableGain()

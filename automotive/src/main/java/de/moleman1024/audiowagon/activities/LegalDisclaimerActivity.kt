@@ -10,15 +10,18 @@ import android.os.Bundle
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
-import de.moleman1024.audiowagon.SharedPrefs
 import de.moleman1024.audiowagon.R
+import de.moleman1024.audiowagon.SharedPrefs
 import de.moleman1024.audiowagon.filestorage.usb.ACTION_USB_UPDATE
 import de.moleman1024.audiowagon.log.Logger
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 private const val TAG = "LegalDisclAct"
 private val logger = Logger
 
+@ExperimentalCoroutinesApi
 class LegalDisclaimerActivity : AppCompatActivity() {
+    private val sharedPrefs = SharedPrefs()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         logger.debug(TAG, "onCreate()")
@@ -42,12 +45,12 @@ class LegalDisclaimerActivity : AppCompatActivity() {
 
     private fun onAgree() {
         logger.debug(TAG, "User agreed to legal disclaimer")
-        if (SharedPrefs.isLegalDisclaimerAgreed(this)) {
+        if (sharedPrefs.isLegalDisclaimerAgreed(this)) {
             // already agreed previously, do nothing
             finish()
             return
         }
-        SharedPrefs.setLegalDisclaimerAgreed(this)
+        sharedPrefs.setLegalDisclaimerAgreed(this)
         val updateUSBIntent = Intent(ACTION_USB_UPDATE)
         sendBroadcast(updateUSBIntent)
         finish()

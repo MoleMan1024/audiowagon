@@ -191,23 +191,4 @@ improve the app (requires internet connection).</string>
     <string name="setting_album_display_grid">Grid</string>
     <string name="setting_album_display_list">List</string>
     <string name="setting_requires_media_center_restart">(any change requires restart of \"Media Center\" app)</string>
-    <!-- start of settings for local data sources (not fully implemented, feature will be removed when USB is working
-     again, no need to translate) -->
-    <string name="setting_datasource" translatable="false">Data source</string>
-    <string name="setting_datasource_local" translatable="false">Local files</string>
-    <string name="setting_datasource_usb" translatable="false">USB</string>
-    <string name="setting_sync_files_now" translatable="false">Synchronize files with AudioBuggy</string>
-    <string name="browse_tree_ask_sync_files" translatable="false">Synchronize files with AudioBuggy first</string>
-    <string name="setting_sync_url_hint" translatable="false">URL of AudioBuggy</string>
-    <string name="fragment_name_sync_files" translatable="false">Synchronize files with AudioBuggy</string>
-    <string name="sync_files_button_sync" translatable="false">Synchronize now</string>
-    <string name="sync_files_delete_button" translatable="false">Delete all local audio files</string>
-    <string name="sync_files_num_copied_files" translatable="false">Files copied to car</string>
-    <string name="sync_files_num_files" translatable="false">Files to copy from AudioBuggy</string>
-    <string name="sync_files_status" translatable="false">Status</string>
-    <string name="sync_status_idle" translatable="false">Idle</string>
-    <string name="sync_status_syncing" translatable="false">Syncing</string>
-    <string name="sync_status_done" translatable="false">Done</string>
-    <string name="sync_files_storage_space" translatable="false">Occupied storage space</string>
-    <string name="sync_status_error_connection" translatable="false">Connection error</string>
 </resources>

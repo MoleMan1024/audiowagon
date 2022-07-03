@@ -39,6 +39,7 @@ private val logger = Logger
  */
 @ExperimentalCoroutinesApi
 class USBDummyActivity : AppCompatActivity() {
+    private val sharedPrefs = SharedPrefs()
 
     override fun onCreate(savedInstanceState: Bundle?, persistentState: PersistableBundle?) {
         logger.debug(TAG, "onCreate()")
@@ -54,7 +55,7 @@ class USBDummyActivity : AppCompatActivity() {
         logger.debug(TAG, "onStart()")
         super.onStart()
         startForegroundService(Intent(ACTION_RESTART_SERVICE, Uri.EMPTY, this, AudioBrowserService::class.java))
-        if (!SharedPrefs.isLegalDisclaimerAgreed(this)) {
+        if (!sharedPrefs.isLegalDisclaimerAgreed(this)) {
             showLegalDisclaimer()
         }
         rebroadcastUSBDeviceAttached()

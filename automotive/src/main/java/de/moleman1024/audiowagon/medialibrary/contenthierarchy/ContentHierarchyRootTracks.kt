@@ -11,9 +11,7 @@ import android.support.v4.media.MediaBrowserCompat.MediaItem
 import android.support.v4.media.MediaDescriptionCompat
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.SharedPrefs
-import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.filestorage.AudioFileStorage
-import de.moleman1024.audiowagon.filestorage.DataSourceSetting
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
@@ -32,7 +30,8 @@ private val logger = Logger
 class ContentHierarchyRootTracks(
     context: Context,
     audioItemLibrary: AudioItemLibrary,
-    private val audioFileStorage: AudioFileStorage
+    private val audioFileStorage: AudioFileStorage,
+    private val sharedPrefs: SharedPrefs
 ) :
     ContentHierarchyElement(ContentHierarchyID(ContentHierarchyType.ROOT_TRACKS), context, audioItemLibrary) {
 
@@ -83,19 +82,14 @@ class ContentHierarchyRootTracks(
     }
 
     private fun createPseudoNoEntriesItem(): MediaItem {
-        val dataSourceSetting = SharedPrefs.getDataSourceSettingEnum(context, logger, TAG)
         val numConnectedDevices = audioFileStorage.getNumConnectedDevices()
         var title = context.getString(R.string.browse_tree_no_entries_title)
         var subtitle: String
-        subtitle = if (dataSourceSetting == DataSourceSetting.USB) {
-            context.getString(R.string.browse_tree_no_usb_drive)
-        } else {
-            context.getString(R.string.browse_tree_ask_sync_files)
-        }
+        subtitle = context.getString(R.string.browse_tree_no_usb_drive)
         if (numConnectedDevices > 0) {
-            if (SharedPrefs.isLegalDisclaimerAgreed(context)) {
+            if (sharedPrefs.isLegalDisclaimerAgreed(context)) {
                 if (audioFileStorage.areAnyStoragesAvail()) {
-                    val metadataReadSetting = SharedPrefs.getMetadataReadSettingEnum(context, logger, TAG)
+                    val metadataReadSetting = sharedPrefs.getMetadataReadSettingEnum(context, logger, TAG)
                     if (metadataReadSetting == MetadataReadSetting.MANUALLY
                         || metadataReadSetting == MetadataReadSetting.FILEPATHS_ONLY) {
                         title = context.getString(R.string.browse_tree_metadata_not_yet_indexed_title)

@@ -20,16 +20,13 @@ data class AudioSessionChange(val type: AudioSessionChangeType) {
     var metadataReadSetting: String = ""
     var audioFocusSetting: String = ""
     var albumStyleSetting: String = ""
-    var dataSourceSetting: String = ""
-    var syncFilesURL: String = ""
 
     override fun toString(): String {
         return "AudioSessionChange(type=$type, queueID=$queueID, " +
                 "contentHierarchyID='$contentHierarchyID', artistToPlay='$artistToPlay', albumToPlay='$albumToPlay', " +
                 "trackToPlay='$trackToPlay', queryToPlay='$queryToPlay', queryFocus='$queryFocus' " +
                 "equalizerPreset='$equalizerPreset', metadataReadSetting='$metadataReadSetting', " +
-                "audioFocusSetting='$audioFocusSetting', albumStyleSetting='$albumStyleSetting', " +
-                "dataSourceSetting='$dataSourceSetting', syncFilesURL='$syncFilesURL')"
+                "audioFocusSetting='$audioFocusSetting', albumStyleSetting='$albumStyleSetting')"
     }
 
 }

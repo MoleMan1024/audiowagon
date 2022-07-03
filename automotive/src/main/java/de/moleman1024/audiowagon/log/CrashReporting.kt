@@ -17,7 +17,12 @@ import kotlinx.coroutines.tasks.await
 private const val TAG = "CrashReporting"
 private val logger = Logger
 
-class CrashReporting(context: Context, private val scope: CoroutineScope, private val dispatcher: CoroutineDispatcher) {
+class CrashReporting(
+    context: Context,
+    private val scope: CoroutineScope,
+    private val dispatcher: CoroutineDispatcher,
+    sharedPrefs: SharedPrefs
+) {
     private val crashlytics = Firebase.crashlytics
     private var isEnabled: Boolean = false
     private var isDebugBuild: Boolean = false
@@ -27,7 +32,7 @@ class CrashReporting(context: Context, private val scope: CoroutineScope, privat
         if (Util.isDebugBuild(context) || Util.isRunningInEmulator()) {
             isDebugBuild = true
         }
-        if (SharedPrefs.isCrashReportingEnabled(context)) {
+        if (sharedPrefs.isCrashReportingEnabled(context)) {
             enable()
         } else {
             disable()

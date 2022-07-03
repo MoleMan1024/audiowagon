@@ -28,20 +28,21 @@ private val logger = Logger
 class ContentHierarchyRootFiles(
     context: Context,
     audioItemLibrary: AudioItemLibrary,
-    private val audioFileStorage: AudioFileStorage
+    private val audioFileStorage: AudioFileStorage,
+    private val sharedPrefs: SharedPrefs
 ) :
     ContentHierarchyElement(ContentHierarchyID(ContentHierarchyType.ROOT_FILES), context, audioItemLibrary) {
 
     override suspend fun getMediaItems(): List<MediaItem> {
         val items = mutableListOf<MediaItem>()
-        if (!SharedPrefs.isLegalDisclaimerAgreed(context) || !audioFileStorage.areAnyStoragesAvail()) {
+        if (!sharedPrefs.isLegalDisclaimerAgreed(context) || !audioFileStorage.areAnyStoragesAvail()) {
             logger.debug(TAG, "Showing pseudo MediaItem 'no entries available'")
             items += createPseudoNoEntriesItem()
             return items
         }
         val directoryContents = getDirectoryContents()
         if (directoryContents.isNotEmpty()) {
-            val metadataReadSetting = SharedPrefs.getMetadataReadSettingEnum(context, logger, TAG)
+            val metadataReadSetting = sharedPrefs.getMetadataReadSettingEnum(context, logger, TAG)
             if (metadataReadSetting != MetadataReadSetting.OFF && !audioItemLibrary.isBuildingLibrary) {
                 val numPathsInRepo = audioItemLibrary.getPrimaryRepository()?.getNumPaths() ?: 0
                 if (numPathsInRepo > 0) {
@@ -55,7 +56,7 @@ class ContentHierarchyRootFiles(
             val contentHierarchyID = id
             contentHierarchyID.path = "/"
             val contentHierarchyDirectory = ContentHierarchyDirectory(
-                contentHierarchyID, context, audioItemLibrary, audioFileStorage
+                contentHierarchyID, context, audioItemLibrary, audioFileStorage, sharedPrefs
             )
             items += contentHierarchyDirectory.createGroups(directoryContents)
         }
@@ -79,17 +80,12 @@ class ContentHierarchyRootFiles(
     }
 
     private fun createPseudoNoEntriesItem(): MediaItem {
-        val dataSourceSetting = SharedPrefs.getDataSourceSettingEnum(context, logger, TAG)
         val numConnectedDevices = audioFileStorage.getNumConnectedDevices()
         var title = context.getString(R.string.browse_tree_no_entries_title)
         var subtitle: String
-        subtitle = if (dataSourceSetting == DataSourceSetting.USB) {
-            context.getString(R.string.browse_tree_no_usb_drive)
-        } else {
-            context.getString(R.string.browse_tree_ask_sync_files)
-        }
+        subtitle = context.getString(R.string.browse_tree_no_usb_drive)
         if (numConnectedDevices > 0) {
-            if (SharedPrefs.isLegalDisclaimerAgreed(context)) {
+            if (sharedPrefs.isLegalDisclaimerAgreed(context)) {
                 subtitle = context.getString(R.string.browse_tree_usb_drive_ejected)
             } else {
                 logger.debug(TAG, "Legal disclaimer was not yet agreed")

@@ -22,74 +22,75 @@ import org.junit.Test
 @ExperimentalCoroutinesApi
 class SharedPrefsTest {
 
-    private lateinit var sharedPrefsVersion110: SharedPreferences
+    private lateinit var sharedPreferencesVersion110: SharedPreferences
+    private val sharedPrefs = SharedPrefs()
 
     @Before
     fun setUp() {
-        sharedPrefsVersion110 =
+        sharedPreferencesVersion110 =
             TestUtils.createSharedPrefsVersion110(InstrumentationRegistry.getInstrumentation().context)
     }
 
     @Test
     fun isLegalDisclaimerAgreed_sharedPrefAppVersion110_isCompatible() {
-        Assert.assertFalse(SharedPrefs.isLegalDisclaimerAgreed(sharedPrefsVersion110))
+        Assert.assertFalse(sharedPrefs.isLegalDisclaimerAgreed(sharedPreferencesVersion110))
     }
 
     @Test
     fun setLegalDisclaimerAgreed_legalDisclNotAgreed_agreementIsStored() {
-        val sharedPrefs =
+        val sharedPreferences =
             TestUtils.createSharedPrefsNotAgreedLegal(InstrumentationRegistry.getInstrumentation().context)
-        Assert.assertFalse(SharedPrefs.isLegalDisclaimerAgreed(sharedPrefs))
-        SharedPrefs.setLegalDisclaimerAgreed(sharedPrefs)
-        Assert.assertTrue(SharedPrefs.isLegalDisclaimerAgreed(sharedPrefs))
+        Assert.assertFalse(sharedPrefs.isLegalDisclaimerAgreed(sharedPreferences))
+        sharedPrefs.setLegalDisclaimerAgreed(sharedPreferences)
+        Assert.assertTrue(sharedPrefs.isLegalDisclaimerAgreed(sharedPreferences))
     }
 
     @Test
     fun isReplayGainEnabled_sharedPrefAppVersion110_isCompatible() {
-        Assert.assertTrue(SharedPrefs.isReplayGainEnabled(sharedPrefsVersion110))
+        Assert.assertTrue(sharedPrefs.isReplayGainEnabled(sharedPreferencesVersion110))
     }
 
     @Test
     fun getEQPreset_sharedPrefAppVersion110_isCompatible() {
-        Assert.assertTrue(EqualizerPreset.values().any { it.name == SharedPrefs.getEQPreset(sharedPrefsVersion110) })
+        Assert.assertTrue(EqualizerPreset.values().any { it.name == sharedPrefs.getEQPreset(sharedPreferencesVersion110) })
     }
 
     @Test
     fun isEQEnabled_sharedPrefAppVersion110_isCompatible() {
-        Assert.assertTrue(SharedPrefs.isEQEnabled(sharedPrefsVersion110))
+        Assert.assertTrue(sharedPrefs.isEQEnabled(sharedPreferencesVersion110))
     }
 
     @Test
     fun getMetadataReadSetting_sharedPrefAppVersion110_isCompatible() {
-        Assert.assertEquals("WHEN_USB_CONNECTED", SharedPrefs.getMetadataReadSetting(sharedPrefsVersion110))
+        Assert.assertEquals("WHEN_USB_CONNECTED", sharedPrefs.getMetadataReadSetting(sharedPreferencesVersion110))
     }
 
     @Test
     fun getAudioFocusSetting_sharedPrefAppVersion110_isCompatible() {
-        Assert.assertEquals("PAUSE", SharedPrefs.getAudioFocusSetting(sharedPrefsVersion110))
+        Assert.assertEquals("PAUSE", sharedPrefs.getAudioFocusSetting(sharedPreferencesVersion110))
     }
 
     @Test
     fun isLogToUSBEnabled_sharedPrefAppVersion110_isCompatible() {
-        Assert.assertTrue(SharedPrefs.isLogToUSBEnabled(sharedPrefsVersion110))
+        Assert.assertTrue(sharedPrefs.isLogToUSBEnabled(sharedPreferencesVersion110))
     }
 
     @Test
     fun isCrashReportingEnabled_sharedPrefAppVersion110_isCompatible() {
-        Assert.assertFalse(SharedPrefs.isCrashReportingEnabled(sharedPrefsVersion110))
+        Assert.assertFalse(sharedPrefs.isCrashReportingEnabled(sharedPreferencesVersion110))
     }
 
     @Test
     fun getUSBStatusResID_sharedPrefAppVersion110_isCompatible() {
-        Assert.assertEquals(2131689640, SharedPrefs.getUSBStatusResID(sharedPrefsVersion110))
+        Assert.assertEquals(2131689640, sharedPrefs.getUSBStatusResID(sharedPreferencesVersion110))
     }
 
     @Test
     fun setUSBStatusResID_default_changesResourceID() {
-        Assert.assertEquals(2131689640, SharedPrefs.getUSBStatusResID(sharedPrefsVersion110))
+        Assert.assertEquals(2131689640, sharedPrefs.getUSBStatusResID(sharedPreferencesVersion110))
         val resID = 12345
-        SharedPrefs.setUSBStatusResID(sharedPrefsVersion110, resID)
-        Assert.assertEquals(resID, SharedPrefs.getUSBStatusResID(sharedPrefsVersion110))
+        sharedPrefs.setUSBStatusResID(sharedPreferencesVersion110, resID)
+        Assert.assertEquals(resID, sharedPrefs.getUSBStatusResID(sharedPreferencesVersion110))
     }
 
 }

@@ -50,12 +50,4 @@ SPDX-License-Identifier: GPL-3.0-or-later
         <item>GRID</item>
         <item>LIST</item>
     </string-array>
-    <string-array name="datasource_settings">
-        <item>@string/setting_datasource_usb</item>
-        <item>@string/setting_datasource_local</item>
-    </string-array>
-    <string-array name="datasource_settings_values">
-        <item>USB</item>
-        <item>LOCAL</item>
-    </string-array>
 </resources>
