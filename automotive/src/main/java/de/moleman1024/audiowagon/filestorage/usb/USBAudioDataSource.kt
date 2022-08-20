@@ -6,8 +6,10 @@ SPDX-License-Identifier: GPL-3.0-or-later
 package de.moleman1024.audiowagon.filestorage.usb
 
 import android.media.MediaDataSource
-import com.github.mjdev.libaums.fs.UsbFile
+import me.jahnen.libaums.core.fs.UsbFile
 import de.moleman1024.audiowagon.log.Logger
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.runBlocking
 import java.io.IOException
 import java.nio.ByteBuffer
 import kotlin.math.min
@@ -24,30 +26,34 @@ private val logger = Logger
 open class USBAudioDataSource(
     private var usbFile: UsbFile?,
     private val chunkSize: Int,
+    private val libaumsDispatcher: CoroutineDispatcher
 ) : MediaDataSource() {
     var isClosed = false
     var hasError = false
 
     init {
-        logger.verbose(
-            TAG, "Init data source with chunk size $chunkSize for file with length ${usbFile?.length}: $usbFile"
-        )
+        runBlocking(libaumsDispatcher) {
+            logger.verbose(
+                TAG, "Init data source with chunk size $chunkSize for file with length ${usbFile?.length}: $usbFile"
+            )
+        }
     }
 
-    @Synchronized
     override fun close() {
         if (isClosed || hasError) {
             usbFile = null
             return
         }
-        try {
-            usbFile?.close()
-            isClosed = true
-            usbFile = null
-        } catch (exc: IOException) {
-            // If we rethrow this, it will trigger a fatal SIGABRT and the app will be restarted.
-            logger.exceptionLogcatOnly(TAG, "Error while closing USB file, did you unplug the device?", exc)
-            hasError = true
+        runBlocking(libaumsDispatcher) {
+            try {
+                usbFile?.close()
+                isClosed = true
+                usbFile = null
+            } catch (exc: IOException) {
+                // If we rethrow this, it will trigger a fatal SIGABRT and the app will be restarted.
+                logger.exceptionLogcatOnly(TAG, "Error while closing USB file, did you unplug the device?", exc)
+                hasError = true
+            }
         }
     }
 
@@ -102,9 +108,10 @@ open class USBAudioDataSource(
         return numBytesToRead
     }
 
-    @Synchronized
     override fun getSize(): Long {
-        return usbFile?.length ?: 0
+        return runBlocking(libaumsDispatcher) {
+            return@runBlocking usbFile?.length ?: 0
+        }
     }
 
     private fun readFromUSBFileSystem(position: Long, outBuffer: ByteBuffer): Int {
@@ -115,10 +122,11 @@ open class USBAudioDataSource(
         return numBytesRead
     }
 
-    @Synchronized
     fun read(position: Long, outBuffer: ByteBuffer) {
         try {
-            usbFile?.read(position, outBuffer)
+            runBlocking(libaumsDispatcher) {
+                usbFile?.read(position, outBuffer)
+            }
         } catch (exc: IOException) {
             logger.exception(TAG, exc.message.toString(), exc)
             hasError = true

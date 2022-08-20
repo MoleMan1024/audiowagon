@@ -101,17 +101,20 @@ class CrashReporting(
         }
     }
 
-    fun logMessages(messages: List<String>) {
+    fun logLastLogMessages() {
         if (!isEnabled || isDebugBuild) {
             return
         }
-        messages.forEach {
-            crashlytics.log(it)
+        launchInScopeSafely {
+            val messages = logger.getLogsForCrashReporting()
+            messages.forEach {
+                crashlytics.log(it)
+            }
         }
     }
 
     private fun launchInScopeSafely(func: suspend (CoroutineScope) -> Unit) {
-        Util.launchInScopeSafely(scope, dispatcher, logger, TAG, this, func)
+        Util.launchInScopeSafely(scope, dispatcher, logger, TAG, crashReporting = null, func)
     }
 
 }

@@ -18,7 +18,8 @@ nav_order: 2
 
 Sorry, I don't know why that happens. It works fine on the mobile phone that I use for development, however the car
 maker probably put some extra security in the car that will always trigger this permission dialog popup. I would need
-help from the car maker or Google to improve this.
+help from the car maker or Google to improve this to allow the user to select *AudioWagon* to be the default app for 
+USB devices.
 
 ### What is the eject button for?
 
@@ -30,11 +31,14 @@ on your USB drive might be damaged.
 
 ### Why is my USB drive not recognized?
 
+If you are driving a Polestar or Volvo, make sure you use car software version 2.2 or higher, [certain versions do not
+allow access to the USB data port]({{ site.baseurl }}{% link index.markdown %}#limitations).
+
 ![FAT32 error](/img/fat32_error.jpg)
 
-The app only supports USB flash drives formatted using **FAT32 filesystem**. There are several tools available that you
-can download from the internet to format a drive using this filesystem. On Windows I recommend
-[Rufus](https://rufus.ie/en/).
+The app only supports USB flash drives formatted using **FAT32 filesystem**. Do *not* use *exFAT*, do *not* use any
+other filesystem, it will *not* work. There are several tools available that you can download from the internet to
+format a drive using this filesystem. On Windows I recommend [Rufus](https://rufus.ie/en/).
 
 Also make sure to plug the USB flash drive into the port in your car that is marked (usually in the front of the car,
 with a white outline). The other USB ports are for *charging your phone only*.
@@ -66,24 +70,25 @@ the settings screen using the option "Read metadata":
   that file. If not, it will take the information from the database. Thus this process should be much quicker than the
   first time. However it can still take multiple seconds with large music libraries.
 
-  This setting is recommended when you don't have a lot of audio files on your USB drive.
+  This setting is **recommended when you don't have a lot of audio files on your USB drive**.
 
 - **Manually**: Similar to above, but you have to start the indexing process by hand. You should do this whenever you
   change files on the USB drive. You can start the indexing using the option "Read metadata now" in the settings screen.
 
-  This setting is recommended when you have many audio files on your USB drive but you do not change them very often.
+  This setting is **recommended when you have many audio files on your USB drive but you do not change them very
+  often**.
 
 - **File paths only**: With this setting only the file paths on the USB drive will be indexed, no other metadata. This
   setting will allow you to use "Play all" in any directory.
 
-  This setting is recommended when you don't care about metadata but still would like to play all files in a directory
+  This setting is **recommended when you don't care about metadata** but still would like to play all files in a directory
   hierarchy.
 
 - **Off**: With this setting metadata will *not* be extracted from audio files. You will not be able to navigate nor
   search by track, album, artist. You can only browse by directory or file and you can only play files found in a single
   directory.
 
-  This setting is recommended when many audio files on your USB drive do not have any/correct metadata or you never
+  This setting is **recommended when many audio files on your USB drive do not have any/correct metadata** or you never
   want to wait for indexing.
 
 ### Why do my compilation albums show up as separate albums?
@@ -175,7 +180,8 @@ happens to you:
 
 - First of all do not store any important data on the USB drive other than audio files. Keep a copy of those files on
   your PC
-- Update the app to version 0.6.1 or higher, there was an issue in earlier versions that could cause this corruption
+- Update the app to latest version, there were some issues in earlier versions (especially before version 0.6.1) that
+  could cause this corruption
 - Try using a different USB drive (flash memory can wear out after some years)
 - Try putting less data on the USB drive
 - Make sure to always properly eject the USB drive before unplugging it. Do not assume that if the infotainment screen
@@ -230,8 +236,6 @@ However it has some strange behaviour, I am still trying to figure out why this 
 - when AudioWagon is running, you can switch to *radio app* and back to AudioWagon both using your voice. However you
   can *not* switch to AudioWagon when a different *media app* is running (for example Spotify). Commands such as "Play
   Michael Jackson on AudioWagon" appear to *not* work
-- sometimes the TTS voice says "Sorry, an error has occured" although the app has executed the command just fine
-
 
 ### Does the app support video? Will you add support for videos?
 

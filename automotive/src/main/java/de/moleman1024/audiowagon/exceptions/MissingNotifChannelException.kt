@@ -5,5 +5,5 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 package de.moleman1024.audiowagon.exceptions
 
-class MissingNotifChannelException : RuntimeException()
+class MissingNotifChannelException(msg: String) : RuntimeException(msg)
 

@@ -39,8 +39,8 @@ class ContentHierarchyRootTracks(
         val items = mutableListOf<MediaItem>()
         val numTracksInRepo = audioItemLibrary.getPrimaryRepository()?.getNumTracks() ?: 0
         if (!audioItemLibrary.areAnyReposAvail() || (numTracksInRepo <= 0 && !audioItemLibrary.isBuildingLibrary)) {
-            logger.debug(TAG, "Showing pseudo MediaItem 'no entries available'")
             items += createPseudoNoEntriesItem()
+            logger.debug(TAG, "Showing pseudo MediaItem 'No entries available: ${items[0].description.title}'")
             return items
         }
         if (audioItemLibrary.isBuildingLibrary) {
@@ -82,7 +82,7 @@ class ContentHierarchyRootTracks(
     }
 
     private fun createPseudoNoEntriesItem(): MediaItem {
-        val numConnectedDevices = audioFileStorage.getNumConnectedDevices()
+        val numConnectedDevices = audioFileStorage.getNumAvailableDevices()
         var title = context.getString(R.string.browse_tree_no_entries_title)
         var subtitle: String
         subtitle = context.getString(R.string.browse_tree_no_usb_drive)

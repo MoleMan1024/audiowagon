@@ -259,7 +259,7 @@ abstract class ContentHierarchyElement(
             setTitle(context.getString(R.string.notif_indexing_text_in_progress))
             setSubtitle(numItemsFoundText)
             setIconUri(
-                Uri.parse(RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.baseline_sync_24))
+                Uri.parse(RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.sync_animated))
             )
         }.build()
         return MediaItem(description, MediaItem.FLAG_BROWSABLE)

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+SPDX-FileCopyrightText: 2022 MoleMan1024 <moleman1024dev@gmail.com>
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
+<objectAnimator xmlns:android="http://schemas.android.com/apk/res/android"
+        android:duration="3000"
+        android:repeatCount="infinite"
+        android:propertyName="rotation"
+        android:interpolator="@android:anim/linear_interpolator"
+        android:valueFrom="0"
+        android:valueTo="-360" />

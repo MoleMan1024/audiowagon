@@ -52,14 +52,16 @@ class AudioBrowserServiceTest {
     fun onStartCommand_default_startsService() {
         val audioBrowserService = serviceFixture.createAudioBrowserService()
         serviceFixture.startService()
-        TestUtils.waitForTrueOrFail({ audioBrowserService.lifecycle.currentState == Lifecycle.State.STARTED }, 200)
+        TestUtils.waitForTrueOrFail({ audioBrowserService.lifecycle.currentState == Lifecycle.State.STARTED }, 200,
+            "lifecycle started")
     }
 
     @Test
     fun onStartCommand_serviceAlreadyStarted_callsOnStartCommandAgain() {
         val audioBrowserService = serviceFixture.createAudioBrowserService()
         serviceFixture.startService()
-        TestUtils.waitForTrueOrFail({ audioBrowserService.lifecycle.currentState == Lifecycle.State.STARTED }, 200)
+        TestUtils.waitForTrueOrFail({ audioBrowserService.lifecycle.currentState == Lifecycle.State.STARTED }, 200,
+            "lifecycle started")
         serviceFixture.startService()
         // TODO: improve
         Thread.sleep(2000)
@@ -83,7 +85,7 @@ class AudioBrowserServiceTest {
         serviceFixture.mediaBrowser.disconnect()
         serviceFixture.unbindService()
         serviceFixture.stopService()
-        TestUtils.waitForTrueOrFail({ isDestroyed }, 1000)
+        TestUtils.waitForTrueOrFail({ isDestroyed }, 1000, "isDestroyed")
     }
 
 }

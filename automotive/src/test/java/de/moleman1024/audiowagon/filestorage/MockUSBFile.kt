@@ -5,7 +5,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 package de.moleman1024.audiowagon.filestorage
 
-import com.github.mjdev.libaums.fs.UsbFile
+import me.jahnen.libaums.core.fs.UsbFile
 import de.moleman1024.audiowagon.log.Logger
 import java.nio.ByteBuffer
 

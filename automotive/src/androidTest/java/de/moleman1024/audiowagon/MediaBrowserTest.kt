@@ -13,6 +13,7 @@ import de.moleman1024.audiowagon.util.MediaBrowserTraversal
 import de.moleman1024.audiowagon.util.ServiceFixture
 import de.moleman1024.audiowagon.util.TestUtils
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.runBlocking
 import org.junit.*
 
 private const val TAG = "MediaBrowserTest"
@@ -44,11 +45,11 @@ class MediaBrowserTest {
             // TODO: find a way to provide .img files, too big for repository
             val sdCardMediaDevice = SDCardMediaDevice(SD_CARD_ID, ROOT_DIR)
             audioBrowserService.setMediaDeviceForTest(sdCardMediaDevice)
-            audioBrowserService.updateConnectedDevices()
+            audioBrowserService.updateAttachedDevices()
             // this will take a minute or so
             TestUtils.waitForTrueOrFail(
                 { audioBrowserService.getIndexingStatus().any { it == IndexingStatus.COMPLETED } },
-                TIMEOUT_MS_LIBRARY_CREATION
+                TIMEOUT_MS_LIBRARY_CREATION, "indexing completed"
             )
             Logger.info(TAG, "Indexing was completed")
         }

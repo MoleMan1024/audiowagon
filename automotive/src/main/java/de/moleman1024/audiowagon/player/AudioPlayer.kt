@@ -13,6 +13,7 @@ import android.os.PersistableBundle
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import androidx.annotation.VisibleForTesting
+import de.moleman1024.audiowagon.POPUP_TIMEOUT_MS
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.SharedPrefs
 import de.moleman1024.audiowagon.Util
@@ -220,8 +221,8 @@ class AudioPlayer(
                     MediaPlayer.MEDIA_ERROR_UNSUPPORTED ->
                         playerStatus.errorMsg = context.getString(R.string.error_not_supported)
                     else -> {
-                        val numConnectedDevices = audioFileStorage.getNumConnectedDevices()
-                        if (numConnectedDevices <= 0) {
+                        val numAvailableDevices = audioFileStorage.getNumAvailableDevices()
+                        if (numAvailableDevices <= 0) {
                             playerStatus.errorMsg = context.getString(R.string.error_no_USB_device)
                         } else {
                             playerStatus.errorMsg = context.getString(R.string.error_unknown)
@@ -266,7 +267,7 @@ class AudioPlayer(
             setState(currentMediaPlayer, AudioPlayerState.PAUSED)
             playerStatus.playbackState = PlaybackStateCompat.STATE_PAUSED
             notifyPlayerStatusChange()
-            logger.flushToUSB()
+            logger.setFlushToUSBFlag()
         }
     }
 
@@ -317,6 +318,18 @@ class AudioPlayer(
                 }
             }
             currentMediaPlayer?.seekTo(millisec)
+        }
+    }
+
+    suspend fun rewind(millisec: Int) {
+        withContext(dispatcher) {
+            logger.debug(TAG, "rewind(millisec=$millisec)")
+            val currentPosMilliSec = getCurrentPositionMilliSec()
+            var newPosMilliSec = currentPosMilliSec - millisec
+            if (newPosMilliSec < 0) {
+                newPosMilliSec = 0
+            }
+            seekTo(newPosMilliSec.toInt())
         }
     }
 
@@ -424,7 +437,7 @@ class AudioPlayer(
                     logger.debug(TAG, "Shuffle is already turned on")
                     return@withContext
                 }
-                playbackQueue.setShuffleOn()
+                playbackQueue.setShuffleOnExceptFirstItem()
             } else {
                 if (!playerStatus.isShuffling) {
                     logger.debug(TAG, "Shuffle is already turned off")
@@ -608,12 +621,12 @@ class AudioPlayer(
                 numFilesNotFound += 1
                 if (numFilesNotFound < 5) {
                     logger.debug(TAG, "File not found, trying to play next item in queue instead: ${AudioFile(uri).name}")
-                    delay(4000)
+                    delay(POPUP_TIMEOUT_MS)
                     logger.debug(TAG, "Skipping next track after delay for file not found")
                     skipNextTrack()
                 } else {
                     logger.error(TAG, "Too many files not found, update metadata or check your playlist")
-                    delay(4000)
+                    delay(POPUP_TIMEOUT_MS)
                     playerStatus.playbackState = PlaybackStateCompat.STATE_ERROR
                     notifyPlayerStatusChange()
                 }
@@ -811,7 +824,7 @@ class AudioPlayer(
         }
     }
 
-    suspend fun maybeShuffleQueue() {
+    suspend fun maybeShuffleNewQueue() {
         withContext(dispatcher) {
             if (isShuffling()) {
                 playbackQueue.setShuffleOn()

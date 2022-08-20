@@ -53,21 +53,30 @@ class IndexingTest {
         TestUtils.deleteDatabaseDirectory()
         val sdCardMediaDevice = SDCardMediaDevice(SD_CARD_ID, ROOT_DIR)
         audioBrowserService.setMediaDeviceForTest(sdCardMediaDevice)
-        audioBrowserService.updateConnectedDevices()
+        audioBrowserService.updateAttachedDevices()
         val waitForIndexingTimeoutMS = 1000 * 5
         TestUtils.waitForTrueOrFail(
             { audioBrowserService.getIndexingStatus().any { it == IndexingStatus.INDEXING } },
-            waitForIndexingTimeoutMS
+            waitForIndexingTimeoutMS, "indexing"
         )
         Logger.debug(TAG, "Indexing is ongoing")
         Thread.sleep(100)
         Logger.debug(TAG, "Will re-index now")
         audioBrowserService.setMediaDeviceForTest(sdCardMediaDevice)
-        audioBrowserService.updateConnectedDevices()
+        audioBrowserService.updateAttachedDevices()
+        val waitForStoppedTimeoutMS = 1000 * 5
+        TestUtils.waitForTrueOrFail(
+            { audioBrowserService.getIndexingStatus().any { it != IndexingStatus.INDEXING } },
+            waitForStoppedTimeoutMS, "stopped"
+        )
+        TestUtils.waitForTrueOrFail(
+            { audioBrowserService.getIndexingStatus().any { it == IndexingStatus.INDEXING } },
+            waitForIndexingTimeoutMS, "indexing"
+        )
         val waitForCompletedTimeoutMS = 1000 * 20
         TestUtils.waitForTrueOrFail(
             { audioBrowserService.getIndexingStatus().any { it == IndexingStatus.COMPLETED } },
-            waitForCompletedTimeoutMS
+            waitForCompletedTimeoutMS, "indexing completed"
         )
         runBlocking {
             // The number of tracks in database was messed up when multiple indexing coroutines were running in

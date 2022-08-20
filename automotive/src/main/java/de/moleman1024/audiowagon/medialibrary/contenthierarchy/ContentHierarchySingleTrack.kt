@@ -35,7 +35,7 @@ class ContentHierarchySingleTrack(
         val repo: AudioItemRepository = audioItemLibrary.getRepoForContentHierarchyID(id) ?: return listOf()
         val tracks: MutableList<AudioItem> = mutableListOf()
         try {
-            // play a single track only
+            // get a single track only
             tracks += repo.getTrack(id.trackID)
         } catch (exc: RuntimeException) {
             logger.exception(TAG, exc.message.toString(), exc)

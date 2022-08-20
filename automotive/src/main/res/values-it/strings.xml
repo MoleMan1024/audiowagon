@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+SPDX-FileCopyrightText: 2021 MoleMan1024 <moleman1024dev@gmail.com>
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
+<!-- initial translation by: Luca M -->
+<resources>
+    <string name="app_name">AudioWagon</string>
+    <string name="queue_title">Ascolta coda</string>
+    <string name="search_group_tracks">Tracce</string>
+    <string name="search_group_artists">Artisti</string>
+    <string name="search_group_albums">Album</string>
+    <string name="search_group_files">File</string>
+    <string name="browse_tree_category_tracks">Tracce</string>
+    <string name="browse_tree_category_artists">Artisti</string>
+    <string name="browse_tree_category_albums">Album</string>
+    <string name="browse_tree_pseudo_track_shuffle_all">Ordine casuale</string>
+    <string name="browse_tree_pseudo_play_all">Ascolta tutto</string>
+    <string name="browse_tree_unknown_album">Album sconosciuto</string>
+    <string name="browse_tree_unknown_artist">Artista sconosciuto</string>
+    <string name="browse_tree_various_artists">Artisti vari</string>
+    <string name="browse_tree_no_entries_title">Nessun file audio</string>
+    <string name="browse_tree_no_usb_drive">Inserisci un dispositivo USB</string>
+    <string name="browse_tree_usb_drive_ejected">Dispositivo USB non leggibile</string>
+    <string name="browse_tree_need_to_agree_legal_title">Note legali non accettate</string>
+    <string name="browse_tree_need_to_agree_legal_desc">Controlla le impostazioni</string>
+    <string name="toast_indexing_started">Inizio indicizzazione USB …</string>
+    <string name="toast_indexing_completed">Indicizzazione USB completata</string>
+    <string name="no_next_track">Nessuna traccia successiva</string>
+    <string name="no_prev_track">Nessuna traccia precedente</string>
+    <string name="eject_completed">Dispositivo USB espulso, ora è possibile scollegarlo</string>
+    <string name="error">ERRORE: %1$s</string>
+    <string name="error_audio_focus_denied">Non è possibile ottenere il focus audio</string>
+    <string name="error_USB_init">Errore nella connessione al dispositivo USB</string>
+    <string name="error_no_filesystem">Filesystem non supportato</string>
+    <string name="error_library_creation_fail">Creazione della libreria fallita</string>
+    <string name="error_invalid_state">Stato invalido</string>
+    <string name="error_IO">Errore I/O</string>
+    <string name="error_malformed_data">Data malformata</string>
+    <string name="error_timeout">Timeout</string>
+    <string name="error_not_supported">Non supportato</string>
+    <string name="error_no_USB_device">Nessun dispositivo USB</string>
+    <string name="error_unknown">Errore sconosciuto</string>
+    <string name="notif_action_play">Play</string>
+    <string name="notif_action_pause">Pausa</string>
+    <string name="notif_action_stop">Stop</string>
+    <string name="notif_action_next">Successiva</string>
+    <string name="notif_action_prev">Precedente</string>
+    <string name="notif_channel_name">Notifiche AudioWagon</string>
+    <string name="notif_channel_desc">Canale delle notifiche AudioWagon</string>
+    <string name="notif_channel_name_indexing">Notifiche indicizzazione AudioWagon</string>
+    <string name="notif_channel_desc_indexing">Canale delle notifiche indicizzazione AudioWagon</string>
+    <string name="notif_indexing_title">Stato indicizzazione USB</string>
+    <string name="notif_indexing_text_in_progress">In corso …</string>
+    <string name="notif_indexing_text_in_progress_num_items">Trovati elementi: %1$d …</string>
+    <string name="notif_indexing_text_completed">Completato</string>
+    <string name="action_shuffle_turn_on">Shuffle acceso</string>
+    <string name="action_shuffle_turn_off">Shuffle spento</string>
+    <string name="action_repeat_turn_on">Ripeti acceso</string>
+    <string name="action_repeat_turn_off">Ripeti spento</string>
+    <string name="action_eject">Espelli</string>
+    <string name="action_rewind">Riavvolgere</string>
+    <string name="settings_title">Impostazioni</string>
+    <string name="setting_enable_equalizer_title">Equalizzatore</string>
+    <string name="setting_sound_category_title">Suono</string>
+    <string name="setting_equalizer_preset_title">Preset equalizzatore</string>
+    <string name="equalizer_preset_less_bass">Meno bassi</string>
+    <string name="equalizer_preset_more_bass">Più bassi</string>
+    <string name="equalizer_preset_less_treble">Meno alti</string>
+    <string name="equalizer_preset_more_treble">Più alti</string>
+    <string name="equalizer_preset_P2">P2</string>
+    <string name="equalizer_preset_P2_plus">P2+</string>
+    <string name="equalizer_preset_V_shape">Forma a V</string>
+    <string name="setting_general_category_title">Generale</string>
+    <string name="setting_log_to_USB_title">Scrivi file di log sul dispositivo USB</string>
+    <string name="setting_log_to_USB_desc">Fornisci questi file di log allo sviluppatore quando crei un bug
+report.</string>
+    <string name="setting_USB_status_title">Stato USB</string>
+    <string name="setting_USB_status_ok">OK</string>
+    <string name="setting_USB_status_not_connected">Non connesso</string>
+    <string name="setting_USB_status_unknown">Sconosciuto. Provare a ricollegare il dispositivo USB o riavviare
+Android</string>
+    <string name="setting_USB_status_connected_no_permission">Connesso. Nessun permesso</string>
+    <string name="setting_USB_status_error">Errore in lettura/scrittura, provare a ricollegare il dispositivo USB o
+formattarlo (formato FAT32) se l\'errore persiste</string>
+    <string name="setting_USB_status_ejected">Espulso. Ora puoi rimuovere il dispositivo USB</string>
+    <string name="setting_USB_status_not_compatible">Non compatibile. Per favore formatta il dispositivo USB
+utilizzando il formato FAT32</string>
+    <string name="setting_show_legal_disclaimer_title">Mostra note legali</string>
+    <string name="setting_show_legal_disclaimer_desc">Devi accettare le note legali prima di poter utilizzare
+l\'app</string>
+    <string name="setting_version">Versione</string>
+    <string name="legal_disclaimer_title">AudioWagon: Note legali</string>
+    <string name="legal_disclaimer_distraction_heading">Distrazione autista</string>
+    <string name="legal_disclaimer_distraction_text">Accetti di sottostare alle leggi applicabili dallo stato in
+merito all\'utilizzo di questo software sul sistema di infotainment a bordo.\nUtilizza il software solo quando le
+condizioni stradali lo permettono.</string>
+    <string name="legal_disclaimer_liability_heading">Garanzia/Responsabilità</string>
+    <string name="legal_disclaimer_liability_text">Questo software viene fornito \"as-is\" senza garanzie implicite o
+esplicite.\nGli autori non possono essere ritenuti responsabili in nessun caso di eventuali danni provocati
+dall\'utilizzo del software.</string>
+    <string name="legal_disclaimer_license_heading">Licenza</string>
+    <string name="legal_disclaimer_license_text">Questo software è sotto licenza GPLv3.\nCreato da MoleMan1024</string>
+    <string name="legal_disclaimer_third_party_licenses_heading">Licenze terze parti</string>
+    <string name="legal_disclaimer_third_party_licenses_text">Questa applicazione utilizza contenuti presi dai seguenti
+autori, tutti sotto licenza Apache 2.0:\n\n&#x2013; Librerie varie create da Android Open Source Project\n&#x2013;
+Libreria libaums creata da Magnus Jahnen\n&#x2013; Icone vettoriali Material design create da Google\n&#x2013; Firebase
+Crashlytics\n\nLicense texts:\nwww.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/licenses/gpl-3.0.html</string>
+    <string name="legal_disclaimer_confirm_btn">Accetto</string>
+    <string name="legal_disclaimer_cancel_btn">Annulla</string>
+    <string name="error_no_tracks">Nessuna traccia</string>
+    <string name="error_not_enough_space_for_log">Spazio disco non sufficiente per scrivere i file di log</string>
+    <string name="browse_tree_category_files">File</string>
+    <string name="setting_library_category_title">Media</string>
+    <string name="setting_read_metadata">Leggi metadati</string>
+    <string name="setting_delete_databases">Cancella database</string>
+    <string name="setting_database_status_title">Database</string>
+    <string name="setting_enable_replaygain">ReplayGain</string>
+    <string name="searching_voice_input">Ricerca vocale: \"%1$s\"</string>
+    <string name="setting_read_metadata_when_connected">Quando dispositivo USB connesso</string>
+    <string name="setting_read_metadata_manual">Manualmente</string>
+    <string name="setting_read_metadata_filepaths_only">Solo percorsi file</string>
+    <string name="setting_read_metadata_off">Spento</string>
+    <string name="setting_read_metadata_start_now">Leggi metadati ora</string>
+    <string name="browse_tree_metadata_not_yet_indexed_title">Metadati ancora da indicizzare</string>
+    <string name="browse_tree_metadata_not_yet_indexed_desc">Controlla le impostazioni</string>
+    <string name="setting_audiofocus_behavior">Comportamento durante avvisi navigatore</string>
+    <string name="setting_audiofocus_pause">Metti in pausa</string>
+    <string name="setting_audiofocus_duck">Volume più basso</string>
+    <string name="setting_crash_reporting_title">Invia report di crash</string>
+    <string name="setting_crash_reporting_desc">Invia automaticamente report di crash allo sviluppatore per
+migliorare l\'app (richiede connessione a internet).</string>
+    <string name="cannot_read_file">Il file non può essere letto: %1$s</string>
+    <string name="setting_website_title">Sito Web</string>
+    <string name="setting_album_display">Mostra album come</string>
+    <string name="setting_album_display_grid">Griglia</string>
+    <string name="setting_album_display_list">Lista</string>
+    <string name="setting_requires_media_center_restart">(qualsiasi modifica richiede il riavvio dell\'app \"Media
+Center\")</string>
+    <string name="error_no_results">Niente trovato: \"%1$s\"</string>
+</resources>
+

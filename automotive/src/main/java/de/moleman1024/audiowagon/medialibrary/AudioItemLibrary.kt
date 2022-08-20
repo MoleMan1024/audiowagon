@@ -111,6 +111,7 @@ class AudioItemLibrary(
      */
     @ExperimentalCoroutinesApi
     suspend fun buildLibrary(channel: ReceiveChannel<FileLike>, callback: () -> Unit) {
+        logger.verbose(TAG, "buildLibrary(channel$channel)")
         val metadataReadSetting = sharedPrefs.getMetadataReadSettingEnum(context, logger, TAG)
         val isReadAudioFileMetadata =
             metadataReadSetting in listOf(MetadataReadSetting.WHEN_USB_CONNECTED, MetadataReadSetting.MANUALLY)
@@ -135,7 +136,7 @@ class AudioItemLibrary(
                     // ignored if too many are sent
                     if (numFilesSeenWhenBuildingLibrary % UPDATE_INDEX_NOTIF_FOR_EACH_NUM_ITEMS == 0) {
                         gui.updateIndexingNotification(numFilesSeenWhenBuildingLibrary)
-                        logger.flushToUSB()
+                        logger.setFlushToUSBFlag()
                         callback()
                     }
                 } else if (fileOrDirectory is Directory) {
@@ -151,9 +152,13 @@ class AudioItemLibrary(
                 repo.clean()
             }
             repo.updateGroups()
-            setDatabaseStatus(Status(storageID = repo.storageID, wasCompletedOnce = true))
+            if (areAnyReposAvail()) {
+                setDatabaseStatus(Status(storageID = repo.storageID, wasCompletedOnce = true))
+            }
         } else {
-            setDatabaseStatus(Status(storageID = repo.storageID, wasCompletedOnce = false))
+            if (areAnyReposAvail()) {
+                setDatabaseStatus(Status(storageID = repo.storageID, wasCompletedOnce = false))
+            }
         }
         isBuildingLibrary = false
         isBuildLibraryCancelled = false
@@ -612,7 +617,7 @@ class AudioItemLibrary(
         return searchResults
     }
 
-    suspend fun searchUnspecific(query: String): MutableList<AudioItem> {
+    private suspend fun searchUnspecific(query: String): MutableList<AudioItem> {
         val searchResults: MutableList<AudioItem> = mutableListOf()
         if (query.isBlank()) {
             return searchResults
@@ -627,6 +632,25 @@ class AudioItemLibrary(
         }.toMutableList()
     }
 
+    /**
+     * Search given an unspecific query and a fallback query. This is used for voice search in case first query does
+     * not return any results e.g. "ACDC" but alternative fields "AC/DC" do return results
+     */
+    suspend fun searchUnspecificWithFallback(query: String, fallbackQuery: String? = null): List<AudioItem> {
+        var audioItems: MutableList<AudioItem> = searchUnspecific(query)
+        if (audioItems.isNotEmpty()) {
+            return audioItems
+        } else {
+            logger.debug(TAG, "No results for primary query, try fallback query: $fallbackQuery")
+            fallbackQuery?.let {
+                if (it.isNotBlank() && it != query) {
+                    audioItems = searchUnspecific(it)
+                }
+            }
+        }
+        return audioItems
+    }
+
     fun createMetadataForItem(audioItem: AudioItem): MediaMetadataCompat {
         logger.debug(TAG, "createMetadataForItem($audioItem)")
         return metadataMaker.createMetadataForItem(audioItem)
@@ -635,6 +659,7 @@ class AudioItemLibrary(
     private fun getAlbumArtForFile(file: FileLike): ByteArray? {
         val byteArrayFromCache: ByteArray? = recentAudioItemToAlbumArtMap[file.uri.toString()]
         if (byteArrayFromCache != null) {
+            logger.debug(TAG, "Returning album art from cache for: $file")
             return byteArrayFromCache
         }
         var albumArtBytes: ByteArray? = null
@@ -645,7 +670,7 @@ class AudioItemLibrary(
                 if (albumArtBytes != null) {
                     val albumArtResized = metadataMaker.resizeAlbumArt(albumArtBytes)
                     if (albumArtResized != null) {
-                        logger.verbose(TAG, "Got album art with size ${albumArtResized.size} for: ${audioItem.uri}")
+                        logger.debug(TAG, "Got album art with size ${albumArtResized.size} for: ${audioItem.uri}")
                         recentAudioItemToAlbumArtMap[file.uri.toString()] = albumArtBytes
                     }
                     return albumArtResized
@@ -655,10 +680,7 @@ class AudioItemLibrary(
                 albumArtBytes = audioFileStorage.getByteArrayForURI(file.uri)
                 val albumArtResized = metadataMaker.resizeAlbumArt(albumArtBytes)
                 if (albumArtResized != null) {
-                    logger.verbose(
-                        TAG,
-                        "Found album art in directory with size ${albumArtResized.size} for: ${file.uri}"
-                    )
+                    logger.debug(TAG, "Found album art in directory with size ${albumArtResized.size} for: ${file.uri}")
                     recentAudioItemToAlbumArtMap[file.uri.toString()] = albumArtBytes
                 }
                 return albumArtResized
@@ -669,23 +691,44 @@ class AudioItemLibrary(
     }
 
     fun getAlbumArtForArtURI(uri: Uri): ByteArray? {
-        if (!uri.toString().contains("$ART_URI_PART/$ART_URI_PART_FILE")) {
+        val uriString = uri.toString()
+        if (!uriString.contains("$ART_URI_PART/$ART_URI_PART_FILE")) {
             val repo = getPrimaryRepository()
-            val albumForAlbumArt = repo?.getAlbumForAlbumArt(uri.toString()) ?: return null
-            val albumArtFile: FileLike
-            if (albumForAlbumArt.albumArtURIString.isBlank()) {
-                return null
-            }
-            val albumArtSourceURI = Uri.parse(albumForAlbumArt.albumArtSourceURIString)
-            if (albumArtSourceURI == Uri.EMPTY) {
-                return null
-            }
-            albumArtFile = if (albumForAlbumArt.hasFolderImage) {
-                GeneralFile(albumArtSourceURI)
+            val albumForAlbumArt = repo?.getAlbumForAlbumArt(uriString)
+            if (albumForAlbumArt != null && albumForAlbumArt.albumArtURIString.isNotBlank()) {
+                logger.debug(TAG, "Got album for album art: $albumForAlbumArt")
+                val albumArtFile: FileLike
+                val albumArtSourceURI = Uri.parse(albumForAlbumArt.albumArtSourceURIString)
+                if (albumArtSourceURI == Uri.EMPTY) {
+                    logger.debug(TAG, "Album art URI is empty for: $albumForAlbumArt")
+                    return null
+                }
+                albumArtFile = if (albumForAlbumArt.hasFolderImage) {
+                    GeneralFile(albumArtSourceURI)
+                } else {
+                    AudioFile(albumArtSourceURI)
+                }
+                return getAlbumArtForFile(albumArtFile)
             } else {
-                AudioFile(albumArtSourceURI)
+                // No album associated with this URI, could be a track without album info
+                // https://github.com/MoleMan1024/audiowagon/issues/79
+                val trackForAlbumArt = repo?.getTrackForAlbumArt(uriString)
+                if (trackForAlbumArt != null) {
+                    if (trackForAlbumArt.albumArtURIString.isBlank()) {
+                        logger.warning(TAG, "Track album art URI is blank")
+                        return null
+                    }
+                    val albumArtSourceURI = Uri.parse(trackForAlbumArt.uriString)
+                    if (albumArtSourceURI == Uri.EMPTY) {
+                        return null
+                    }
+                    val fileForTrack = AudioFile(albumArtSourceURI)
+                    return getAlbumArtForFile(fileForTrack)
+                } else {
+                    logger.warning(TAG, "No track for album art")
+                    return null
+                }
             }
-            return getAlbumArtForFile(albumArtFile)
         } else {
             val pathInURI = uri.path?.replace("^/$ART_URI_PART/$ART_URI_PART_FILE".toRegex(), "") ?: return null
             val audioFile =
@@ -697,14 +740,17 @@ class AudioItemLibrary(
 
     private fun findAlbumArtFor(audioFile: AudioFile): FileLike? {
         val audioItem = createAudioItemForFile(audioFile)
-        val albumArtBytes = metadataMaker.getEmbeddedAlbumArtForAudioItem(audioItem)
-        if (albumArtBytes != null) {
+        val hasEmbeddedAlbumArt = metadataMaker.hasEmbeddedAlbumArt(audioItem)
+        if (hasEmbeddedAlbumArt) {
+            logger.debug(TAG, "Found embedded album art for: ${audioFile.name}")
             return AudioFile(audioFile.uri)
         }
         val albumArtFile = audioFileStorage.getAlbumArtFileInDirectoryForURI(audioItem.uri)
         if (albumArtFile != null) {
+            logger.debug(TAG, "Found album art in directory for: ${audioFile.name}")
             return GeneralFile(albumArtFile.uri)
         }
+        logger.debug(TAG, "No album art for: $audioFile")
         return null
     }
 

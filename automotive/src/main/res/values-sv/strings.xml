@@ -59,6 +59,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
     <string name="action_repeat_turn_on">Repetition på</string>
     <string name="action_repeat_turn_off">Repetition av</string>
     <string name="action_eject">Mata ut</string>
+    <string name="action_rewind">Spola tillbaka</string>
     <string name="settings_title">Inställningar</string>
     <string name="setting_enable_equalizer_title">Equalizer</string>
     <string name="setting_sound_category_title">Ljud</string>
@@ -109,15 +110,13 @@ Google\n&#x2013; Firebase Crashlytics\n\nLicenstexter:\nwww.apache.org/licenses/
     <string name="legal_disclaimer_cancel_btn">Avbryt</string>
     <string name="error_no_tracks">Inga spår</string>
     <string name="error_not_enough_space_for_log">Inte tillräckligt utrymme att skriva logg-fil</string>
-    <string name="setting_USB_status_too_many_files_in_dir">För många filer i en katalog. Vänligen använd
-underkataloger</string>
     <string name="browse_tree_category_files">Filer</string>
     <string name="setting_library_category_title">Media</string>
     <string name="setting_read_metadata">Läs metadata</string>
     <string name="setting_delete_databases">Ta bort databaser</string>
     <string name="setting_database_status_title">Databas</string>
     <string name="setting_enable_replaygain">ReplayGain</string>
-    <string name="searching_voice_input">Söka efter: \"%1$s\"</string>
+    <string name="searching_voice_input">Röstsökning: \"%1$s\"</string>
     <string name="setting_read_metadata_when_connected">När USB-enheten är ansluten</string>
     <string name="setting_read_metadata_manual">Manuellt</string>
     <string name="setting_read_metadata_filepaths_only">Endast filsökvägar</string>
@@ -138,4 +137,5 @@ förbättra appen (kräver internetanslutning).</string>
     <string name="setting_album_display_list">Lista</string>
     <string name="setting_requires_media_center_restart">(alla ändringar kräver omstart av appen
 \"Media Center\")</string>
+    <string name="error_no_results">Inget hittat: \"%1$s\"</string>
 </resources>

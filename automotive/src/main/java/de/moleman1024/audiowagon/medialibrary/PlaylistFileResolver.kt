@@ -10,6 +10,8 @@ import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.filestorage.*
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.yield
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserException
 import org.xmlpull.v1.XmlPullParserFactory
@@ -30,7 +32,7 @@ class PlaylistFileResolver(
     private val playlistFileUri: Uri,
     private val audioFileStorage: AudioFileStorage
 ) {
-    private val inputStream: InputStream = audioFileStorage.getInputStream(playlistFileUri)
+    private val lockableInputStream: LockableInputStream = audioFileStorage.getInputStream(playlistFileUri)
 
     fun parseForAudioItems(): List<AudioItem> {
         val audioItems: List<AudioItem>
@@ -95,33 +97,37 @@ class PlaylistFileResolver(
     private fun parseXSPF(): MutableList<AudioItem> {
         logger.debug(TAG, "Parsing .xspf playlist file")
         val audioItems = mutableListOf<AudioItem>()
-        try {
-            val parserFactory = XmlPullParserFactory.newInstance()
-            val parser: XmlPullParser = parserFactory.newPullParser()
-            parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
-            parser.setInput(inputStream, null)
-            var tag: String?
-            var text = ""
-            var xmlEvent = parser.eventType
-            while (xmlEvent != XmlPullParser.END_DOCUMENT) {
-                tag = parser.name
-                when (xmlEvent) {
-                    XmlPullParser.TEXT -> {
-                        text = parser.text
-                    }
-                    XmlPullParser.END_TAG -> {
-                        if (tag == "location") {
-                            val filePath = XSPF_PREFIX.replace(Uri.decode(text), "")
-                            val pathInPlaylist = Paths.get(filePath)
-                            val audioItem = convertPathToAudioItem(pathInPlaylist.toString())
-                            audioItems.add(audioItem)
+        lockableInputStream.libaumsDispatcher?.let {
+            runBlocking(it) {
+                try {
+                    val parserFactory = XmlPullParserFactory.newInstance()
+                    val parser: XmlPullParser = parserFactory.newPullParser()
+                    parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
+                    parser.setInput(lockableInputStream.inputStream, null)
+                    var tag: String?
+                    var text = ""
+                    var xmlEvent = parser.eventType
+                    while (xmlEvent != XmlPullParser.END_DOCUMENT) {
+                        tag = parser.name
+                        when (xmlEvent) {
+                            XmlPullParser.TEXT -> {
+                                text = parser.text
+                            }
+                            XmlPullParser.END_TAG -> {
+                                if (tag == "location") {
+                                    val filePath = XSPF_PREFIX.replace(Uri.decode(text), "")
+                                    val pathInPlaylist = Paths.get(filePath)
+                                    val audioItem = convertPathToAudioItem(pathInPlaylist.toString())
+                                    audioItems.add(audioItem)
+                                }
+                            }
                         }
+                        xmlEvent = parser.next()
                     }
+                } catch (exc: XmlPullParserException) {
+                    logger.exception(TAG, exc.message.toString(), exc)
                 }
-                xmlEvent = parser.next()
             }
-        } catch (exc: XmlPullParserException) {
-            logger.exception(TAG, exc.message.toString(), exc)
         }
         return audioItems
     }
@@ -151,22 +157,28 @@ class PlaylistFileResolver(
 
     private fun getLines(): List<String> {
         val lines: MutableList<String> = mutableListOf()
-        try {
-            BufferedReader(InputStreamReader(inputStream)).use { br ->
-                var line: String?
-                while (br.readLine().also { line = it } != null) {
-                    line?.let {
-                        logger.debug(TAG, "Playlist content: $it")
-                        val lineSanitized = removeBOM(it.trim())
-                        if (lineSanitized.isNotBlank()) {
-                            lines.add(lineSanitized)
+        lockableInputStream.libaumsDispatcher?.let { dispatcher ->
+            runBlocking(dispatcher) {
+                try {
+                    BufferedReader(InputStreamReader(lockableInputStream.inputStream)).use { br ->
+                        var line: String?
+                        while (br.readLine().also { line = it } != null) {
+                            line?.let {
+                                logger.debug(TAG, "Playlist content: $it")
+                                val lineSanitized = removeBOM(it.trim())
+                                if (lineSanitized.isNotBlank()) {
+                                    lines.add(lineSanitized)
+                                }
+                            }
+                            yield()
                         }
                     }
+                } catch (exc: IOException) {
+                    logger.exception(TAG, exc.message.toString(), exc)
+                    lines.clear()
+                    return@runBlocking
                 }
             }
-        } catch (exc: IOException) {
-            logger.exception(TAG, exc.message.toString(), exc)
-            return listOf()
         }
         return lines
     }

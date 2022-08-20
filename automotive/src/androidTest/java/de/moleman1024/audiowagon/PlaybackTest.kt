@@ -8,7 +8,6 @@ package de.moleman1024.audiowagon
 import android.content.Intent
 import android.content.res.AssetManager
 import android.hardware.usb.UsbManager
-import android.os.Bundle
 import android.support.v4.media.MediaBrowserCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import androidx.test.platform.app.InstrumentationRegistry
@@ -42,6 +41,7 @@ class PlaybackTest {
     fun setUp() {
         Logger.debug(TAG, "setUp()")
         TestUtils.deleteDatabaseDirectory()
+        // TODO: delete persisted playback queue
         serviceFixture = ServiceFixture()
         browser = serviceFixture.createMediaBrowser()
         browser.connect()
@@ -108,6 +108,49 @@ class PlaybackTest {
         serviceFixture.transportControls?.playFromMediaId(playAllID, null)
         TestUtils.waitForAudioPlayerState(PlaybackStateCompat.STATE_PLAYING, audioBrowserService)
         Assert.assertEquals(3, serviceFixture.playbackQueue?.size)
+    }
+
+    /**
+     * https://github.com/MoleMan1024/audiowagon/issues/83
+     */
+    @Test
+    fun shuffleNewPlaybackQueue_default_firstTrackIsShuffled() {
+        serviceFixture.transportControls?.sendCustomAction("de.moleman1024.audiowagon.ACTION_SHUFFLE_OFF", null)
+        for (index in 0..20) {
+            createMP3().apply {
+                id3v2Tag.title = "Track${index}"
+            }.also { storeMP3(it, "$MUSIC_ROOT/folder/track${index}.mp3") }
+        }
+        attachUSBDevice(mockUSBDevice)
+        TestUtils.waitForIndexingCompleted(audioBrowserService)
+        // TODO: improve, wait for persistance
+        Thread.sleep(1000)
+        serviceFixture.transportControls?.stop()
+        Thread.sleep(500)
+        serviceFixture.transportControls?.sendCustomAction("de.moleman1024.audiowagon.ACTION_SHUFFLE_ON", null)
+        Thread.sleep(500)
+        val playAlbumID = "{\"type\":\"ALL_TRACKS_FOR_ALBUM\",\"alb\":1,$STORAGE_ID}"
+        var lastTrack = ""
+        // with shuffle on when playing back the same album multiple times we should get a random order also for
+        // first item in playback queue
+        var differentItemFound = false
+        for (tries in 0..10) {
+            serviceFixture.transportControls?.playFromMediaId(playAlbumID, null)
+            TestUtils.waitForAudioPlayerState(PlaybackStateCompat.STATE_PLAYING, audioBrowserService)
+            serviceFixture.transportControls?.pause()
+            TestUtils.waitForAudioPlayerState(PlaybackStateCompat.STATE_PAUSED, audioBrowserService)
+            val firstTrackMediaID = serviceFixture.playbackQueue?.get(0)?.description?.mediaId.toString()
+            if (lastTrack.isNotBlank() && firstTrackMediaID.isNotBlank()) {
+                if (lastTrack != firstTrackMediaID) {
+                    differentItemFound = true
+                    break
+                }
+            }
+            lastTrack = firstTrackMediaID
+        }
+        if (!differentItemFound) {
+            throw AssertionError("First item in playback queue was not shuffled")
+        }
     }
 
 }

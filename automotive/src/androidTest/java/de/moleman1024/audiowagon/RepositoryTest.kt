@@ -41,10 +41,11 @@ class RepositoryTest {
         audioBrowserService.setUseInMemoryDatabase()
         val sdCardMediaDevice = SDCardMediaDevice(SD_CARD_ID, "/metadata")
         audioBrowserService.setMediaDeviceForTest(sdCardMediaDevice)
-        audioBrowserService.updateConnectedDevices()
+        // FIXME: these tests will fail if permission for SD card not yet given
+        audioBrowserService.updateAttachedDevices()
         TestUtils.waitForTrueOrFail(
             { audioBrowserService.getIndexingStatus().any { it == IndexingStatus.COMPLETED } },
-            TIMEOUT_MS_LIBRARY_CREATION
+            TIMEOUT_MS_LIBRARY_CREATION, "indexing completed"
         )
         Logger.info(TAG, "Indexing was completed")
     }

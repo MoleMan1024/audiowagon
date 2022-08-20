@@ -32,8 +32,6 @@ class PowerEventReceiver : BroadcastReceiver() {
             Intent.ACTION_SHUTDOWN,
             Intent.ACTION_SCREEN_OFF -> audioBrowserService?.suspend()
             Intent.ACTION_SCREEN_ON -> audioBrowserService?.wakeup()
-            // Intent.ACTION_MY_PACKAGE_REPLACED needs to be in manifest to work, it will be registered too late
-            // otherwise
             // Intent.ACTION_BATTERY_CHANGED was not helpful
             else -> {
                 // ignore

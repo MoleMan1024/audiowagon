@@ -80,11 +80,11 @@ class ContentHierarchyRootFiles(
     }
 
     private fun createPseudoNoEntriesItem(): MediaItem {
-        val numConnectedDevices = audioFileStorage.getNumConnectedDevices()
+        val numAvailableDevices = audioFileStorage.getNumAvailableDevices()
         var title = context.getString(R.string.browse_tree_no_entries_title)
         var subtitle: String
         subtitle = context.getString(R.string.browse_tree_no_usb_drive)
-        if (numConnectedDevices > 0) {
+        if (numAvailableDevices > 0) {
             if (sharedPrefs.isLegalDisclaimerAgreed(context)) {
                 subtitle = context.getString(R.string.browse_tree_usb_drive_ejected)
             } else {

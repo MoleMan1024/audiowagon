@@ -23,6 +23,7 @@ import de.moleman1024.audiowagon.filestorage.usb.USBAudioDataSource
 import de.moleman1024.audiowagon.filestorage.usb.USBDeviceConnections
 import de.moleman1024.audiowagon.filestorage.usb.USBDeviceStorageLocation
 import de.moleman1024.audiowagon.filestorage.usb.USBMediaDevice
+import de.moleman1024.audiowagon.log.CrashReporting
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.RESOURCE_ROOT_URI
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyElement
@@ -34,7 +35,6 @@ import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.channels.produce
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import java.io.InputStream
 
 private const val TAG = "AudioFileStor"
 private val logger = Logger
@@ -53,12 +53,13 @@ open class AudioFileStorage(
     private val scope: CoroutineScope,
     private val dispatcher: CoroutineDispatcher,
     usbDevicePermissions: USBDevicePermissions,
-    private val sharedPrefs: SharedPrefs
+    private val sharedPrefs: SharedPrefs,
+    crashReporting: CrashReporting
 ) {
     // TODO: this was originally intended to support multiple storage locations, but we only allow a single one now
     private val audioFileStorageLocations: MutableList<AudioFileStorageLocation> = mutableListOf()
     private var usbDeviceConnections: USBDeviceConnections = USBDeviceConnections(
-        context, scope, dispatcher, usbDevicePermissions, sharedPrefs
+        context, scope, usbDevicePermissions, sharedPrefs, crashReporting
     )
     private var dataSources = mutableListOf<MediaDataSource>()
     private val dataSourcesMutex = Mutex()
@@ -74,6 +75,7 @@ open class AudioFileStorage(
     }
 
     init {
+        logger.debug(TAG, "Init AudioFileStorage()")
         cleanAlbumArtCache()
         initUSBObservers()
         try {
@@ -85,6 +87,7 @@ open class AudioFileStorage(
 
     private fun initUSBObservers() {
         usbDeviceConnections.registerForUSBIntents()
+        // this callback is called from a coroutine
         usbDeviceConnections.deviceObservers.add { deviceChange ->
             if (deviceChange.error.isNotBlank()) {
                 val storageChange = StorageChange(error = deviceChange.error)
@@ -201,10 +204,10 @@ open class AudioFileStorage(
         storageLocations.first().setDetached()
     }
 
-    fun updateConnectedDevices() {
+    fun updateAttachedDevices() {
         val isDebugBuild = Util.isDebugBuild(context)
         val isInEmulator = Util.isRunningInEmulator()
-        usbDeviceConnections.updateConnectedDevices()
+        usbDeviceConnections.updateAttachedDevices()
         if (isDebugBuild) {
             val sdCardDevicePermissions = SDCardDevicePermissions(context)
             if (!sdCardDevicePermissions.isPermitted()) {
@@ -242,7 +245,6 @@ open class AudioFileStorage(
             fileProducerChannels.add(fileChannel)
         }
         logger.debug(TAG, "Merging file producer channels: $fileProducerChannels")
-        // read about coroutines scope/context: https://elizarov.medium.com/coroutine-context-and-scope-c8b255d59055
         return scope.produce(dispatcher) {
             fileProducerChannels.forEach { channel ->
                 channel.consumeEach {
@@ -354,7 +356,7 @@ open class AudioFileStorage(
         return getStorageLocationForID(audioFile.storageID)
     }
 
-    fun removeAllDevicesFromStorage() {
+    fun prepareForEject() {
         audioFileStorageLocations.forEach {
             val storageChange = StorageChange(it.storageID, StorageAction.REMOVE)
             notifyObservers(storageChange)
@@ -363,16 +365,20 @@ open class AudioFileStorage(
         usbDeviceConnections.updateUSBStatusInSettings(R.string.setting_USB_status_ejected)
     }
 
-    fun enableLogToUSB() {
-        usbDeviceConnections.enableLogToUSB()
+    suspend fun enableLogToUSBPreference() {
+        usbDeviceConnections.enableLogToUSBPreference()
+    }
+
+    fun disableLogToUSBPreference() {
+        usbDeviceConnections.disableLogToUSBPreference()
     }
 
     fun disableLogToUSB() {
         usbDeviceConnections.disableLogToUSB()
     }
 
-    fun getNumConnectedDevices(): Int {
-        return usbDeviceConnections.getNumConnectedDevices() + mediaDevicesForTest.size
+    fun getNumAvailableDevices(): Int {
+        return usbDeviceConnections.getNumAttachedPermittedDevices() + mediaDevicesForTest.size
     }
 
     fun setIndexingStatus(storageID: String, indexingStatus: IndexingStatus) {
@@ -487,7 +493,7 @@ open class AudioFileStorage(
         logger.debug(TAG, "Looking for album art in directory: $directory")
         if (recentDirToAlbumArtMap.containsKey(directory)) {
             val albumArtInCache = recentDirToAlbumArtMap[directory]
-            logger.debug(TAG, "Returning album art for $directory from cache: ${albumArtInCache?.uri}")
+            logger.verbose(TAG, "Returning album art for $directory from cache: ${albumArtInCache?.uri}")
             return albumArtInCache
         }
         val storageLocation = getStorageLocationForURI(uri)
@@ -511,9 +517,13 @@ open class AudioFileStorage(
         return storageLocation.getByteArrayForURI(uri)
     }
 
-    fun getInputStream(uri: Uri): InputStream {
+    fun getInputStream(uri: Uri): LockableInputStream {
         val storageLocation = getStorageLocationForURI(uri)
         return storageLocation.getInputStreamForURI(uri)
+    }
+
+    fun requestUSBPermissionIfMissing() {
+        usbDeviceConnections.requestUSBPermissionIfMissing()
     }
 
 }

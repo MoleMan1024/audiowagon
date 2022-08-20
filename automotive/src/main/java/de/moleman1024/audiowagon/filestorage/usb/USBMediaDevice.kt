@@ -13,17 +13,16 @@ import android.hardware.usb.UsbConstants.USB_CLASS_MASS_STORAGE
 import android.hardware.usb.UsbDevice
 import android.media.MediaDataSource
 import android.net.Uri
-import com.github.mjdev.libaums.UsbMassStorageDevice
-import com.github.mjdev.libaums.fs.FileSystem
-import com.github.mjdev.libaums.fs.UsbFile
+import me.jahnen.libaums.core.UsbMassStorageDevice
+import me.jahnen.libaums.core.fs.FileSystem
+import me.jahnen.libaums.core.fs.UsbFile
 import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.exceptions.DriveAlmostFullException
 import de.moleman1024.audiowagon.exceptions.NoFileSystemException
 import de.moleman1024.audiowagon.filestorage.AudioFile
 import de.moleman1024.audiowagon.filestorage.MediaDevice
 import de.moleman1024.audiowagon.log.Logger
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.*
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.io.UnsupportedEncodingException
@@ -31,6 +30,7 @@ import java.lang.IllegalArgumentException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
+import java.util.concurrent.Executors
 import kotlin.collections.LinkedHashMap
 
 private const val MINIMUM_FREE_SPACE_FOR_LOGGING_MB = 10
@@ -57,6 +57,9 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
     private var volumeLabel: String = ""
     private var logDirectoryNum: Int = 0
     private val recentFilepathToFileMap: FilePathToFileMapCache = FilePathToFileMapCache()
+    // libaums is not thread-safe. My changes made it a bit more safe but still having some threading problems here and
+    // there, so will try thread confinement
+    val libaumsDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
 
     private class FilePathToFileMapCache : LinkedHashMap<String, UsbFile>() {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, UsbFile>?): Boolean {
@@ -126,7 +129,7 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
      * This re-implements some of the checks done in libaums class [UsbMassStorageDevice]. The content of this
      * function is originally licensed under Apache 2.0. I modified it slightly.
      *
-     * @see [library source code](https://github.com/magnusja/libaums/blob/develop/libaums/src/main/java/com/github/mjdev/libaums/UsbMassStorageDevice.kt)
+     * @see [library source code](https://github.com/magnusja/libaums/blob/develop/libaums/src/main/java/me.jahnen.libaums.core/UsbMassStorageDevice.kt)
      * TODO: avoid code duplication with libaums library
      *
      * (C) Copyright 2014-2019 magnusja <github@mgns.tech>
@@ -175,20 +178,24 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
             }.isNotEmpty()
     }
 
-    fun initFilesystem() {
+    suspend fun initFilesystem() {
         if (hasFileSystem()) {
             return
         }
-        fileSystem = usbDevice.initFilesystem(context)
-        if (fileSystem == null) {
-            logger.error(TAG, "No filesystem after initFilesystem() for: $this")
-            return
+        withContext(libaumsDispatcher) {
+            fileSystem = usbDevice.initFilesystem(context)
+            if (fileSystem == null) {
+                logger.error(TAG, "No filesystem after initFilesystem() for: $this")
+                return@withContext
+            }
+            volumeLabel = fileSystem?.volumeLabel?.trim() ?: ""
+            logger.debug(TAG, "Initialized filesystem with volume label: $volumeLabel")
         }
-        volumeLabel = fileSystem?.volumeLabel?.trim() ?: ""
-        logger.debug(TAG, "Initialized filesystem with volume label: $volumeLabel")
     }
 
-    fun enableLogging() {
+    @Suppress("BlockingMethodInNonBlockingContext")
+    suspend fun enableLogging() {
+        logger.verbose(TAG, "enableLogging()")
         if (logFile != null) {
             logger.debug(TAG, "Logging to file is already enabled")
             return
@@ -202,29 +209,41 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
         val now = LocalDateTime.now()
         val logFileName = "audiowagon_${now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"))}.log"
         try {
-            var logDirectory: UsbFile?
-            logDirectory = getRoot().search("${LOG_DIRECTORY}_$logDirectoryNum")
-            if (logDirectory == null) {
-                logDirectory = getRoot().createDirectory("${LOG_DIRECTORY}_$logDirectoryNum")
+            withContext(libaumsDispatcher) {
+                var logDirectory: UsbFile?
+                logDirectory = getRoot().search("${LOG_DIRECTORY}_$logDirectoryNum")
+                if (logDirectory == null) {
+                    logDirectory = getRoot().createDirectory("${LOG_DIRECTORY}_$logDirectoryNum")
+                }
+                logFile = logDirectory.createFile(logFileName)
+                logger.debug(TAG, "Logging to file on USB device: ${logFile!!.absolutePath}")
+                logger.setUSBFile(
+                    logFile!!,
+                    fileSystem?.chunkSize ?: DEFAULT_FILESYSTEM_CHUNK_SIZE,
+                    libaumsDispatcher
+                )
             }
-            logFile = logDirectory.createFile(logFileName)
-            logger.debug(TAG, "Logging to file on USB device: ${logFile!!.absolutePath}")
-            logger.setUSBFile(logFile!!, fileSystem?.chunkSize ?: DEFAULT_FILESYSTEM_CHUNK_SIZE)
             logVersionToUSBLogfile()
         } catch (exc: IOException) {
             logger.exception(TAG, "Cannot create log file on USB device", exc)
         }
+        logger.launchLogFileWriteJob()
     }
 
     fun disableLogging() {
+        logger.debug(TAG, "disableLogging()")
         if (logFile == null) {
             logger.debug(TAG, "Logging to file is already disabled")
             return
         }
+        logger.cancelLogFileWriteJob()
         try {
             logVersionToUSBLogfile()
             logger.info(TAG, "Disabling log to file on USB device")
-            logger.flushToUSB()
+            logger.setFlushToUSBFlag()
+            runBlocking(Dispatchers.IO) {
+                logger.writeBufferedLogToUSBFile()
+            }
             logger.closeUSBFile()
         } catch (exc: IOException) {
             logFile = null
@@ -243,12 +262,13 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
         try {
             val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
             logger.info(TAG, "Version: ${packageInfo.versionName} (code: ${packageInfo.longVersionCode})")
-            logger.flushToUSB()
+            logger.setFlushToUSBFlag()
         } catch (exc: PackageManager.NameNotFoundException) {
             logger.exception(TAG, "Package name not found", exc)
         }
     }
 
+    // confined by libaumsDispatcher internally
     fun close() {
         logger.debug(TAG, "Closing: ${getName()}")
         try {
@@ -260,10 +280,13 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
     }
 
     fun closeMassStorageFilesystem() {
-        fileSystem = null
-        usbDevice.close()
+        runBlocking(libaumsDispatcher) {
+            fileSystem = null
+            usbDevice.close()
+        }
     }
 
+    // needs to be confied via libaumsDispatcher externally
     fun getRoot(): UsbFile {
         if (!hasFileSystem()) {
             throw RuntimeException("No filesystem in getRoot() for: $this")
@@ -272,37 +295,53 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
     }
 
     /**
-     * Traverses files/directories breadth-first
+     * Traverses files/directories breadth-first. Locked internally by usbMutex
      */
     fun walkTopDown(rootDirectory: UsbFile, scope: CoroutineScope): Sequence<UsbFile> = sequence {
         val queue = LinkedList<UsbFile>()
         val allFilesDirs = mutableMapOf<String, Unit>()
         clearRecentFilepathToFileMap()
-        allFilesDirs[rootDirectory.absolutePath] = Unit
+        runBlocking(libaumsDispatcher) {
+            allFilesDirs[rootDirectory.absolutePath] = Unit
+        }
         queue.add(rootDirectory)
         while (queue.isNotEmpty()) {
             scope.ensureActive()
             val fileOrDirectory = queue.removeFirst()
             assertFileSystemAvailable()
-            if (!fileOrDirectory.isDirectory) {
-                logger.verbose(TAG, "Found file: ${fileOrDirectory.absolutePath}")
-                recentFilepathToFileMap[fileOrDirectory.absolutePath] = fileOrDirectory
+            var isDirectory: Boolean
+            var absPath: String
+            var name: String
+            runBlocking(libaumsDispatcher) {
+                isDirectory = fileOrDirectory.isDirectory
+                absPath = fileOrDirectory.absolutePath
+                name = fileOrDirectory.name
+            }
+            if (!isDirectory) {
+                logger.verbose(TAG, "Found file: $absPath")
+                recentFilepathToFileMap[absPath] = fileOrDirectory
                 yield(fileOrDirectory)
             } else {
-                if (fileOrDirectory.name.contains(Util.DIRECTORIES_TO_IGNORE_REGEX)) {
-                    logger.debug(TAG, "Ignoring directory: ${fileOrDirectory.name}")
+                if (name.contains(Util.DIRECTORIES_TO_IGNORE_REGEX)) {
+                    logger.debug(TAG, "Ignoring directory: $name")
                 } else {
-                    logger.debug(TAG, "Walking directory: ${fileOrDirectory.absolutePath}")
-                    recentFilepathToFileMap[fileOrDirectory.absolutePath] = fileOrDirectory
+                    logger.debug(TAG, "Walking directory: $absPath")
+                    recentFilepathToFileMap[absPath] = fileOrDirectory
                     yield(fileOrDirectory)
-                    for (subFileOrDir in fileOrDirectory.listFiles().sortedBy { it.name.lowercase() }) {
+                    var subFilesDirs: List<UsbFile>
+                    runBlocking(libaumsDispatcher) {
+                        subFilesDirs = fileOrDirectory.listFiles().sortedBy { it.name.lowercase() }
+                    }
+                    for (subFileOrDir in subFilesDirs) {
                         assertFileSystemAvailable()
-                        if (!allFilesDirs.containsKey(subFileOrDir.absolutePath)) {
-                            allFilesDirs[subFileOrDir.absolutePath] = Unit
-                            if (subFileOrDir.isDirectory) {
-                                logger.verbose(TAG, "Found directory: ${subFileOrDir.absolutePath}")
+                        runBlocking(libaumsDispatcher) {
+                            if (!allFilesDirs.containsKey(subFileOrDir.absolutePath)) {
+                                allFilesDirs[subFileOrDir.absolutePath] = Unit
+                                if (subFileOrDir.isDirectory) {
+                                    logger.verbose(TAG, "Found directory: ${subFileOrDir.absolutePath}")
+                                }
+                                queue.add(subFileOrDir)
                             }
-                            queue.add(subFileOrDir)
                         }
                     }
                 }
@@ -323,10 +362,12 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
     fun getDirectoryContents(directoryURI: Uri): List<UsbFile> {
         logger.verbose(TAG, "getDirectoryContents(directoryURI=$directoryURI)")
         val directory = getUSBFileFromURI(directoryURI)
-        if (!directory.isDirectory) {
-            throw IllegalArgumentException("Is not a directory: $directory")
+        return runBlocking(libaumsDispatcher) {
+            if (!directory.isDirectory) {
+                throw IllegalArgumentException("Is not a directory: $directory")
+            }
+            return@runBlocking directory.listFiles().sortedBy { it.name }.toList()
         }
-        return directory.listFiles().sortedBy { it.name }.toList()
     }
 
     override fun getName(): String {
@@ -365,27 +406,39 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
         if (!hasFileSystem()) {
             throw IOException("No filesystem for data source")
         }
-        return USBAudioDataSource(getUSBFileFromURI(uri), fileSystem!!.chunkSize)
+        val chunkSize: Int
+        val usbFile: UsbFile
+        runBlocking(libaumsDispatcher) {
+            chunkSize = fileSystem!!.chunkSize
+            usbFile = getUSBFileFromURI(uri)
+        }
+        return USBAudioDataSource(usbFile, chunkSize, libaumsDispatcher)
     }
 
     override fun getBufferedDataSourceForURI(uri: Uri): MediaDataSource {
         if (!hasFileSystem()) {
             throw IOException("No filesystem for data source")
         }
-        return USBAudioCachedDataSource(getUSBFileFromURI(uri), fileSystem!!.chunkSize)
+        val chunkSize: Int
+        val usbFile: UsbFile
+        runBlocking(libaumsDispatcher) {
+            chunkSize = fileSystem!!.chunkSize
+            usbFile = getUSBFileFromURI(uri)
+        }
+        return USBAudioCachedDataSource(usbFile, chunkSize, libaumsDispatcher)
     }
 
+    // locked externally
     override fun getFileFromURI(uri: Uri): Any {
         return getUSBFileFromURI(uri)
     }
 
-    @Synchronized
     fun getUSBFileFromURI(uri: Uri): UsbFile {
         val audioFile = AudioFile(uri)
         val filePath = audioFile.path
         val usbFileFromCache: UsbFile? = recentFilepathToFileMap[filePath]
         if (usbFileFromCache != null) {
-            logger.verbose(TAG, "Found file/dir $uri in recentFilepathToFileMap: $usbFileFromCache")
+            logger.verbose(TAG, "Returning file/dir from cache: $uri")
             return usbFileFromCache
         }
         return if (filePath == "/") {
@@ -399,7 +452,7 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
     /**
      * Creates a "unique" identifier for the USB device that is persistent across USB device (dis)connects.
      * We cannot use [UsbDevice.getDeviceId] because of that requirement.
-     * TODO: not great because it changes depending on permissions/filesystem initialization status
+     * TODO: not great because it changes depending on permissions/volume label status
      */
     override fun getID(): String {
         val stringBuilder: StringBuilder = StringBuilder()
@@ -466,11 +519,15 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
         if (!hasFileSystem()) {
             throw NoFileSystemException()
         }
-        return fileSystem!!.freeSpace < 1024 * 1024 * MINIMUM_FREE_SPACE_FOR_LOGGING_MB
+        return runBlocking(libaumsDispatcher) {
+            return@runBlocking fileSystem!!.freeSpace < 1024 * 1024 * MINIMUM_FREE_SPACE_FOR_LOGGING_MB
+        }
     }
 
     fun getChunkSize(): Int {
-        return fileSystem?.chunkSize ?: DEFAULT_FILESYSTEM_CHUNK_SIZE
+        return runBlocking(libaumsDispatcher) {
+            return@runBlocking fileSystem?.chunkSize ?: DEFAULT_FILESYSTEM_CHUNK_SIZE
+        }
     }
 
     override fun equals(other: Any?): Boolean {

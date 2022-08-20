@@ -9,25 +9,6 @@ nav_order: 1
 This app will **play audio files** from an attached **USB flash drive** in cars equipped with **Android™ Automotive OS**
 (for example Polestar 2™, Volvo XC40 Recharge™, &hellip;)[^1].
 
-## ⚠ 2022-07-04 ⚠ Important notice for US / UK users
-
-It looks like the most recent car software update 2.2 is different in the United States / United Kingdom. It does not
-include CarPlay and also the USB port will not yet work with that version. 
-
-Here is what Polestar said on their Facebook page:
-
-> We’ve begun to redeploy the latest OTA software update incrementally in batches and two versions are available for
-> download:
-> 1. For customers in all markets except the UK and US, P2.2 with the full set of enhancements, including Apple CarPlay
->    will be available for download.
-> 2. For customers in the UK and US, P2.2 which does not have Apple CarPlay, will be available for download.  
-> 
-> We’re working hard on releasing P2.2 with the full set of enhancements as a top priority for all customers in the US and
-> UK and sincerely apologise for the inconvenience. 
-
-That means the AudioWagon app will not work in the US / UK right now, you will need another update from Polestar /
-Volvo.
-
 ![AudioWagon in car](/img/audiowagon.jpg)
 
 ## Features
@@ -57,10 +38,7 @@ Please see Github for a [list of changes for each version of the app](https://gi
 ## Limitations
 
 - The app will *not* work with Polestar/Volvo OTA car software version 2.0 nor 2.1. You will need the car software
-  version 2.2 or higher that includes the CarPlay Update (or 1.9 or lower). 
-
-  ⚠ NOTE ⚠: In UK / USA a different variant of 2.2 has been rolled out by Polestar/Volvo without CarPlay (and it looks
-  like without USB data support which AudioWagon requires).
+  version 2.2 or higher that includes the CarPlay Update (or 1.9 or lower) which re-enables the USB data connection.  
 - The app can *not* play back **.wma** files
 - *Some* people have reported issues when using the app with a **USB to micro SD card adapter** where no files could be
   played back and lots of error messages were shown. In such cases the adapter is probably not compatible with the
@@ -142,8 +120,8 @@ at my email (or you can use [GitHub](https://github.com/MoleMan1024/audiowagon/i
 
 ### Native speakers
 
-I am still looking for **volunteer native speakers to translate** the GUI texts in the app to all languages
-(already translated: German, English, Dutch, Swedish, Norwegian, Danish, French, Russian, Polish). You can get the
+I am still looking for **volunteer native speakers to translate** the GUI texts in the app to all languages (already
+translated: German, English, Dutch, Swedish, Norwegian, Danish, French, Russian, Polish, Italian). You can get the
 [English strings to translate here](https://github.com/MoleMan1024/audiowagon/blob/master/automotive/src/main/res/values/strings.xml).
 
 

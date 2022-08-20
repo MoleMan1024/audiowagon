@@ -5,9 +5,10 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 package de.moleman1024.audiowagon.filestorage.usb
 
-import com.github.mjdev.libaums.fs.UsbFile
+import me.jahnen.libaums.core.fs.UsbFile
 import de.moleman1024.audiowagon.log.Logger
 import android.media.MediaDataSource
+import kotlinx.coroutines.CoroutineDispatcher
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.util.*
@@ -31,7 +32,8 @@ private val logger = Logger
 class USBAudioCachedDataSource(
     usbFile: UsbFile?,
     chunkSize: Int,
-) : USBAudioDataSource(usbFile, chunkSize) {
+    libaumsDispatcher: CoroutineDispatcher
+) : USBAudioDataSource(usbFile, chunkSize, libaumsDispatcher) {
     private val cacheMap: TreeMap<Long, AgingCache> = TreeMap<Long, AgingCache>()
     private val bufSize: Int = chunkSize
 

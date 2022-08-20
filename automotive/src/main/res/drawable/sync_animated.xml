@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+SPDX-FileCopyrightText: 2022 MoleMan1024 <moleman1024dev@gmail.com>
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
+<!-- animation does not seem to work in AAOS -->
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+        android:drawable="@drawable/baseline_sync_24">
+    <target
+            android:name="rotationGroup"
+            android:animation="@animator/sync_rotate" />
+</animated-vector>

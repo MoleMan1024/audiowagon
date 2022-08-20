@@ -28,10 +28,11 @@ const val SHARED_PREF_CRASH_REPORTING = "crashReporting"
 val SHARED_PREF_EQUALIZER_PRESET_DEFAULT = EqualizerPreset.LESS_BASS.name
 
 open class SharedPrefs {
-
     companion object {
+        private val sharedPrefsStorage = SharedPrefsStorage()
+
         private fun getDefaultSharedPreferences(context: Context): SharedPreferences {
-            return PreferenceManager.getDefaultSharedPreferences(context)
+            return sharedPrefsStorage.getDefaultStorage(context)
         }
     }
 

@@ -12,16 +12,18 @@ import de.moleman1024.audiowagon.filestorage.AudioFileStorage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestCoroutineScope
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.createTestCoroutineScope
 import org.mockito.Mockito
 
 @ExperimentalCoroutinesApi
 class AudioItemLibraryFixture {
     private val dispatcher = Dispatchers.IO
-    val context = Mockito.mock(Context::class.java)
-    val mockAudioFileStorage = Mockito.mock(AudioFileStorage::class.java)
-    val scope = TestCoroutineScope()
-    val mockGUI = Mockito.mock(GUI::class.java)
-    val sharedPrefs = Mockito.mock(SharedPrefs::class.java)
+    private val context: Context = Mockito.mock(Context::class.java)
+    private val mockAudioFileStorage: AudioFileStorage = Mockito.mock(AudioFileStorage::class.java)
+    private val scope = TestScope()
+    private val mockGUI: GUI = Mockito.mock(GUI::class.java)
+    private val sharedPrefs: SharedPrefs = Mockito.mock(SharedPrefs::class.java)
     var audioItemLibrary: AudioItemLibrary
 
     /**

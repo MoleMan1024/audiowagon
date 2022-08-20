@@ -9,13 +9,10 @@ import android.media.MediaDataSource
 import android.net.Uri
 import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.Util.Companion.determinePlayableFileType
-import de.moleman1024.audiowagon.filestorage.AudioFileStorageLocation
-import de.moleman1024.audiowagon.filestorage.Directory
-import de.moleman1024.audiowagon.filestorage.FileLike
-import de.moleman1024.audiowagon.filestorage.IndexingStatus
+import de.moleman1024.audiowagon.filestorage.*
 import de.moleman1024.audiowagon.log.Logger
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import java.io.InputStream
 
 
 /**
@@ -27,8 +24,14 @@ class SDCardStorageLocation(override val device: SDCardMediaDevice) : AudioFileS
     override val storageID: String
         get() = device.getID()
     override var indexingStatus: IndexingStatus = IndexingStatus.NOT_INDEXED
+        set(value) {
+            logger.debug(TAG, "indexingStatus=$value")
+            field = value
+        }
     override var isDetached: Boolean = false
     override var isIndexingCancelled: Boolean = false
+    // does not need a lock
+    override var libaumsDispatcher: CoroutineDispatcher? = null
 
     override fun walkTopDown(startDirectory: Any, scope: CoroutineScope): Sequence<Any> {
         return device.walkTopDown(startDirectory)
@@ -67,7 +70,7 @@ class SDCardStorageLocation(override val device: SDCardMediaDevice) : AudioFileS
         TODO("Not yet implemented")
     }
 
-    override fun getInputStreamForURI(uri: Uri): InputStream {
+    override fun getInputStreamForURI(uri: Uri): LockableInputStream {
         TODO("Not yet implemented")
     }
 

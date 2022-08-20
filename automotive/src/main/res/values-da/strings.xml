@@ -59,6 +59,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
     <string name="action_repeat_turn_on">Gentagelse til</string>
     <string name="action_repeat_turn_off">Gentagelse fra</string>
     <string name="action_eject">Tag USB-drevet ud</string>
+    <string name="action_rewind">Spole tilbage</string>
     <string name="settings_title">Indstillinger</string>
     <string name="setting_enable_equalizer_title">Equalizer</string>
     <string name="setting_sound_category_title">Lyd</string>
@@ -110,15 +111,13 @@ udviklet af Google\n&#x2013; Firebase Crashlytics\n\nLicenstekster:\nwww.apache.
     <string name="legal_disclaimer_cancel_btn">Afbryd</string>
     <string name="error_no_tracks">Ingen musikfiler</string>
     <string name="error_not_enough_space_for_log">Ikke nok plads til at gemme log-filerne</string>
-    <string name="setting_USB_status_too_many_files_in_dir">For mange filer i et af bibliotekerne. Reducer dette ved at
-anvende underfoldere.</string>
     <string name="browse_tree_category_files">Filer</string>
     <string name="setting_library_category_title">Medier</string>
     <string name="setting_read_metadata">Læs metadata</string>
     <string name="setting_delete_databases">Slette databaser</string>
     <string name="setting_database_status_title">Database</string>
     <string name="setting_enable_replaygain">ReplayGain</string>
-    <string name="searching_voice_input">Søge efter: "%1$s"</string>
+    <string name="searching_voice_input">Stemmesøgning: "%1$s"</string>
     <string name="setting_read_metadata_when_connected">Når USB-drevet er tilsluttet</string>
     <string name="setting_read_metadata_manual">Manuelt</string>
     <string name="setting_read_metadata_filepaths_only">Kun filstier</string>
@@ -139,4 +138,5 @@ forbedre appen (kræver internetforbindelse).</string>
     <string name="setting_album_display_list">Liste</string>
     <string name="setting_requires_media_center_restart">(enhver ændring kræver genstart af
 \"Media Center\"-appen)</string>
+    <string name="error_no_results">Intet fundet: \"%1$s\"</string>
 </resources>

@@ -36,6 +36,7 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
             mediaBrowser.sessionToken.also { token ->
                 mediaController = MediaControllerCompat(this@SettingsActivity, token)
                 MediaControllerCompat.setMediaController(this@SettingsActivity, mediaController)
+                mediaController.sendCommand(CMD_REQUEST_USB_PERMISSION, null, null)
             }
         }
 
@@ -52,7 +53,7 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        logger.debug(TAG, "onCreate()")
+        logger.debug(TAG, "onCreate(savedInstanceState=$savedInstanceState)")
         mediaBrowser = MediaBrowserCompat(
             this, ComponentName(this, AudioBrowserService::class.java), connectionCallbacks, null
         )
@@ -67,7 +68,9 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
         supportActionBar?.setHomeButtonEnabled(true)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         toolbar.setNavigationIcon(R.drawable.baseline_west_24)
-        supportFragmentManager.beginTransaction().replace(R.id.settings_container, SettingsFragment()).commit()
+        if (savedInstanceState == null) {
+            supportFragmentManager.beginTransaction().replace(R.id.settings_container, SettingsFragment()).commit()
+        }
     }
 
     fun enableLogToUSB() {
@@ -170,7 +173,7 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
     }
 
     private fun goBack() {
-        logger.debug(TAG, "${supportFragmentManager.backStackEntryCount}")
+        logger.debug(TAG, "goBack(backStackEntryCount=${supportFragmentManager.backStackEntryCount})")
         if (supportFragmentManager.backStackEntryCount <= 0) {
             finish()
             return

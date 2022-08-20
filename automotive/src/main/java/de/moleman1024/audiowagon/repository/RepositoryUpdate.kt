@@ -295,22 +295,16 @@ class RepositoryUpdate(private val repo: AudioItemRepository, private val contex
     suspend fun clean() {
         logger.debug(TAG, "Cleaning no longer available items from database")
         val allTracksInDB = repo.getDatabase()?.trackDAO()?.queryAll() ?: listOf()
-        val allPathsInDB = repo.getDatabase()?.pathDAO()?.queryAll() ?: listOf()
-        val artistDeletionCandidates = mutableSetOf<Long>()
-        val albumArtistDeletionCandidates = mutableSetOf<Long>()
-        val albumDeletionCandidates = mutableSetOf<Long>()
         for (track in allTracksInDB) {
             if (track.trackId in trackIDsToKeep) {
                 continue
             }
-            artistDeletionCandidates.add(track.parentArtistId)
-            albumDeletionCandidates.add(track.parentAlbumId)
-            albumArtistDeletionCandidates.add(track.parentAlbumArtistId)
             logger.verbose(TAG, "Removing track from database: $track")
             repo.getDatabase()?.trackDAO()?.delete(track)
             repo.hasUpdatedDatabase = true
         }
         trackIDsToKeep.clear()
+        val allPathsInDB = repo.getDatabase()?.pathDAO()?.queryAll() ?: listOf()
         for (path in allPathsInDB) {
             if (path.pathId in pathIDsToKeep) {
                 continue
@@ -319,16 +313,16 @@ class RepositoryUpdate(private val repo: AudioItemRepository, private val contex
             repo.getDatabase()?.pathDAO()?.delete(path)
             repo.hasUpdatedDatabase = true
         }
-        pruneAlbums(albumDeletionCandidates)
-        pruneArtists(artistDeletionCandidates)
-        pruneAlbumArtists(albumArtistDeletionCandidates)
+        pruneAlbums()
+        pruneArtists()
     }
 
     /**
      * Remove albums that no longer have any associated tracks
      */
-    private suspend fun pruneAlbums(deletionCandidateIDs: Set<Long>) {
-        deletionCandidateIDs.forEach { albumID ->
+    private suspend fun pruneAlbums() {
+        val albumIDs = repo.getDatabase()?.albumDAO()?.queryAll()?.map { it.albumId }
+        albumIDs?.forEach { albumID ->
             val numTracksForAlbum = repo.getDatabase()?.trackDAO()?.queryNumTracksForAlbum(albumID) ?: 0
             if (numTracksForAlbum <= 0) {
                 logger.verbose(TAG, "Removing album from database: $albumID")
@@ -340,24 +334,13 @@ class RepositoryUpdate(private val repo: AudioItemRepository, private val contex
     /**
      * Remove artists that no longer have any associated tracks
      */
-    private suspend fun pruneArtists(deletionCandidateIDs: Set<Long>) {
-        deletionCandidateIDs.forEach { artistID ->
+    private suspend fun pruneArtists() {
+        val artistIDs = repo.getDatabase()?.artistDAO()?.queryAll()?.map { it.artistId }
+        artistIDs?.forEach { artistID ->
             val numTracksForArtist = repo.getDatabase()?.trackDAO()?.queryNumTracksForArtist(artistID) ?: 0
-            if (numTracksForArtist <= 0) {
-                logger.verbose(TAG, "Removing artist from database: $artistID")
-                repo.getDatabase()?.artistDAO()?.deleteByID(artistID)
-            }
-        }
-    }
-
-    /**
-     * Remove album artists that no longer have any associated tracks
-     */
-    private suspend fun pruneAlbumArtists(deletionCandidateIDs: Set<Long>) {
-        deletionCandidateIDs.forEach { artistID ->
             val numTracksForAlbumArtist = repo.getDatabase()?.trackDAO()?.queryNumTracksForAlbumArtist(artistID) ?: 0
-            if (numTracksForAlbumArtist <= 0) {
-                logger.verbose(TAG, "Removing album artist from database: $artistID")
+            if (numTracksForArtist <= 0 && numTracksForAlbumArtist <= 0) {
+                logger.verbose(TAG, "Removing artist from database: $artistID")
                 repo.getDatabase()?.artistDAO()?.deleteByID(artistID)
             }
         }

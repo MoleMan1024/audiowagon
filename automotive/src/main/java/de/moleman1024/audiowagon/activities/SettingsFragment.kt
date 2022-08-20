@@ -357,12 +357,14 @@ class SettingsFragment : PreferenceFragmentCompat() {
         logger.debug(TAG, "onDestroy()")
         // We register the listeners in onCreate and onDestroy() instead of in onResume() and onPause() because the
         // latter two will be triggered by the transparent USBDummyActivity. The user would still see the preferences
-        // screen but it would not update in realtime.
+        // screen but it would not update in realtime because it is considered paused when USBDummyActivity is in
+        // foreground.
         preferenceManager.sharedPreferences?.unregisterOnSharedPreferenceChangeListener(listener)
         super.onDestroy()
     }
 
     override fun onPreferenceTreeClick(preference: Preference): Boolean {
+        // this shows the state when the user clicks the preference, before it is being updated via SharedPreferences
         logger.debug(TAG, "onPreferenceTreeClick(preference=$preference)")
         val settingsActivity = getParentSettingsActivity()
         try {

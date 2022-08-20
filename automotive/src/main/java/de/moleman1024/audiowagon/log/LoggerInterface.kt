@@ -5,8 +5,6 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 package de.moleman1024.audiowagon.log
 
-import com.github.mjdev.libaums.fs.UsbFile
-
 interface LoggerInterface {
     enum class LogLevel {
         @Suppress("unused")
@@ -17,9 +15,6 @@ interface LoggerInterface {
         ERROR
     }
 
-    fun setUSBFile(usbFileForLogging: UsbFile, chunkSize: Int)
-    fun closeUSBFile()
-    fun flushToUSB()
     fun verbose(tag: String?, msg: String)
     fun debug(tag: String?, msg: String)
     fun error(tag: String?, msg: String)

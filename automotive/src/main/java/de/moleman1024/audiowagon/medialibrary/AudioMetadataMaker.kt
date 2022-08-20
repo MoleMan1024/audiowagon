@@ -7,6 +7,7 @@ package de.moleman1024.audiowagon.medialibrary
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.media.MediaDataSource
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.support.v4.media.MediaMetadataCompat
@@ -42,7 +43,7 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
 
     fun extractMetadataFrom(audioFile: AudioFile): AudioItem {
         val startTime = System.nanoTime()
-        logger.debug(TAG, "Extracting metadata for: $audioFile")
+        logger.debug(TAG, "Extracting metadata for: ${audioFile.name}")
         val metadataRetriever = MediaMetadataRetriever()
         val dataSource = audioFileStorage.getDataSourceForAudioFile(audioFile)
         // TODO: find out reason for
@@ -57,13 +58,14 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
         if (dataSource is USBAudioDataSource && dataSource.isClosed) {
             throw IOException("Data source was closed while extracting metadata")
         }
+        logger.verbose(TAG, "Starting metadata extraction")
         // sometimes this will take values from unexpected places, e.g. it prefers APE tags in MP3s over ID3 tags
+        val title: String? = metadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)
         val artist: String? = metadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)
         val album: String? = metadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM)
-        val title: String? = metadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)
+        val year: Short? = extractYearFromMetadata(metadataRetriever)
         val trackNum: Short? = extractTrackNumFromMetadata(metadataRetriever)
         val discNum: Short? = extractDiscNumFromMetadata(metadataRetriever)
-        val year: Short? = extractYearFromMetadata(metadataRetriever)
         var durationMS: Int? = null
         val durationMSAsString: String? =
             metadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
@@ -99,7 +101,7 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
         audioItemForMetadata.isInCompilation = isInCompilation
         val endTime = System.nanoTime()
         val timeTakenMS = (endTime - startTime) / 1000000L
-        logger.debug(TAG, "Extracted metadata in ${timeTakenMS}ms: $audioItemForMetadata")
+        logger.verbose(TAG, "Extracted metadata in ${timeTakenMS}ms: $audioItemForMetadata")
         return audioItemForMetadata
     }
 
@@ -214,20 +216,30 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
                     throw AssertionError("createMetadataForItem() not supported for: $contentHierarchyID")
                 }
             }
-            // The METADATA_KEY_DISPLAY_ICON_URI will be shown in the "Now Playing" widget
             putString(MediaMetadataCompat.METADATA_KEY_ART_URI, audioItem.albumArtURI.toString())
+            // The METADATA_KEY_DISPLAY_ICON_URI will be shown in the "Now Playing" widget
             putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON_URI, audioItem.albumArtURI.toString())
         }.build()
     }
 
     fun getEmbeddedAlbumArtForAudioItem(audioItem: AudioItem): ByteArray? {
-        val metadataRetriever = MediaMetadataRetriever()
         val mediaDataSource = audioFileStorage.getDataSourceForURI(audioItem.uri)
-        logger.verbose(TAG, "Retrieving embedded image")
+        logger.debug(TAG, "Retrieving embedded image for: ${audioItem.uri}")
+        return getAlbumArtFromMediaDataSource(mediaDataSource)
+    }
+
+    private fun getAlbumArtFromMediaDataSource(mediaDataSource: MediaDataSource): ByteArray? {
+        val metadataRetriever = MediaMetadataRetriever()
         metadataRetriever.setDataSource(mediaDataSource)
         val embeddedImage = metadataRetriever.embeddedPicture ?: return null
         metadataRetriever.close()
         return embeddedImage
+    }
+
+    fun hasEmbeddedAlbumArt(audioItem: AudioItem): Boolean {
+        logger.verbose(TAG, "hasAlbumArt(audioItem=$audioItem)")
+        val mediaDataSource = audioFileStorage.getDataSourceForURI(audioItem.uri)
+        return getAlbumArtFromMediaDataSource(mediaDataSource) != null
     }
 
     fun resizeAlbumArt(albumArtBytes: ByteArray): ByteArray? {

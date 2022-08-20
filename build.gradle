@@ -6,9 +6,8 @@ buildscript {
     ext {
         minSdkVersion = 29
         compileSdkVersion = 31
-        targetSdkVersion = 30
-        // upgrading to 1.7.0 gives some weird Room warnings
-        kotlin_version = "1.6.10"
+        targetSdkVersion = 31
+        kotlinVersion = "1.7.10"
     }
     repositories {
         google()
@@ -16,11 +15,11 @@ buildscript {
         gradlePluginPortal()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.1.3'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath "com.android.tools.build:gradle:7.2.2"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
         // Firebase Crashlytics requires this
-        classpath "com.google.gms:google-services:4.3.10"
-        classpath "com.google.firebase:firebase-crashlytics-gradle:2.9.0"
+        classpath "com.google.gms:google-services:4.3.13"
+        classpath "com.google.firebase:firebase-crashlytics-gradle:2.9.1"
     }
 }
 

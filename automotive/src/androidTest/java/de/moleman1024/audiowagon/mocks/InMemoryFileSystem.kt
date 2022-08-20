@@ -5,13 +5,12 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 package de.moleman1024.audiowagon.mocks
 
-import com.github.mjdev.libaums.fs.FileSystem
-import com.github.mjdev.libaums.fs.UsbFile
-import com.github.mjdev.libaums.partition.PartitionTypes
+import me.jahnen.libaums.core.fs.FileSystem
+import me.jahnen.libaums.core.fs.UsbFile
+import me.jahnen.libaums.core.partition.PartitionTypes
 import com.google.common.jimfs.Configuration
 import com.google.common.jimfs.Jimfs
 import de.moleman1024.audiowagon.log.Logger
-import java.io.File
 import java.io.InputStream
 import java.nio.ByteBuffer
 import java.nio.channels.SeekableByteChannel
@@ -19,7 +18,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
 import kotlin.io.path.*
-import kotlin.math.min
 
 private const val TAG = "InMemoryFS"
 

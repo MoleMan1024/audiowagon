@@ -6,22 +6,11 @@ SPDX-License-Identifier: GPL-3.0-or-later
 package de.moleman1024.audiowagon.log
 
 import android.util.Log
-import com.github.mjdev.libaums.fs.UsbFile
 
 /**
  * Alternate logger class used in unit tests where Android logger is not available
  */
 object Logger : LoggerInterface {
-
-    override fun setUSBFile(usbFileForLogging: UsbFile, chunkSize: Int) {
-
-    }
-
-    override fun closeUSBFile() {
-    }
-
-    override fun flushToUSB() {
-    }
 
     override fun verbose(tag: String?, msg: String) {
         println("[VERBOSE] $tag: $msg")

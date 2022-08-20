@@ -54,9 +54,8 @@ class AudioItemLibraryTest {
 
     @Test
     fun usbDeviceAttachedBroadcast_default_isHandled() {
-        // TODO: need to mock/reset shared preferences
         attachUSBDevice()
         val audioItemLibrary = audioBrowserService.getAudioItemLibrary()
-        assertTrue(audioItemLibrary.areAnyReposAvail())
+        assertTrue("No repositories", audioItemLibrary.areAnyReposAvail())
     }
 }

@@ -23,11 +23,11 @@ import java.io.FileOutputStream
 private const val TAG = "TestUtils"
 
 object TestUtils {
-    fun waitForTrueOrFail(func: () -> Boolean, timeoutMS: Int) {
+    fun waitForTrueOrFail(func: () -> Boolean, timeoutMS: Int, name: String) {
         var timeout = 0
         while (!func()) {
             if (timeout > timeoutMS) {
-                Assert.fail("Timed out waiting for $func")
+                Assert.fail("Timed out waiting for: $name")
             }
             Thread.sleep(10)
             timeout += 10
@@ -38,13 +38,14 @@ object TestUtils {
     fun waitForIndexingCompleted(audioBrowserService: AudioBrowserService, timeoutMS: Int = 1000 * 10) {
         waitForTrueOrFail(
             { audioBrowserService.getIndexingStatus().any { it == IndexingStatus.COMPLETED } },
-            timeoutMS
+            timeoutMS, "waitForIndexingCompleted()"
         )
     }
 
     @ExperimentalCoroutinesApi
     fun waitForAudioPlayerState(state: Int, audioBrowserService: AudioBrowserService, timeoutMS: Int = 1000 * 10) {
-        waitForTrueOrFail({ audioBrowserService.getAudioPlayerStatus().playbackState == state }, timeoutMS)
+        waitForTrueOrFail({ audioBrowserService.getAudioPlayerStatus().playbackState == state }, timeoutMS,
+            "waitForAudioPlayerState($state)")
     }
 
     fun deleteDatabaseDirectory() {

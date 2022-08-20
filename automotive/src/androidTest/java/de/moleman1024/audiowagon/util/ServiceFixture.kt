@@ -14,6 +14,7 @@ import android.net.Uri
 import android.os.IBinder
 import android.support.v4.media.MediaBrowserCompat
 import android.support.v4.media.session.MediaControllerCompat
+import android.support.v4.media.session.MediaSessionCompat
 import androidx.media.MediaBrowserServiceCompat
 import androidx.test.platform.app.InstrumentationRegistry
 import de.moleman1024.audiowagon.AudioBrowserService
@@ -44,12 +45,12 @@ class ServiceFixture {
     lateinit var audioBrowserService: AudioBrowserService
     var mediaController: MediaControllerCompat? = null
     val transportControls get() = mediaController?.transportControls
-    val playbackQueue get() = mediaController?.queue
+    val playbackQueue: MutableList<MediaSessionCompat.QueueItem>? get() = mediaController?.queue
 
     fun bind() {
         Logger.debug(TAG, "Binding service")
         targetContext.bindService(intent, connection, Context.BIND_AUTO_CREATE)
-        TestUtils.waitForTrueOrFail({ isBound }, 1000)
+        TestUtils.waitForTrueOrFail({ isBound }, 1000, "isBound")
     }
 
     fun startService() {
@@ -86,7 +87,7 @@ class ServiceFixture {
     }
 
     fun waitForAudioBrowserService(): AudioBrowserService {
-        TestUtils.waitForTrueOrFail({ this::audioBrowserService.isInitialized }, 1000)
+        TestUtils.waitForTrueOrFail({ this::audioBrowserService.isInitialized }, 1000, "isInitialized")
         audioBrowserService.logger.setStoreLogs(true)
         return audioBrowserService
     }
@@ -128,6 +129,6 @@ class ServiceFixture {
         Logger.debug(TAG, "Killing service")
         val activityManager = targetContext.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
         activityManager.killBackgroundProcesses("de.moleman1024.audiowagon")
-        Logger.debug(TAG, "Shut down service fixture")
+        Logger.debug(TAG, "Service fixture was shut down")
     }
 }

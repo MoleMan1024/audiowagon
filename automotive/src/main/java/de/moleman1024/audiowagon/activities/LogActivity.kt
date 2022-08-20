@@ -17,7 +17,7 @@ import androidx.lifecycle.lifecycleScope
 
 private const val TAG = "LogActivity"
 private val logger = Logger
-private const val NUM_LAST_LOG_LINES_TO_SHOW = 100
+private const val NUM_LOG_BYTES_TO_SHOW = 32768
 
 class LogActivity : AppCompatActivity() {
     private val showLineCallback = { line: String ->
@@ -41,24 +41,31 @@ class LogActivity : AppCompatActivity() {
     }
 
     override fun onStart() {
+        logger.debug(TAG, "onStart()")
         super.onStart()
-        Util.launchInScopeSafely(lifecycleScope, Dispatchers.Main, logger, TAG, crashReporting = null) {
-            val logTextView = findViewById<TextView>(R.id.logText)
-            Logger.getLastLogLines(NUM_LAST_LOG_LINES_TO_SHOW).forEach {
-                logTextView.append(it)
-            }
-        }
     }
 
     override fun onResume() {
         logger.debug(TAG, "onResume()")
         super.onResume()
-        Logger.addObserver(showLineCallback)
+        initTextViewWithLastLogLines()
+        logger.addObserver(showLineCallback)
+    }
+
+    private fun initTextViewWithLastLogLines() {
+        Util.launchInScopeSafely(lifecycleScope, Dispatchers.Main, logger, TAG, crashReporting = null) {
+            val logTextView = findViewById<TextView>(R.id.logText)
+            logTextView.text = ""
+            val logLines = logger.getLogs(NUM_LOG_BYTES_TO_SHOW)
+            logLines.forEach {
+                logTextView.append(it)
+            }
+        }
     }
 
     override fun onPause() {
         logger.debug(TAG, "onPause()")
-        Logger.removeObserver(showLineCallback)
+        logger.removeObserver(showLineCallback)
         super.onPause()
     }
 

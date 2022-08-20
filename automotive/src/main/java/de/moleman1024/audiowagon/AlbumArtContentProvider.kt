@@ -21,6 +21,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import java.io.ByteArrayOutputStream
 import java.lang.Integer.min
 import java.nio.ByteBuffer
+import java.util.concurrent.locks.ReentrantLock
 
 
 private const val TAG = "AlbumArtContentProv"
@@ -36,18 +37,39 @@ class AlbumArtContentProvider : ContentProvider() {
     private var defaultAlbumArtAlbums: ByteArray = ByteArray(1)
     private var defaultAlbumArtTracks: ByteArray = ByteArray(1)
     private var audioBrowserService: AudioBrowserService? = null
-    // we use a local binder connection to access the album art via AudioBrowserService. Because it is local in the
+    private var binderStatus: BinderStatus = BinderStatus.UNKNOWN
+    private val uuid = Util.generateUUID()
+    private val audioBrowserLifecycleObserver: ((event: LifecycleEvent) -> Unit) = {
+        when (it) {
+            LifecycleEvent.DESTROY, LifecycleEvent.SUSPEND, LifecycleEvent.IDLE -> {
+                audioBrowserService?.removeLifecycleObserver(uuid)
+                unbindAudioBrowserService()
+            }
+        }
+    }
+    // We use a local binder connection to access the album art via AudioBrowserService. Because it is local in the
     // same process the binder RPC size restrictions do not apply
     private val connection = object : ServiceConnection {
+        @Synchronized
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            Logger.debug(TAG, "onServiceConnected(name=$name, $service=$service)")
+            logger.debug(TAG, "onServiceConnected(name=$name, service=$service)")
+            if (binderStatus == BinderStatus.BOUND) {
+                logger.warning(TAG, "Already bound to AudioBrowserService")
+                return
+            }
             val binder = service as AudioBrowserService.LocalBinder
             audioBrowserService = binder.getService()
+            binderStatus = BinderStatus.BOUND
+            logger.debug(TAG, "Add lifecycle observer: $uuid")
+            audioBrowserService?.addLifecycleObserver(uuid, audioBrowserLifecycleObserver)
         }
 
+        // This is called only when the AudioBrowserService process exits, it is not called when unbinding
+        @Synchronized
         override fun onServiceDisconnected(name: ComponentName?) {
-            Logger.debug(TAG, "onServiceDisconnected(name=$name)")
+            logger.debug(TAG, "onServiceDisconnected(name=$name)")
             audioBrowserService = null
+            binderStatus = BinderStatus.UNBOUND
         }
     }
 
@@ -67,15 +89,25 @@ class AlbumArtContentProvider : ContentProvider() {
 
     override fun onCreate(): Boolean {
         logger.debug(TAG, "onCreate()")
+        binderStatus = BinderStatus.UNBOUND
         return true
     }
 
     override fun shutdown() {
         logger.debug(TAG, "shutdown()")
-        if (audioBrowserService != null) {
-            context?.unbindService(connection)
-        }
+        audioBrowserService?.removeLifecycleObserver(uuid)
+        unbindAudioBrowserService()
         super.shutdown()
+    }
+
+    @Synchronized
+    private fun unbindAudioBrowserService() {
+        if (audioBrowserService != null) {
+            logger.debug(TAG, "unbindAudioBrowserService() in $context")
+            context?.unbindService(connection)
+            audioBrowserService = null
+            binderStatus = BinderStatus.UNBOUND
+        }
     }
 
     override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor? {
@@ -135,10 +167,12 @@ class AlbumArtContentProvider : ContentProvider() {
 
     @Synchronized
     private fun init() {
-        if (audioBrowserService == null) {
+        if (binderStatus == BinderStatus.UNBOUND) {
             val intent =
                 Intent(AudioBrowserService::class.java.name, Uri.EMPTY, context, AudioBrowserService::class.java)
+            logger.verbose(TAG, "bindService(intent=$intent, connection=$connection)")
             context?.bindService(intent, connection, Context.BIND_AUTO_CREATE)
+            binderStatus = BinderStatus.BIND_REQUESTED
         }
         if (defaultAlbumArtAlbums.size <= 1) {
             val drawable =
@@ -160,7 +194,6 @@ class AlbumArtContentProvider : ContentProvider() {
      * We create a default album art bitmap instead of using the vector drawable icon directly, the latter does not
      * seem to update the album art on Polestar 2 main view
      */
-    @Synchronized
     private fun createDefaultAlbumArt(drawable: Drawable): ByteArray {
         val albumArtNumPixels = getAlbumArtSizePixels()
         logger.debug(TAG, "Creating default album art with size: $albumArtNumPixels")

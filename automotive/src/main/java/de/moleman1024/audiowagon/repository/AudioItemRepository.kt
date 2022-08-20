@@ -8,7 +8,6 @@ package de.moleman1024.audiowagon.repository
 import android.content.Context
 import androidx.room.RoomDatabase
 import de.moleman1024.audiowagon.filestorage.AudioFile
-import de.moleman1024.audiowagon.filestorage.Directory
 import de.moleman1024.audiowagon.filestorage.FileLike
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.ART_URI_PART
@@ -305,11 +304,8 @@ class AudioItemRepository(
         return repoQuery.getFilesInDirRecursive(path, numMaxItems)
     }
 
-    suspend fun getRootDirectories(): List<Directory> {
-        return repoQuery.getRootDirectories()
-    }
-
     fun getAlbumForAlbumArt(uriString: String): Album? {
+        logger.verbose(TAG, "getAlbumForAlbumArt(uriString=$uriString)")
         var albumForAlbumArt: Album? = null
         if (uriString.contains("$ART_URI_PART/$ART_URI_PART_TRACK")) {
             runBlocking(dispatcher) {
@@ -325,6 +321,18 @@ class AudioItemRepository(
             }
         }
         return albumForAlbumArt
+    }
+
+    fun getTrackForAlbumArt(uriString: String): Track? {
+        logger.verbose(TAG, "getTrackForAlbumArt(uriString=$uriString)")
+        if (!uriString.contains("$ART_URI_PART/$ART_URI_PART_TRACK")) {
+            return null
+        }
+        return runBlocking(dispatcher) {
+            val track = getDatabase()?.trackDAO()?.queryTrackByAlbumArt(uriString)
+            logger.verbose(TAG, "track=$track")
+            return@runBlocking track
+        }
     }
 
     suspend fun searchTracks(query: String): List<AudioItem> {
@@ -380,7 +388,6 @@ class AudioItemRepository(
         if (isClosed) {
             return
         }
-        isClosed = true
         runBlocking(dispatcher) {
             databaseMutex.withLock {
                 if (database?.isOpen == true) {
@@ -390,6 +397,7 @@ class AudioItemRepository(
                 database = null
             }
         }
+        isClosed = true
     }
 
     companion object {

@@ -59,6 +59,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
     <string name="action_repeat_turn_on">Powtarzanie wł.</string>
     <string name="action_repeat_turn_off">Powtarzanie wył.</string>
     <string name="action_eject">Odłącz dysk USB</string>
+    <string name="action_rewind">Przewijanie do tyłu</string>
     <string name="settings_title">Ustawienia</string>
     <string name="setting_enable_equalizer_title">Korektor dźwięku</string>
     <string name="setting_sound_category_title">Dźwięk</string>
@@ -107,15 +108,13 @@ Firebase Crashlytics\n\nPełne teksty licencji:\nwww.apache.org/licenses/LICENSE
     <string name="legal_disclaimer_cancel_btn">Odrzuć</string>
     <string name="error_no_tracks">Brak utworów</string>
     <string name="error_not_enough_space_for_log">Brak miejsca do zapisu pliku dziennika</string>
-    <string name="setting_USB_status_too_many_files_in_dir">Zbyt dużo plików w katalogu. Proszę umieścić pliki w
-podkatalogach</string>
     <string name="browse_tree_category_files">Pliki</string>
     <string name="setting_library_category_title">Media</string>
     <string name="setting_read_metadata">Odczyt metadanych</string>
     <string name="setting_delete_databases">Usuń biblioteki</string>
     <string name="setting_database_status_title">Biblioteka metadanych</string>
     <string name="setting_enable_replaygain">ReplayGain</string>
-    <string name="searching_voice_input">Wyszukiwanie \"%1$s\"</string>
+    <string name="searching_voice_input">Szukanie głosowe: \"%1$s\"</string>
     <string name="setting_read_metadata_when_connected">Po podłączeniu dysku USB</string>
     <string name="setting_read_metadata_manual">Ręcznie</string>
     <string name="setting_read_metadata_filepaths_only">Tylko ścieżki plików</string>
@@ -136,4 +135,5 @@ to w ulepszeniu aplikacji (funkcja wymaga połączenia z internetem).</string>
     <string name="setting_album_display_list">Lista</string>
     <string name="setting_requires_media_center_restart">(każda zmiana wymaga ponownego uruchomienia aplikacji
 \"Media Center\")</string>
+    <string name="error_no_results">Nic nie znaleziono: \"%1$s\"</string>
 </resources>

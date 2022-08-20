@@ -59,6 +59,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
     <string name="action_repeat_turn_on">Mode répétition activé</string>
     <string name="action_repeat_turn_off">Mode répétition désactivé</string>
     <string name="action_eject">Éjecter</string>
+    <string name="action_rewind">Rembobiner</string>
     <string name="settings_title">Réglages</string>
     <string name="setting_enable_equalizer_title">Égaliseur</string>
     <string name="setting_sound_category_title">Son</string>
@@ -109,15 +110,13 @@ sont créées par Google\n&#x2013; Firebase Crashlytics\n\nTextes de licence:\nw
     <string name="legal_disclaimer_cancel_btn">Annuler</string>
     <string name="error_no_tracks">Aucun titre</string>
     <string name="error_not_enough_space_for_log">Pas assez d\'espace pour écrire le fichier journal.</string>
-    <string name="setting_USB_status_too_many_files_in_dir">Trop de fichiers dans un répertoire, veuillez
-utiliser des sous-répertoires.</string>
     <string name="setting_read_metadata">Lire les métadonnées</string>
     <string name="browse_tree_category_files">Fichiers</string>
     <string name="setting_library_category_title">Médias</string>
     <string name="setting_delete_databases">Supprimer des bibliothèques</string>
     <string name="setting_database_status_title">Bibliothèque</string>
     <string name="setting_enable_replaygain">ReplayGain</string>
-    <string name="searching_voice_input">Rechercher: \"%1$s\"</string>
+    <string name="searching_voice_input">Recherche vocale: \"%1$s\"</string>
     <string name="setting_read_metadata_when_connected">Lorsque clé USB connecté</string>
     <string name="setting_read_metadata_manual">Manuelle</string>
     <string name="setting_read_metadata_filepaths_only">Seulement chemins fichiers</string>
@@ -138,4 +137,5 @@ l\'aider améliorer l\'application (nécessite une connexion Internet).</string>
     <string name="setting_album_display_list">Liste</string>
     <string name="setting_requires_media_center_restart">(toute modification nécessite le redémarrage
 de l\'application \"Media Center\")</string>
+    <string name="error_no_results">Rien trouvé: \"%1$s\"</string>
 </resources>

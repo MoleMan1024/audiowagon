@@ -109,6 +109,9 @@ class PlaybackQueue(private val dispatcher: CoroutineDispatcher) {
             if (currentIndex <= -1 || playbackQueue.size <= 0) {
                 return@withContext null
             }
+            if (currentIndex > playbackQueue.size) {
+                return@withContext null
+            }
             return@withContext playbackQueue[currentIndex]
         }
     }
@@ -117,6 +120,9 @@ class PlaybackQueue(private val dispatcher: CoroutineDispatcher) {
         return withContext(dispatcher) {
             val nextIndex = getNextIndex()
             if (nextIndex <= -1 || playbackQueue.size <= 0) {
+                return@withContext null
+            }
+            if (nextIndex > playbackQueue.size) {
                 return@withContext null
             }
             return@withContext playbackQueue[nextIndex]
@@ -132,13 +138,21 @@ class PlaybackQueue(private val dispatcher: CoroutineDispatcher) {
         }
     }
 
-    suspend fun setShuffleOn() {
+    suspend fun setShuffleOnExceptFirstItem() {
         withContext(dispatcher) {
             val currentItem = getCurrentItem() ?: return@withContext
             playbackQueue.removeAt(currentIndex)
             playbackQueue.shuffle()
             currentIndex = 0
             playbackQueue.add(currentIndex, currentItem)
+            notifyQueueChanged()
+        }
+    }
+
+    suspend fun setShuffleOn() {
+        withContext(dispatcher) {
+            playbackQueue.shuffle()
+            currentIndex = 0
             notifyQueueChanged()
         }
     }

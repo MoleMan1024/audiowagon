@@ -1,11 +1,11 @@
 <!-- taken from https://fonts.google.com/icons licensed under Apache 2.0 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="24dp"
-    android:height="24dp"
-    android:viewportWidth="24"
-    android:viewportHeight="24"
-    android:tint="?attr/colorControlNormal">
-  <path
-      android:fillColor="@android:color/white"
-      android:pathData="M12,4L12,1L8,5l4,4L12,6c3.31,0 6,2.69 6,6 0,1.01 -0.25,1.97 -0.7,2.8l1.46,1.46C19.54,15.03 20,13.57 20,12c0,-4.42 -3.58,-8 -8,-8zM12,18c-3.31,0 -6,-2.69 -6,-6 0,-1.01 0.25,-1.97 0.7,-2.8L5.24,7.74C4.46,8.97 4,10.43 4,12c0,4.42 3.58,8 8,8v3l4,-4 -4,-4v3z"/>
+        android:width="24dp"
+        android:height="24dp"
+        android:viewportWidth="24"
+        android:viewportHeight="24"
+        android:tint="?attr/colorControlNormal">
+    <path
+            android:fillColor="@android:color/white"
+            android:pathData="M7.2,21.125 L3.875,17.8 7.2,14.5 7.9,15.225 5.8,17.3H17.3V13.3H18.3V18.3H5.8L7.9,20.4ZM5.7,10.7V5.7H18.2L16.1,3.6L16.8,2.875L20.125,6.2L16.8,9.5L16.1,8.775L18.2,6.7H6.7V10.7Z" />
 </vector>

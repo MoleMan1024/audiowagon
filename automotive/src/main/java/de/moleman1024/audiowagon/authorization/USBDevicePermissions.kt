@@ -20,8 +20,9 @@ private val logger = Logger
 
 class USBDevicePermissions(private val context: Context) {
 
-    // TODO: do we even need to track this? Isn't device.hasPermission() quick enough?
-    private val usbDeviceToPermissionMap = mutableMapOf<USBMediaDevice, USBPermission>()
+    init {
+        Logger.debug(TAG, "init()")
+    }
 
     /**
      * Called after the user has granted/denied access to a USB device
@@ -29,8 +30,7 @@ class USBDevicePermissions(private val context: Context) {
     fun onUSBPermissionChanged(intent: Intent, device: USBMediaDevice) {
         val permissionGranted: Boolean = intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)
         val permission = if (permissionGranted) USBPermission.GRANTED else USBPermission.DENIED
-        setPermissionForDevice(device, permission)
-        logger.debug(TAG, "USB device permission updated to $permission for: ${device.getName()}")
+        logger.debug(TAG, "USB device permission changed to $permission for: ${device.getName()}")
     }
 
     /**
@@ -50,25 +50,9 @@ class USBDevicePermissions(private val context: Context) {
     }
 
     fun getCurrentPermissionForDevice(device: USBMediaDevice): USBPermission {
-        var permission: USBPermission = USBPermission.UNKNOWN
-        if (device in usbDeviceToPermissionMap) {
-            if (usbDeviceToPermissionMap[device] != USBPermission.UNKNOWN) {
-                permission = usbDeviceToPermissionMap.getOrDefault(device, USBPermission.UNKNOWN)
-            }
-        }
-        if (permission == USBPermission.UNKNOWN) {
-            permission = if (device.hasPermission()) USBPermission.GRANTED else USBPermission.UNKNOWN
-        }
+        val permission: USBPermission = if (device.hasPermission()) USBPermission.GRANTED else USBPermission.UNKNOWN
         logger.debug(TAG, "USB device ${device.getName()} has permission: $permission")
         return permission
-    }
-
-    fun setPermissionForDevice(device: USBMediaDevice, permission: USBPermission) {
-        usbDeviceToPermissionMap[device] = permission
-    }
-
-    fun removeDevice(device: USBMediaDevice) {
-        usbDeviceToPermissionMap.remove(device)
     }
 
 }

@@ -7,7 +7,7 @@ package de.moleman1024.audiowagon.filestorage.usb
 
 import android.app.PendingIntent
 import android.content.Context
-import com.github.mjdev.libaums.fs.FileSystem
+import me.jahnen.libaums.core.fs.FileSystem
 
 interface USBDevice {
     var configurationCount: Int

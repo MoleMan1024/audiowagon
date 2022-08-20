@@ -92,6 +92,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
     <string name="action_repeat_turn_on">Repeat on</string>
     <string name="action_repeat_turn_off">Repeat off</string>
     <string name="action_eject">Eject</string>
+    <string name="action_rewind">Rewind</string>
     <!-- The settings screen -->
     <string name="settings_title">Settings</string>
     <string name="setting_enable_equalizer_title">Equalizer</string>
@@ -149,9 +150,6 @@ Project\n&#x2013; the libaums library created by Magnus Jahnen\n&#x2013; Materia
     <string name="legal_disclaimer_cancel_btn">Cancel</string>
     <string name="error_no_tracks">No tracks</string>
     <string name="error_not_enough_space_for_log">Not enough space to write log file</string>
-    <!-- This string is no longer used, no need to translate it -->
-    <string name="setting_USB_status_too_many_files_in_dir">Too many files in a directory, please use
-subdirectories</string>
     <string name="browse_tree_category_files">Files</string>
     <!-- more entries in the settings screen: the car-internal databases can be deleted (e.g. if a USB stick is no
     longer used) to save some space -->
@@ -163,7 +161,7 @@ subdirectories</string>
     ( https://en.wikipedia.org/wiki/ReplayGain ) -->
     <string name="setting_enable_replaygain">ReplayGain</string>
     <!-- The search query based on the recognized voice input will be shown to the user in a toast message -->
-    <string name="searching_voice_input">Searching for: \"%1$s\"</string>
+    <string name="searching_voice_input">Voice search: \"%1$s\"</string>
     <!-- even more entries in the settings screen: how/when to index audio files on USB stick -->
     <string name="setting_read_metadata_when_connected">When USB drive connected</string>
     <string name="setting_read_metadata_manual">Manually</string>
@@ -191,4 +189,5 @@ improve the app (requires internet connection).</string>
     <string name="setting_album_display_grid">Grid</string>
     <string name="setting_album_display_list">List</string>
     <string name="setting_requires_media_center_restart">(any change requires restart of \"Media Center\" app)</string>
+    <string name="error_no_results">Nothing found: \"%1$s\"</string>
 </resources>

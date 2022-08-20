@@ -58,6 +58,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
     <string name="action_repeat_turn_on">Wiederholen an</string>
     <string name="action_repeat_turn_off">Wiederholen aus</string>
     <string name="action_eject">Auswerfen</string>
+    <string name="action_rewind">Zurückspulen</string>
     <string name="settings_title">Einstellungen</string>
     <string name="setting_enable_equalizer_title">Equalizer</string>
     <string name="setting_sound_category_title">Klang</string>
@@ -112,15 +113,13 @@ Vektorgrafiken, entwickelt von Google\n&#x2013; Firebase Crashlytics\n\nLizenzve
     <string name="legal_disclaimer_cancel_btn">Abbrechen</string>
     <string name="error_no_tracks">Keine Titel</string>
     <string name="error_not_enough_space_for_log">Zu wenig freier Speicherplatz für Logdatei</string>
-    <string name="setting_USB_status_too_many_files_in_dir">Zu viele Dateien in einem Verzeichnis, bitte verwenden
-Sie Unterverzeichnisse.</string>
     <string name="browse_tree_category_files">Dateien</string>
     <string name="setting_library_category_title">Medien</string>
     <string name="setting_read_metadata">Metadaten auslesen</string>
     <string name="setting_delete_databases">Datenbanken löschen</string>
     <string name="setting_database_status_title">Datenbank</string>
     <string name="setting_enable_replaygain">ReplayGain</string>
-    <string name="searching_voice_input">Suche nach: \"%1$s\"</string>
+    <string name="searching_voice_input">Sprachsuche: \"%1$s\"</string>
     <string name="setting_read_metadata_when_connected">Wenn USB-Stick verbunden</string>
     <string name="setting_read_metadata_manual">Manuell</string>
     <string name="setting_read_metadata_filepaths_only">Nur Dateipfade</string>
@@ -140,4 +139,5 @@ verbessern (benötigt Internetverbindung).</string>
     <string name="setting_album_display_grid">Raster</string>
     <string name="setting_album_display_list">Liste</string>
     <string name="setting_requires_media_center_restart">(Änderung erfordert Neustart der \"Media Center\" App)</string>
+    <string name="error_no_results">Nichts gefunden: \"%1$s\"</string>
 </resources>

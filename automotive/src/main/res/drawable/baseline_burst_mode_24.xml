@@ -1,15 +1,15 @@
 <!-- taken from https://fonts.google.com/icons licensed under Apache 2.0 and mirrored -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="24dp"
-    android:height="24dp"
-    android:viewportWidth="24"
-    android:viewportHeight="24"
-    android:tint="?attr/colorControlNormal">
-  <group
-          android:scaleX="-1"
-          android:translateX="24">
-    <path
-        android:fillColor="@android:color/white"
-        android:pathData="M1,5h2v14L1,19zM5,5h2v14L5,19zM22,5L10,5c-0.55,0 -1,0.45 -1,1v12c0,0.55 0.45,1 1,1h12c0.55,0 1,-0.45 1,-1L23,6c0,-0.55 -0.45,-1 -1,-1zM11,17l2.5,-3.15L15.29,16l2.5,-3.22L21,17L11,17z"/>
-  </group>
+        android:width="24dp"
+        android:height="24dp"
+        android:viewportWidth="24"
+        android:viewportHeight="24"
+        android:tint="?attr/colorControlNormal">
+    <group
+            android:scaleX="-1"
+            android:translateX="24">
+        <path
+                android:fillColor="@android:color/white"
+                android:pathData="M1.775,18V6H2.775V18ZM6,18V6H7V18ZM11.85,18Q11.15,18 10.688,17.538Q10.225,17.075 10.225,16.375V7.625Q10.225,6.925 10.688,6.463Q11.15,6 11.85,6H20.625Q21.3,6 21.763,6.463Q22.225,6.925 22.225,7.625V16.375Q22.225,17.075 21.763,17.538Q21.3,18 20.625,18ZM12.7,14.775H19.775L17.625,11.875L15.725,14.375L14.325,12.525Z" />
+    </group>
 </vector>

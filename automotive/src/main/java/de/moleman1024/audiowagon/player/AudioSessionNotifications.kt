@@ -84,6 +84,7 @@ class AudioSessionNotifications(
 
     private fun deleteNotificationChannel() {
         if (notificationManager.getNotificationChannel(AUDIO_SESS_NOTIF_CHANNEL) == null) {
+            logger.debug(TAG, "No notification channel")
             isChannelCreated = false
             return
         }
@@ -183,7 +184,8 @@ class AudioSessionNotifications(
 
     fun getNotification(): Notification {
         if (!isChannelCreated) {
-            throw MissingNotifChannelException()
+            val channel = notificationManager.getNotificationChannel(AUDIO_SESS_NOTIF_CHANNEL)
+            throw MissingNotifChannelException("channel=$channel")
         }
         return prepareNotification(isPlayingNotificationBuilder)
     }
@@ -203,7 +205,6 @@ class AudioSessionNotifications(
         context.unregisterReceiver(broadcastMsgRecv)
     }
 
-    // TODO: check why called multiple times
     fun removeNotification() {
         logger.debug(TAG, "removeNotification()")
         if (!isShowingNotification) {
@@ -218,6 +219,7 @@ class AudioSessionNotifications(
     }
 
     fun shutdown() {
+        logger.debug(TAG, "shutdown()")
         deleteNotificationChannel()
     }
 

@@ -8,15 +8,12 @@ package de.moleman1024.audiowagon.filestorage.local
 import android.media.MediaDataSource
 import android.net.Uri
 import de.moleman1024.audiowagon.Util
-import de.moleman1024.audiowagon.filestorage.AudioFileStorageLocation
-import de.moleman1024.audiowagon.filestorage.Directory
-import de.moleman1024.audiowagon.filestorage.FileLike
-import de.moleman1024.audiowagon.filestorage.IndexingStatus
+import de.moleman1024.audiowagon.filestorage.*
 import de.moleman1024.audiowagon.log.Logger
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import java.io.ByteArrayOutputStream
 import java.io.FileInputStream
-import java.io.InputStream
 
 // not used right now
 class LocalFileStorageLocation(override val device: LocalFileMediaDevice) : AudioFileStorageLocation {
@@ -27,6 +24,8 @@ class LocalFileStorageLocation(override val device: LocalFileMediaDevice) : Audi
     override var indexingStatus: IndexingStatus = IndexingStatus.NOT_INDEXED
     override var isDetached: Boolean = false
     override var isIndexingCancelled: Boolean = false
+    // does not need a thread confinement
+    override var libaumsDispatcher: CoroutineDispatcher? = null
 
     override fun walkTopDown(startDirectory: Any, scope: CoroutineScope): Sequence<Any> {
         return device.walkTopDown(startDirectory)
@@ -41,20 +40,20 @@ class LocalFileStorageLocation(override val device: LocalFileMediaDevice) : Audi
     }
 
     override fun getByteArrayForURI(uri: Uri): ByteArray {
-        val inputStream = getInputStreamForURI(uri)
+        val lockableInputStream = getInputStreamForURI(uri)
         val byteArrayOutputStream = ByteArrayOutputStream()
         val buffer = ByteArray(device.chunkSize)
         var bytesRead = 0
         while (bytesRead > -1) {
-            bytesRead = inputStream.read(buffer)
+            bytesRead = lockableInputStream.inputStream.read(buffer)
             byteArrayOutputStream.write(buffer)
         }
         return byteArrayOutputStream.toByteArray()
     }
 
-    override fun getInputStreamForURI(uri: Uri): InputStream {
+    override fun getInputStreamForURI(uri: Uri): LockableInputStream {
         val file = device.getFileFromURI(uri)
-        return FileInputStream(file)
+        return LockableInputStream(FileInputStream(file))
     }
 
     override fun close() {

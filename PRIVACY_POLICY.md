@@ -25,8 +25,7 @@ The user of the app *needs to opt-in* to use this feature via the settings scree
 A detailed description about the data collected, how and where it is being processed can be found
 [in Google's Firebase support documentation for Crashlytics](https://firebase.google.com/support/privacy?hl=en).
 
-In addition to the crash/error message, the last 100 lines of the log file (maximum, can be less) are transferred as
-well.
+In addition to the crash/error message, the last 64 kB lines of the log file are transferred as well.
 
 
 ## Sharing usage & diagnostics data via Google

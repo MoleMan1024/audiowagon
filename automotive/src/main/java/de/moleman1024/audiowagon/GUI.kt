@@ -16,6 +16,7 @@ private const val TAG = "AudioBrowserGUI"
 private val logger = Logger
 const val INDEXING_NOTIF_CHANNEL: String = "IndexingNotifChan"
 const val INDEXING_NOTIFICATION_ID: Int = 25468
+const val POPUP_TIMEOUT_MS: Long = 4000L
 
 open class GUI(private val scope: CoroutineScope, private val context: Context) {
     private var changeIndexingNotifJob: Job? = null
@@ -77,7 +78,7 @@ open class GUI(private val scope: CoroutineScope, private val context: Context) 
             val builder = getIndexingNotificationBuilder()
             builder.setContentText(context.getString(R.string.notif_indexing_text_completed))
             builder.setProgress(0, 0, false)
-            builder.setTimeoutAfter(4000)
+            builder.setTimeoutAfter(POPUP_TIMEOUT_MS)
             sendNotification(builder)
         }
     }

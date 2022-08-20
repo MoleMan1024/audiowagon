@@ -13,15 +13,18 @@ import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.SharedPrefs
+import de.moleman1024.audiowagon.SingletonCoroutine
 import de.moleman1024.audiowagon.authorization.ACTION_USB_PERMISSION_CHANGE
 import de.moleman1024.audiowagon.authorization.USBDevicePermissions
 import de.moleman1024.audiowagon.authorization.USBPermission
 import de.moleman1024.audiowagon.exceptions.*
 import de.moleman1024.audiowagon.filestorage.DeviceAction
 import de.moleman1024.audiowagon.filestorage.DeviceChange
+import de.moleman1024.audiowagon.log.CrashReporting
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.*
 import java.io.IOException
+import java.util.concurrent.Executors
 
 private const val TAG = "USBDevConn"
 const val ACTION_USB_ATTACHED = "de.moleman1024.audiowagon.authorization.USB_ATTACHED"
@@ -44,16 +47,27 @@ private val logger = Logger
 class USBDeviceConnections(
     private val context: Context,
     val scope: CoroutineScope,
-    private val dispatcher: CoroutineDispatcher,
     private val usbDevicePermissions: USBDevicePermissions,
-    private val sharedPrefs: SharedPrefs
+    private val sharedPrefs: SharedPrefs,
+    crashReporting: CrashReporting
 ) {
     val deviceObservers = mutableListOf<(DeviceChange) -> Unit>()
-    private var isLogToUSB = false
-    private val connectedDevices = mutableListOf<USBMediaDevice>()
-    private var onAttachedUSBDeviceFoundJob: Job? = null
+    private var isLogToUSBPreferenceSet = false
+    private val attachedAndPermittedDevices = mutableListOf<USBMediaDevice>()
     var isSuspended = false
-
+    private var isBroadcastRecvRegistered = false
+    // use a single thread here to avoid race conditions updating the USB attached/detached status from multiple threads
+    private val singleThreadDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
+    private val updateAttachedDevicesSingletonCoroutine =
+        SingletonCoroutine("updAttdDevices", singleThreadDispatcher, scope.coroutineContext, crashReporting)
+    private val usbAttachedSingletonCoroutine =
+        SingletonCoroutine("USBAttached", singleThreadDispatcher, scope.coroutineContext, crashReporting)
+    private val usbAttachedDelayedSingletonCoroutine =
+        SingletonCoroutine("USBAttachedDelay", singleThreadDispatcher, scope.coroutineContext, crashReporting)
+    private val usbDetachedSingletonCoroutine =
+        SingletonCoroutine("USBDetached", singleThreadDispatcher, scope.coroutineContext, crashReporting)
+    private val usbPermissionSingletonCoroutine =
+        SingletonCoroutine("USBPermission", singleThreadDispatcher, scope.coroutineContext, crashReporting)
     /**
      * Received when a USB device is (un)plugged. This can take a few seconds after plugging in the USB flash drive.
      * Runs in main thread, do not perform long running tasks here:
@@ -69,7 +83,7 @@ class USBDeviceConnections(
                 return
             }
             if (intent.action == ACTION_USB_UPDATE) {
-                updateConnectedDevices()
+                updateAttachedDevices()
                 return
             }
             val usbDeviceWrapper: USBMediaDevice
@@ -85,31 +99,36 @@ class USBDeviceConnections(
             try {
                 when (intent.action) {
                     ACTION_USB_ATTACHED -> {
-                        runBlocking(dispatcher) {
-                            onAttachedUSBDeviceFoundJob?.let {
-                                logger.debug(TAG, "Cancelling onAttachedUSBDeviceFoundJob")
-                                it.cancelAndJoin()
-                            }
-                            onAttachedUSBDeviceFound(usbDeviceWrapper)
+                        usbAttachedSingletonCoroutine.launch {
+                            usbAttachedDelayedSingletonCoroutine.cancel()
+                            onAttachedUSBMassStorageDeviceFound(usbDeviceWrapper)
                         }
                     }
                     UsbManager.ACTION_USB_DEVICE_ATTACHED -> {
-                        onAttachedUSBDeviceFoundJob = scope.launch(dispatcher) {
+                        usbAttachedDelayedSingletonCoroutine.launch {
                             // wait a bit to give USBDummyActivity a chance to catch this instead and send
                             // ACTION_USB_ATTACHED (see above)
                             delay(400)
-                            onAttachedUSBDeviceFound(usbDeviceWrapper)
-                            onAttachedUSBDeviceFoundJob = null
+                            onAttachedUSBMassStorageDeviceFound(usbDeviceWrapper)
                         }
                     }
-                    UsbManager.ACTION_USB_DEVICE_DETACHED -> onUSBDeviceDetached(usbDeviceWrapper)
-                    ACTION_USB_PERMISSION_CHANGE -> {
-                        if (!isDeviceConnected(usbDeviceWrapper)) {
-                            logger.warning(TAG, "Received permission change for USB device that is not connected")
-                            return
+                    UsbManager.ACTION_USB_DEVICE_DETACHED -> {
+                        usbDetachedSingletonCoroutine.launch {
+                            usbAttachedDelayedSingletonCoroutine.cancel()
+                            usbAttachedSingletonCoroutine.cancel()
+                            updateAttachedDevicesSingletonCoroutine.cancel()
+                            onUSBDeviceDetached(usbDeviceWrapper)
                         }
-                        usbDevicePermissions.onUSBPermissionChanged(intent, usbDeviceWrapper)
-                        onUSBPermissionChanged(usbDeviceWrapper)
+                    }
+                    ACTION_USB_PERMISSION_CHANGE -> {
+                        usbPermissionSingletonCoroutine.launch {
+                            if (!isDeviceAttached(usbDeviceWrapper)) {
+                                logger.warning(TAG, "Received permission change for USB device that is not attached")
+                                return@launch
+                            }
+                            usbDevicePermissions.onUSBPermissionChanged(intent, usbDeviceWrapper)
+                            onUSBPermissionChanged(usbDeviceWrapper)
+                        }
                     }
                 }
             } catch (exc: RuntimeException) {
@@ -120,18 +139,24 @@ class USBDeviceConnections(
     }
 
     init {
+        logger.debug(TAG, "Init USBDeviceConnections()")
         val logToUSBPreference = sharedPrefs.isLogToUSBEnabled(context)
         if (logToUSBPreference) {
-            isLogToUSB = true
+            isLogToUSBPreferenceSet = true
+        }
+        updateUSBStatusInSettings(R.string.setting_USB_status_not_connected)
+    }
+
+    fun updateAttachedDevices() {
+        updateAttachedDevicesSingletonCoroutine.launch {
+            for (usbMediaDevice in getAttachedUSBMassStorageDevices()) {
+                onAttachedUSBMassStorageDeviceFound(usbMediaDevice)
+            }
         }
     }
 
-    fun updateConnectedDevices() {
-        val filteredUSBDevices = getConnectedFilteredDevicesFromUSBManager()
-        if (filteredUSBDevices.isEmpty()) {
-            updateUSBStatusInSettings(R.string.setting_USB_status_not_connected)
-            return
-        }
+    private fun getAttachedUSBMassStorageDevices(): List<USBMediaDevice> {
+        val filteredUSBDevices = getAttachedFilteredDevicesFromUSBManager()
         for (usbMediaDevice in filteredUSBDevices) {
             try {
                 checkIsCompatibleUSBMassStorage(usbMediaDevice)
@@ -147,8 +172,8 @@ class USBDeviceConnections(
                     else -> throw exc
                 }
             }
-            onAttachedUSBDeviceFound(usbMediaDevice)
         }
+        return filteredUSBDevices
     }
 
     private fun checkIsCompatibleUSBMassStorage(usbDeviceWrapper: USBMediaDevice) {
@@ -182,10 +207,9 @@ class USBDeviceConnections(
         return context.getSystemService(Context.USB_SERVICE) as UsbManager
     }
 
-    private fun onAttachedUSBDeviceFound(device: USBMediaDevice) {
-        logger.debug(TAG, "onAttachedUSBDeviceFound: $device")
+    private suspend fun onAttachedUSBMassStorageDeviceFound(device: USBMediaDevice) {
+        logger.debug(TAG, "onAttachedUSBMassStorageDeviceFound(device=$device)")
         val permission: USBPermission = usbDevicePermissions.getCurrentPermissionForDevice(device)
-        usbDevicePermissions.setPermissionForDevice(device, permission)
         if (permission == USBPermission.UNKNOWN) {
             updateUSBStatusInSettings(R.string.setting_USB_status_connected_no_permission)
             if (isSuspended) {
@@ -212,16 +236,16 @@ class USBDeviceConnections(
     /**
      * Prepare the filesystem on the attached USB device and notify that it is ready for usage
      */
-    private fun onUSBDeviceWithPermissionAttached(device: USBMediaDevice) {
-        var connectedDevice = device
-        if (!isDeviceInConnectedList(device)) {
-            appendConnectedUSBDevice(device)
+    private suspend fun onUSBDeviceWithPermissionAttached(device: USBMediaDevice) {
+        var attachedPermittedDevice = device
+        if (!isDeviceInAttachedPermittedList(device)) {
+            appendAttachedPermittedDevice(device)
         } else {
-            connectedDevice = getConnectedDevice(device)
+            attachedPermittedDevice = getAttachedPermittedDevice(device)
         }
         // TODO: improve this, does not look nice with so many catch statements
         try {
-            connectedDevice.initFilesystem()
+            attachedPermittedDevice.initFilesystem()
         } catch (exc: IOException) {
             logger.exception(TAG, "I/O exception when attaching USB drive", exc)
             updateUSBStatusInSettings(R.string.setting_USB_status_error)
@@ -237,13 +261,18 @@ class USBDeviceConnections(
             return
         } catch (exc: IllegalStateException) {
             logger.exception(TAG, "Illegal state when initiating filesystem, missing permission?", exc)
-            val deviceChange = DeviceChange(error = context.getString(R.string.error_USB_init))
-            notifyObservers(deviceChange)
+            notifyUSBInitError()
+            return
+        } catch (exc: IndexOutOfBoundsException) {
+            // I saw this once in Google Play Console, came from
+            // com.github.mjdev.libaums.fs.fat32.FAT.getChain$libaums_release (FAT.kt:132)
+            logger.exception(TAG, exc.message.toString(), exc)
+            notifyUSBInitError()
             return
         }
-        if (isLogToUSB) {
+        if (isLogToUSBPreferenceSet) {
             try {
-                connectedDevice.enableLogging()
+                attachedPermittedDevice.enableLogging()
             } catch (exc: DriveAlmostFullException) {
                 logger.exceptionLogcatOnly(TAG, exc.message.toString(), exc)
             } catch (exc: RuntimeException) {
@@ -251,7 +280,12 @@ class USBDeviceConnections(
             }
         }
         updateUSBStatusInSettings(R.string.setting_USB_status_ok)
-        val deviceChange = DeviceChange(connectedDevice, DeviceAction.CONNECT)
+        val deviceChange = DeviceChange(attachedPermittedDevice, DeviceAction.CONNECT)
+        notifyObservers(deviceChange)
+    }
+
+    private fun notifyUSBInitError() {
+        val deviceChange = DeviceChange(error = context.getString(R.string.error_USB_init))
         notifyObservers(deviceChange)
     }
 
@@ -270,30 +304,29 @@ class USBDeviceConnections(
             notifyObservers(deviceChange)
         } finally {
             device.closeMassStorageFilesystem()
-            removeConnectedUSBDevice(device)
-            usbDevicePermissions.removeDevice(device)
+            removeAttachedPermittedDevice(device)
             updateUSBStatusInSettings(R.string.setting_USB_status_not_connected)
         }
     }
 
-    private fun removeConnectedUSBDevice(device: USBMediaDevice) {
-        if (!isDeviceInConnectedList(device)) {
-            logger.warning(TAG, "Device not in list of connected devices: ${device.getName()}")
+    private fun removeAttachedPermittedDevice(device: USBMediaDevice) {
+        if (!isDeviceInAttachedPermittedList(device)) {
+            logger.warning(TAG, "Device not in list of attached+permitted devices: ${device.getName()}")
             return
         }
-        connectedDevices.remove(device)
+        attachedAndPermittedDevices.remove(device)
     }
 
-    private fun isDeviceInConnectedList(device: USBMediaDevice): Boolean {
-        return connectedDevices.contains(device)
+    private fun isDeviceInAttachedPermittedList(device: USBMediaDevice): Boolean {
+        return attachedAndPermittedDevices.contains(device)
     }
 
-    private fun getConnectedDevice(device: USBMediaDevice): USBMediaDevice {
-        return connectedDevices.first { it == device }
+    private fun getAttachedPermittedDevice(device: USBMediaDevice): USBMediaDevice {
+        return attachedAndPermittedDevices.first { it == device }
     }
 
-    private fun isDeviceConnected(usbMediaDevice: USBMediaDevice): Boolean {
-        getConnectedFilteredDevicesFromUSBManager().forEach {
+    private fun isDeviceAttached(usbMediaDevice: USBMediaDevice): Boolean {
+        getAttachedFilteredDevicesFromUSBManager().forEach {
             if (it == usbMediaDevice) {
                 return true
             }
@@ -301,7 +334,7 @@ class USBDeviceConnections(
         return false
     }
 
-    private fun getConnectedFilteredDevicesFromUSBManager(): List<USBMediaDevice> {
+    private fun getAttachedFilteredDevicesFromUSBManager(): List<USBMediaDevice> {
         val filteredUSBDevices = mutableListOf<USBMediaDevice>()
         getUSBManager().deviceList.values.forEach {
             val deviceProxy = USBDeviceProxy(it, getUSBManager())
@@ -310,16 +343,15 @@ class USBDeviceConnections(
                 filteredUSBDevices.add(usbMediaDevice)
             }
         }
-        logger.debug(TAG, "Found ${filteredUSBDevices.size} connected, not built-in USB device(s)")
+        logger.debug(TAG, "Found ${filteredUSBDevices.size} attached, not built-in USB device(s)")
         return filteredUSBDevices
     }
 
     /**
      * Received after user has granted/denied access to USB device
      */
-    private fun onUSBPermissionChanged(device: USBMediaDevice) {
+    private suspend fun onUSBPermissionChanged(device: USBMediaDevice) {
         val permission: USBPermission = usbDevicePermissions.getCurrentPermissionForDevice(device)
-        usbDevicePermissions.setPermissionForDevice(device, permission)
         if (permission == USBPermission.DENIED) {
             logger.info(TAG, "User has denied access to: ${device.getName()}")
             return
@@ -349,41 +381,52 @@ class USBDeviceConnections(
             addAction(Intent.ACTION_MEDIA_NOFS)
         }
         context.registerReceiver(usbBroadcastReceiver, filter)
+        isBroadcastRecvRegistered = true
     }
 
     fun unregisterForUSBIntents() {
+        if (!isBroadcastRecvRegistered) {
+            logger.debug(TAG, "USB broadcast receiver not registered")
+            return
+        }
         logger.debug(TAG, "Unregistering for broadcast intents")
         try {
             context.unregisterReceiver(usbBroadcastReceiver)
+            isBroadcastRecvRegistered = false
         } catch (exc: IllegalArgumentException) {
             logger.exceptionLogcatOnly(TAG, exc.message.toString(), exc)
         }
     }
 
-    private fun appendConnectedUSBDevice(device: USBMediaDevice) {
-        if (isDeviceInConnectedList(device)) {
-            logger.warning(TAG, "USB device already in list of connected devices: ${device.getName()}")
+    private fun appendAttachedPermittedDevice(device: USBMediaDevice) {
+        if (isDeviceInAttachedPermittedList(device)) {
+            logger.warning(TAG, "USB device already in list of attached+permitted devices: ${device.getName()}")
             return
         }
-        connectedDevices.add(device)
+        attachedAndPermittedDevices.add(device)
     }
 
     private fun notifyObservers(deviceChange: DeviceChange) {
         deviceObservers.forEach { it(deviceChange) }
     }
 
-    fun getNumConnectedDevices(): Int {
-        return connectedDevices.size
+    fun getNumAttachedPermittedDevices(): Int {
+        return attachedAndPermittedDevices.size
     }
 
-    fun enableLogToUSB() {
-        isLogToUSB = true
-        if (connectedDevices.size <= 0) {
+    suspend fun enableLogToUSBPreference() {
+        isLogToUSBPreferenceSet = true
+        enableLogToUSB()
+    }
+
+    private suspend fun enableLogToUSB() {
+        logger.verbose(TAG, "enableLogToUSB()")
+        if (attachedAndPermittedDevices.size <= 0) {
             logger.warning(TAG, "No USB device, cannot create logfile")
             return
         }
         try {
-            connectedDevices[0].enableLogging()
+            attachedAndPermittedDevices[0].enableLogging()
         } catch (exc: DriveAlmostFullException) {
             throw exc
         }
@@ -392,13 +435,31 @@ class USBDeviceConnections(
         }
     }
 
+    fun disableLogToUSBPreference() {
+        isLogToUSBPreferenceSet = false
+        disableLogToUSB()
+    }
+
     fun disableLogToUSB() {
-        isLogToUSB = false
-        if (connectedDevices.size <= 0) {
-            logger.warning(TAG, "No USB device, cannot use a logfile")
+        logger.verbose(TAG, "disableLogToUSB()")
+        if (attachedAndPermittedDevices.size <= 0) {
+            logger.warning(TAG, "No USB device, cannot use a log file")
             return
         }
-        connectedDevices[0].disableLogging()
+        attachedAndPermittedDevices[0].disableLogging()
+    }
+
+    fun requestUSBPermissionIfMissing() {
+        val attachedDevices = getAttachedUSBMassStorageDevices()
+        if (attachedDevices.isEmpty()) {
+            logger.warning(TAG, "No USB device attached, cannot ask for permission")
+            return
+        }
+        if (usbDevicePermissions.getCurrentPermissionForDevice(attachedDevices[0])
+            in listOf(USBPermission.DENIED, USBPermission.UNKNOWN)
+        ) {
+            usbDevicePermissions.requestPermissionForDevice(attachedDevices[0])
+        }
     }
 
 }

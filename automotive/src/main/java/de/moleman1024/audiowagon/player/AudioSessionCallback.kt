@@ -27,13 +27,29 @@ private val logger = Logger
 @ExperimentalCoroutinesApi
 class AudioSessionCallback(
     private val audioPlayer: AudioPlayer,
-    private val scope: CoroutineScope,
-    private val dispatcher: CoroutineDispatcher,
-    private val crashReporting: CrashReporting
+    scope: CoroutineScope,
+    dispatcher: CoroutineDispatcher,
+    crashReporting: CrashReporting
 ) : MediaSessionCompat.Callback() {
     val observers = mutableListOf<(AudioSessionChange) -> Unit>()
-    var onSkipToNextJob: Job? = null
-    var onSkipToPreviousJob: Job? = null
+    private val skipToNextSingletonCoroutine =
+        SingletonCoroutine("skipToNext", dispatcher, scope.coroutineContext, crashReporting)
+    private val skipToPrevSingletonCoroutine =
+        SingletonCoroutine("skipToPrev", dispatcher, scope.coroutineContext, crashReporting)
+    private val stopSingletonCoroutine = SingletonCoroutine("stop", dispatcher, scope.coroutineContext, crashReporting)
+    private val pauseSingletonCoroutine =
+        SingletonCoroutine("pause", dispatcher, scope.coroutineContext, crashReporting)
+    private val seekSingletonCoroutine = SingletonCoroutine("seek", dispatcher, scope.coroutineContext, crashReporting)
+    private val playFromSearchSingletonCoroutine =
+        SingletonCoroutine("playFromSearch", dispatcher, scope.coroutineContext, crashReporting)
+    private val shuffleSingletonCoroutine =
+        SingletonCoroutine("shuffle", dispatcher, scope.coroutineContext, crashReporting)
+    private val repeatSingletonCoroutine =
+        SingletonCoroutine("repeat", dispatcher, scope.coroutineContext, crashReporting)
+    private val ejectSingletonCoroutine =
+        SingletonCoroutine("eject", dispatcher, scope.coroutineContext, crashReporting)
+    private val rewindSingletonCoroutine =
+        SingletonCoroutine("rewind", dispatcher, scope.coroutineContext, crashReporting)
 
     override fun onCommand(command: String, args: Bundle?, cb: ResultReceiver?) {
         logger.debug(TAG, "onCommand(command=$command,args=$args)")
@@ -92,6 +108,9 @@ class AudioSessionCallback(
             CMD_EJECT -> {
                 notifyObservers(AudioSessionChange(AudioSessionChangeType.ON_EJECT))
             }
+            CMD_REQUEST_USB_PERMISSION -> {
+                notifyObservers(AudioSessionChange(AudioSessionChangeType.ON_REQUEST_USB_PERMISSION))
+            }
             else -> {
                 logger.warning(TAG, "Unhandled command: $command")
             }
@@ -103,28 +122,33 @@ class AudioSessionCallback(
         logger.debug(TAG, "onCustomAction($action, $extras)")
         when (action) {
             ACTION_SHUFFLE_ON -> {
-                launchInScopeSafely {
+                shuffleSingletonCoroutine.launch {
                     audioPlayer.setShuffleOn()
                 }
             }
             ACTION_SHUFFLE_OFF -> {
-                launchInScopeSafely {
+                shuffleSingletonCoroutine.launch {
                     audioPlayer.setShuffleOff()
                 }
             }
             ACTION_REPEAT_ON -> {
-                launchInScopeSafely {
+                repeatSingletonCoroutine.launch {
                     audioPlayer.setRepeatOn()
                 }
             }
             ACTION_REPEAT_OFF -> {
-                launchInScopeSafely {
+                repeatSingletonCoroutine.launch {
                     audioPlayer.setRepeatOff()
                 }
             }
             ACTION_EJECT -> {
-                launchInScopeSafely {
+                ejectSingletonCoroutine.launch {
                     notifyObservers(AudioSessionChange(AudioSessionChangeType.ON_EJECT))
+                }
+            }
+            ACTION_REWIND_10 -> {
+                rewindSingletonCoroutine.launch {
+                    audioPlayer.rewind(10000)
                 }
             }
             else -> {
@@ -159,7 +183,7 @@ class AudioSessionCallback(
 
     override fun onPlayFromMediaId(mediaId: String?, extras: Bundle?) {
         super.onPlayFromMediaId(mediaId, extras)
-        logger.debug(TAG, "onPlayFromMediaId(mediaId=$mediaId;extras=$extras")
+        logger.debug(TAG, "onPlayFromMediaId(mediaId=$mediaId,extras=$extras)")
         if (mediaId == null) {
             return
         }
@@ -178,30 +202,32 @@ class AudioSessionCallback(
      * https://developer.android.com/guide/topics/media-apps/interacting-with-assistant#declare_legacy_support_for_voice_actions
      */
     override fun onPlayFromSearch(query: String?, extras: Bundle?) {
-        logger.debug(TAG, "onPlayFromSearch(query=$query;extras=$extras)")
+        logger.debug(TAG, "onPlayFromSearch(query=$query,extras=$extras)")
         super.onPlayFromSearch(query, extras)
-        val audioSessionChange = AudioSessionChange(AudioSessionChangeType.ON_PLAY_FROM_SEARCH)
-        if (!query.isNullOrEmpty()) {
-            audioSessionChange.queryToPlay = query
-            val extraMediaFocus = extras?.getString(MediaStore.EXTRA_MEDIA_FOCUS)
-            extraMediaFocus?.let {
-                when (it) {
-                    MediaStore.Audio.Artists.ENTRY_CONTENT_TYPE -> audioSessionChange.queryFocus = AudioItemType.ARTIST
-                    MediaStore.Audio.Albums.ENTRY_CONTENT_TYPE -> audioSessionChange.queryFocus = AudioItemType.ALBUM
-                    MediaStore.Audio.Media.ENTRY_CONTENT_TYPE -> audioSessionChange.queryFocus = AudioItemType.TRACK
-                    else -> audioSessionChange.queryFocus = AudioItemType.UNSPECIFIC
+        playFromSearchSingletonCoroutine.launch {
+            val audioSessionChange = AudioSessionChange(AudioSessionChangeType.ON_PLAY_FROM_SEARCH)
+            if (!query.isNullOrEmpty()) {
+                audioSessionChange.queryToPlay = query
+                // Aug 2022: it looks like this extra media focus is broken in Google Assistant:
+                // https://issuetracker.google.com/issues/212779546
+                val extraMediaFocus = extras?.getString(MediaStore.EXTRA_MEDIA_FOCUS)
+                extraMediaFocus?.let {
+                    when (it) {
+                        MediaStore.Audio.Artists.ENTRY_CONTENT_TYPE -> audioSessionChange.queryFocus = AudioItemType.ARTIST
+                        MediaStore.Audio.Albums.ENTRY_CONTENT_TYPE -> audioSessionChange.queryFocus = AudioItemType.ALBUM
+                        MediaStore.Audio.Media.ENTRY_CONTENT_TYPE -> audioSessionChange.queryFocus = AudioItemType.TRACK
+                        else -> audioSessionChange.queryFocus = AudioItemType.UNSPECIFIC
+                    }
                 }
+                // these extras from Google Assistant are strange, I have no idea where this data comes from, it fills it
+                // with data from other sources (Spotify? Youtube Music?) so it will not match local USB database ...
+                val artist = extras?.getString(MediaStore.EXTRA_MEDIA_ARTIST)
+                artist?.let { audioSessionChange.artistToPlay = it }
+                val album = extras?.getString(MediaStore.EXTRA_MEDIA_ALBUM)
+                album?.let { audioSessionChange.albumToPlay = it }
+                val track = extras?.getString(MediaStore.EXTRA_MEDIA_TITLE)
+                track?.let { audioSessionChange.trackToPlay = it }
             }
-            // these extras from Google Assistant are strange, I have no idea where this data comes from, it fills it
-            // with data from other sources (Spotify? Youtube Music?) so it will not match local USB database ...
-            val artist = extras?.getString(MediaStore.EXTRA_MEDIA_ARTIST)
-            artist?.let { audioSessionChange.artistToPlay = it }
-            val album = extras?.getString(MediaStore.EXTRA_MEDIA_ALBUM)
-            album?.let { audioSessionChange.albumToPlay = it }
-            val track = extras?.getString(MediaStore.EXTRA_MEDIA_TITLE)
-            track?.let { audioSessionChange.trackToPlay = it }
-        }
-        launchInScopeSafely {
             notifyObservers(audioSessionChange)
         }
     }
@@ -209,7 +235,7 @@ class AudioSessionCallback(
     override fun onPause() {
         logger.debug(TAG, "onPause()")
         super.onPause()
-        launchInScopeSafely {
+        pauseSingletonCoroutine.launch {
             audioPlayer.pause()
             notifyObservers(AudioSessionChange(AudioSessionChangeType.ON_PAUSE))
         }
@@ -218,7 +244,7 @@ class AudioSessionCallback(
     override fun onSeekTo(pos: Long) {
         logger.debug(TAG, "onSeekTo(pos=$pos)")
         super.onSeekTo(pos)
-        launchInScopeSafely {
+        seekSingletonCoroutine.launch {
             audioPlayer.seekTo(pos.toInt())
         }
     }
@@ -226,30 +252,22 @@ class AudioSessionCallback(
     override fun onSkipToNext() {
         logger.debug(TAG, "onSkipToNext()")
         super.onSkipToNext()
-        runBlocking {
-            onSkipToNextJob?.cancelAndJoin()
-            onSkipToPreviousJob?.cancelAndJoin()
-        }
-        val audioSessionChange = AudioSessionChange(AudioSessionChangeType.ON_SKIP_TO_NEXT)
-        notifyObservers(audioSessionChange)
-        onSkipToNextJob = launchInScopeSafely {
+        skipToPrevSingletonCoroutine.cancel()
+        skipToNextSingletonCoroutine.launch {
+            val audioSessionChange = AudioSessionChange(AudioSessionChangeType.ON_SKIP_TO_NEXT)
+            notifyObservers(audioSessionChange)
             audioPlayer.skipNextTrack()
-            onSkipToNextJob = null
         }
     }
 
     override fun onSkipToPrevious() {
         logger.debug(TAG, "onSkipToPrevious()")
         super.onSkipToPrevious()
-        runBlocking {
-            onSkipToNextJob?.cancelAndJoin()
-            onSkipToPreviousJob?.cancelAndJoin()
-        }
-        val audioSessionChange = AudioSessionChange(AudioSessionChangeType.ON_SKIP_TO_PREVIOUS)
-        notifyObservers(audioSessionChange)
-        onSkipToPreviousJob = launchInScopeSafely {
+        skipToNextSingletonCoroutine.cancel()
+        skipToPrevSingletonCoroutine.launch {
+            val audioSessionChange = AudioSessionChange(AudioSessionChangeType.ON_SKIP_TO_PREVIOUS)
+            notifyObservers(audioSessionChange)
             audioPlayer.handlePrevious()
-            onSkipToPreviousJob = null
         }
     }
 
@@ -269,7 +287,7 @@ class AudioSessionCallback(
         logger.debug(TAG, "onStop()")
         // the call to super.onStop() will release audio focus
         super.onStop()
-        launchInScopeSafely {
+        stopSingletonCoroutine.launch {
             audioPlayer.stop()
             notifyObservers(AudioSessionChange(AudioSessionChangeType.ON_STOP))
         }
@@ -290,10 +308,6 @@ class AudioSessionCallback(
         logger.debug(TAG, "onPrepareFromUri(uri=$uri)")
         // not supported, but it seems this is needed for Google Assistant?
         super.onPrepareFromUri(uri, extras)
-    }
-
-    private fun launchInScopeSafely(func: suspend (CoroutineScope) -> Unit): Job {
-        return Util.launchInScopeSafely(scope, dispatcher, logger, TAG, crashReporting, func)
     }
 
     // we don't use onSetShuffleMode and onSetRepeatMode here because AAOS does not display the GUI icons for these

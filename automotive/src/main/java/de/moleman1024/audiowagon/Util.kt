@@ -16,7 +16,7 @@ import android.util.DisplayMetrics
 import android.view.WindowInsets
 import android.view.WindowManager
 import android.view.WindowMetrics
-import com.github.mjdev.libaums.fs.UsbFile
+import me.jahnen.libaums.core.fs.UsbFile
 import de.moleman1024.audiowagon.exceptions.NoAudioItemException
 import de.moleman1024.audiowagon.filestorage.*
 import de.moleman1024.audiowagon.filestorage.usb.LOG_DIRECTORY
@@ -258,7 +258,7 @@ class Util {
                     else -> {
                         logger.exception(tag, msg, exc)
                         crashReporting?.logMessage(msg)
-                        crashReporting?.logMessages(logger.getLastLogLines(NUM_LOG_LINES_CRASH_REPORT))
+                        crashReporting?.logLastLogMessages()
                         crashReporting?.recordException(exc)
                     }
                 }
@@ -272,7 +272,7 @@ class Util {
                     } catch (exc: CancellationException) {
                         logger.warning(tag, "CancellationException (msg=${exc.message} exc=$exc)")
                     } catch (exc: Exception) {
-                        crashReporting?.logMessages(logger.getLastLogLines(NUM_LOG_LINES_CRASH_REPORT))
+                        crashReporting?.logLastLogMessages()
                         crashReporting?.recordException(exc)
                         logger.exception(tag, exc.message.toString(), exc)
                     }

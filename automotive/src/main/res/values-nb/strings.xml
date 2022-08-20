@@ -59,6 +59,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
     <string name="action_repeat_turn_on">Gjenta på</string>
     <string name="action_repeat_turn_off">Gjenta av</string>
     <string name="action_eject">Løs ut</string>
+    <string name="action_rewind">Spole</string>
     <string name="settings_title">Innstillinger</string>
     <string name="setting_enable_equalizer_title">Equalizer</string>
     <string name="setting_sound_category_title">Lyd</string>
@@ -110,14 +111,13 @@ Google\n&#x2013; Firebase Crashlytics\n\nLisenstekster:\nwww.apache.org/licenses
     <string name="legal_disclaimer_cancel_btn">Avbryt</string>
     <string name="error_no_tracks">Ingen spor</string>
     <string name="error_not_enough_space_for_log">Utilstrekkelig plass til å skrive loggfil</string>
-    <string name="setting_USB_status_too_many_files_in_dir">For mange filer i en mappe, bruk undermapper</string>
     <string name="browse_tree_category_files">Filer</string>
     <string name="setting_library_category_title">Media</string>
     <string name="setting_read_metadata">Lese metadata</string>
     <string name="setting_delete_databases">Slette databaser</string>
     <string name="setting_database_status_title">Database</string>
     <string name="setting_enable_replaygain">ReplayGain</string>
-    <string name="searching_voice_input">Søk etter: \"%1$s\"</string>
+    <string name="searching_voice_input">Stemmesøk: \"%1$s\"</string>
     <string name="setting_read_metadata_when_connected">Når USB-stasjonen er tilkoblet</string>
     <string name="setting_read_metadata_manual">Manuelt</string>
     <string name="setting_read_metadata_filepaths_only">Bare filstier</string>
@@ -138,4 +138,5 @@ forbedre appen (krever internettforbindelse).</string>
     <string name="setting_album_display_list">Liste</string>
     <string name="setting_requires_media_center_restart">(enhver endring krever omstart av
 \"Media Center\"-appen)</string>
+    <string name="error_no_results">Ingenting funnet: \"%1$s\"</string>
 </resources>

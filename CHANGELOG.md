@@ -12,6 +12,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.1] - 2022-08-20
+
+### Fixed
+
+- album art was not shown for tracks that did not have an album name in metadata, this has been fixed 
+  [#79](https://github.com/MoleMan1024/audiowagon/issues/79) 
+- confined all access to *libaums* to a single thread because the library is not thread-safe. Hopefully this will fix a
+  rare filesystem corruption [#80](https://github.com/MoleMan1024/audiowagon/issues/80)
+- sometimes albums/artists with no associated tracks were kept in database, those are now properly cleaned up
+  [#82](https://github.com/MoleMan1024/audiowagon/issues/82) 
+- when starting a new playback queue with shuffle mode turned on, the first track was never shuffled. This issue was
+  related to the intended behaviour that the currently playing track shall not be modified when toggling shuffle mode.
+  The issue been fixed [#83](https://github.com/MoleMan1024/audiowagon/issues/83) 
+- try to avoid hangs (ANRs) in different places by refactoring blocking coroutines
+- try to avoid a `IllegalStateException` that could occur in Settings screen sometimes
+- fixed an issue during quick service startup/shutdown where coroutines were not cancelled properly during 
+  restoring of persistent state
+- fixed multiple issues when writing log files to USB drive
+- fixed some problems in `LogActivity`
+- handled a rare `IndexOutOfBoundsException` when setting up filesystem partitions
+- made sure that stack traces arrive in *Crashlytics* logs fully
+
+### Changed
+
+- when persisting the playback queue only upcoming tracks were stored. This has been changed to persist the complete
+  playback queue instead [#78](https://github.com/MoleMan1024/audiowagon/issues/78)
+- when a user cancelled the permission popup, or if the permission request was denied automatically, you had to re-plug
+  the USB drive to make the permission pop-up appear again. Now the permission popup will be triggered again when
+  entering *AudioWagon* settings (in case the permission was not yet given) 
+  [#76](https://github.com/MoleMan1024/audiowagon/issues/76)
+- the eject icon could be tapped accidentally while driving because it was nearby the skip backwards icon. To avoid
+  accidental presses the eject icon has been moved into the extra icon drawer next to shuffle and repeat icons. A
+  seek-backwards icon was added in its original place which is less annoying if tapped accidentally 
+  [#74](https://github.com/MoleMan1024/audiowagon/issues/74)
+- for *Crashlytics* exception catching we now log the maximum amount of log lines possible (64 kB) instead of just the
+  last 100 lines (because it was confusing during analysis of logs)
+- *libaums* and other library version updates 
+- update of icons
+- internal refactoring (mainly in coroutines)
+
+### Added
+
+- translation for Italian
+
 
 ## [2.0.1] - 2022-07-03
 

@@ -14,7 +14,6 @@ import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.produce
 import java.io.File
 import java.io.IOException
-import java.io.InputStream
 import java.util.*
 
 interface AudioFileStorageLocation {
@@ -26,6 +25,7 @@ interface AudioFileStorageLocation {
     var indexingStatus: IndexingStatus
     var isDetached: Boolean
     var isIndexingCancelled: Boolean
+    var libaumsDispatcher: CoroutineDispatcher?
 
     @ExperimentalCoroutinesApi
     fun indexAudioFiles(
@@ -34,7 +34,6 @@ interface AudioFileStorageLocation {
         dispatcher: CoroutineDispatcher
     ): ReceiveChannel<FileLike> {
         logger.debug(TAG, "indexAudioFiles(directory=$directory, ${device.getName()})")
-        val startDirectory = device.getFileFromURI(directory.uri)
         val exceptionHandler = CoroutineExceptionHandler { _, exc ->
             when (exc) {
                 is IOException -> {
@@ -48,28 +47,39 @@ interface AudioFileStorageLocation {
             postIndexAudioFiles()
         }
         return scope.produce(dispatcher + exceptionHandler) {
+            val startDirectory = device.getFileFromURI(directory.uri)
             try {
+                // walkTopDown is locked internally for USB
                 for (file in walkTopDown(startDirectory, this)) {
                     if (isIndexingCancelled) {
                         logger.debug(TAG, "Cancel indexAudioFiles()")
                         break
                     }
-                    val fileType = Util.determinePlayableFileType(file)
-                    if (fileType == null) {
-                        logger.debug(TAG, "Skipping unsupported file: $file")
-                        continue
+                    val createTypedFileLambda: (suspend() -> Unit) = createTypedFileLambda@ {
+                        val fileType = Util.determinePlayableFileType(file)
+                        if (fileType == null) {
+                            logger.debug(TAG, "Skipping unsupported file: $file")
+                            return@createTypedFileLambda
+                        }
+                        when (fileType) {
+                            is PlaylistFile -> {
+                                // skip playlists, we don't need them indexed in media library
+                                return@createTypedFileLambda
+                            }
+                            is Directory -> {
+                                send(createDirectoryFromFileInIndex(file))
+                            }
+                            is AudioFile -> {
+                                send(createAudioFileFromFileInIndex(file))
+                            }
+                        }
                     }
-                    when (fileType) {
-                        is PlaylistFile -> {
-                            // skip playlists, we don't need them indexed in media library
-                            continue
+                    libaumsDispatcher?.let {
+                        withContext(it) {
+                            createTypedFileLambda()
                         }
-                        is Directory -> {
-                            send(createDirectoryFromFileInIndex(file))
-                        }
-                        is AudioFile -> {
-                            send(createAudioFileFromFileInIndex(file))
-                        }
+                    } ?: run {
+                        createTypedFileLambda()
                     }
                 }
             } catch (exc: CancellationException) {
@@ -105,7 +115,7 @@ interface AudioFileStorageLocation {
     fun getDataSourceForURI(uri: Uri): MediaDataSource
     fun getBufferedDataSourceForURI(uri: Uri): MediaDataSource
     fun getByteArrayForURI(uri: Uri): ByteArray
-    fun getInputStreamForURI(uri: Uri): InputStream
+    fun getInputStreamForURI(uri: Uri): LockableInputStream
     fun close()
     fun setDetached()
 

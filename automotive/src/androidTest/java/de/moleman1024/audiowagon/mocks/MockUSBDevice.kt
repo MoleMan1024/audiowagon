@@ -9,7 +9,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.os.Parcel
 import android.os.Parcelable
-import com.github.mjdev.libaums.fs.FileSystem
+import me.jahnen.libaums.core.fs.FileSystem
 import de.moleman1024.audiowagon.filestorage.usb.USBDevice
 import de.moleman1024.audiowagon.filestorage.usb.USBDeviceConfig
 import de.moleman1024.audiowagon.filestorage.usb.USBEndpoint
