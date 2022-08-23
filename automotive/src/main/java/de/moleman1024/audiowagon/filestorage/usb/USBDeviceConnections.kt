@@ -49,7 +49,7 @@ class USBDeviceConnections(
     val scope: CoroutineScope,
     private val usbDevicePermissions: USBDevicePermissions,
     private val sharedPrefs: SharedPrefs,
-    crashReporting: CrashReporting
+    private val crashReporting: CrashReporting
 ) {
     val deviceObservers = mutableListOf<(DeviceChange) -> Unit>()
     private var isLogToUSBPreferenceSet = false
@@ -251,6 +251,7 @@ class USBDeviceConnections(
             updateUSBStatusInSettings(R.string.setting_USB_status_error)
             val deviceChange = exc.message?.let { DeviceChange(error = it) }
             deviceChange?.let { notifyObservers(it) }
+            crashReporting.logLastMessagesAndRecordException(exc)
             return
         } catch (exc: NoPartitionsException) {
             // libaums library only supports FAT32 (4 GB file size limit per file)
@@ -258,16 +259,19 @@ class USBDeviceConnections(
             val deviceChange = DeviceChange(error = context.getString(R.string.error_no_filesystem))
             updateUSBStatusInSettings(R.string.setting_USB_status_not_compatible)
             notifyObservers(deviceChange)
+            crashReporting.logLastMessagesAndRecordException(exc)
             return
         } catch (exc: IllegalStateException) {
             logger.exception(TAG, "Illegal state when initiating filesystem, missing permission?", exc)
             notifyUSBInitError()
+            crashReporting.logLastMessagesAndRecordException(exc)
             return
         } catch (exc: IndexOutOfBoundsException) {
             // I saw this once in Google Play Console, came from
             // com.github.mjdev.libaums.fs.fat32.FAT.getChain$libaums_release (FAT.kt:132)
             logger.exception(TAG, exc.message.toString(), exc)
             notifyUSBInitError()
+            crashReporting.logLastMessagesAndRecordException(exc)
             return
         }
         if (isLogToUSBPreferenceSet) {

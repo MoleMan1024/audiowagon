@@ -445,8 +445,8 @@ open class AudioFileStorage(
         val builder = MediaDescriptionCompat.Builder().apply {
             setTitle(file.name)
             setIconUri(Uri.parse(
-                RESOURCE_ROOT_URI
-                    + context.resources.getResourceEntryName(R.drawable.baseline_insert_drive_file_24)))
+                RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.baseline_insert_drive_file_24)
+            ))
             setMediaId(ContentHierarchyElement.serialize(contentHierarchyID))
             setMediaUri(file.uri)
         }
@@ -462,8 +462,8 @@ open class AudioFileStorage(
         val builder = MediaDescriptionCompat.Builder().apply {
             setTitle(directory.name)
             setIconUri(Uri.parse(
-                RESOURCE_ROOT_URI
-                        + context.resources.getResourceEntryName(R.drawable.baseline_folder_24)))
+                RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.baseline_folder_24)
+            ))
             setMediaId(ContentHierarchyElement.serialize(contentHierarchyID))
             setMediaUri(directory.uri)
         }
@@ -476,8 +476,8 @@ open class AudioFileStorage(
         val builder = MediaDescriptionCompat.Builder().apply {
             setTitle(file.name)
             setIconUri(Uri.parse(
-                RESOURCE_ROOT_URI
-                        + context.resources.getResourceEntryName(R.drawable.baseline_description_24)))
+                RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.baseline_description_24)
+            ))
             setMediaId(ContentHierarchyElement.serialize(contentHierarchyID))
             setMediaUri(file.uri)
         }

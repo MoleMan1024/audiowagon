@@ -66,8 +66,7 @@ class SingletonCoroutine(
             } catch (exc: CancellationException) {
                 logger.warning(tag, "CancellationException $currentID (exc=$exc)")
             } catch (exc: Exception) {
-                crashReporting?.logLastLogMessages()
-                crashReporting?.recordException(exc)
+                crashReporting?.logLastMessagesAndRecordException(exc)
                 logger.exception(tag, exc.message.toString(), exc)
             } finally {
                 instancesMap.remove(currentID)
@@ -94,8 +93,7 @@ class SingletonCoroutine(
                 else -> {
                     logger.exception(tag, msg, exc)
                     crashReporting?.logMessage(msg)
-                    crashReporting?.logLastLogMessages()
-                    crashReporting?.recordException(exc)
+                    crashReporting?.logLastMessagesAndRecordException(exc)
                 }
             }
         }

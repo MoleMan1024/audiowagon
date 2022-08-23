@@ -258,8 +258,7 @@ class Util {
                     else -> {
                         logger.exception(tag, msg, exc)
                         crashReporting?.logMessage(msg)
-                        crashReporting?.logLastLogMessages()
-                        crashReporting?.recordException(exc)
+                        crashReporting?.logLastMessagesAndRecordException(exc)
                     }
                 }
             }
@@ -272,8 +271,7 @@ class Util {
                     } catch (exc: CancellationException) {
                         logger.warning(tag, "CancellationException (msg=${exc.message} exc=$exc)")
                     } catch (exc: Exception) {
-                        crashReporting?.logLastLogMessages()
-                        crashReporting?.recordException(exc)
+                        crashReporting?.logLastMessagesAndRecordException(exc)
                         logger.exception(tag, exc.message.toString(), exc)
                     }
                 }

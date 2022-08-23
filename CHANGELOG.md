@@ -12,6 +12,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+## [2.2.2] - 2022-08-23
+
+### Fixed
+
+- fixed an issue in *Crashlytics* logging
+- added another USB device to the list of built-in devices to be ignored
+- avoid a crash when closing a USB file does not finish within 10 seconds
+
+
 ## [2.2.1] - 2022-08-20
 
 ### Fixed

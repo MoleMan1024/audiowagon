@@ -14,7 +14,6 @@ import me.jahnen.libaums.core.UsbMassStorageDevice.Companion.getMassStorageDevic
 import me.jahnen.libaums.core.fs.FileSystem
 import de.moleman1024.audiowagon.exceptions.NoPartitionsException
 import de.moleman1024.audiowagon.log.Logger
-import java.io.IOException
 
 private const val TAG = "USBDeviceProxy"
 private val logger = Logger
@@ -99,8 +98,10 @@ class USBDeviceProxy(
         logger.debug(TAG, "Initializing filesystem")
         if (massStorageDevice == null) {
             try {
-                massStorageDevice = androidUSBDevice.getMassStorageDevices(context).first()
-                Logger.verbose(TAG, "Created mass storage device: $massStorageDevice")
+                val massStorageDevices = androidUSBDevice.getMassStorageDevices(context)
+                logger.debug(TAG, "Found mass storage devices: $massStorageDevices")
+                massStorageDevice = massStorageDevices.first()
+                logger.verbose(TAG, "Created mass storage device: $massStorageDevice")
             } catch (exc: NoSuchElementException) {
                 throw RuntimeException("No mass storage device: $androidUSBDevice")
             }
@@ -122,7 +123,7 @@ class USBDeviceProxy(
 
     // locked externally by usbMutex
     override fun close() {
-        Logger.verbose(TAG, "Closing mass storage device: $massStorageDevice")
+        logger.verbose(TAG, "Closing mass storage device: $massStorageDevice")
         massStorageDevice?.close()
         massStorageDevice = null
     }

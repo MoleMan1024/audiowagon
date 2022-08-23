@@ -113,7 +113,9 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
                 // MicroChip OS81118 network interface card 0x0424
                 Pair(1060, 53016),
                 // Microchip MCP2200 USB to UART converter 0x04D8
-                Pair(1240, 223)
+                Pair(1240, 223),
+                // Mitsubishi USB to Modem Bridge 0x06D3
+                Pair(1747, 10272)
             )
         ) {
             return true
@@ -154,10 +156,12 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
                 it.interfaceSubclass == INTERFACE_SUBCLASS && it.interfaceProtocol == INTERFACE_PROTOCOL
             }
             .map { usbInterface ->
-                // Every mass storage device has exactly two endpoints: One IN and one OUT endpoint
+                // Every mass storage device should have exactly two endpoints: One IN and one OUT endpoint
+                // Some people connect strange devices e.g. Transcend MP3 players that have more endpoints but also
+                // support USB mass storage
                 val endpointCount = usbInterface.endpointCount
                 if (endpointCount != 2) {
-                    logger.warning(TAG, "Interface endpoint count != 2")
+                    logger.warning(TAG, "Interface endpoint count: $endpointCount != 2 for $usbInterface")
                 }
                 var outEndpoint: USBEndpoint? = null
                 var inEndpoint: USBEndpoint? = null

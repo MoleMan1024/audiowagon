@@ -44,6 +44,34 @@ index 9b955fb..e5961c4 100644
      PUBLISH_ARTIFACT_ID = 'core'
  }
  
+diff --git a/libaums/src/c/usb.c b/libaums/src/c/usb.c
+index 5b2d72a..67c0bf2 100644
+--- a/libaums/src/c/usb.c
++++ b/libaums/src/c/usb.c
+@@ -8,7 +8,7 @@
+ #define TAG "native_usb_ioctl"
+ 
+ JNIEXPORT jboolean JNICALL
+-Java_me_jahnen_libaums_usb_AndroidUsbCommunication_resetUsbDeviceNative(JNIEnv *env, jobject thiz, jint fd) {
++Java_me_jahnen_libaums_core_usb_AndroidUsbCommunication_resetUsbDeviceNative(JNIEnv *env, jobject thiz, jint fd) {
+     int ret = ioctl(fd, USBDEVFS_RESET);
+     if(ret < 0) {
+         LOG_E(TAG, "ioctl USBDEVFS_RESET error %d, %s", errno, strerror(errno));
+@@ -18,11 +18,11 @@ Java_me_jahnen_libaums_usb_AndroidUsbCommunication_resetUsbDeviceNative(JNIEnv *
+ }
+ 
+ JNIEXPORT jboolean JNICALL
+-Java_me_jahnen_libaums_usb_AndroidUsbCommunication_clearHaltNative(JNIEnv *env, jobject thiz, jint fd, jint endpoint) {
++Java_me_jahnen_libaums_core_usb_AndroidUsbCommunication_clearHaltNative(JNIEnv *env, jobject thiz, jint fd, jint endpoint) {
+     int ret = ioctl(fd, USBDEVFS_CLEAR_HALT, &endpoint);
+     if(ret < 0) {
+         LOG_E(TAG, "ioctl USBDEVFS_CLEAR_HALT error %d, %s", errno, strerror(errno));
+     }
+ 
+     return (ret == 0) ? JNI_TRUE : JNI_FALSE;
+-}
+\ No newline at end of file
++}
 diff --git a/libaums/src/main/java/me/jahnen/libaums/core/driver/ByteBlockDevice.kt b/libaums/src/main/java/me/jahnen/libaums/core/driver/ByteBlockDevice.kt
 index 7c00c2c..d12ed07 100644
 --- a/libaums/src/main/java/me/jahnen/libaums/core/driver/ByteBlockDevice.kt
@@ -185,10 +213,22 @@ index 7c00c2c..d12ed07 100644
 \ No newline at end of file
 +} 
 diff --git a/libaums/src/main/java/me/jahnen/libaums/core/driver/scsi/ScsiBlockDevice.kt b/libaums/src/main/java/me/jahnen/libaums/core/driver/scsi/ScsiBlockDevice.kt
-index cc1d351..573c202 100644
+index cc1d351..9b0fc63 100644
 --- a/libaums/src/main/java/me/jahnen/libaums/core/driver/scsi/ScsiBlockDevice.kt
 +++ b/libaums/src/main/java/me/jahnen/libaums/core/driver/scsi/ScsiBlockDevice.kt
-@@ -174,10 +174,8 @@ class ScsiBlockDevice(private val usbCommunication: UsbCommunication, private va
+@@ -103,7 +103,10 @@ class ScsiBlockDevice(private val usbCommunication: UsbCommunication, private va
+         Log.d(TAG, "inquiry response: $inquiryResponse")
+ 
+         if (inquiryResponse.peripheralQualifier.toInt() != 0 || inquiryResponse.peripheralDeviceType.toInt() != 0) {
+-            throw IOException("unsupported PeripheralQualifier or PeripheralDeviceType")
++            throw IOException(
++                "Unsupported PeripheralQualifier=${inquiryResponse.peripheralQualifier.toInt()} " +
++                        "or PeripheralDeviceType=${inquiryResponse.peripheralDeviceType.toInt()}"
++            )
+         }
+ 
+         val testUnit = ScsiTestUnitReady(lun=lun)
+@@ -174,10 +177,8 @@ class ScsiBlockDevice(private val usbCommunication: UsbCommunication, private va
                  // Retry
                  Log.w(TAG, (e.message ?: "IOException") + ", retrying...")
              }
@@ -199,7 +239,7 @@ index cc1d351..573c202 100644
          throw IOException("MAX_RECOVERY_ATTEMPTS Exceeded while trying to transfer command to device, please reattach device and try again")
      }
  
-@@ -255,26 +253,36 @@ class ScsiBlockDevice(private val usbCommunication: UsbCommunication, private va
+@@ -255,26 +256,36 @@ class ScsiBlockDevice(private val usbCommunication: UsbCommunication, private va
          }
  
          var transferLength = command.dCbwDataTransferLength
@@ -244,7 +284,7 @@ index cc1d351..573c202 100644
                  written = 0
                  do {
                      written += usbCommunication.bulkOutTransfer(inBuffer)
-@@ -286,7 +294,6 @@ class ScsiBlockDevice(private val usbCommunication: UsbCommunication, private va
+@@ -286,7 +297,6 @@ class ScsiBlockDevice(private val usbCommunication: UsbCommunication, private va
              }
          }
  
@@ -252,7 +292,7 @@ index cc1d351..573c202 100644
          // expecting csw now
          cswBuffer.clear()
          read = usbCommunication.bulkInTransfer(cswBuffer)
-@@ -311,16 +318,13 @@ class ScsiBlockDevice(private val usbCommunication: UsbCommunication, private va
+@@ -311,16 +321,13 @@ class ScsiBlockDevice(private val usbCommunication: UsbCommunication, private va
      @Synchronized
      @Throws(IOException::class)
      override fun read(deviceOffset: Long, buffer: ByteBuffer) {
@@ -269,7 +309,7 @@ index cc1d351..573c202 100644
      }
  
      /**
-@@ -331,20 +335,17 @@ class ScsiBlockDevice(private val usbCommunication: UsbCommunication, private va
+@@ -331,20 +338,17 @@ class ScsiBlockDevice(private val usbCommunication: UsbCommunication, private va
      @Synchronized
      @Throws(IOException::class)
      override fun write(deviceOffset: Long, buffer: ByteBuffer) {

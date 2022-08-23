@@ -223,8 +223,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                 is CannotRecoverUSBException -> {
                     cancelMostJobs()
                     notifyLibraryCreationFailure()
-                    crashReporting.logLastLogMessages()
-                    crashReporting.recordException(exc)
+                    crashReporting.logLastMessagesAndRecordException(exc)
                 }
             }
         }
@@ -285,15 +284,13 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             runBlocking(dispatcher) {
                 audioSession.showError(this@AudioBrowserService.getString(R.string.error_USB_init))
             }
-            crashReporting.logLastLogMessages()
-            crashReporting.recordException(exc)
+            crashReporting.logLastMessagesAndRecordException(exc)
         } catch (exc: RuntimeException) {
             logger.exception(TAG, "Runtime error during update of connected USB devices", exc)
             runBlocking(dispatcher) {
                 audioSession.showError(this@AudioBrowserService.getString(R.string.error_USB_init))
             }
-            crashReporting.logLastLogMessages()
-            crashReporting.recordException(exc)
+            crashReporting.logLastMessagesAndRecordException(exc)
         }
     }
 
@@ -445,8 +442,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                     lastServiceStartReason = reason
                 } catch (exc: MissingNotifChannelException) {
                     logger.exception(TAG, exc.message.toString(), exc)
-                    crashReporting.logLastLogMessages()
-                    crashReporting.recordException(exc)
+                    crashReporting.logLastMessagesAndRecordException(exc)
                 }
             }
             return
@@ -463,12 +459,10 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             }
             startForegroundService(Intent(this, AudioBrowserService::class.java))
             logger.debug(TAG, "startForegroundService() called")
-            crashReporting.logLastLogMessages()
         } catch (exc: MissingNotifChannelException) {
             logger.exception(TAG, exc.message.toString(), exc)
             servicePriority = ServicePriority.FOREGROUND
-            crashReporting.logLastLogMessages()
-            crashReporting.recordException(exc)
+            crashReporting.logLastMessagesAndRecordException(exc)
         }
     }
 
@@ -514,8 +508,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         // TODO: the error handling is all over the place, need more structure
         libraryCreationSingletonCoroutine.exceptionHandler = CoroutineExceptionHandler { _, exc ->
             notifyLibraryCreationFailure()
-            crashReporting.logLastLogMessages()
-            crashReporting.recordException(exc)
+            crashReporting.logLastMessagesAndRecordException(exc)
             when (exc) {
                 is IOException -> {
                     logger.exception(TAG, "I/O exception while building library", exc)
@@ -709,8 +702,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             if (audioSessionNotification == null) {
                 val msg = "Missing audioSessionNotification for foreground service"
                 logger.error(TAG, msg)
-                crashReporting.logLastLogMessages()
-                crashReporting.recordException(RuntimeException(msg))
+                crashReporting.logLastMessagesAndRecordException(RuntimeException(msg))
             } else {
                 startForeground(NOTIFICATION_ID, audioSessionNotification)
                 logger.debug(TAG, "Moved service to foreground")
@@ -1029,13 +1021,11 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                 logger.warning(TAG, exc.message.toString())
                 result.sendResult(null)
             } catch (exc: IOException) {
-                crashReporting.logLastLogMessages()
-                crashReporting.recordException(exc)
+                crashReporting.logLastMessagesAndRecordException(exc)
                 logger.exception(TAG, exc.message.toString(), exc)
                 result.sendResult(null)
             } catch (exc: RuntimeException) {
-                crashReporting.logLastLogMessages()
-                crashReporting.recordException(exc)
+                crashReporting.logLastMessagesAndRecordException(exc)
                 logger.exception(TAG, exc.message.toString(), exc)
                 if (!isShuttingDown) {
                     audioSession.showError(getString(R.string.error_unknown))

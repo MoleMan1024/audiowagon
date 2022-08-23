@@ -79,14 +79,20 @@ class CrashReporting(
         isEnabled = false
     }
 
-    fun recordException(exc: Throwable) {
+    fun logLastMessagesAndRecordException(exc: Throwable) {
         if (!isEnabled) {
             return
         }
-        if (!isDebugBuild) {
-            crashlytics.recordException(exc)
-        } else {
-            logger.verbose(TAG, "Recording exception: $exc")
+        launchInScopeSafely {
+            val messages = logger.getLogsForCrashReporting()
+            messages.forEach {
+                crashlytics.log(it)
+            }
+            if (!isDebugBuild) {
+                crashlytics.recordException(exc)
+            } else {
+                logger.verbose(TAG, "Recording exception: $exc")
+            }
         }
     }
 
@@ -98,18 +104,6 @@ class CrashReporting(
             crashlytics.log(msg)
         } else {
             logger.verbose(TAG, "Logging: $msg")
-        }
-    }
-
-    fun logLastLogMessages() {
-        if (!isEnabled || isDebugBuild) {
-            return
-        }
-        launchInScopeSafely {
-            val messages = logger.getLogsForCrashReporting()
-            messages.forEach {
-                crashlytics.log(it)
-            }
         }
     }
 

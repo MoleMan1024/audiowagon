@@ -40,6 +40,10 @@ Please see Github for a [list of changes for each version of the app](https://gi
 - The app will *not* work with Polestar/Volvo OTA car software version 2.0 nor 2.1. You will need the car software
   version 2.2 or higher that includes the CarPlay Update (or 1.9 or lower) which re-enables the USB data connection.  
 - The app can *not* play back **.wma** files
+- The app does *not* work with music stored on *iPod*, *iPhone* nor *Android phone*, you need to use a *USB mass storage
+  device* formatted as *FAT32* (for example a USB flash drive)
+- One person has [reported incompatibility](https://github.com/MoleMan1024/audiowagon/issues/85) with a *SanDisk 2TB
+  Extreme Portable SSD*
 - *Some* people have reported issues when using the app with a **USB to micro SD card adapter** where no files could be
   played back and lots of error messages were shown. In such cases the adapter is probably not compatible with the
   library I use to read the filesystem, please try with a USB flash drive instead, I have not heard about problems with

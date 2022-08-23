@@ -324,8 +324,7 @@ class AudioSession(
         initPlaybackState()
         launchInScopeSafely("reInitAfterError()") {
             audioPlayer.reInitAfterError()
-            crashReporting.logLastLogMessages()
-            crashReporting.recordException(AudioPlayerException("errorCode=$errorCode"))
+            crashReporting.logLastMessagesAndRecordException(AudioPlayerException("errorCode=$errorCode"))
         }
     }
 
@@ -1156,9 +1155,8 @@ class AudioSession(
                 launchInScopeSafely("Cannot read file") {
                     showError(context.getString(R.string.cannot_read_file, exc.fileName))
                 }
-                crashReporting.logLastLogMessages()
                 crashReporting.logMessage(msg)
-                crashReporting.recordException(exc)
+                crashReporting.logLastMessagesAndRecordException(exc)
                 logger.exception(TAG, msg, exc)
             }
             is FileNotFoundException -> {
@@ -1168,16 +1166,14 @@ class AudioSession(
             }
             is IOException -> {
                 if (exc.message?.contains("MAX_RECOVERY_ATTEMPTS") == false) {
-                    crashReporting.logLastLogMessages()
                     crashReporting.logMessage(msg)
-                    crashReporting.recordException(exc)
+                    crashReporting.logLastMessagesAndRecordException(exc)
                 }
                 logger.exception(TAG, msg, exc)
             }
             else -> {
-                crashReporting.logLastLogMessages()
                 crashReporting.logMessage(msg)
-                crashReporting.recordException(exc)
+                crashReporting.logLastMessagesAndRecordException(exc)
                 logger.exception(TAG, msg, exc)
             }
         }
