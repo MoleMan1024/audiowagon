@@ -16,10 +16,10 @@ import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.util.*
-import java.util.concurrent.locks.ReentrantLock
 
 class USBDeviceStorageLocation(override val device: USBMediaDevice) : AudioFileStorageLocation {
     override val TAG = "USBDevStorLoc"
@@ -118,17 +118,21 @@ class USBDeviceStorageLocation(override val device: USBMediaDevice) : AudioFileS
         return Util.createURIForPath(storageID, path)
     }
 
-    override fun getDataSourceForURI(uri: Uri): MediaDataSource {
+    override suspend fun getDataSourceForURI(uri: Uri): MediaDataSource {
         return device.getDataSourceForURI(uri)
     }
 
-    override fun getBufferedDataSourceForURI(uri: Uri): MediaDataSource {
+    override suspend fun getBufferedDataSourceForURI(uri: Uri): MediaDataSource {
         return device.getBufferedDataSourceForURI(uri)
     }
 
-    override fun getByteArrayForURI(uri: Uri): ByteArray {
+    @Suppress("BlockingMethodInNonBlockingContext")
+    override suspend fun getByteArrayForURI(uri: Uri): ByteArray {
         val lockableInputStream = getInputStreamForURI(uri)
-        return runBlocking(device.libaumsDispatcher) {
+        if (lockableInputStream.libaumsDispatcher == null) {
+            return ByteArray(0)
+        }
+        return withContext(lockableInputStream.libaumsDispatcher) {
             val byteArrayOutputStream = ByteArrayOutputStream()
             val buffer = ByteArray(device.getChunkSize())
             var bytesRead = 0
@@ -136,13 +140,13 @@ class USBDeviceStorageLocation(override val device: USBMediaDevice) : AudioFileS
                 bytesRead = lockableInputStream.inputStream.read(buffer)
                 byteArrayOutputStream.write(buffer)
             }
-            return@runBlocking byteArrayOutputStream.toByteArray()
+            return@withContext byteArrayOutputStream.toByteArray()
         }
     }
 
-    override fun getInputStreamForURI(uri: Uri): LockableInputStream {
+    override suspend fun getInputStreamForURI(uri: Uri): LockableInputStream {
         val inputStream: InputStream
-        runBlocking(device.libaumsDispatcher) {
+        withContext(device.libaumsDispatcher) {
             inputStream = UsbFileInputStream(device.getUSBFileFromURI(uri))
         }
         return LockableInputStream(inputStream, device.libaumsDispatcher)

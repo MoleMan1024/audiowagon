@@ -656,7 +656,7 @@ class AudioItemLibrary(
         return metadataMaker.createMetadataForItem(audioItem)
     }
 
-    private fun getAlbumArtForFile(file: FileLike): ByteArray? {
+    private suspend fun getAlbumArtForFile(file: FileLike): ByteArray? {
         val byteArrayFromCache: ByteArray? = recentAudioItemToAlbumArtMap[file.uri.toString()]
         if (byteArrayFromCache != null) {
             logger.debug(TAG, "Returning album art from cache for: $file")
@@ -690,7 +690,7 @@ class AudioItemLibrary(
         return albumArtBytes
     }
 
-    fun getAlbumArtForArtURI(uri: Uri): ByteArray? {
+    suspend fun getAlbumArtForArtURI(uri: Uri): ByteArray? {
         val uriString = uri.toString()
         if (!uriString.contains("$ART_URI_PART/$ART_URI_PART_FILE")) {
             val repo = getPrimaryRepository()
@@ -738,7 +738,7 @@ class AudioItemLibrary(
         }
     }
 
-    private fun findAlbumArtFor(audioFile: AudioFile): FileLike? {
+    private suspend fun findAlbumArtFor(audioFile: AudioFile): FileLike? {
         val audioItem = createAudioItemForFile(audioFile)
         val hasEmbeddedAlbumArt = metadataMaker.hasEmbeddedAlbumArt(audioItem)
         if (hasEmbeddedAlbumArt) {
@@ -785,7 +785,7 @@ class AudioItemLibrary(
         libraryExceptionObservers.forEach { it(exc) }
     }
 
-    fun extractMetadataFrom(audioFile: AudioFile): AudioItem {
+    suspend fun extractMetadataFrom(audioFile: AudioFile): AudioItem {
         return metadataMaker.extractMetadataFrom(audioFile)
     }
 

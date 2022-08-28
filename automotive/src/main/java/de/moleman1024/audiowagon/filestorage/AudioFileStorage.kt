@@ -289,50 +289,42 @@ open class AudioFileStorage(
         return audioFileStorageLocations.first()
     }
 
-    fun getDataSourceForAudioFile(audioFile: AudioFile): MediaDataSource {
+    suspend fun getDataSourceForAudioFile(audioFile: AudioFile): MediaDataSource {
         cleanClosedDataSources()
         val dataSource = getStorageLocationForID(audioFile.storageID).getDataSourceForURI(audioFile.uri)
-        runBlocking(dispatcher) {
-            dataSourcesMutex.withLock {
-                dataSources.add(dataSource)
-            }
+        dataSourcesMutex.withLock {
+            dataSources.add(dataSource)
         }
         return dataSource
     }
 
-    fun getDataSourceForURI(uri: Uri): MediaDataSource {
+    suspend fun getDataSourceForURI(uri: Uri): MediaDataSource {
         cleanClosedDataSources()
         val dataSource = getStorageLocationForURI(uri).getDataSourceForURI(uri)
-        runBlocking(dispatcher) {
-            dataSourcesMutex.withLock {
-                dataSources.add(dataSource)
-            }
+        dataSourcesMutex.withLock {
+            dataSources.add(dataSource)
         }
         return dataSource
     }
 
-    fun getBufferedDataSourceForURI(uri: Uri): MediaDataSource {
+    suspend fun getBufferedDataSourceForURI(uri: Uri): MediaDataSource {
         cleanClosedDataSources()
         val dataSource = getStorageLocationForURI(uri).getBufferedDataSourceForURI(uri)
-        runBlocking(dispatcher) {
-            dataSourcesMutex.withLock {
-                dataSources.add(dataSource)
-            }
+        dataSourcesMutex.withLock {
+            dataSources.add(dataSource)
         }
         return dataSource
     }
 
-    private fun cleanClosedDataSources() {
-        runBlocking(dispatcher) {
-            dataSourcesMutex.withLock {
-                dataSources = dataSources.filterNot {
-                    when (it) {
-                        is USBAudioDataSource -> it.isClosed
-                        is SDCardAudioDataSource -> it.isClosed
-                        else -> true
-                    }
-                }.toMutableList()
-            }
+    private suspend fun cleanClosedDataSources() {
+        dataSourcesMutex.withLock {
+            dataSources = dataSources.filterNot {
+                when (it) {
+                    is USBAudioDataSource -> it.isClosed
+                    is SDCardAudioDataSource -> it.isClosed
+                    else -> true
+                }
+            }.toMutableList()
         }
     }
 
@@ -512,12 +504,12 @@ open class AudioFileStorage(
         recentDirToAlbumArtMap.clear()
     }
 
-    fun getByteArrayForURI(uri: Uri): ByteArray {
+    suspend fun getByteArrayForURI(uri: Uri): ByteArray {
         val storageLocation = getStorageLocationForURI(uri)
         return storageLocation.getByteArrayForURI(uri)
     }
 
-    fun getInputStream(uri: Uri): LockableInputStream {
+    suspend fun getInputStream(uri: Uri): LockableInputStream {
         val storageLocation = getStorageLocationForURI(uri)
         return storageLocation.getInputStreamForURI(uri)
     }

@@ -23,6 +23,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import java.time.temporal.ChronoUnit
 
 const val MAX_DATABASE_SEARCH_ROWS = 10
@@ -304,35 +305,29 @@ class AudioItemRepository(
         return repoQuery.getFilesInDirRecursive(path, numMaxItems)
     }
 
-    fun getAlbumForAlbumArt(uriString: String): Album? {
+    suspend fun getAlbumForAlbumArt(uriString: String): Album? {
         logger.verbose(TAG, "getAlbumForAlbumArt(uriString=$uriString)")
         var albumForAlbumArt: Album? = null
         if (uriString.contains("$ART_URI_PART/$ART_URI_PART_TRACK")) {
-            runBlocking(dispatcher) {
-                val track = getDatabase()?.trackDAO()?.queryTrackByAlbumArt(uriString) ?: return@runBlocking null
-                if (track.parentAlbumId == DATABASE_ID_UNKNOWN) {
-                    return@runBlocking null
-                }
-                albumForAlbumArt = getDatabase()?.albumDAO()?.queryByID(track.parentAlbumId) ?: return@runBlocking null
+            val track = getDatabase()?.trackDAO()?.queryTrackByAlbumArt(uriString) ?: return null
+            if (track.parentAlbumId == DATABASE_ID_UNKNOWN) {
+                return null
             }
+            albumForAlbumArt = getDatabase()?.albumDAO()?.queryByID(track.parentAlbumId) ?: return null
         } else if (uriString.contains("$ART_URI_PART/$ART_URI_PART_ALBUM")) {
-            runBlocking(dispatcher) {
-                albumForAlbumArt = getDatabase()?.albumDAO()?.queryAlbumByAlbumArt(uriString) ?: return@runBlocking null
-            }
+            albumForAlbumArt = getDatabase()?.albumDAO()?.queryAlbumByAlbumArt(uriString) ?: return null
         }
         return albumForAlbumArt
     }
 
-    fun getTrackForAlbumArt(uriString: String): Track? {
+    suspend fun getTrackForAlbumArt(uriString: String): Track? {
         logger.verbose(TAG, "getTrackForAlbumArt(uriString=$uriString)")
         if (!uriString.contains("$ART_URI_PART/$ART_URI_PART_TRACK")) {
             return null
         }
-        return runBlocking(dispatcher) {
-            val track = getDatabase()?.trackDAO()?.queryTrackByAlbumArt(uriString)
-            logger.verbose(TAG, "track=$track")
-            return@runBlocking track
-        }
+        val track = getDatabase()?.trackDAO()?.queryTrackByAlbumArt(uriString)
+        logger.verbose(TAG, "track=$track")
+        return track
     }
 
     suspend fun searchTracks(query: String): List<AudioItem> {

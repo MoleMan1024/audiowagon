@@ -13,6 +13,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+## [2.2.3] - 2022-08-28
+
+### Fixed
+
+- fixed a situation where AudioWagon became unresponsive when loading external cover art image files
+  [#88](https://github.com/MoleMan1024/audiowagon/issues/88)
+
+
 ## [2.2.2] - 2022-08-23
 
 ### Fixed

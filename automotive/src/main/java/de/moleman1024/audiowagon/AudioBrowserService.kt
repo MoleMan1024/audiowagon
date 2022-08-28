@@ -1111,7 +1111,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         return Util.launchInScopeSafely(lifecycleScope, dispatcher, logger, TAG, crashReporting, func)
     }
 
-    fun getAlbumArtForURI(uri: Uri): ByteArray? {
+    suspend fun getAlbumArtForURI(uri: Uri): ByteArray? {
         logger.debug(TAG, "getAlbumArtForURI($uri)")
         if (lifecycleRegistry.currentState == Lifecycle.State.DESTROYED) {
             logger.warning(TAG, "No album art because lifecycle destroyed")

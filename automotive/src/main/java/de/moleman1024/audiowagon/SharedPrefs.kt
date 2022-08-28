@@ -31,7 +31,7 @@ open class SharedPrefs {
     companion object {
         private val sharedPrefsStorage = SharedPrefsStorage()
 
-        private fun getDefaultSharedPreferences(context: Context): SharedPreferences {
+        fun getDefaultSharedPreferences(context: Context): SharedPreferences {
             return sharedPrefsStorage.getDefaultStorage(context)
         }
     }

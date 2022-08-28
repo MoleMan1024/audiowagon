@@ -1,5 +1,5 @@
 /*
-SPDX-FileCopyrightText: 2021-2022 MoleMan1024 <moleman1024dev@gmail.com>
+SPDX-FileCopyrightText: 2021 MoleMan1024 <moleman1024dev@gmail.com>
 SPDX-License-Identifier: GPL-3.0-or-later
 */
 
@@ -8,8 +8,11 @@ package de.moleman1024.audiowagon
 import android.content.Intent
 import android.content.res.AssetManager
 import android.hardware.usb.UsbManager
+import android.net.Uri
+import android.os.ParcelFileDescriptor
 import android.support.v4.media.MediaBrowserCompat
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.rule.provider.ProviderTestRule
 import com.mpatric.mp3agic.Mp3File
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.mocks.MockUSBDevice
@@ -17,24 +20,23 @@ import de.moleman1024.audiowagon.util.MediaBrowserTraversal
 import de.moleman1024.audiowagon.util.ServiceFixture
 import de.moleman1024.audiowagon.util.TestUtils
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import org.junit.After
-import org.junit.Assert
-import org.junit.Before
-import org.junit.Test
+import org.junit.*
 
-private const val TAG = "DatabaseTest"
+private const val TAG = "AlbumArtTest"
 private const val TEMPLATE_MP3_NAME = "test.mp3"
 private const val TEMPLATE_MP3_PATH = "/.template/$TEMPLATE_MP3_NAME"
 private const val MUSIC_ROOT = "/Music"
+private const val ALBUM_ART = "cover.jpg"
 private const val STORAGE_ID = "\"storage\":\"123456789ABC-5118-7715\""
-private const val PLAY_ALL = "Play all"
 
 @ExperimentalCoroutinesApi
-class DatabaseTest {
+class AlbumArtTest {
     private lateinit var serviceFixture: ServiceFixture
     private lateinit var browser: MediaBrowserCompat
     private lateinit var audioBrowserService: AudioBrowserService
     private lateinit var mockUSBDevice: MockUSBDevice
+
+    // TODO: remove code duplication
 
     @Before
     fun setUp() {
@@ -79,66 +81,32 @@ class DatabaseTest {
 
     private fun storeMP3(mp3File: Mp3File, filePath: String) {
         mockUSBDevice.fileSystem.createDirectories(filePath.split("/").dropLast(1).joinToString("/"))
-        Logger.debug(TAG, "Storing MP3: $filePath")
         mp3File.save(mockUSBDevice.fileSystem.getPath(filePath))
     }
 
     /**
-     * https://github.com/MoleMan1024/audiowagon/issues/62
+     * Regression test for https://github.com/MoleMan1024/audiowagon/issues/88
      */
     @Test
-    fun databaseSorting_hasDiscNumbers_sortedByDiscNumber() {
-        val albumName = "ALBUM"
-        val disc1Track1 = "Disc1Track1"
-        val disc1Track2 = "Disc1Track2"
-        val disc2Track1 = "Disc2Track1"
+    fun browse_jpgCoverArtInDir_doesNotDeadlock() {
         createMP3().apply {
-            id3v2Tag.title = disc1Track1
-            id3v2Tag.album = albumName
-            id3v2Tag.track = "1"
-            id3v2Tag.partOfSet = "1"
-        }.also { storeMP3(it, "$MUSIC_ROOT/disc1File1.mp3") }
-        createMP3().apply {
-            id3v2Tag.title = disc1Track2
-            id3v2Tag.album = albumName
-            id3v2Tag.track = "2"
-            id3v2Tag.partOfSet = "1"
-        }.also { storeMP3(it, "$MUSIC_ROOT/disc1File2.mp3") }
-        createMP3().apply {
-            id3v2Tag.title = disc2Track1
-            id3v2Tag.album = albumName
-            id3v2Tag.track = "1"
-            id3v2Tag.partOfSet = "2"
-        }.also { storeMP3(it, "$MUSIC_ROOT/disc2File1.mp3") }
+            id3v2Tag.title = "Track1"
+            id3v2Tag.album = "fooAlbum"
+        }.also { storeMP3(it, "$MUSIC_ROOT/folder1/track1.mp3") }
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val assetManager: AssetManager = context.assets
+        mockUSBDevice.fileSystem.copyToFile(assetManager.open(ALBUM_ART), "${MUSIC_ROOT}/folder1/$ALBUM_ART")
         attachUSBDevice(mockUSBDevice)
         TestUtils.waitForIndexingCompleted(audioBrowserService)
         val traversal = MediaBrowserTraversal(browser)
         val albumsRoot = "{\"type\":\"ALBUM\",$STORAGE_ID,\"alb\":\"1\"}"
         traversal.start(albumsRoot)
-        Assert.assertEquals(PLAY_ALL, traversal.hierarchy[albumsRoot]?.get(0)?.description?.title)
-        Assert.assertEquals(disc1Track1, traversal.hierarchy[albumsRoot]?.get(1)?.description?.title)
-        Assert.assertEquals(disc1Track2, traversal.hierarchy[albumsRoot]?.get(2)?.description?.title)
-        Assert.assertEquals(disc2Track1, traversal.hierarchy[albumsRoot]?.get(3)?.description?.title)
-    }
-
-    /**
-     * https://github.com/MoleMan1024/audiowagon/issues/60
-     */
-    @Test
-    fun databaseSorting_artistWithArticle_ignoresArticle() {
-        val artists = listOf("Beach Boys", "The Beatles", "Beatsteaks")
-        artists.forEachIndexed { index, artist ->
-            createMP3().apply {
-                id3v2Tag.artist = artist
-            }.also { storeMP3(it, "$MUSIC_ROOT/$index.mp3") }
-        }
-        attachUSBDevice(mockUSBDevice)
-        TestUtils.waitForIndexingCompleted(audioBrowserService)
-        val traversal = MediaBrowserTraversal(browser)
-        val artistsRoot = "{\"type\":\"ROOT_ARTISTS\"}"
-        traversal.start(artistsRoot)
-        artists.forEachIndexed { index, artist ->
-            Assert.assertEquals(artist, traversal.hierarchy[artistsRoot]?.get(index)?.description?.title)
-        }
+        val albumArtURI = traversal.hierarchy[albumsRoot]?.get(1)?.description?.iconUri
+            ?: throw AssertionError("No album art URI")
+        val resolver = context.contentResolver
+        val proxyFileDescriptor: ParcelFileDescriptor? = resolver.openFile(albumArtURI, "r", null)
+        val resizedAlbumArtSize = 3530
+        Assert.assertEquals(resizedAlbumArtSize, proxyFileDescriptor?.statSize)
+        proxyFileDescriptor?.close()
     }
 }

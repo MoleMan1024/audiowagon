@@ -7,6 +7,10 @@ package de.moleman1024.audiowagon
 
 import android.content.Context
 import android.content.SharedPreferences
+import de.moleman1024.audiowagon.log.Logger
+import de.moleman1024.audiowagon.persistence.*
+
+private const val TAG = "SharedPrefsStorage"
 
 open class SharedPrefsStorage {
     val mockPreferencesMap = mutableMapOf<String, Any>()
@@ -22,6 +26,13 @@ open class SharedPrefsStorage {
         mockPreferencesMap[SHARED_PREF_LEGAL_DISCLAIMER_AGREED] = "1.1"
         mockPreferencesMap[SHARED_PREF_READ_METADATA] = "WHEN_USB_CONNECTED"
         mockPreferencesMap[SHARED_PREF_EQUALIZER_PRESET] = "LESS_BASS"
+        mockPreferencesMap[PERSISTENT_STORAGE_CURRENT_TRACK_ID] = ""
+        mockPreferencesMap[PERSISTENT_STORAGE_CURRENT_TRACK_POS] = 0L
+        mockPreferencesMap[PERSISTENT_STORAGE_QUEUE_INDEX] = 0
+        mockPreferencesMap[PERSISTENT_STORAGE_QUEUE_IDS] = ""
+        mockPreferencesMap[PERSISTENT_STORAGE_IS_SHUFFLING] = false
+        mockPreferencesMap[PERSISTENT_STORAGE_IS_REPEATING] = false
+        mockPreferencesMap[PERSISTENT_STORAGE_LAST_CONTENT_HIERARCHY_ID] = ""
     }
 
     @Suppress("UNUSED_PARAMETER")
@@ -32,6 +43,7 @@ open class SharedPrefsStorage {
             }
 
             override fun getString(key: String?, value: String?): String? {
+                Logger.debug(TAG, "getString($key)")
                 return mockPreferencesMap[key] as String
             }
 
@@ -40,11 +52,13 @@ open class SharedPrefsStorage {
             }
 
             override fun getInt(key: String?, value: Int): Int {
+                Logger.debug(TAG, "getInt($key)")
                 return mockPreferencesMap[key] as Int
             }
 
-            override fun getLong(p0: String?, p1: Long): Long {
-                TODO("Not yet implemented")
+            override fun getLong(key: String?, value: Long): Long {
+                Logger.debug(TAG, "getLong($key)")
+                return mockPreferencesMap[key] as Long
             }
 
             override fun getFloat(p0: String?, p1: Float): Float {

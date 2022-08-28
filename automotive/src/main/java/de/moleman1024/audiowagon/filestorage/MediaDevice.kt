@@ -17,8 +17,8 @@ interface MediaDevice {
    val TAG: String
    val logger: Logger
 
-   fun getDataSourceForURI(uri: Uri): MediaDataSource
-   fun getBufferedDataSourceForURI(uri: Uri): MediaDataSource
+   suspend fun getDataSourceForURI(uri: Uri): MediaDataSource
+   suspend fun getBufferedDataSourceForURI(uri: Uri): MediaDataSource
    fun getID(): String
    fun getName(): String
    fun getFileFromURI(uri: Uri): Any

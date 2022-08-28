@@ -41,11 +41,11 @@ class SDCardMediaDevice(val id: String, private val rootDir: String = "/") : Med
         return directory.listFiles()!!.toList()
     }
 
-    override fun getDataSourceForURI(uri: Uri): MediaDataSource {
+    override suspend fun getDataSourceForURI(uri: Uri): MediaDataSource {
         return SDCardAudioDataSource(getFileFromURI(uri))
     }
 
-    override fun getBufferedDataSourceForURI(uri: Uri): MediaDataSource {
+    override suspend fun getBufferedDataSourceForURI(uri: Uri): MediaDataSource {
         return getDataSourceForURI(uri)
     }
 

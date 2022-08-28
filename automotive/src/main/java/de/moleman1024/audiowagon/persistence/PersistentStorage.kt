@@ -6,9 +6,8 @@ SPDX-License-Identifier: GPL-3.0-or-later
 package de.moleman1024.audiowagon.persistence
 
 import android.content.Context
-import androidx.preference.PreferenceManager
+import de.moleman1024.audiowagon.SharedPrefs
 import de.moleman1024.audiowagon.log.Logger
-import de.moleman1024.audiowagon.persistence.PersistentPlaybackState
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 
@@ -25,7 +24,7 @@ private val logger = Logger
 private const val QUEUE_ID_SEPARATOR = ";"
 
 class PersistentStorage(context: Context, private val dispatcher: CoroutineDispatcher) {
-    private val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
+    private val sharedPreferences = SharedPrefs.getDefaultSharedPreferences(context)
 
     suspend fun store(state: PersistentPlaybackState) {
         logger.debug(TAG, "Storing playback state: $state")

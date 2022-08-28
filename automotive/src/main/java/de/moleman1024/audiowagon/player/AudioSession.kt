@@ -418,7 +418,7 @@ class AudioSession(
     }
 
     // TODO: move this elsewhere
-    private fun extractReplayGain(uri: Uri): Float {
+    private suspend fun extractReplayGain(uri: Uri): Float {
         logger.debug(TAG, "extractReplayGain($uri)")
         var replayGain: Float
         val dataSource = audioFileStorage.getDataSourceForURI(uri)

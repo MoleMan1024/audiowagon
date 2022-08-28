@@ -6,13 +6,19 @@ SPDX-License-Identifier: GPL-3.0-or-later
 package de.moleman1024.audiowagon
 
 import android.content.SharedPreferences
+import android.support.v4.media.MediaBrowserCompat
 import androidx.test.platform.app.InstrumentationRegistry
+import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.player.EqualizerPreset
+import de.moleman1024.audiowagon.util.ServiceFixture
 import de.moleman1024.audiowagon.util.TestUtils
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import org.junit.After
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
+
+private const val TAG = "SharedPrefsTest"
 
 /**
  * This class contains tests for the "shared preferences" which are written to disk in xml format.
@@ -24,11 +30,27 @@ class SharedPrefsTest {
 
     private lateinit var sharedPreferencesVersion110: SharedPreferences
     private val sharedPrefs = SharedPrefs()
+    private lateinit var serviceFixture: ServiceFixture
+    private lateinit var browser: MediaBrowserCompat
+    private lateinit var audioBrowserService: AudioBrowserService
 
     @Before
     fun setUp() {
+        Logger.debug(TAG, "setUp()")
         sharedPreferencesVersion110 =
             TestUtils.createSharedPrefsVersion110(InstrumentationRegistry.getInstrumentation().context)
+        serviceFixture = ServiceFixture()
+        browser = serviceFixture.createMediaBrowser()
+        browser.connect()
+        audioBrowserService = serviceFixture.waitForAudioBrowserService()
+    }
+
+    @After
+    fun tearDown() {
+        Logger.debug(TAG, "tearDown()")
+        browser.unsubscribe(browser.root)
+        browser.disconnect()
+        serviceFixture.shutdown()
     }
 
     @Test

@@ -32,7 +32,13 @@ class PlaylistFileResolver(
     private val playlistFileUri: Uri,
     private val audioFileStorage: AudioFileStorage
 ) {
-    private val lockableInputStream: LockableInputStream = audioFileStorage.getInputStream(playlistFileUri)
+    private var lockableInputStream: LockableInputStream
+
+    init {
+        runBlocking {
+            lockableInputStream = audioFileStorage.getInputStream(playlistFileUri)
+        }
+    }
 
     fun parseForAudioItems(): List<AudioItem> {
         val audioItems: List<AudioItem>

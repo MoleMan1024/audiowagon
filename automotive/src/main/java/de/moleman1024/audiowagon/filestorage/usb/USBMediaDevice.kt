@@ -406,26 +406,26 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
         return "${USBMediaDevice::class}{${usbDevice};${hashCode()}}"
     }
 
-    override fun getDataSourceForURI(uri: Uri): MediaDataSource {
+    override suspend fun getDataSourceForURI(uri: Uri): MediaDataSource {
         if (!hasFileSystem()) {
             throw IOException("No filesystem for data source")
         }
         val chunkSize: Int
         val usbFile: UsbFile
-        runBlocking(libaumsDispatcher) {
+        withContext(libaumsDispatcher) {
             chunkSize = fileSystem!!.chunkSize
             usbFile = getUSBFileFromURI(uri)
         }
         return USBAudioDataSource(usbFile, chunkSize, libaumsDispatcher)
     }
 
-    override fun getBufferedDataSourceForURI(uri: Uri): MediaDataSource {
+    override suspend fun getBufferedDataSourceForURI(uri: Uri): MediaDataSource {
         if (!hasFileSystem()) {
             throw IOException("No filesystem for data source")
         }
         val chunkSize: Int
         val usbFile: UsbFile
-        runBlocking(libaumsDispatcher) {
+        withContext(libaumsDispatcher) {
             chunkSize = fileSystem!!.chunkSize
             usbFile = getUSBFileFromURI(uri)
         }
@@ -519,18 +519,18 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
         return serialNum
     }
 
-    private fun isDriveAlmostFull(): Boolean {
+    private suspend fun isDriveAlmostFull(): Boolean {
         if (!hasFileSystem()) {
             throw NoFileSystemException()
         }
-        return runBlocking(libaumsDispatcher) {
-            return@runBlocking fileSystem!!.freeSpace < 1024 * 1024 * MINIMUM_FREE_SPACE_FOR_LOGGING_MB
+        return withContext(libaumsDispatcher) {
+            return@withContext fileSystem!!.freeSpace < 1024 * 1024 * MINIMUM_FREE_SPACE_FOR_LOGGING_MB
         }
     }
 
-    fun getChunkSize(): Int {
-        return runBlocking(libaumsDispatcher) {
-            return@runBlocking fileSystem?.chunkSize ?: DEFAULT_FILESYSTEM_CHUNK_SIZE
+    suspend fun getChunkSize(): Int {
+        return withContext(libaumsDispatcher) {
+            return@withContext fileSystem?.chunkSize ?: DEFAULT_FILESYSTEM_CHUNK_SIZE
         }
     }
 

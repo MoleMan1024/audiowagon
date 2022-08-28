@@ -36,6 +36,7 @@ object TestUtils {
 
     @ExperimentalCoroutinesApi
     fun waitForIndexingCompleted(audioBrowserService: AudioBrowserService, timeoutMS: Int = 1000 * 10) {
+        Logger.debug(TAG, "waitForIndexingCompleted()")
         waitForTrueOrFail(
             { audioBrowserService.getIndexingStatus().any { it == IndexingStatus.COMPLETED } },
             timeoutMS, "waitForIndexingCompleted()"

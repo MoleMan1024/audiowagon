@@ -15,6 +15,7 @@ import android.os.IBinder
 import android.support.v4.media.MediaBrowserCompat
 import android.support.v4.media.session.MediaControllerCompat
 import android.support.v4.media.session.MediaSessionCompat
+import androidx.lifecycle.Lifecycle
 import androidx.media.MediaBrowserServiceCompat
 import androidx.test.platform.app.InstrumentationRegistry
 import de.moleman1024.audiowagon.AudioBrowserService
@@ -126,9 +127,17 @@ class ServiceFixture {
         }
         unbindService()
         stopService()
-        Logger.debug(TAG, "Killing service")
+        Logger.debug(TAG, "Killing background processes")
         val activityManager = targetContext.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
         activityManager.killBackgroundProcesses("de.moleman1024.audiowagon")
+        // TODO: need to ensure in each test that service is destroyed
+        if (this::audioBrowserService.isInitialized) {
+            Logger.debug(TAG, "Waiting for service to be destroyed")
+            TestUtils.waitForTrueOrFail(
+                { audioBrowserService.lifecycle.currentState == Lifecycle.State.DESTROYED },
+                2000, "isDestroyed"
+            )
+        }
         Logger.debug(TAG, "Service fixture was shut down")
     }
 }

@@ -22,11 +22,11 @@ class LocalFileMediaDevice(private val context: Context) : MediaDevice {
     val chunkSize = 32768
     var rootPath = ""
 
-    override fun getDataSourceForURI(uri: Uri): MediaDataSource {
+    override suspend fun getDataSourceForURI(uri: Uri): MediaDataSource {
         return LocalFileAudioDataSource(getFileFromURI(uri))
     }
 
-    override fun getBufferedDataSourceForURI(uri: Uri): MediaDataSource {
+    override suspend fun getBufferedDataSourceForURI(uri: Uri): MediaDataSource {
         return getDataSourceForURI(uri)
     }
 

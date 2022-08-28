@@ -112,10 +112,10 @@ interface AudioFileStorageLocation {
         // no op
     }
 
-    fun getDataSourceForURI(uri: Uri): MediaDataSource
-    fun getBufferedDataSourceForURI(uri: Uri): MediaDataSource
-    fun getByteArrayForURI(uri: Uri): ByteArray
-    fun getInputStreamForURI(uri: Uri): LockableInputStream
+    suspend fun getDataSourceForURI(uri: Uri): MediaDataSource
+    suspend fun getBufferedDataSourceForURI(uri: Uri): MediaDataSource
+    suspend fun getByteArrayForURI(uri: Uri): ByteArray
+    suspend fun getInputStreamForURI(uri: Uri): LockableInputStream
     fun close()
     fun setDetached()
 

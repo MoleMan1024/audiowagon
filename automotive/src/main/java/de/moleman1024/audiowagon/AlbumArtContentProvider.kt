@@ -17,11 +17,13 @@ import androidx.core.content.res.ResourcesCompat
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.ART_URI_PART
 import de.moleman1024.audiowagon.medialibrary.ART_URI_PART_ALBUM
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
+import kotlinx.coroutines.runBlocking
 import java.io.ByteArrayOutputStream
 import java.lang.Integer.min
 import java.nio.ByteBuffer
-import java.util.concurrent.locks.ReentrantLock
 
 
 private const val TAG = "AlbumArtContentProv"
@@ -115,54 +117,65 @@ class AlbumArtContentProvider : ContentProvider() {
             return null
         }
         init()
-        var albumArtByteArray = defaultAlbumArtTracks
-        if (uri.toString().contains("$ART_URI_PART/$ART_URI_PART_ALBUM")) {
-            albumArtByteArray = defaultAlbumArtAlbums
-        }
-        if (audioBrowserService != null) {
-            val resolvedAlbumArt = audioBrowserService?.getAlbumArtForURI(uri)
-            if (resolvedAlbumArt != null) {
-                albumArtByteArray = resolvedAlbumArt
+        val proxyFileDescriptor = createProxyFileDescriptor(uri)
+        logger.verbose(TAG, "Got proxy file descriptor for: $uri")
+        return proxyFileDescriptor
+    }
+
+    @Suppress("BlockingMethodInNonBlockingContext")
+    private fun createProxyFileDescriptor(uri: Uri): ParcelFileDescriptor? = runBlocking {
+        logger.verbose(TAG, "Creating proxy file descriptor for: $uri")
+        val future: Deferred<ParcelFileDescriptor?> = async {
+            var albumArtByteArray = defaultAlbumArtTracks
+            if (uri.toString().contains("$ART_URI_PART/$ART_URI_PART_ALBUM")) {
+                albumArtByteArray = defaultAlbumArtAlbums
             }
+            if (audioBrowserService != null) {
+                val resolvedAlbumArt = audioBrowserService?.getAlbumArtForURI(uri)
+                if (resolvedAlbumArt != null) {
+                    albumArtByteArray = resolvedAlbumArt
+                }
+            }
+            val albumArtBuf = ByteBuffer.wrap(albumArtByteArray)
+            val storageManager = context?.getSystemService(Context.STORAGE_SERVICE) as StorageManager
+            val handler = Handler(Looper.getMainLooper())
+            return@async storageManager.openProxyFileDescriptor(
+                ParcelFileDescriptor.MODE_READ_ONLY,
+                object : ProxyFileDescriptorCallback() {
+
+                    override fun onGetSize(): Long {
+                        return albumArtBuf.array().size.toLong()
+                    }
+
+                    override fun onRead(offset: Long, size: Int, data: ByteArray?): Int {
+                        if (albumArtBuf.limit() <= 0) {
+                            return 0
+                        }
+                        if (data == null) {
+                            return 0
+                        }
+                        albumArtBuf.position(offset.toInt())
+                        val numBytesToRead = min(size, (albumArtBuf.array().size - offset).toInt())
+                        val outBuffer = ByteBuffer.wrap(data)
+                        albumArtBuf.get(outBuffer.array(), 0, numBytesToRead)
+                        return numBytesToRead
+                    }
+
+                    override fun hashCode(): Int {
+                        if (albumArtBuf.limit() <= 0) {
+                            return 0
+                        }
+                        return albumArtBuf.hashCode()
+                    }
+
+                    override fun onRelease() {
+                        albumArtBuf.rewind()
+                    }
+                },
+                handler
+            )
         }
-        val albumArtBuf = ByteBuffer.wrap(albumArtByteArray)
-        val storageManager = context?.getSystemService(Context.STORAGE_SERVICE) as StorageManager
-        val handler = Handler(Looper.getMainLooper())
-        return storageManager.openProxyFileDescriptor(
-            ParcelFileDescriptor.MODE_READ_ONLY,
-            object : ProxyFileDescriptorCallback() {
-
-                override fun onGetSize(): Long {
-                    return albumArtBuf.array().size.toLong()
-                }
-
-                override fun onRead(offset: Long, size: Int, data: ByteArray?): Int {
-                    if (albumArtBuf.limit() <= 0) {
-                        return 0
-                    }
-                    if (data == null) {
-                        return 0
-                    }
-                    albumArtBuf.position(offset.toInt())
-                    val numBytesToRead = min(size, (albumArtBuf.array().size - offset).toInt())
-                    val outBuffer = ByteBuffer.wrap(data)
-                    albumArtBuf.get(outBuffer.array(), 0, numBytesToRead)
-                    return numBytesToRead
-                }
-
-                override fun hashCode(): Int {
-                    if (albumArtBuf.limit() <= 0) {
-                        return 0
-                    }
-                    return albumArtBuf.hashCode()
-                }
-
-                override fun onRelease() {
-                    albumArtBuf.rewind()
-                }
-            },
-            handler
-        )
+        return@runBlocking future.await()
     }
 
     @Synchronized

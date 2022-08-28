@@ -36,6 +36,7 @@ import org.junit.runners.Suite
     DatabaseTest::class,
     MediaSearchTest::class,
     PlaybackTest::class,
+    AlbumArtTest::class,
     MediaBrowserTest::class,
 )
 class InstrumentedTestSuite

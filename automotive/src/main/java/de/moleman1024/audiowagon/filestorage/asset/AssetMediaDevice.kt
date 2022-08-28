@@ -40,11 +40,11 @@ class AssetMediaDevice(private val assetManager: AssetManager) : MediaDevice {
     }
 
 
-    override fun getDataSourceForURI(uri: Uri): MediaDataSource {
+    override suspend fun getDataSourceForURI(uri: Uri): MediaDataSource {
         return AssetAudioDataSource(getFileDescriptorFromURI(uri))
     }
 
-    override fun getBufferedDataSourceForURI(uri: Uri): MediaDataSource {
+    override suspend fun getBufferedDataSourceForURI(uri: Uri): MediaDataSource {
         return getDataSourceForURI(uri)
     }
 

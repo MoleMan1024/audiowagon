@@ -33,16 +33,10 @@ open class USBAudioDataSource(
     var hasError = false
 
     init {
-        try {
-            runBlocking(libaumsDispatcher) {
-                logger.verbose(
-                    TAG, "Init data source with chunk size $chunkSize for file with length ${usbFile?.length}: $usbFile"
-                )
-            }
-        } catch (exc: TimeoutException) {
-            logger.exception(TAG, exc.message.toString(), exc)
-            hasError = true
-            throw IOException(exc.message.toString())
+        runBlocking(libaumsDispatcher) {
+            logger.verbose(
+                TAG, "Init data source with chunk size $chunkSize for file with length ${usbFile?.length}: $usbFile"
+            )
         }
     }
 
@@ -51,21 +45,16 @@ open class USBAudioDataSource(
             usbFile = null
             return
         }
-        try {
-            runBlocking(libaumsDispatcher) {
-                try {
-                    usbFile?.close()
-                    isClosed = true
-                    usbFile = null
-                } catch (exc: IOException) {
-                    // If we rethrow this, it will trigger a fatal SIGABRT and the app will be restarted.
-                    logger.exceptionLogcatOnly(TAG, "Error while closing USB file, did you unplug the device?", exc)
-                    hasError = true
-                }
+        runBlocking(libaumsDispatcher) {
+            try {
+                usbFile?.close()
+                isClosed = true
+                usbFile = null
+            } catch (exc: IOException) {
+                // If we rethrow this, it will trigger a fatal SIGABRT and the app will be restarted.
+                logger.exceptionLogcatOnly(TAG, "Error while closing USB file, did you unplug the device?", exc)
+                hasError = true
             }
-        } catch (exc: TimeoutException) {
-            logger.exception(TAG, exc.message.toString(), exc)
-            hasError = true
         }
     }
 
@@ -121,14 +110,8 @@ open class USBAudioDataSource(
     }
 
     override fun getSize(): Long {
-        try {
-            return runBlocking(libaumsDispatcher) {
-                return@runBlocking usbFile?.length ?: 0
-            }
-        } catch (exc: TimeoutException) {
-            logger.exception(TAG, exc.message.toString(), exc)
-            hasError = true
-            throw IOException(exc.message.toString())
+        return runBlocking(libaumsDispatcher) {
+            return@runBlocking usbFile?.length ?: 0
         }
     }
 
@@ -149,10 +132,6 @@ open class USBAudioDataSource(
             logger.exception(TAG, exc.message.toString(), exc)
             hasError = true
             throw exc
-        } catch (exc: TimeoutException) {
-            logger.exception(TAG, exc.message.toString(), exc)
-            hasError = true
-            throw IOException(exc.message.toString())
         }
     }
 

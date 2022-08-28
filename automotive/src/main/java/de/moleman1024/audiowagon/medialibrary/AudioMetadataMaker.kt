@@ -41,7 +41,7 @@ const val ART_URI_PART_FILE = "file"
 @ExperimentalCoroutinesApi
 class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
 
-    fun extractMetadataFrom(audioFile: AudioFile): AudioItem {
+    suspend fun extractMetadataFrom(audioFile: AudioFile): AudioItem {
         val startTime = System.nanoTime()
         logger.debug(TAG, "Extracting metadata for: ${audioFile.name}")
         val metadataRetriever = MediaMetadataRetriever()
@@ -222,7 +222,7 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
         }.build()
     }
 
-    fun getEmbeddedAlbumArtForAudioItem(audioItem: AudioItem): ByteArray? {
+    suspend fun getEmbeddedAlbumArtForAudioItem(audioItem: AudioItem): ByteArray? {
         val mediaDataSource = audioFileStorage.getDataSourceForURI(audioItem.uri)
         logger.debug(TAG, "Retrieving embedded image for: ${audioItem.uri}")
         return getAlbumArtFromMediaDataSource(mediaDataSource)
@@ -236,7 +236,7 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
         return embeddedImage
     }
 
-    fun hasEmbeddedAlbumArt(audioItem: AudioItem): Boolean {
+    suspend fun hasEmbeddedAlbumArt(audioItem: AudioItem): Boolean {
         logger.verbose(TAG, "hasAlbumArt(audioItem=$audioItem)")
         val mediaDataSource = audioFileStorage.getDataSourceForURI(audioItem.uri)
         return getAlbumArtFromMediaDataSource(mediaDataSource) != null

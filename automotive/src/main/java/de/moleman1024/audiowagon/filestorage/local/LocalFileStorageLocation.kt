@@ -31,15 +31,16 @@ class LocalFileStorageLocation(override val device: LocalFileMediaDevice) : Audi
         return device.walkTopDown(startDirectory)
     }
 
-    override fun getDataSourceForURI(uri: Uri): MediaDataSource {
+    override suspend fun getDataSourceForURI(uri: Uri): MediaDataSource {
         return device.getDataSourceForURI(uri)
     }
 
-    override fun getBufferedDataSourceForURI(uri: Uri): MediaDataSource {
+    override suspend fun getBufferedDataSourceForURI(uri: Uri): MediaDataSource {
         return device.getBufferedDataSourceForURI(uri)
     }
 
-    override fun getByteArrayForURI(uri: Uri): ByteArray {
+    @Suppress("BlockingMethodInNonBlockingContext")
+    override suspend fun getByteArrayForURI(uri: Uri): ByteArray {
         val lockableInputStream = getInputStreamForURI(uri)
         val byteArrayOutputStream = ByteArrayOutputStream()
         val buffer = ByteArray(device.chunkSize)
@@ -51,7 +52,8 @@ class LocalFileStorageLocation(override val device: LocalFileMediaDevice) : Audi
         return byteArrayOutputStream.toByteArray()
     }
 
-    override fun getInputStreamForURI(uri: Uri): LockableInputStream {
+    @Suppress("BlockingMethodInNonBlockingContext")
+    override suspend fun getInputStreamForURI(uri: Uri): LockableInputStream {
         val file = device.getFileFromURI(uri)
         return LockableInputStream(FileInputStream(file))
     }
