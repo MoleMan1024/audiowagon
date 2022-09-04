@@ -39,7 +39,9 @@ class ContentHierarchyTrack(
             // However some users did not understand why next/previous track would not work in that case. Now we try
             // to fill the playback queue intelligently when selecting a single track.
             if (id.albumArtistID > DATABASE_ID_UNKNOWN && id.albumID > DATABASE_ID_UNKNOWN) {
-                tracks += repo.getTracksForAlbumAndArtist(id.albumArtistID, id.artistID)
+                tracks += repo.getTracksForAlbumAndArtist(id.albumID, id.albumArtistID)
+            } else if (id.artistID > DATABASE_ID_UNKNOWN && id.albumID > DATABASE_ID_UNKNOWN) {
+                tracks += repo.getTracksForAlbumAndArtist(id.albumID, id.artistID)
             } else if (id.artistID > DATABASE_ID_UNKNOWN && id.albumID == DATABASE_ID_UNKNOWN) {
                 tracks += repo.getTracksWithUnknAlbumForArtist(id.artistID)
             } else if (id.artistID == DATABASE_ID_UNKNOWN && id.albumID == DATABASE_ID_UNKNOWN) {

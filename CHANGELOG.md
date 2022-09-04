@@ -12,6 +12,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.4] - 2022-09-04
+
+### Fixed
+
+- selecting a track in an album inside artist view would erroneously play all songs from that artist instead of just the
+  tracks on that album. This has been fixed.
+  [#89](https://github.com/MoleMan1024/audiowagon/issues/89)
+
 
 ## [2.2.3] - 2022-08-28
 
