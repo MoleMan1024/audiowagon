@@ -213,7 +213,7 @@ index 7c00c2c..d12ed07 100644
 \ No newline at end of file
 +} 
 diff --git a/libaums/src/main/java/me/jahnen/libaums/core/driver/scsi/ScsiBlockDevice.kt b/libaums/src/main/java/me/jahnen/libaums/core/driver/scsi/ScsiBlockDevice.kt
-index cc1d351..9b0fc63 100644
+index cc1d351..edc0b76 100644
 --- a/libaums/src/main/java/me/jahnen/libaums/core/driver/scsi/ScsiBlockDevice.kt
 +++ b/libaums/src/main/java/me/jahnen/libaums/core/driver/scsi/ScsiBlockDevice.kt
 @@ -103,7 +103,10 @@ class ScsiBlockDevice(private val usbCommunication: UsbCommunication, private va
@@ -309,7 +309,7 @@ index cc1d351..9b0fc63 100644
      }
  
      /**
-@@ -331,20 +338,17 @@ class ScsiBlockDevice(private val usbCommunication: UsbCommunication, private va
+@@ -331,16 +338,13 @@ class ScsiBlockDevice(private val usbCommunication: UsbCommunication, private va
      @Synchronized
      @Throws(IOException::class)
      override fun write(deviceOffset: Long, buffer: ByteBuffer) {
@@ -326,11 +326,6 @@ index cc1d351..9b0fc63 100644
      }
  
      companion object {
--        private const val MAX_RECOVERY_ATTEMPTS = 20
-+        private const val MAX_RECOVERY_ATTEMPTS = 10
-         private val TAG = ScsiBlockDevice::class.java.simpleName
-     }
- }
 diff --git a/libaums/src/main/java/me/jahnen/libaums/core/fs/AbstractUsbFile.kt b/libaums/src/main/java/me/jahnen/libaums/core/fs/AbstractUsbFile.kt
 index c7fdd05..1890adb 100644
 --- a/libaums/src/main/java/me/jahnen/libaums/core/fs/AbstractUsbFile.kt

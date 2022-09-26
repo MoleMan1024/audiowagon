@@ -123,7 +123,7 @@ class USBDeviceProxy(
 
     // locked externally by usbMutex
     override fun close() {
-        logger.verbose(TAG, "Closing mass storage device: $massStorageDevice")
+        logger.debug(TAG, "Closing mass storage device: $massStorageDevice")
         massStorageDevice?.close()
         massStorageDevice = null
     }

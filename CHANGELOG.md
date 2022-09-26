@@ -12,6 +12,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.5] - 2022-09-26
+
+### Changed
+
+- increased the number in `MAX_RECOVERY_ATTEMPTS` in *libaums* back to 20 in case USB is busy and cannot do bulk
+  transfers right away (seen a bit more often recently in *Crashlytics*).
+
+
 ## [2.2.4] - 2022-09-04
 
 ### Fixed
