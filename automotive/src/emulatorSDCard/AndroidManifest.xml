@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-		package="de.moleman1024.audiowagon">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 	<!-- Used for accessing SD cards. Only used on emulator for debugging -->
 	<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 

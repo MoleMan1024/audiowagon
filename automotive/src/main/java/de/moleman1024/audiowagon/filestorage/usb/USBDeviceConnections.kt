@@ -463,6 +463,8 @@ class USBDeviceConnections(
             in listOf(USBPermission.DENIED, USBPermission.UNKNOWN)
         ) {
             usbDevicePermissions.requestPermissionForDevice(attachedDevices[0])
+        } else {
+            logger.debug(TAG, "USB device already has permission")
         }
     }
 

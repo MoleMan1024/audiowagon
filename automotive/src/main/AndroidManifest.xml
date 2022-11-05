@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:dist="http://schemas.android.com/apk/distribution"
-        xmlns:tools="http://schemas.android.com/tools"
-        package="de.moleman1024.audiowagon">
+        xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <!-- The app implicitly uses android.permission.INTERNET and android.permission.ACCESS_NETWORK_STATE for

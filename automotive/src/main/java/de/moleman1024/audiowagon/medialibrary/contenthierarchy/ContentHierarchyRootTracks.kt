@@ -40,7 +40,7 @@ class ContentHierarchyRootTracks(
         val numTracksInRepo = audioItemLibrary.getPrimaryRepository()?.getNumTracks() ?: 0
         if (!audioItemLibrary.areAnyReposAvail() || (numTracksInRepo <= 0 && !audioItemLibrary.isBuildingLibrary)) {
             items += createPseudoNoEntriesItem()
-            logger.debug(TAG, "Showing pseudo MediaItem 'No entries available: ${items[0].description.title}'")
+            logger.debug(TAG, "Showing pseudo MediaItem 'No entries available': ${items[0].description.title}'")
             return items
         }
         if (audioItemLibrary.isBuildingLibrary) {

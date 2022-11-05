@@ -20,8 +20,8 @@ android {
         applicationId "de.moleman1024.audiowagon"
         minSdkVersion rootProject.minSdkVersion
         targetSdkVersion rootProject.targetSdkVersion
-        versionCode 225
-        versionName "2.2.5"
+        versionCode 228
+        versionName "2.2.8"
         resValue "string", "VERSION_NAME", versionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         signingConfig signingConfigs.debug
@@ -52,15 +52,13 @@ android {
         // for testing Android Room database migrations
         getByName("androidTest").assets.srcDir("$projectDir/schemas")
     }
-
     packagingOptions {
-        exclude "META-INF/spring.factories"
-        exclude "META-INF/spring.handlers"
-        exclude "META-INF/spring.schemas"
-        exclude "META-INF/spring.tooling"
-        exclude "META-INF/license.txt"
-        exclude "META-INF/notice.txt"
+        resources {
+            excludes += ['META-INF/spring.factories', 'META-INF/spring.handlers', 'META-INF/spring.schemas', 'META-INF/spring.tooling', 'META-INF/license.txt', 'META-INF/notice.txt']
+        }
     }
+
+    namespace 'de.moleman1024.audiowagon'
 }
 
 dependencies {

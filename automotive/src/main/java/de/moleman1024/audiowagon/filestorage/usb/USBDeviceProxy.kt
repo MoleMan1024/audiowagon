@@ -146,4 +146,10 @@ class USBDeviceProxy(
         result = 31 * result + vendorId
         return result
     }
+
+    override fun toString(): String {
+        return "USBDeviceProxy(deviceClass=$deviceClass, deviceName='$deviceName', " +
+                "manufacturerName=$manufacturerName, productId=$productId, productName=$productName, " +
+                "vendorId=$vendorId, serialNumber=${serialNumber?.take(14)})"
+    }
 }

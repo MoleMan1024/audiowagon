@@ -47,7 +47,7 @@ private const val DEFAULT_FILESYSTEM_CHUNK_SIZE = 32768
 // used in a hash map during indexing to improve speed
 private const val MAX_NUM_FILEPATHS_TO_CACHE = 20
 
-class USBMediaDevice(private val context: Context, private val usbDevice: USBDevice): MediaDevice {
+class USBMediaDevice(private val context: Context, private val usbDevice: USBDevice) : MediaDevice {
     override val TAG = "USBMediaDevice"
     override val logger = Logger
     private var fileSystem: FileSystem? = null
@@ -57,6 +57,7 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
     private var volumeLabel: String = ""
     private var logDirectoryNum: Int = 0
     private val recentFilepathToFileMap: FilePathToFileMapCache = FilePathToFileMapCache()
+
     // libaums is not thread-safe. My changes made it a bit more safe but still having some threading problems here and
     // there, so will try thread confinement
     val libaumsDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
@@ -100,22 +101,34 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
      */
     fun isToBeIgnored(): Boolean {
         val vendorProductID = Pair(usbDevice.vendorId, usbDevice.productId)
-        logger.debug(TAG, "isToBeIgnored($vendorProductID)")
+        val vendorProductIDHex = Pair("0x%x".format(usbDevice.vendorId), "0x%x".format(usbDevice.productId))
+        logger.debug(TAG, "isToBeIgnored($vendorProductID / $vendorProductIDHex)")
+        // Volvo, Polestar, General Motors, Renault
         if (vendorProductID in listOf(
-                // Cambridge Silicon Radio Bluetooth dongle 0x0A12
-                Pair(2578, 1),
-                // Cambridge Silicon Radio Bluetooth dongle 0x0A12
-                Pair(2578, 3),
                 // Microchip AN20021 USB to UART Bridge with USB 2.0 hub 0x2530
                 Pair(1060, 9520),
                 // USB Ethernet 0X9E08
                 Pair(1060, 40456),
                 // MicroChip OS81118 network interface card 0x0424
                 Pair(1060, 53016),
+                // Microchip Tech USB49XX NCM/IAP Bridge
+                Pair(1060, 18704),
                 // Microchip MCP2200 USB to UART converter 0x04D8
                 Pair(1240, 223),
                 // Mitsubishi USB to Modem Bridge 0x06D3
-                Pair(1747, 10272)
+                Pair(1747, 10272),
+                // Cambridge Silicon Radio Bluetooth dongle 0x0A12
+                Pair(2578, 1),
+                // Cambridge Silicon Radio Bluetooth dongle 0x0A12
+                Pair(2578, 3),
+                // Linux xHCI Host Controller
+                Pair(7531, 3),
+                // Delphi Host to Host Bridge
+                Pair(11336, 261),
+                // Delphi Vendor
+                Pair(11336, 288),
+                // Delphi Hub
+                Pair(11336, 306),
             )
         ) {
             return true
@@ -376,7 +389,7 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
 
     override fun getName(): String {
         val stringBuilder: StringBuilder = StringBuilder()
-        stringBuilder.append("${USBMediaDevice::class}{")
+        stringBuilder.append("${USBMediaDevice::class.simpleName}{")
         if (usbDevice.manufacturerName?.isBlank() == false) {
             stringBuilder.append(usbDevice.manufacturerName)
         }
@@ -403,7 +416,7 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
     }
 
     override fun toString(): String {
-        return "${USBMediaDevice::class}{${usbDevice};${hashCode()}}"
+        return "${USBMediaDevice::class.simpleName}{${usbDevice};${hashCode()}}"
     }
 
     override suspend fun getDataSourceForURI(uri: Uri): MediaDataSource {

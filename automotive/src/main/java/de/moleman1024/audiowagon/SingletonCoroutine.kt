@@ -83,7 +83,7 @@ class SingletonCoroutine(
             when (exc) {
                 is NoAudioItemException -> {
                     // this happens often when persistent data does not match USB drive contents, do not report this
-                    // crash in crashlytics
+                    // exception in crashlytics
                     logger.exception(tag, msg, exc)
                 }
                 is CancellationException -> {

@@ -13,7 +13,6 @@ import android.net.Uri
 import android.support.v4.media.MediaMetadataCompat
 import de.moleman1024.audiowagon.AUTHORITY
 import de.moleman1024.audiowagon.AlbumArtContentProvider
-import de.moleman1024.audiowagon.DEFAULT_JPEG_QUALITY_PERCENTAGE
 import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.filestorage.AudioFile
 import de.moleman1024.audiowagon.filestorage.AudioFileStorage
@@ -22,8 +21,8 @@ import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyElement
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyType
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import java.io.ByteArrayOutputStream
 import java.io.IOException
+import java.nio.ByteBuffer
 
 private const val TAG = "AudioMetadataMaker"
 private val logger = Logger
@@ -156,7 +155,7 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
         try {
             yearAsString = Util.sanitizeYear(yearAsString)
             year = Util.convertStringToShort(yearAsString)
-        } catch(exc: java.lang.NumberFormatException) {
+        } catch (exc: java.lang.NumberFormatException) {
             logger.error(TAG, "$exc for year: $yearAsString")
         }
         return year
@@ -230,6 +229,9 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
 
     private fun getAlbumArtFromMediaDataSource(mediaDataSource: MediaDataSource): ByteArray? {
         val metadataRetriever = MediaMetadataRetriever()
+        if (mediaDataSource.size <= 0) {
+            return null
+        }
         metadataRetriever.setDataSource(mediaDataSource)
         val embeddedImage = metadataRetriever.embeddedPicture ?: return null
         metadataRetriever.close()
@@ -243,30 +245,56 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
     }
 
     fun resizeAlbumArt(albumArtBytes: ByteArray): ByteArray? {
-        val resizedBitmap: Bitmap?
+        val resizedBitmap: Bitmap
         try {
             logger.verbose(TAG, "Decoding image")
-            val decodedBitmap = BitmapFactory.decodeByteArray(albumArtBytes, 0, albumArtBytes.size) ?: return null
-            logger.verbose(TAG, "Scaling image")
+            // https://developer.android.com/topic/performance/graphics/load-bitmap
+            val bitmapOptions = BitmapFactory.Options().apply {
+                inJustDecodeBounds = true
+            }
+            BitmapFactory.decodeByteArray(albumArtBytes, 0, albumArtBytes.size, bitmapOptions)
+            logger.verbose(
+                TAG,
+                "Got original bitmap bounds: width=${bitmapOptions.outWidth},height=${bitmapOptions.outHeight}"
+            )
             val widthHeightForResize = AlbumArtContentProvider.getAlbumArtSizePixels()
+            bitmapOptions.inSampleSize = calculateBitmapInSampleSize(
+                bitmapOptions.outWidth,
+                bitmapOptions.outHeight,
+                widthHeightForResize,
+                widthHeightForResize
+            )
+            logger.verbose(TAG, "Using bitmap inSampleSize: ${bitmapOptions.inSampleSize}")
+            bitmapOptions.inJustDecodeBounds = false
+            logger.verbose(TAG, "Scaling image")
             resizedBitmap =
-                if (decodedBitmap.width < widthHeightForResize || decodedBitmap.height < widthHeightForResize) {
-                    decodedBitmap
-                } else {
-                    // TODO: try inSampleSize e.g. see
-                    //  https://stackoverflow.com/questions/25719620/how-to-solve-java-lang-outofmemoryerror-trouble-in-android
-                    Bitmap.createScaledBitmap(decodedBitmap, widthHeightForResize, widthHeightForResize, false)
-                }
+                BitmapFactory.decodeByteArray(albumArtBytes, 0, albumArtBytes.size, bitmapOptions) ?: return null
         } catch (exc: NullPointerException) {
             logger.exception(TAG, "Exception when decoding image", exc)
             return null
         }
-        val stream = ByteArrayOutputStream()
-        logger.verbose(TAG, "Compressing resized image")
-        val quality = DEFAULT_JPEG_QUALITY_PERCENTAGE
-        // TODO: I am getting some warnings in log on Pixel 3 XL AAOS that this takes some time
-        resizedBitmap?.compress(Bitmap.CompressFormat.JPEG, quality, stream) ?: return null
-        return stream.toByteArray()
+        val bitmapBytes = ByteArray(resizedBitmap.byteCount)
+        val buffer = ByteBuffer.allocate(resizedBitmap.byteCount)
+        resizedBitmap.copyPixelsToBuffer(buffer)
+        buffer.rewind()
+        buffer.get(bitmapBytes)
+        resizedBitmap.recycle()
+        return bitmapBytes
+    }
+
+    // https://developer.android.com/topic/performance/graphics/load-bitmap
+    private fun calculateBitmapInSampleSize(width: Int, height: Int, reqWidth: Int, reqHeight: Int): Int {
+        var inSampleSize = 1
+        if (height > reqHeight || width > reqWidth) {
+            val halfHeight: Int = height / 2
+            val halfWidth: Int = width / 2
+            // Calculate the largest inSampleSize value that is a power of 2 and keeps both
+            // height and width larger than the requested height and width.
+            while (halfHeight / inSampleSize >= reqHeight && halfWidth / inSampleSize >= reqWidth) {
+                inSampleSize *= 2
+            }
+        }
+        return inSampleSize
     }
 
     companion object {

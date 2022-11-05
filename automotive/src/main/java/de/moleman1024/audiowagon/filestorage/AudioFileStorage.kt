@@ -189,8 +189,7 @@ open class AudioFileStorage(
         val storageChange = StorageChange(storageLocation.storageID, StorageAction.REMOVE)
         notifyObservers(storageChange)
         // TODO: the initial design of the app allowed for multiple audio file storage locations in parallel, I
-        //  kinda of gave up on that midway, should re-design the classes a bit
-        // (check why calling audioFileStorageLocations.remove(storageLocation) does not work)
+        //  gave up on that midway, should re-design the classes a bit
         audioFileStorageLocations.clear()
         logger.debug(TAG, "audioFileStorageLocations cleared at end of removeDevice()")
     }
@@ -382,8 +381,10 @@ open class AudioFileStorage(
         logger.debug(TAG, "shutdown()")
         usbDeviceConnections.unregisterForUSBIntents()
         closeDataSources()
+        disableLogToUSB()
         audioFileStorageLocations.forEach {
             it.cancelIndexAudioFiles()
+            // this will close USB device
             it.close()
         }
         audioFileStorageLocations.clear()
@@ -393,6 +394,7 @@ open class AudioFileStorage(
     fun suspend() {
         logger.debug(TAG, "suspend()")
         closeDataSources()
+        disableLogToUSB()
         audioFileStorageLocations.forEach {
             it.cancelIndexAudioFiles()
             it.close()

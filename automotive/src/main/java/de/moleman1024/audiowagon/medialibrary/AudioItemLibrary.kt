@@ -33,8 +33,6 @@ import java.io.IOException
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.coroutineContext
 
-// could add one more category shown in header, maybe use for playlists
-
 /*
 These CONTENT_STYLE constants determine what the browse tree will look like on AAOS
 https://developer.android.com/training/cars/media#apply_content_style

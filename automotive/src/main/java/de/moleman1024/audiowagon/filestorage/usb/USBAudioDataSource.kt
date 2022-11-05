@@ -90,6 +90,9 @@ open class USBAudioDataSource(
             } catch (exc: IOException) {
                 return -1
             }
+            if (isClosed) {
+                return -1
+            }
             numBytesToReadFromChunk = min(numBytesToReadRemain, numBytesInChunk)
             outBufPosBeforeRead = outBuffer.position()
             if (offsetIntoChunk > 0) {
@@ -110,6 +113,9 @@ open class USBAudioDataSource(
     }
 
     override fun getSize(): Long {
+        if (isClosed) {
+            return 0
+        }
         return runBlocking(libaumsDispatcher) {
             return@runBlocking usbFile?.length ?: 0
         }

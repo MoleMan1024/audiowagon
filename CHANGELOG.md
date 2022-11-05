@@ -12,6 +12,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+## [2.2.8] - 2022-11-05
+
+### Changed
+
+- trying to avoid issue with `MAX_RECOVERY_ATTEMPTS` when waking up from sleep
+- trying to reduce memory usage of album art
+- ignoring some more built-in USB devices found in General Motors and Renault cars that use AAOS
+
+
 ## [2.2.5] - 2022-09-26
 
 ### Changed
