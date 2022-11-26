@@ -39,7 +39,8 @@ Please see Github for a [list of changes for each version of the app](https://gi
 
 - The app will *not* work with Polestar/Volvo OTA car software version 2.0 nor 2.1. You will need the car software
   version 2.2 or higher that includes the CarPlay Update (or 1.9 or lower) which re-enables the USB data connection.  
-- The app can *not* play back **.wma** files
+- The app can *not* play back **.wma** files. Also Android does not support files encoded with "Apple Lossless Audio
+  (alac)" codec.
 - The app does *not* work with music stored on *iPod*, *iPhone* nor *Android phone*, you need to use a *USB mass storage
   device* formatted as *FAT32* (for example a USB flash drive)
 - One person has [reported incompatibility](https://github.com/MoleMan1024/audiowagon/issues/85) with a *SanDisk 2TB
@@ -49,13 +50,7 @@ Please see Github for a [list of changes for each version of the app](https://gi
   library I use to read the filesystem, please try with a USB flash drive instead, I have not heard about problems with
   those. 
 
-  *This problem applies only to certain adapters*, I also have reports where similar adapters were working
-  normally. The following hardware setups might give you issues and should be avoided:
-  - Transcend USB-A 3.0 adapter, white, with SD and µSD slot, using a µSD card
-  - unknown brand USB-A to µSD adapter, black, with label "MicroSD, USB2.0 Y", using a µSD card
-  - unknown brand USB-A to µSD adapter, black, with label "MjX R/C Technic", using a µSD card
-  - unknown brand USB-C adapter, gray, with SD and µSD slot and LED, using another adapter SD to µSD, using a µSD card
-    (this one could be fixed by removing the second unnecessary adapter)
+  *This problem applies only to certain adapters*, I also have reports where similar adapters were working normally.
 
 ## How to use
 
@@ -103,7 +98,7 @@ See [the FAQ section]({{ site.baseurl }}{% link faq.markdown %}).
 ## How do I report an issue?
 
 If you encounter any issues, please let me know so I can fix them. If possible provide all of the following info to me
-at my email (or you can use [GitHub](https://github.com/MoleMan1024/audiowagon/issues)):
+at my email (see below, or you can use [GitHub](https://github.com/MoleMan1024/audiowagon/issues)):
 
 - What happened? Describe ALL steps that you did EXACTLY. Please mention even minor details (e.g. did you leave/enter
   the car before you saw the issue occur?). Also be precise: saying that something "does not work"/"is broken" is not
