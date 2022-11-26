@@ -660,7 +660,7 @@ class AudioItemLibrary(
             logger.debug(TAG, "Returning album art from cache for: $file")
             return byteArrayFromCache
         }
-        var albumArtBytes: ByteArray? = null
+        val albumArtBytes: ByteArray?
         when (file) {
             is AudioFile -> {
                 val audioItem = createAudioItemForFile(file)
@@ -685,7 +685,7 @@ class AudioItemLibrary(
             }
         }
         logger.warning(TAG, "Could not retrieve any album art for: ${file.uri}")
-        return albumArtBytes
+        return null
     }
 
     suspend fun getAlbumArtForArtURI(uri: Uri): ByteArray? {

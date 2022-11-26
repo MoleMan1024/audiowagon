@@ -101,7 +101,7 @@ class USBDeviceProxy(
                 val massStorageDevices = androidUSBDevice.getMassStorageDevices(context)
                 logger.debug(TAG, "Found mass storage devices: $massStorageDevices")
                 massStorageDevice = massStorageDevices.first()
-                logger.verbose(TAG, "Created mass storage device: $massStorageDevice")
+                logger.verbose(TAG, "Created mass storage device for: $this")
             } catch (exc: NoSuchElementException) {
                 throw RuntimeException("No mass storage device: $androidUSBDevice")
             }
@@ -144,12 +144,14 @@ class USBDeviceProxy(
         result = 31 * result + deviceName.hashCode()
         result = 31 * result + productId
         result = 31 * result + vendorId
+        result = 31 * result + massStorageDevice.hashCode()
         return result
     }
 
     override fun toString(): String {
-        return "USBDeviceProxy(deviceClass=$deviceClass, deviceName='$deviceName', " +
-                "manufacturerName=$manufacturerName, productId=$productId, productName=$productName, " +
-                "vendorId=$vendorId, serialNumber=${serialNumber?.take(14)})"
+        return "USBDeviceProxy(deviceName='$deviceName', " +
+                "productId=$productId, " +
+                "vendorId=$vendorId, serialNumber=${serialNumber?.take(14)}, " +
+                "massStorageDevice=${massStorageDevice.hashCode()})"
     }
 }

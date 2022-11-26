@@ -55,6 +55,7 @@ class SingletonCoroutine(
                 if (behaviour == SingletonCoroutineBehaviour.CANCEL_OTHER_ON_LAUNCH) {
                     // wait for all previous instances to finish cancellation
                     instancesMap.keys.filter { it != currentID }.forEach {
+                        logger.debug(tag, "Waiting for cancellation of $it (instancesMap=$instancesMap)")
                         instancesMap[it]?.join()
                         instancesMap.remove(it)
                         logger.debug(tag, "Cancelled $it (instancesMap=$instancesMap)")

@@ -351,9 +351,12 @@ open class AudioFileStorage(
         audioFileStorageLocations.forEach {
             val storageChange = StorageChange(it.storageID, StorageAction.REMOVE)
             notifyObservers(storageChange)
+            it.cancelIndexAudioFiles()
+            it.close()
         }
         audioFileStorageLocations.clear()
         usbDeviceConnections.updateUSBStatusInSettings(R.string.setting_USB_status_ejected)
+        notifyObservers(StorageChange("", StorageAction.REFRESH))
     }
 
     suspend fun enableLogToUSBPreference() {
@@ -380,11 +383,11 @@ open class AudioFileStorage(
     fun shutdown() {
         logger.debug(TAG, "shutdown()")
         usbDeviceConnections.unregisterForUSBIntents()
+        usbDeviceConnections.cancelCoroutines()
         closeDataSources()
         disableLogToUSB()
         audioFileStorageLocations.forEach {
             it.cancelIndexAudioFiles()
-            // this will close USB device
             it.close()
         }
         audioFileStorageLocations.clear()
@@ -393,6 +396,7 @@ open class AudioFileStorage(
 
     fun suspend() {
         logger.debug(TAG, "suspend()")
+        usbDeviceConnections.cancelCoroutines()
         closeDataSources()
         disableLogToUSB()
         audioFileStorageLocations.forEach {

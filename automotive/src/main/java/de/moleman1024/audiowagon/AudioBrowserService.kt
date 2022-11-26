@@ -31,12 +31,14 @@ package de.moleman1024.audiowagon
 import android.app.Notification
 import android.app.Service
 import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.net.Uri
 import android.os.Binder
 import android.os.Bundle
 import android.os.IBinder
+import android.os.PowerManager
 import android.support.v4.media.MediaBrowserCompat.MediaItem
 import android.support.v4.media.session.PlaybackStateCompat
 import androidx.annotation.VisibleForTesting
@@ -72,6 +74,7 @@ import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.coroutineContext
 import kotlin.system.exitProcess
+
 
 private const val TAG = "AudioBrowserService"
 const val NOTIFICATION_ID: Int = 25575
@@ -138,6 +141,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     private lateinit var suspendSingletonCoroutine: SingletonCoroutine
     private lateinit var wakeSingletonCoroutine: SingletonCoroutine
     private lateinit var notifyIdleSingletonCoroutine: SingletonCoroutine
+    private lateinit var powerManager: PowerManager
     @Volatile
     private var isServiceStarted: Boolean = false
     @Volatile
@@ -206,7 +210,12 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             addAction(Intent.ACTION_SHUTDOWN)
         }
         registerReceiver(powerEventReceiver, shutdownFilter)
+        powerManager = this.getSystemService(Context.POWER_SERVICE) as PowerManager
         startup()
+        if (!powerManager.isInteractive) {
+            logger.debug(TAG, "onCreate() called while screen was off, suspending again")
+            suspend()
+        }
     }
 
     @ExperimentalCoroutinesApi
@@ -246,7 +255,9 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         logger.verbose(TAG, "Lifecycle set to CREATED")
         observeAudioFileStorage()
         observeAudioSessionStateChanges()
-        updateAttachedDevices()
+        if (powerManager.isInteractive) {
+            updateAttachedDevices()
+        }
     }
 
     private fun observeAudioFileStorage() {
@@ -268,6 +279,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             when (storageChange.action) {
                 StorageAction.ADD -> onStorageLocationAdded(storageChange.id)
                 StorageAction.REMOVE -> onStorageLocationRemoved(storageChange.id)
+                StorageAction.REFRESH -> onStorageLocationRefresh()
             }
             val allStorageIDsAfter = audioItemLibrary.getAllStorageIDs()
             logger.debug(TAG, "Storage IDs in library after change: $allStorageIDsAfter")
@@ -344,9 +356,6 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                     return
                 }
                 logger.warning(TAG, "Player encountered an error")
-                runBlocking(dispatcher) {
-                    audioSession.showError(event.errorMsg)
-                }
             }
             else -> {
                 // ignore
@@ -679,6 +688,10 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         }
     }
 
+    private fun onStorageLocationRefresh() {
+        notifyBrowserChildrenChangedAllLevels()
+    }
+
     /**
      * See https://developer.android.com/guide/components/services#Lifecycle
      * https://developer.android.com/guide/topics/media-apps/audio-app/building-a-mediabrowserservice#service-lifecycle
@@ -1001,6 +1014,11 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         logger.debug(TAG, "onLoadChildren(parentId=$parentId) from package ${currentBrowserInfo.packageName}")
         latestContentHierarchyIDRequested = parentId
         result.detach()
+        if (isSuspended) {
+            logger.warning(TAG, "Returning empty result for onLoadChildren() because suspended")
+            result.sendResult(mutableListOf())
+            return
+        }
         val jobID = Util.generateUUID()
         val loadChildrenJob = launchInScopeSafely {
             logger.verbose(TAG, "launch loadChildrenJob=$coroutineContext")

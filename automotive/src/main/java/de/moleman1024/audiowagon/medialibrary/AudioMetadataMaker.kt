@@ -13,6 +13,7 @@ import android.net.Uri
 import android.support.v4.media.MediaMetadataCompat
 import de.moleman1024.audiowagon.AUTHORITY
 import de.moleman1024.audiowagon.AlbumArtContentProvider
+import de.moleman1024.audiowagon.DEFAULT_JPEG_QUALITY_PERCENTAGE
 import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.filestorage.AudioFile
 import de.moleman1024.audiowagon.filestorage.AudioFileStorage
@@ -21,6 +22,7 @@ import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyElement
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyType
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.nio.ByteBuffer
 
@@ -122,7 +124,7 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
             // sometimes this is returned as e.g. "5/11" (five out of eleven tracks), remove that
             trackNumAsString = trackNumAsString.replace("/.*".toRegex(), "").trim()
             if (trackNumAsString.isBlank()) {
-                return trackNum
+                return null
             }
             trackNum = Util.convertStringToShort(trackNumAsString)
         } catch (exc: NumberFormatException) {
@@ -139,7 +141,7 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
             // sometimes this is returned as e.g. "1/1" (one out of one discs), remove that
             discNumAsString = discNumAsString.replace("(CD|/.*)".toRegex(), "").trim()
             if (discNumAsString.isBlank()) {
-                return discNum
+                return null
             }
             discNum = Util.convertStringToShort(discNumAsString)
         } catch (exc: NumberFormatException) {
@@ -230,6 +232,7 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
     private fun getAlbumArtFromMediaDataSource(mediaDataSource: MediaDataSource): ByteArray? {
         val metadataRetriever = MediaMetadataRetriever()
         if (mediaDataSource.size <= 0) {
+            logger.error(TAG, "Media data source for album art is empty")
             return null
         }
         metadataRetriever.setDataSource(mediaDataSource)
@@ -273,13 +276,12 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
             logger.exception(TAG, "Exception when decoding image", exc)
             return null
         }
-        val bitmapBytes = ByteArray(resizedBitmap.byteCount)
-        val buffer = ByteBuffer.allocate(resizedBitmap.byteCount)
-        resizedBitmap.copyPixelsToBuffer(buffer)
-        buffer.rewind()
-        buffer.get(bitmapBytes)
-        resizedBitmap.recycle()
-        return bitmapBytes
+        val stream = ByteArrayOutputStream()
+        logger.verbose(TAG, "Compressing resized image")
+        val quality = DEFAULT_JPEG_QUALITY_PERCENTAGE
+        // TODO: I am getting some warnings in log on Pixel 3 XL AAOS that this takes some time
+        resizedBitmap.compress(Bitmap.CompressFormat.JPEG, quality, stream)
+        return stream.toByteArray()
     }
 
     // https://developer.android.com/topic/performance/graphics/load-bitmap

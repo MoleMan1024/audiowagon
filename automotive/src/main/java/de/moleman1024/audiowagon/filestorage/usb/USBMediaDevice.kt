@@ -31,16 +31,17 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 import java.util.concurrent.Executors
+import kotlin.NoSuchElementException
 import kotlin.collections.LinkedHashMap
 
 private const val MINIMUM_FREE_SPACE_FOR_LOGGING_MB = 10
 const val LOG_DIRECTORY = "aw_logs"
 
 // subclass 6 means that the usb mass storage device implements the SCSI transparent command set
-private const val INTERFACE_SUBCLASS = 6
+private const val INTERFACE_SUBCLASS_SCSI = 6
 
 // protocol 80 means the communication happens only via bulk transfers
-private const val INTERFACE_PROTOCOL = 80
+private const val INTERFACE_PROTOCOL_BULK_TRANSFER = 80
 
 private const val DEFAULT_FILESYSTEM_CHUNK_SIZE = 32768
 
@@ -113,6 +114,8 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
                 Pair(1060, 53016),
                 // Microchip Tech USB49XX NCM/IAP Bridge
                 Pair(1060, 18704),
+                // Microchip USB4913
+                Pair(1060, 18707),
                 // Microchip MCP2200 USB to UART converter 0x04D8
                 Pair(1240, 223),
                 // Mitsubishi USB to Modem Bridge 0x06D3
@@ -122,6 +125,8 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
                 // Cambridge Silicon Radio Bluetooth dongle 0x0A12
                 Pair(2578, 3),
                 // Linux xHCI Host Controller
+                Pair(7531, 2),
+                // Linux xHCI Host Controller
                 Pair(7531, 3),
                 // Delphi Host to Host Bridge
                 Pair(11336, 261),
@@ -129,6 +134,8 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
                 Pair(11336, 288),
                 // Delphi Hub
                 Pair(11336, 306),
+                // Microchip USB2 Controller Hub
+                Pair(18752, 1060)
             )
         ) {
             return true
@@ -166,7 +173,8 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
             .map { usbDevice.getInterface(it) }
             .filter {
                 // libaums currently only supports SCSI transparent command set with bulk transfers
-                it.interfaceSubclass == INTERFACE_SUBCLASS && it.interfaceProtocol == INTERFACE_PROTOCOL
+                it.interfaceSubclass == INTERFACE_SUBCLASS_SCSI
+                        && it.interfaceProtocol == INTERFACE_PROTOCOL_BULK_TRANSFER
             }
             .map { usbInterface ->
                 // Every mass storage device should have exactly two endpoints: One IN and one OUT endpoint
@@ -306,8 +314,9 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
     // needs to be confied via libaumsDispatcher externally
     fun getRoot(): UsbFile {
         if (!hasFileSystem()) {
-            throw RuntimeException("No filesystem in getRoot() for: $this")
+            throw NoSuchElementException("No filesystem in getRoot() for: $this")
         }
+        logger.verbose(TAG, "Using filesystem: $fileSystem")
         return fileSystem!!.rootDirectory
     }
 

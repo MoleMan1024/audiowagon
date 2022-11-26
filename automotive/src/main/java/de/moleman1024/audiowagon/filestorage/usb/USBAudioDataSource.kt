@@ -12,7 +12,6 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.runBlocking
 import java.io.IOException
 import java.nio.ByteBuffer
-import java.util.concurrent.TimeoutException
 import kotlin.math.min
 
 private const val TAG = "USBAudDataSrc"

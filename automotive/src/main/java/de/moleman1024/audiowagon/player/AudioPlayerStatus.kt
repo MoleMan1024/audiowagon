@@ -5,19 +5,20 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 package de.moleman1024.audiowagon.player
 
+import android.support.v4.media.session.MediaSessionCompat.QueueItem
 import android.support.v4.media.session.PlaybackStateCompat
 
 data class AudioPlayerStatus(var playbackState: Int = PlaybackStateCompat.STATE_NONE) {
     var positionInMilliSec: Long = PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN
     var errorCode: Int = 0
     var errorMsg: String = ""
-    var queueItemID: Long = -1
+    var queueItem: QueueItem? = null
     var isShuffling: Boolean = false
     var isRepeating: Boolean = false
     var hasPlaybackQueueEnded: Boolean = false
 
     override fun toString(): String {
-        return "AudioPlayerStatus(playbackState=${getStatusName(playbackState)}, queueItemID=$queueItemID, " +
+        return "AudioPlayerStatus(playbackState=${getStatusName(playbackState)}, queueItem=$queueItem, " +
                 "positionInMilliSec=$positionInMilliSec, errorCode=$errorCode, errorMsg='$errorMsg', " +
                 "hasPlaybackQueueEnded=$hasPlaybackQueueEnded)"
     }

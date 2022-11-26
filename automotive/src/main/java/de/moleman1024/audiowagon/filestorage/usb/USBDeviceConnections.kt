@@ -242,6 +242,7 @@ class USBDeviceConnections(
             appendAttachedPermittedDevice(device)
         } else {
             attachedPermittedDevice = getAttachedPermittedDevice(device)
+            logger.debug(TAG, "Device already attached and permitted: $attachedPermittedDevice")
         }
         // TODO: improve this, does not look nice with so many catch statements
         try {
@@ -466,6 +467,15 @@ class USBDeviceConnections(
         } else {
             logger.debug(TAG, "USB device already has permission")
         }
+    }
+
+    fun cancelCoroutines() {
+        logger.debug(TAG, "cancelCoroutines()")
+        updateAttachedDevicesSingletonCoroutine.cancel()
+        usbAttachedSingletonCoroutine.cancel()
+        usbAttachedDelayedSingletonCoroutine.cancel()
+        usbDetachedSingletonCoroutine.cancel()
+        usbPermissionSingletonCoroutine.cancel()
     }
 
 }

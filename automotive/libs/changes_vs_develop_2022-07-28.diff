@@ -213,7 +213,7 @@ index 7c00c2c..d12ed07 100644
 \ No newline at end of file
 +} 
 diff --git a/libaums/src/main/java/me/jahnen/libaums/core/driver/scsi/ScsiBlockDevice.kt b/libaums/src/main/java/me/jahnen/libaums/core/driver/scsi/ScsiBlockDevice.kt
-index cc1d351..edc0b76 100644
+index cc1d351..0c45425 100644
 --- a/libaums/src/main/java/me/jahnen/libaums/core/driver/scsi/ScsiBlockDevice.kt
 +++ b/libaums/src/main/java/me/jahnen/libaums/core/driver/scsi/ScsiBlockDevice.kt
 @@ -103,7 +103,10 @@ class ScsiBlockDevice(private val usbCommunication: UsbCommunication, private va
@@ -239,7 +239,22 @@ index cc1d351..edc0b76 100644
          throw IOException("MAX_RECOVERY_ATTEMPTS Exceeded while trying to transfer command to device, please reattach device and try again")
      }
  
-@@ -255,26 +256,36 @@ class ScsiBlockDevice(private val usbCommunication: UsbCommunication, private va
+@@ -192,7 +193,13 @@ class ScsiBlockDevice(private val usbCommunication: UsbCommunication, private va
+         return when (status) {
+             CommandStatusWrapper.COMMAND_PASSED -> true
+             CommandStatusWrapper.COMMAND_FAILED -> {
+-                requestSense()
++                try {
++                    requestSense()
++                } catch (exc: UnitAttention) {
++                    // UnitAttention comes normally with some SD card readers when adding new SD
++                    // card
++                    Log.e(TAG, "UnitAttention", exc)
++                }
+                 false
+             }
+             CommandStatusWrapper.PHASE_ERROR -> {
+@@ -255,26 +262,36 @@ class ScsiBlockDevice(private val usbCommunication: UsbCommunication, private va
          }
  
          var transferLength = command.dCbwDataTransferLength
@@ -284,7 +299,7 @@ index cc1d351..edc0b76 100644
                  written = 0
                  do {
                      written += usbCommunication.bulkOutTransfer(inBuffer)
-@@ -286,7 +297,6 @@ class ScsiBlockDevice(private val usbCommunication: UsbCommunication, private va
+@@ -286,7 +303,6 @@ class ScsiBlockDevice(private val usbCommunication: UsbCommunication, private va
              }
          }
  
@@ -292,7 +307,7 @@ index cc1d351..edc0b76 100644
          // expecting csw now
          cswBuffer.clear()
          read = usbCommunication.bulkInTransfer(cswBuffer)
-@@ -311,16 +321,13 @@ class ScsiBlockDevice(private val usbCommunication: UsbCommunication, private va
+@@ -311,16 +327,13 @@ class ScsiBlockDevice(private val usbCommunication: UsbCommunication, private va
      @Synchronized
      @Throws(IOException::class)
      override fun read(deviceOffset: Long, buffer: ByteBuffer) {
@@ -309,7 +324,7 @@ index cc1d351..edc0b76 100644
      }
  
      /**
-@@ -331,16 +338,13 @@ class ScsiBlockDevice(private val usbCommunication: UsbCommunication, private va
+@@ -331,16 +344,13 @@ class ScsiBlockDevice(private val usbCommunication: UsbCommunication, private va
      @Synchronized
      @Throws(IOException::class)
      override fun write(deviceOffset: Long, buffer: ByteBuffer) {

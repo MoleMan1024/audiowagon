@@ -7,5 +7,6 @@ package de.moleman1024.audiowagon.filestorage
 
 enum class StorageAction {
     ADD,
-    REMOVE
+    REMOVE,
+    REFRESH
 }

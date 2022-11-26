@@ -20,7 +20,7 @@ const val POPUP_TIMEOUT_MS: Long = 4000L
 
 open class GUI(private val scope: CoroutineScope, private val context: Context) {
     private var changeIndexingNotifJob: Job? = null
-    private var notificationManager: NotificationManager =
+    private val notificationManager: NotificationManager =
         context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     private var isChannelCreated: Boolean = false
 

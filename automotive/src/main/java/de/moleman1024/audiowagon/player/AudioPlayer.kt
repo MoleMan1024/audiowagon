@@ -68,7 +68,7 @@ class AudioPlayer(
     private var mediaPlayerFlopState: AudioPlayerState = AudioPlayerState.IDLE
     private var effectsFlip: Effects? = null
     private var effectsFlop: Effects? = null
-    val playerStatusObservers = mutableListOf<(AudioPlayerStatus) -> Unit>()
+    val playerStatusObservers = mutableListOf<suspend (AudioPlayerStatus) -> Unit>()
     private var isRecoveringFromIOError: Boolean = false
     // A single thread executor is used to confine access to queue and other shared state variables to a single
     // thread when called from coroutines. MediaPlayer is not thread-safe, must be accessed from a thread that has
@@ -298,6 +298,8 @@ class AudioPlayer(
         playerStatus.hasPlaybackQueueEnded = false
         playerStatus.playbackState = PlaybackStateCompat.STATE_NONE
         playerStatus.positionInMilliSec = PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN
+        playerStatus.errorMsg = ""
+        playerStatus.errorCode = 0
     }
 
     suspend fun seekTo(millisec: Int) {
@@ -357,7 +359,7 @@ class AudioPlayer(
                 pause()
                 val endOfQueueStatus = AudioPlayerStatus(playerStatus.playbackState)
                 endOfQueueStatus.positionInMilliSec = getCurrentPositionMilliSec()
-                endOfQueueStatus.queueItemID = playbackQueue.getCurrentItem()?.queueId ?: -1
+                endOfQueueStatus.queueItem = playbackQueue.getCurrentItem()
                 endOfQueueStatus.errorCode = PlaybackStateCompat.ERROR_CODE_END_OF_QUEUE
                 endOfQueueStatus.errorMsg = context.getString(R.string.no_next_track)
                 endOfQueueStatus.playbackState = PlaybackStateCompat.STATE_ERROR
@@ -383,7 +385,7 @@ class AudioPlayer(
                 pause()
                 val endOfQueueStatus = AudioPlayerStatus(playerStatus.playbackState)
                 endOfQueueStatus.positionInMilliSec = getCurrentPositionMilliSec()
-                endOfQueueStatus.queueItemID = playbackQueue.getCurrentItem()?.queueId ?: -1
+                endOfQueueStatus.queueItem = playbackQueue.getCurrentItem()
                 endOfQueueStatus.errorCode = PlaybackStateCompat.ERROR_CODE_END_OF_QUEUE
                 endOfQueueStatus.errorMsg = context.getString(R.string.no_prev_track)
                 endOfQueueStatus.playbackState = PlaybackStateCompat.STATE_ERROR
@@ -506,7 +508,7 @@ class AudioPlayer(
                 logger.warning(TAG, "Cannot start playback, audio focus request was denied")
                 val audioFocusDeniedStatus = AudioPlayerStatus(playerStatus.playbackState)
                 audioFocusDeniedStatus.positionInMilliSec = getCurrentPositionMilliSec()
-                audioFocusDeniedStatus.queueItemID = playbackQueue.getCurrentItem()?.queueId ?: -1
+                audioFocusDeniedStatus.queueItem = playbackQueue.getCurrentItem()
                 audioFocusDeniedStatus.errorCode = MEDIA_ERROR_AUDIO_FOCUS_DENIED
                 audioFocusDeniedStatus.errorMsg = context.getString(R.string.error_audio_focus_denied)
                 audioFocusDeniedStatus.playbackState = PlaybackStateCompat.STATE_ERROR
@@ -562,7 +564,7 @@ class AudioPlayer(
         }
         if (status == null) {
             playerStatus.positionInMilliSec = getCurrentPositionMilliSec()
-            playerStatus.queueItemID = playbackQueue.getCurrentItem()?.queueId ?: -1
+            playerStatus.queueItem = playbackQueue.getCurrentItem()
             notifyPlayerStatus(playerStatus)
         } else {
             notifyPlayerStatus(status)
@@ -872,6 +874,7 @@ class AudioPlayer(
             setPlayQueueAndNotify(listOf())
             reInitAllPlayers()
             resetPlayerStatus()
+            notifyPlayerStatusChange()
         }
     }
 
@@ -894,6 +897,7 @@ class AudioPlayer(
             setPlayQueueAndNotify(listOf())
             reInitAllPlayers()
             resetPlayerStatus()
+            notifyPlayerStatusChange()
         }
     }
 
@@ -905,6 +909,7 @@ class AudioPlayer(
             reInitAllPlayers()
             isRecoveringFromIOError = false
             resetPlayerStatus()
+            notifyPlayerStatusChange()
         }
     }
 
@@ -919,9 +924,8 @@ class AudioPlayer(
         }
     }
 
-    private suspend fun resetPlayerStatus() {
+    private fun resetPlayerStatus() {
         playerStatus = AudioPlayerStatus(PlaybackStateCompat.STATE_NONE)
-        notifyPlayerStatusChange()
     }
 
     @Suppress("RedundantSuspendModifier")

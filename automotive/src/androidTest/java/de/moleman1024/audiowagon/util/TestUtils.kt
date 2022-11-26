@@ -8,12 +8,10 @@ package de.moleman1024.audiowagon.util
 import android.content.Context
 import android.content.SharedPreferences
 import android.content.res.AssetManager
-import android.support.v4.media.session.PlaybackStateCompat
 import androidx.test.platform.app.InstrumentationRegistry
 import de.moleman1024.audiowagon.AudioBrowserService
 import de.moleman1024.audiowagon.filestorage.IndexingStatus
 import de.moleman1024.audiowagon.log.Logger
-import de.moleman1024.audiowagon.player.AudioPlayerStatus
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.Assert
 import java.io.File
@@ -58,7 +56,7 @@ object TestUtils {
         databasesDir.delete()
     }
 
-    fun getDatabaseDirectory(): File {
+    private fun getDatabaseDirectory(): File {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         return File(context?.dataDir.toString() + "/databases")
     }

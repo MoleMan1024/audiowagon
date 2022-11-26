@@ -255,7 +255,7 @@ class AudioSession(
                 addCustomAction(createCustomActionEject())
                 addCustomAction(customActionRepeat)
                 setState(audioPlayerStatus.playbackState, audioPlayerStatus.positionInMilliSec, PLAYBACK_SPEED)
-                setActiveQueueItemId(audioPlayerStatus.queueItemID)
+                audioPlayerStatus.queueItem?.queueId?.let { setActiveQueueItemId(it) }
             }
             if (audioPlayerStatus.errorCode == 0) {
                 newPlaybackState =
@@ -271,14 +271,15 @@ class AudioSession(
                 }
                 notifyStartPauseStop(audioPlayerStatus.playbackState)
             } else {
+                val audioPlayerStatusEnhanced = enhanceAudioPlayerErrorStatus(audioPlayerStatus)
                 newPlaybackState = playbackStateBuilder.setErrorMessage(
-                    audioPlayerStatus.errorCode, audioPlayerStatus.errorMsg
+                    audioPlayerStatusEnhanced.errorCode, audioPlayerStatusEnhanced.errorMsg
                 ).build()
                 val audioPlayerEvt = AudioPlayerEvent(AudioPlayerState.ERROR)
-                audioPlayerEvt.errorMsg = audioPlayerStatus.errorMsg
-                audioPlayerEvt.errorCode = audioPlayerStatus.errorCode
+                audioPlayerEvt.errorMsg = audioPlayerStatusEnhanced.errorMsg
+                audioPlayerEvt.errorCode = audioPlayerStatusEnhanced.errorCode
                 notifyObservers(audioPlayerEvt)
-                handlePlayerError(audioPlayerStatus.errorCode)
+                handlePlayerError(audioPlayerStatusEnhanced.errorCode)
             }
             playbackState = newPlaybackState
             audioFocusChangeListener.playbackState = newPlaybackState.state
@@ -300,6 +301,36 @@ class AudioSession(
             }
         }
         notifyObservers(playerEvent)
+    }
+
+    private suspend fun enhanceAudioPlayerErrorStatus(audioPlayerStatus: AudioPlayerStatus): AudioPlayerStatus {
+        if (audioPlayerStatus.errorCode == MediaPlayer.MEDIA_ERROR_UNKNOWN) {
+            // #94: this error code is also returned in some cases where the codec is not supported
+            audioPlayerStatus.queueItem?.description?.mediaUri?.let {
+                if (!isCodecSupported(it)) {
+                    val audioFile = AudioFile(it)
+                    audioPlayerStatus.errorCode = MediaPlayer.MEDIA_ERROR_UNSUPPORTED
+                    audioPlayerStatus.errorMsg =
+                        "${context.getString(R.string.error_not_supported)}: ${audioFile.name}"
+                }
+            }
+        }
+        return audioPlayerStatus
+    }
+
+    private suspend fun isCodecSupported(uri: Uri): Boolean {
+        Logger.debug(TAG, "Checking if codec is supported for: $uri")
+        val dataSource = audioFileStorage.getDataSourceForURI(uri)
+        val dataFront = ByteArray(NUM_BYTES_METADATA)
+        dataSource.readAt(0L, dataFront, 0, dataFront.size)
+        withContext(Dispatchers.IO) {
+            dataSource.close()
+        }
+        if (String(dataFront).contains("alac")) {
+            // Apple Lossless Audio is not supported by Android
+            return false
+        }
+        return true
     }
 
     private fun handlePlayerError(errorCode: Int) {
@@ -356,8 +387,6 @@ class AudioSession(
                                 // If we are playing files directly, extract the metadata here. This will slow down the
                                 // start of playback but without it we will not be able to show the duration of file,
                                 // album art etc.
-                                // TODO: this could be optimized, extractMetadataFrom and createMetadataForItem both use
-                                //  a MediaDataRetriever, should be merged
                                 audioItem = audioItemLibrary.extractMetadataFrom(audioFile)
                                 audioItem.id = ContentHierarchyElement.serialize(contentHierarchyID)
                                 audioItem.uri = audioFile.uri
@@ -427,7 +456,9 @@ class AudioSession(
         dataSource.readAt(0L, dataFront, 0, dataFront.size)
         replayGain = findReplayGainInBytes(dataFront)
         if (replayGain != REPLAYGAIN_NOT_FOUND) {
-            dataSource.close()
+            withContext(Dispatchers.IO) {
+                dataSource.close()
+            }
             return replayGain
         }
         val dataBack = ByteArray(NUM_BYTES_METADATA)

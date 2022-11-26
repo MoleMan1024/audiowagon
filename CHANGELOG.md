@@ -12,6 +12,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.1] - 2022-11-26
+
+### Fixed
+
+- a regression was fixed where album art was no longer displayed
+  [#92](https://github.com/MoleMan1024/audiowagon/issues/92)
+- the eject function was not properly releasing all resources, this has been fixed
+
+### Changed
+
+- Apple Lossless Audio ("alac") is not supported by the Android platform. Previously, when trying to play back such files
+  AudioWagon would show an "unknown error". Now the error message will say "Not supported" instead.
+  [#94](https://github.com/MoleMan1024/audiowagon/issues/94)
+- When the *AudioBrowserService* was started while the screen was still off the app would try to access the USB device,
+  even though this situation seems to happen most often before going into suspend-to-RAM. The app will now no longer try
+  to query and/or index USB devices while the screen is off.
+- some micro-SD card readers show a "Unit attention ASCQ 40" error message when being plugged in. However it turns out
+  this error can usually be ignored, those devices should now work with AudioWagon
+- ignoring some more built-in USB devices found in Renault cars that use AAOS
+- cancel some more coroutines that were possibly still running when going into shutdown/suspend
+
 
 ## [2.2.8] - 2022-11-05
 
