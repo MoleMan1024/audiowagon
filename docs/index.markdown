@@ -43,8 +43,10 @@ Please see Github for a [list of changes for each version of the app](https://gi
   (alac)" codec.
 - The app does *not* work with music stored on *iPod*, *iPhone* nor *Android phone*, you need to use a *USB mass storage
   device* formatted as *FAT32* (for example a USB flash drive)
-- One person has [reported incompatibility](https://github.com/MoleMan1024/audiowagon/issues/85) with a *SanDisk 2TB
+- One person has [reported a problem](https://github.com/MoleMan1024/audiowagon/issues/85) with a *SanDisk 2TB
   Extreme Portable SSD*
+- The app does *not* work with a *BDYING Car USB CD Player* (see issue 
+  [#95](https://github.com/MoleMan1024/audiowagon/issues/95))
 - *Some* people have reported issues when using the app with a **USB to micro SD card adapter** where no files could be
   played back and lots of error messages were shown. In such cases the adapter is probably not compatible with the
   library I use to read the filesystem, please try with a USB flash drive instead, I have not heard about problems with

@@ -21,6 +21,15 @@ maker probably put some extra security in the car that will always trigger this 
 help from the car maker or Google to improve this to allow the user to select *AudioWagon* to be the default app for 
 USB devices.
 
+### Why is there a popup abbout "USB device is not supported" when the USB device works fine?
+
+![Not supported popup](/img/not_supported.jpg)
+
+This popup is triggered by Volvo/Polestar and is invalid, it always comes and can be ignored when using AudioWagon. You 
+can temporarily get rid of it by doing the steps I mentioned in 
+[issue #73](https://github.com/MoleMan1024/audiowagon/issues/73#issuecomment-1172879863) but it will come 
+back after a headunit restart. Please file a bug report at Volvo/Polestar to get this fixed.
+
 ### What is the eject button for?
 
 The eject button will make sure that the USB drive is not in use when you unplug it. Press it while the infotainment
