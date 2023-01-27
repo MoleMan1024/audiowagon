@@ -6,6 +6,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 package de.moleman1024.audiowagon.medialibrary
 
 import android.content.Context
+import android.media.MediaMetadataRetriever
 import android.media.browse.MediaBrowser
 import android.net.Uri
 import android.os.Bundle
@@ -121,7 +122,7 @@ class AudioItemLibrary(
         val repo = getPrimaryRepository() ?: throw RuntimeException("No repository")
         repo.hasUpdatedDatabase = false
         channel.consumeEach { fileOrDirectory ->
-            logger.verbose(TAG, "buildLibrary() received: $fileOrDirectory")
+            logger.debug(TAG, "buildLibrary() received: $fileOrDirectory")
             if (!isBuildLibraryCancelled) {
                 if (fileOrDirectory is AudioFile) {
                     if (isReadAudioFileMetadata) {
@@ -132,7 +133,9 @@ class AudioItemLibrary(
                     // We limit the number of indexing notification updates sent here. It seems Android will throttle
                     // if too many notifications are posted and the last important notification indicating "finished" might be
                     // ignored if too many are sent
-                    if (numFilesSeenWhenBuildingLibrary % UPDATE_INDEX_NOTIF_FOR_EACH_NUM_ITEMS == 0) {
+                    // Below 100 entries send more updates to indicate to user early this is actually working
+                    if (numFilesSeenWhenBuildingLibrary % UPDATE_INDEX_NOTIF_FOR_EACH_NUM_ITEMS == 0
+                        || (numFilesSeenWhenBuildingLibrary < 100 && numFilesSeenWhenBuildingLibrary % 20 == 0)) {
                         gui.updateIndexingNotification(numFilesSeenWhenBuildingLibrary)
                         logger.setFlushToUSBFlag()
                         callback()
@@ -236,12 +239,19 @@ class AudioItemLibrary(
         coroutineContext: CoroutineContext
     ) {
         try {
-            // TODO: extract album art in extractMetadataFrom
-            val metadata: AudioItem = extractMetadataFrom(audioFile)
+            val startTime = System.nanoTime()
+            logger.debug(TAG, "Extracting metadata for: ${audioFile.name}")
+            val dataSource = audioFileStorage.getDataSourceForAudioFile(audioFile)
+            val metadataRetriever = metadataMaker.setupMetadataRetrieverFromDataSource(dataSource)
+            val metadata: AudioItem = extractMetadataFrom(audioFile, metadataRetriever)
+            val albumArtSourceURI: FileLike? = findAlbumArtFor(audioFile, metadataRetriever)
+            metadataMaker.cleanMetadataRetriever(metadataRetriever, dataSource)
             if (isBuildLibraryCancelled) {
                 return
             }
-            val albumArtSourceURI: FileLike? = findAlbumArtFor(audioFile)
+            val endTime = System.nanoTime()
+            val timeTakenMS = (endTime - startTime) / 1000000L
+            logger.debug(TAG, "Extracted metadata in ${timeTakenMS}ms: $metadata")
             repo.populateDatabaseFrom(audioFile, metadata, albumArtSourceURI)
         } catch (exc: IOException) {
             // this can happen for example for files with strange filenames, the file will be ignored
@@ -257,6 +267,21 @@ class AudioItemLibrary(
             }
         } catch (exc: RuntimeException) {
             logger.exception(TAG, "Exception when processing file: $audioFile", exc)
+        }
+    }
+
+    suspend fun extractMetadataFrom(
+        audioFile: AudioFile,
+        metadataRetriever: MediaMetadataRetriever? = null
+    ): AudioItem {
+        return if (metadataRetriever == null) {
+            val dataSource = audioFileStorage.getDataSourceForAudioFile(audioFile)
+            val mediaMetadataRetriever = metadataMaker.setupMetadataRetrieverFromDataSource(dataSource)
+            val audioItemForMetadata = metadataMaker.extractMetadataFrom(audioFile, mediaMetadataRetriever)
+            metadataMaker.cleanMetadataRetriever(mediaMetadataRetriever, dataSource)
+            audioItemForMetadata
+        } else {
+            metadataMaker.extractMetadataFrom(audioFile, metadataRetriever)
         }
     }
 
@@ -736,9 +761,16 @@ class AudioItemLibrary(
         }
     }
 
-    private suspend fun findAlbumArtFor(audioFile: AudioFile): FileLike? {
+    private suspend fun findAlbumArtFor(
+        audioFile: AudioFile,
+        metadataRetriever: MediaMetadataRetriever? = null
+    ): FileLike? {
         val audioItem = createAudioItemForFile(audioFile)
-        val hasEmbeddedAlbumArt = metadataMaker.hasEmbeddedAlbumArt(audioItem)
+        val hasEmbeddedAlbumArt = if (metadataRetriever != null) {
+            metadataMaker.getAlbumArtFromMetadataRetriever(metadataRetriever) != null
+        } else {
+            metadataMaker.hasEmbeddedAlbumArt(audioItem)
+        }
         if (hasEmbeddedAlbumArt) {
             logger.debug(TAG, "Found embedded album art for: ${audioFile.name}")
             return AudioFile(audioFile.uri)
@@ -781,10 +813,6 @@ class AudioItemLibrary(
 
     private fun notifyObservers(exc: Exception) {
         libraryExceptionObservers.forEach { it(exc) }
-    }
-
-    suspend fun extractMetadataFrom(audioFile: AudioFile): AudioItem {
-        return metadataMaker.extractMetadataFrom(audioFile)
     }
 
     fun cancelBuildLibrary() {

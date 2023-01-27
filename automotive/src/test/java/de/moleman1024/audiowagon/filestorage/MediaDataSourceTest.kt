@@ -7,6 +7,7 @@ package de.moleman1024.audiowagon.filestorage
 
 import android.media.MediaDataSource
 import de.moleman1024.audiowagon.filestorage.usb.USBAudioDataSource
+import de.moleman1024.audiowagon.filestorage.usb.USBMetaDataSource
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.asCoroutineDispatcher
 import org.junit.Assert.assertEquals
@@ -76,6 +77,13 @@ class MediaDataSourceTest(
         val mockUSBFile = createMockUSBFile(100)
         val dispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
         testMediaDataSource(USBAudioDataSource(mockUSBFile, chunkSize, dispatcher), mockUSBFile.bytes)
+    }
+
+    @Test
+    fun usbMetaDataSourceReadAt_multipleConfigs_readsData() {
+        val mockUSBFile = createMockUSBFile(100)
+        val dispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
+        testMediaDataSource(USBMetaDataSource(mockUSBFile, chunkSize, dispatcher), mockUSBFile.bytes)
     }
 
     private fun testMediaDataSource(dataSource: MediaDataSource, bytes: ByteArray) {

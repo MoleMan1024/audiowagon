@@ -34,8 +34,12 @@ interface MediaDevice {
       while (queue.isNotEmpty()) {
          val fileOrDirectory = queue.removeFirst()
          if (!fileOrDirectory.isDirectory) {
-            logger.verbose(TAG, "Found file: ${fileOrDirectory.absolutePath}")
-            yield(fileOrDirectory)
+            if (fileOrDirectory.name.contains(Util.FILES_TO_IGNORE_REGEX)) {
+               logger.debug(TAG, "Ignoring file: ${fileOrDirectory.name}")
+            } else {
+               logger.verbose(TAG, "Found file: ${fileOrDirectory.absolutePath}")
+               yield(fileOrDirectory)
+            }
          } else {
             if (fileOrDirectory.name.contains(Util.DIRECTORIES_TO_IGNORE_REGEX)) {
                logger.debug(TAG, "Ignoring directory: ${fileOrDirectory.name}")

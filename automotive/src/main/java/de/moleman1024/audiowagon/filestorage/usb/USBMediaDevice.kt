@@ -116,6 +116,8 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
                 Pair(1060, 18704),
                 // Microchip USB4913
                 Pair(1060, 18707),
+                // Microchip Tech USB2 Controller Hub
+                Pair(1060, 18752),
                 // Microchip MCP2200 USB to UART converter 0x04D8
                 Pair(1240, 223),
                 // Mitsubishi USB to Modem Bridge 0x06D3
@@ -344,9 +346,13 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
                 name = fileOrDirectory.name
             }
             if (!isDirectory) {
-                logger.verbose(TAG, "Found file: $absPath")
-                recentFilepathToFileMap[absPath] = fileOrDirectory
-                yield(fileOrDirectory)
+                if (name.contains(Util.FILES_TO_IGNORE_REGEX)) {
+                    logger.debug(TAG, "Ignoring file: $name")
+                } else {
+                    logger.verbose(TAG, "Found file: $absPath")
+                    recentFilepathToFileMap[absPath] = fileOrDirectory
+                    yield(fileOrDirectory)
+                }
             } else {
                 if (name.contains(Util.DIRECTORIES_TO_IGNORE_REGEX)) {
                     logger.debug(TAG, "Ignoring directory: $name")
@@ -387,8 +393,8 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
 
     fun getDirectoryContents(directoryURI: Uri): List<UsbFile> {
         logger.verbose(TAG, "getDirectoryContents(directoryURI=$directoryURI)")
-        val directory = getUSBFileFromURI(directoryURI)
         return runBlocking(libaumsDispatcher) {
+            val directory = getUSBFileFromURI(directoryURI)
             if (!directory.isDirectory) {
                 throw IllegalArgumentException("Is not a directory: $directory")
             }
@@ -438,7 +444,7 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
             chunkSize = fileSystem!!.chunkSize
             usbFile = getUSBFileFromURI(uri)
         }
-        return USBAudioDataSource(usbFile, chunkSize, libaumsDispatcher)
+        return USBMetaDataSource(usbFile, chunkSize, libaumsDispatcher)
     }
 
     override suspend fun getBufferedDataSourceForURI(uri: Uri): MediaDataSource {
@@ -459,6 +465,7 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
         return getUSBFileFromURI(uri)
     }
 
+    // needs to be confied via libaumsDispatcher externally
     fun getUSBFileFromURI(uri: Uri): UsbFile {
         val audioFile = AudioFile(uri)
         val filePath = audioFile.path

@@ -174,7 +174,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         isShuttingDown = false
         lifecycleRegistry.currentState = Lifecycle.State.INITIALIZED
         instance = this
-        logger.lifecycleScope = lifecycleScope
+        logger.init(lifecycleScope)
         setUncaughtExceptionHandler()
     }
 
@@ -261,7 +261,6 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     }
 
     private fun observeAudioFileStorage() {
-        // this callback is called from a coroutine
         audioFileStorage.storageObservers.add { storageChange ->
             val allStorageIDs = audioItemLibrary.getAllStorageIDs()
             logger.debug(TAG, "Storage IDs in library before change: $allStorageIDs")

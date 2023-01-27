@@ -127,9 +127,10 @@ class ServiceFixture {
         }
         unbindService()
         stopService()
-        Logger.debug(TAG, "Killing background processes")
+        val packageName = targetContext.packageName
+        Logger.debug(TAG, "Killing background processes: $packageName")
         val activityManager = targetContext.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-        activityManager.killBackgroundProcesses("de.moleman1024.audiowagon")
+        activityManager.killBackgroundProcesses(packageName)
         // TODO: need to ensure in each test that service is destroyed
         if (this::audioBrowserService.isInitialized) {
             Logger.debug(TAG, "Waiting for service to be destroyed")

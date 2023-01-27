@@ -106,7 +106,7 @@ class AlbumArtTest {
         val resolver = context.contentResolver
         val proxyFileDescriptor: ParcelFileDescriptor? = resolver.openFile(albumArtURI, "r", null)
         val resizedAlbumArtSize = 3530
-        Assert.assertEquals(resizedAlbumArtSize, proxyFileDescriptor?.statSize)
+        Assert.assertEquals(resizedAlbumArtSize, proxyFileDescriptor?.statSize?.toInt())
         proxyFileDescriptor?.close()
     }
 }

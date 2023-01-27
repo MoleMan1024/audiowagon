@@ -20,8 +20,8 @@ android {
         applicationId "de.moleman1024.audiowagon"
         minSdkVersion rootProject.minSdkVersion
         targetSdkVersion rootProject.targetSdkVersion
-        versionCode 231
-        versionName "2.3.1"
+        versionCode 236
+        versionName "2.3.6"
         resValue "string", "VERSION_NAME", versionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         signingConfig signingConfigs.debug

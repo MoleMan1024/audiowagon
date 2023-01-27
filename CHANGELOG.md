@@ -12,6 +12,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.6] - 2023-01-27
+
+### Fixed
+
+- ensure log lines are written in correct order to log file
+- try to avoid `MissingNotifChannelException` during startup
+
+### Changed
+
+- extraction of metadata is now faster [#103](https://github.com/MoleMan1024/audiowagon/issues/103)
+- hidden resource fork files created by Apple OS X are now ignored when indexing 
+  [#107](https://github.com/MoleMan1024/audiowagon/issues/107)
+- avoid spamming logfile with stacktraces when there are lots of mismatches between media library and persisted playback
+  queue
+- ignore another built-in USB device found in some car using AAOS
+- the indexing notification visible to the user is now updated earlier to indicate more clearly that the media library 
+  indexing is actually in progress (from 0 to 100 it is now updated every 20 files. Above 100 files it is unchanged 
+  and is updated every 100 files)
+- increased log file write frequency
+
+### Added
+
+- ReplayGain tags in .opus files are now taken into account
+  [#99](https://github.com/MoleMan1024/audiowagon/issues/99)
+
+
 ## [2.3.1] - 2022-11-26
 
 ### Fixed

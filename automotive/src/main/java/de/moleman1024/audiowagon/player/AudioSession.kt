@@ -42,6 +42,7 @@ private const val TAG = "AudioSession"
 private val logger = Logger
 const val SESSION_TAG = "AudioSession"
 const val PLAYBACK_SPEED: Float = 1.0f
+
 // arbitrary number
 const val REQUEST_CODE: Int = 25573
 const val ACTION_SHUFFLE_ON = "de.moleman1024.audiowagon.ACTION_SHUFFLE_ON"
@@ -67,10 +68,12 @@ class AudioSession(
     private var mediaSession: MediaSessionCompat
     private var audioSessionCallback: AudioSessionCallback
     var sessionToken: MediaSessionCompat.Token
+
     // See https://developer.android.com/reference/android/support/v4/media/session/PlaybackStateCompat
     private lateinit var playbackState: PlaybackStateCompat
     private var currentQueueItem: MediaSessionCompat.QueueItem? = null
     private val observers = mutableListOf<(Any) -> Unit>()
+
     // media session must be accessed from same thread always
     private val mediaSessionDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
     private var lastContentHierarchyIDPlayed: String = ""
@@ -105,6 +108,7 @@ class AudioSession(
     private var isSuspending: Boolean = false
     private var extractReplayGain: Boolean = false
     private val replayGainRegex = "replaygain_track_gain.*?([-0-9][^ ]+?) ?dB".toRegex(RegexOption.IGNORE_CASE)
+    private val replayGainOpusRegex = "R128_TRACK_GAIN=([-0-9]+)".toRegex()
 
     init {
         logger.debug(TAG, "Init AudioSession()")
@@ -285,7 +289,7 @@ class AudioSession(
             audioFocusChangeListener.playbackState = newPlaybackState.state
             logger.debug(TAG, "newPlaybackState=$newPlaybackState")
             sendNotificationBasedOnPlaybackState()
-            launchInScopeSafely("setMediaSessionPlaybackState()")  {
+            launchInScopeSafely("setMediaSessionPlaybackState()") {
                 setMediaSessionPlaybackState(playbackState)
             }
         }
@@ -452,7 +456,7 @@ class AudioSession(
         var replayGain: Float
         val dataSource = audioFileStorage.getDataSourceForURI(uri)
         val dataFront = ByteArray(NUM_BYTES_METADATA)
-        // IDv3 tags are at the beginning of the file
+        // IDv3 and opus tags are at the beginning of the file
         dataSource.readAt(0L, dataFront, 0, dataFront.size)
         replayGain = findReplayGainInBytes(dataFront)
         if (replayGain != REPLAYGAIN_NOT_FOUND) {
@@ -461,6 +465,16 @@ class AudioSession(
             }
             return replayGain
         }
+        // supported containers for opus files: https://developer.android.com/guide/topics/media/media-formats
+        if (listOf(".opus", ".ogg", ".mkv").any { extension -> uri.toString().lowercase().endsWith(extension) }) {
+            replayGain = findReplayGainOpusInBytes(dataFront)
+            if (replayGain != REPLAYGAIN_NOT_FOUND) {
+                withContext(Dispatchers.IO) {
+                    dataSource.close()
+                }
+                return replayGain
+            }
+        }
         val dataBack = ByteArray(NUM_BYTES_METADATA)
         // APE tags are at the end of the file
         dataSource.readAt(dataSource.size - dataBack.size, dataBack, 0, dataBack.size)
@@ -468,7 +482,9 @@ class AudioSession(
         if (replayGain == REPLAYGAIN_NOT_FOUND) {
             replayGain = 0f
         }
-        dataSource.close()
+        withContext(Dispatchers.IO) {
+            dataSource.close()
+        }
         return replayGain
     }
 
@@ -481,6 +497,26 @@ class AudioSession(
             try {
                 replayGain = replayGainStr.toFloat()
             } catch (exc: NumberFormatException) {
+                return REPLAYGAIN_NOT_FOUND
+            }
+        }
+        return replayGain
+    }
+
+    // #99: Extract .opus replaygain. The additional "opus header gain" should be automatically applied by Android when
+    // decoding, if I read https://android.googlesource.com/platform/frameworks/av/+/master/media/codec2/components/opus/C2SoftOpusDec.cpp#297
+    // correctly and this is used in cars
+    private fun findReplayGainOpusInBytes(bytes: ByteArray): Float {
+        val bytesStr = String(bytes)
+        var replayGain = REPLAYGAIN_NOT_FOUND
+        val replayGainOpusMatch = replayGainOpusRegex.find(bytesStr)
+        if (replayGainOpusMatch?.groupValues?.size == 2) {
+            val replayGainStr = replayGainOpusMatch.groupValues[1].trim()
+            try {
+                // opus replay gain is stored as 8-bit signed integer
+                val replayGainQ78 = replayGainStr.toInt()
+                replayGain = replayGainQ78.toFloat() / 256f
+            } catch (exc: java.lang.NumberFormatException) {
                 return REPLAYGAIN_NOT_FOUND
             }
         }
@@ -961,7 +997,13 @@ class AudioSession(
                 logger.warning(TAG, "Preparation from persistent has been cancelled")
                 return
             } catch (exc: RuntimeException) {
-                logger.exception(TAG, "Issue with persistent data", exc)
+                if (exc.message?.contains("No track for") == true) {
+                    // If there is a mismatch for persistent data because new tracks have been added to USB drive,
+                    // avoid to log an exception stacktrace for every item in persisted playback queue
+                    logger.error(TAG, "Issue with persistent data: ${exc.message}")
+                } else {
+                    logger.exception(TAG, "Issue with persistent data", exc)
+                }
             }
         }
         if (queue.size <= 0) {

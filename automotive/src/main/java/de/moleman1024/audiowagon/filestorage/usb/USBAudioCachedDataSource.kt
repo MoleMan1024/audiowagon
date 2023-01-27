@@ -29,12 +29,12 @@ private val logger = Logger
  * If a cached chunk is not accessed after a couple of reads, it is discarded to free the memory (the media player
  * reads files sequentially for most of the time, older cached chunks are not required usually).
  */
-class USBAudioCachedDataSource(
+open class USBAudioCachedDataSource(
     usbFile: UsbFile?,
     chunkSize: Int,
     libaumsDispatcher: CoroutineDispatcher
 ) : USBAudioDataSource(usbFile, chunkSize, libaumsDispatcher) {
-    private val cacheMap: TreeMap<Long, AgingCache> = TreeMap<Long, AgingCache>()
+    protected val cacheMap: TreeMap<Long, AgingCache> = TreeMap<Long, AgingCache>()
     private val bufSize: Int = chunkSize
 
     inner class AgingCache {
@@ -73,7 +73,7 @@ class USBAudioCachedDataSource(
         val outBuffer = ByteBuffer.wrap(buffer)
         outBuffer.position(offset)
         increaseCacheAge()
-        dropOldCaches()
+        freeCache()
         var cacheStartPos = getCacheMapKeyFor(position, numBytesToRead)
         if (cacheStartPos <= -1) {
             try {
@@ -92,11 +92,11 @@ class USBAudioCachedDataSource(
         return size <= bufSize
     }
 
-    private fun increaseCacheAge() {
+    protected open fun increaseCacheAge() {
         cacheMap.forEach { (_, agingCache) -> agingCache.age++ }
     }
 
-    private fun dropOldCaches() {
+    protected open fun freeCache() {
         cacheMap.values.removeIf { it.age > 2 }
     }
 

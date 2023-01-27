@@ -2,8 +2,8 @@
 echo Stopping media player
 cmd.exe /c "adb shell input keyevent 86"
 sleep 2s
-echo Waiting 30 seconds
-sleep 30s
+echo Waiting 10 seconds
+sleep 10s
 echo Sending power event to turn screen off
 cmd.exe /c "adb shell input keyevent 26"
 sleep 3s

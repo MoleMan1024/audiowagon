@@ -30,6 +30,7 @@ open class USBAudioDataSource(
 ) : MediaDataSource() {
     var isClosed = false
     var hasError = false
+    var fileSize: Long = -1L
 
     init {
         runBlocking(libaumsDispatcher) {
@@ -115,8 +116,12 @@ open class USBAudioDataSource(
         if (isClosed) {
             return 0
         }
+        if (fileSize >= 0) {
+            return fileSize
+        }
         return runBlocking(libaumsDispatcher) {
-            return@runBlocking usbFile?.length ?: 0
+            fileSize = usbFile?.length ?: 0
+            return@runBlocking fileSize
         }
     }
 

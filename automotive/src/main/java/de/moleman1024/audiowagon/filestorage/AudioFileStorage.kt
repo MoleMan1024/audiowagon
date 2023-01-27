@@ -35,6 +35,7 @@ import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.channels.produce
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlin.coroutines.coroutineContext
 
 private const val TAG = "AudioFileStor"
 private val logger = Logger
@@ -89,6 +90,7 @@ open class AudioFileStorage(
         usbDeviceConnections.registerForUSBIntents()
         // this callback is called from a coroutine
         usbDeviceConnections.deviceObservers.add { deviceChange ->
+            coroutineContext.ensureActive()
             if (deviceChange.error.isNotBlank()) {
                 val storageChange = StorageChange(error = deviceChange.error)
                 notifyObservers(storageChange)
@@ -117,6 +119,7 @@ open class AudioFileStorage(
         if (!Util.isRunningInEmulator()) {
             return
         }
+        @Suppress("KotlinConstantConditions")
         if (!Util.isDebugBuild(context)) {
             logger.debug(TAG, "initAssetsForEmulator()")
             try {

@@ -136,8 +136,9 @@ class ContentHierarchyDirectory(
         val directoryURI = Util.createURIForPath(storageLocation.storageID, id.path.removePrefix("/"))
         val directoryContents = storageLocation.getDirectoryContentsPlayable(Directory(directoryURI))
         // do not ignore articles using sortName here, that is only done for artists/albums/tracks
-        return directoryContents.filter { !it.name.matches(Util.DIRECTORIES_TO_IGNORE_REGEX) }
-            .sortedWith(compareBy { it.name.lowercase() })
+        return directoryContents.filter {
+            !it.name.matches(Util.DIRECTORIES_TO_IGNORE_REGEX) && !it.name.matches(Util.FILES_TO_IGNORE_REGEX)
+        }.sortedWith(compareBy { it.name.lowercase() })
     }
 
 }

@@ -41,6 +41,8 @@ class Util {
                 "|LOST\\.DIR" +
                 "|FOUND\\.[0-9][0-9][0-9]" +
                 "|^\\..*)").toRegex()
+        // https://github.com/MoleMan1024/audiowagon/issues/107 : ignore Apple OSX resource fork files
+        val FILES_TO_IGNORE_REGEX = ("^\\._.*").toRegex()
         private const val URI_SCHEME = "usbAudio"
 
         fun convertStringToShort(numberAsString: String): Short {

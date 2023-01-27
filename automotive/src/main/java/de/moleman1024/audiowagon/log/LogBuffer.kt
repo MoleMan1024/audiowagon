@@ -5,19 +5,43 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 package de.moleman1024.audiowagon.log
 
+import android.util.Log
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.yield
+import androidx.annotation.VisibleForTesting
 
 private const val NUM_MAX_LOG_ENTRIES = 4000
+private const val TAG = "LogBuffer"
 
 class LogBuffer(private val numMaxEntries: Int = NUM_MAX_LOG_ENTRIES) {
     // newest entries at the end, oldest at the front
     private val logDataEntries = mutableListOf<LogData>()
     private val mutex = Mutex()
-    private var numEntriesNotRead = 0
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    var numEntriesNotRead = 0
+    var scope: CoroutineScope? = null
+    private val channel = Channel<LogData>()
+    private var recvChannelJob: Job? = null
 
-    suspend fun append(logData: LogData) {
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun init(scope: CoroutineScope) {
+        this.scope = scope
+        recvChannelJob = scope.launch(Dispatchers.IO) {
+            while (!channel.isClosedForReceive) {
+                val logData = channel.receive()
+                append(logData)
+            }
+            Log.d(TAG, "Channel for log was closed")
+        }
+    }
+
+    suspend fun sendLogDataToChannel(logData: LogData) {
+        channel.send(logData)
+    }
+
+    private suspend fun append(logData: LogData) {
         mutex.withLock {
             logDataEntries.add(logData)
             if (logDataEntries.size > numMaxEntries) {
@@ -115,6 +139,13 @@ class LogBuffer(private val numMaxEntries: Int = NUM_MAX_LOG_ENTRIES) {
      */
     private fun replaceNewlines(line: String): String {
         return line.replace("\n", "↲")
+    }
+
+    @Suppress("RedundantSuspendModifier")
+    @VisibleForTesting(otherwise = VisibleForTesting.NONE)
+    suspend fun shutdown() {
+        recvChannelJob?.cancel()
+        channel.close()
     }
 
 }

@@ -38,7 +38,14 @@ class ContentHierarchySingleTrack(
             // get a single track only
             tracks += repo.getTrack(id.trackID)
         } catch (exc: RuntimeException) {
-            logger.exception(TAG, exc.message.toString(), exc)
+            if (exc.message?.contains("No track for") == true) {
+                // If there is a mismatch for persistent data because new tracks have been added to USB drive,
+                // avoid to log an exception stacktrace here because it will be repeated for every item in persisted
+                // playback queue
+                logger.error(TAG, "Possible problem with persistent data: ${exc.message}")
+            } else {
+                logger.exception(TAG, exc.message.toString(), exc)
+            }
             return listOf()
         }
         return tracks

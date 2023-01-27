@@ -51,7 +51,7 @@ class USBDeviceConnections(
     private val sharedPrefs: SharedPrefs,
     private val crashReporting: CrashReporting
 ) {
-    val deviceObservers = mutableListOf<(DeviceChange) -> Unit>()
+    val deviceObservers = mutableListOf<suspend (DeviceChange) -> Unit>()
     private var isLogToUSBPreferenceSet = false
     private val attachedAndPermittedDevices = mutableListOf<USBMediaDevice>()
     var isSuspended = false
@@ -289,7 +289,7 @@ class USBDeviceConnections(
         notifyObservers(deviceChange)
     }
 
-    private fun notifyUSBInitError() {
+    private suspend fun notifyUSBInitError() {
         val deviceChange = DeviceChange(error = context.getString(R.string.error_USB_init))
         notifyObservers(deviceChange)
     }
@@ -297,7 +297,7 @@ class USBDeviceConnections(
     /**
      * Received after a USB device is unplugged
      */
-    private fun onUSBDeviceDetached(device: USBMediaDevice) {
+    private suspend fun onUSBDeviceDetached(device: USBMediaDevice) {
         try {
             device.preventLoggingToDetachedDevice()
             logger.debug(TAG, "onUSBDeviceDetached: $device")
@@ -411,7 +411,7 @@ class USBDeviceConnections(
         attachedAndPermittedDevices.add(device)
     }
 
-    private fun notifyObservers(deviceChange: DeviceChange) {
+    private suspend fun notifyObservers(deviceChange: DeviceChange) {
         deviceObservers.forEach { it(deviceChange) }
     }
 

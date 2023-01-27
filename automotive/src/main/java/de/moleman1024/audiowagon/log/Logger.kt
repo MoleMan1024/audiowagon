@@ -25,10 +25,10 @@ import java.util.*
  */
 private const val TAG = "Logger"
 const val NUM_BYTES_CRASH_REPORT = 65536
-private const val USB_LOGFILE_WRITE_PERIOD_MS: Long = 1000L
+private const val USB_LOGFILE_WRITE_PERIOD_MS: Long = 500L
 
 object Logger : LoggerInterface {
-    var lifecycleScope: CoroutineScope? = null
+    private var scope: CoroutineScope? = null
     private var usbFile: UsbFile? = null
     private var outStream: OutputStream? = null
     private var usbFileHasError: Boolean = false
@@ -43,6 +43,11 @@ object Logger : LoggerInterface {
     private var usbLogFileWriteJob: Job? = null
     @VisibleForTesting(otherwise = VisibleForTesting.NONE)
     private val storedLogs = Collections.synchronizedList<String>(mutableListOf())
+
+    fun init(scope: CoroutineScope) {
+        this.scope = scope
+        buffer.init(scope)
+    }
 
     // confined by libaumsDispatcher
     @Suppress("BlockingMethodInNonBlockingContext")
@@ -184,8 +189,8 @@ object Logger : LoggerInterface {
             // TODO: not optimal, calls function twice when we have observers
             notifyObservers(LogBuffer.formatLogData(logData))
         }
-        lifecycleScope?.launch(Dispatchers.IO) {
-            buffer.append(logData)
+        scope?.launch(Dispatchers.IO) {
+            buffer.sendLogDataToChannel(logData)
         }
     }
 
@@ -237,7 +242,7 @@ object Logger : LoggerInterface {
 
     fun launchLogFileWriteJob() {
         usbLogFileWriteJob?.cancel()
-        usbLogFileWriteJob = lifecycleScope?.launch(Dispatchers.IO) {
+        usbLogFileWriteJob = scope?.launch(Dispatchers.IO) {
             while (true) {
                 writeBufferedLogToUSBFile()
                 delay(USB_LOGFILE_WRITE_PERIOD_MS)

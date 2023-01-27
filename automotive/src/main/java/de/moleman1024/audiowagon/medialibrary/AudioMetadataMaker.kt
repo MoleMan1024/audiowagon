@@ -24,7 +24,6 @@ import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyT
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import java.io.ByteArrayOutputStream
 import java.io.IOException
-import java.nio.ByteBuffer
 
 private const val TAG = "AudioMetadataMaker"
 private val logger = Logger
@@ -42,24 +41,7 @@ const val ART_URI_PART_FILE = "file"
 @ExperimentalCoroutinesApi
 class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
 
-    suspend fun extractMetadataFrom(audioFile: AudioFile): AudioItem {
-        val startTime = System.nanoTime()
-        logger.debug(TAG, "Extracting metadata for: ${audioFile.name}")
-        val metadataRetriever = MediaMetadataRetriever()
-        val dataSource = audioFileStorage.getDataSourceForAudioFile(audioFile)
-        // TODO: find out reason for
-        //  java.lang.RuntimeException: setDataSourceCallback failed: status = 0x80000000
-        //  that sometimes happens for some files
-        // This can fail on invalid UTF-8 strings in metadata with a JNI error which will cause app to crash.
-        //  Needs to be fixed inside Android Automotive itself.
-        metadataRetriever.setDataSource(dataSource)
-        if (dataSource is USBAudioDataSource && dataSource.hasError) {
-            throw IOException("DataSource error")
-        }
-        if (dataSource is USBAudioDataSource && dataSource.isClosed) {
-            throw IOException("Data source was closed while extracting metadata")
-        }
-        logger.verbose(TAG, "Starting metadata extraction")
+    fun extractMetadataFrom(audioFile: AudioFile, metadataRetriever: MediaMetadataRetriever): AudioItem {
         // sometimes this will take values from unexpected places, e.g. it prefers APE tags in MP3s over ID3 tags
         val title: String? = metadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)
         val artist: String? = metadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)
@@ -73,14 +55,6 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
         val albumArtist: String? = metadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST)
         val compilationStr: String? = metadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_COMPILATION)
         val isInCompilation: Boolean = extractIsCompilation(compilationStr, albumArtist)
-        metadataRetriever.release()
-        if (dataSource is USBAudioDataSource && dataSource.hasError) {
-            throw IOException("DataSource error")
-        }
-        metadataRetriever.close()
-        if (dataSource is USBAudioDataSource && dataSource.hasError) {
-            throw IOException("DataSource error")
-        }
         try {
             durationMS = durationMSAsString?.let { Util.convertStringToInt(it) }
         } catch (exc: NumberFormatException) {
@@ -100,9 +74,6 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
         year?.let { audioItemForMetadata.year = it }
         durationMS?.let { audioItemForMetadata.durationMS = it }
         audioItemForMetadata.isInCompilation = isInCompilation
-        val endTime = System.nanoTime()
-        val timeTakenMS = (endTime - startTime) / 1000000L
-        logger.verbose(TAG, "Extracted metadata in ${timeTakenMS}ms: $audioItemForMetadata")
         return audioItemForMetadata
     }
 
@@ -161,6 +132,34 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
             logger.error(TAG, "$exc for year: $yearAsString")
         }
         return year
+    }
+
+    fun setupMetadataRetrieverFromDataSource(dataSource: MediaDataSource): MediaMetadataRetriever {
+        val metadataRetriever = MediaMetadataRetriever()
+        // TODO: find out reason for
+        //  java.lang.RuntimeException: setDataSourceCallback failed: status = 0x80000000
+        //  that sometimes happens for some files
+        // This can fail on invalid UTF-8 strings in metadata with a JNI error which will cause app to crash.
+        //  Needs to be fixed inside Android Automotive itself.
+        metadataRetriever.setDataSource(dataSource)
+        if (dataSource is USBAudioDataSource && dataSource.hasError) {
+            throw IOException("DataSource error")
+        }
+        if (dataSource is USBAudioDataSource && dataSource.isClosed) {
+            throw IOException("Data source was closed while extracting metadata")
+        }
+        return metadataRetriever
+    }
+
+    fun cleanMetadataRetriever(metadataRetriever: MediaMetadataRetriever, dataSource: MediaDataSource) {
+        metadataRetriever.release()
+        if (dataSource is USBAudioDataSource && dataSource.hasError) {
+            throw IOException("DataSource error")
+        }
+        metadataRetriever.close()
+        if (dataSource is USBAudioDataSource && dataSource.hasError) {
+            throw IOException("DataSource error")
+        }
     }
 
     /**
@@ -229,6 +228,12 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
         return getAlbumArtFromMediaDataSource(mediaDataSource)
     }
 
+    suspend fun hasEmbeddedAlbumArt(audioItem: AudioItem): Boolean {
+        logger.verbose(TAG, "hasAlbumArt(audioItem=$audioItem)")
+        val mediaDataSource = audioFileStorage.getDataSourceForURI(audioItem.uri)
+        return getAlbumArtFromMediaDataSource(mediaDataSource) != null
+    }
+
     private fun getAlbumArtFromMediaDataSource(mediaDataSource: MediaDataSource): ByteArray? {
         val metadataRetriever = MediaMetadataRetriever()
         if (mediaDataSource.size <= 0) {
@@ -236,15 +241,13 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
             return null
         }
         metadataRetriever.setDataSource(mediaDataSource)
-        val embeddedImage = metadataRetriever.embeddedPicture ?: return null
-        metadataRetriever.close()
+        val embeddedImage = getAlbumArtFromMetadataRetriever(metadataRetriever)
+        cleanMetadataRetriever(metadataRetriever, mediaDataSource)
         return embeddedImage
     }
 
-    suspend fun hasEmbeddedAlbumArt(audioItem: AudioItem): Boolean {
-        logger.verbose(TAG, "hasAlbumArt(audioItem=$audioItem)")
-        val mediaDataSource = audioFileStorage.getDataSourceForURI(audioItem.uri)
-        return getAlbumArtFromMediaDataSource(mediaDataSource) != null
+    fun getAlbumArtFromMetadataRetriever(metadataRetriever: MediaMetadataRetriever): ByteArray? {
+        return metadataRetriever.embeddedPicture
     }
 
     fun resizeAlbumArt(albumArtBytes: ByteArray): ByteArray? {

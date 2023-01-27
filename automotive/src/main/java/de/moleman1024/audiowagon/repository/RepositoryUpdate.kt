@@ -124,6 +124,8 @@ class RepositoryUpdate(private val repo: AudioItemRepository, private val contex
         val track = Track(
             name = metadata.title,
             sortName = getSortNameOrBlank(metadata.title),
+            // TODO: to allow https://github.com/MoleMan1024/audiowagon/issues/23 I would need to allow multiple parent
+            //  artist/albumartist IDs
             parentArtistId = artistID,
             parentAlbumArtistId = albumArtistID,
             parentAlbumId = albumID,
