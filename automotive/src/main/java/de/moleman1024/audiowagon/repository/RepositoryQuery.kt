@@ -47,6 +47,7 @@ class RepositoryQuery(
         val albums: List<Album> = withContext(dispatcher) {
             repo.getDatabase()?.albumDAO()?.queryAlbumsByArtist(artistID) ?: listOf()
         }
+        val albumIDs: MutableSet<Long> = mutableSetOf()
         for (album in albums) {
             yield()
             if (repo.isClosed) {
@@ -55,6 +56,7 @@ class RepositoryQuery(
             }
             val audioItemAlbum: AudioItem = createAudioItemForAlbum(album, artistID)
             items += audioItemAlbum
+            albumIDs.add(album.albumId)
         }
         val numTracksWithoutAlbum: Int = withContext(dispatcher) {
             repo.getDatabase()?.trackDAO()?.queryNumTracksByArtistAlbumUnkn(artistID) ?: 0
@@ -70,6 +72,10 @@ class RepositoryQuery(
             if (repo.isClosed) {
                 logger.warning(TAG, "Repository was closed")
                 return listOf()
+            }
+            if (album.albumId in albumIDs) {
+                logger.verbose(TAG, "Skipping compilation album with ID ${album.albumId} already in result list")
+                continue
             }
             val audioItemAlbum: AudioItem = createAudioItemForAlbum(album, artistID)
             audioItemAlbum.isInCompilation = true
@@ -234,7 +240,7 @@ class RepositoryQuery(
 
     // TODO: this is probably inefficient
     private suspend fun getCompilationAlbumsForArtist(artistID: Long): List<Album> {
-        val pseudoCompilationArtistName = repo.repoUpdate.getPseudoCompilationArtistName()
+        val pseudoCompilationArtistName = repo.repoUpdate.getPseudoCompilationArtistNameEnglish()
         val variousArtistsInDB: Artist =
             repo.getDatabase()?.artistDAO()?.queryByName(pseudoCompilationArtistName) ?: return listOf()
         val allCompilationAlbums = repo.getDatabase()?.albumDAO()?.queryByArtist(variousArtistsInDB.artistId) ?: listOf()

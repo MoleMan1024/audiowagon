@@ -116,9 +116,12 @@ open class AudioFileStorage(
      * This is only used to provide demo soundfiles to Google during automatic review of production builds
      */
     private fun initAssetsForEmulator() {
+        logger.verbose(TAG, "initAssetsForEmulator()")
         if (!Util.isRunningInEmulator()) {
+            logger.verbose(TAG, "Not on emulator")
             return
         }
+        logger.verbose(TAG, "Running on emulator")
         @Suppress("KotlinConstantConditions")
         if (!Util.isDebugBuild(context)) {
             logger.debug(TAG, "initAssetsForEmulator()")

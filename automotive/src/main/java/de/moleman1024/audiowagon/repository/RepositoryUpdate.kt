@@ -6,6 +6,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 package de.moleman1024.audiowagon.repository
 
 import android.content.Context
+import android.content.res.Configuration
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.Util.Companion.getSortNameOrBlank
@@ -22,6 +23,8 @@ import de.moleman1024.audiowagon.medialibrary.contenthierarchy.DATABASE_ID_UNKNO
 import de.moleman1024.audiowagon.repository.entities.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import java.time.temporal.ChronoUnit
+import java.util.*
+
 
 private const val TAG = "RepositoryUpdate"
 private val logger = Logger
@@ -29,6 +32,7 @@ private val logger = Logger
 @ExperimentalCoroutinesApi
 class RepositoryUpdate(private val repo: AudioItemRepository, private val context: Context) {
     private var pseudoCompilationArtistID: Long? = null
+    private var pseudoCompilationArtistName: String? = null
     val trackIDsToKeep = mutableListOf<Long>()
     val pathIDsToKeep = mutableListOf<Long>()
 
@@ -252,10 +256,10 @@ class RepositoryUpdate(private val repo: AudioItemRepository, private val contex
         if (pseudoCompilationArtistID != null) {
             return pseudoCompilationArtistID!!
         }
-        val pseudoCompilationArtistName = getPseudoCompilationArtistName()
-        val artistInDB: Artist? = repo.getDatabase()?.artistDAO()?.queryByName(pseudoCompilationArtistName)
+        pseudoCompilationArtistName = getPseudoCompilationArtistNameEnglish()
+        val artistInDB: Artist? = repo.getDatabase()?.artistDAO()?.queryByName(pseudoCompilationArtistName!!)
         val resultID: Long = if (artistInDB?.artistId == null) {
-            repo.getDatabase()?.artistDAO()?.insert(Artist(name = pseudoCompilationArtistName, isAlbumArtist = true))
+            repo.getDatabase()?.artistDAO()?.insert(Artist(name = pseudoCompilationArtistName!!, isAlbumArtist = true))
                 ?: DATABASE_ID_UNKNOWN
         } else {
             artistInDB.artistId
@@ -264,8 +268,17 @@ class RepositoryUpdate(private val repo: AudioItemRepository, private val contex
         return resultID
     }
 
-    fun getPseudoCompilationArtistName(): String {
-        return context.getString(R.string.browse_tree_various_artists)
+    // #110: the entry for "Various artists" should always be English internally, it will only be shown localized to
+    // the user in GUI
+    fun getPseudoCompilationArtistNameEnglish(): String {
+        if (pseudoCompilationArtistName != null) {
+            return pseudoCompilationArtistName!!
+        }
+        val configuration = Configuration(context.resources.configuration)
+        configuration.setLocale(Locale("en_US"))
+        return context.createConfigurationContext(configuration).resources.getString(
+            R.string.browse_tree_various_artists
+        )
     }
 
     /**
@@ -275,7 +288,7 @@ class RepositoryUpdate(private val repo: AudioItemRepository, private val contex
         if (pseudoCompilationArtistID != null) {
             return pseudoCompilationArtistID
         }
-        val pseudoCompilationArtistName = getPseudoCompilationArtistName()
+        val pseudoCompilationArtistName = getPseudoCompilationArtistNameEnglish()
         val artistInDB: Artist? = repo.getDatabase()?.artistDAO()?.queryByName(pseudoCompilationArtistName)
         pseudoCompilationArtistID = artistInDB?.artistId
         return pseudoCompilationArtistID

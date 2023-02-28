@@ -198,7 +198,7 @@ class AudioSessionCallback(
      *
      * We do not implement an intent filter for MEDIA_PLAY_FROM_SEARCH as written here:
      * https://developer.android.com/guide/components/intents-common#PlaySearch
-     * because because we don't have an activity and we don't need to in AAOS:
+     * because we don't have an Activity and we don't need to in AAOS:
      * https://developer.android.com/guide/topics/media-apps/interacting-with-assistant#declare_legacy_support_for_voice_actions
      */
     override fun onPlayFromSearch(query: String?, extras: Bundle?) {

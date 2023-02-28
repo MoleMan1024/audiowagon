@@ -252,7 +252,7 @@ abstract class ContentHierarchyElement(
         logger.debug(TAG, "Showing pseudo MediaItem 'Found <num> items ...'")
         val numItemsFoundText = context.getString(
             R.string.notif_indexing_text_in_progress_num_items,
-            audioItemLibrary.numFilesSeenWhenBuildingLibrary
+            audioItemLibrary.numFileDirsSeenWhenBuildingLibrary
         )
         val description = MediaDescriptionCompat.Builder().apply {
             setMediaId(serialize(ContentHierarchyID(ContentHierarchyType.NONE)))

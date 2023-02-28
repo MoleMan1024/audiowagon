@@ -58,7 +58,7 @@ class AudioItemLibrary(
     private val metadataMaker = AudioMetadataMaker(audioFileStorage)
     val storageToRepoMap = mutableMapOf<String, AudioItemRepository>()
     var isBuildingLibrary = false
-    var numFilesSeenWhenBuildingLibrary = 0
+    var numFileDirsSeenWhenBuildingLibrary = 0
     var libraryExceptionObservers = mutableListOf<(Exception) -> Unit>()
     private var isBuildLibraryCancelled: Boolean = false
     private val recentAudioItemToAlbumArtMap: AudioItemToAlbumArtMapCache = AudioItemToAlbumArtMapCache()
@@ -116,7 +116,7 @@ class AudioItemLibrary(
             metadataReadSetting in listOf(MetadataReadSetting.WHEN_USB_CONNECTED, MetadataReadSetting.MANUALLY)
         isBuildingLibrary = true
         isBuildLibraryCancelled = false
-        numFilesSeenWhenBuildingLibrary = 0
+        numFileDirsSeenWhenBuildingLibrary = 0
         // indicate indexing has started via callback function
         callback()
         val repo = getPrimaryRepository() ?: throw RuntimeException("No repository")
@@ -129,19 +129,19 @@ class AudioItemLibrary(
                         updateLibraryTracksFromAudioFile(fileOrDirectory, repo)
                     }
                     updateLibraryPathsFromFileOrDir(fileOrDirectory, repo)
-                    numFilesSeenWhenBuildingLibrary++
-                    // We limit the number of indexing notification updates sent here. It seems Android will throttle
-                    // if too many notifications are posted and the last important notification indicating "finished" might be
-                    // ignored if too many are sent
-                    // Below 100 entries send more updates to indicate to user early this is actually working
-                    if (numFilesSeenWhenBuildingLibrary % UPDATE_INDEX_NOTIF_FOR_EACH_NUM_ITEMS == 0
-                        || (numFilesSeenWhenBuildingLibrary < 100 && numFilesSeenWhenBuildingLibrary % 20 == 0)) {
-                        gui.updateIndexingNotification(numFilesSeenWhenBuildingLibrary)
-                        logger.setFlushToUSBFlag()
-                        callback()
-                    }
                 } else if (fileOrDirectory is Directory) {
                     updateLibraryPathsFromFileOrDir(fileOrDirectory, repo)
+                }
+                numFileDirsSeenWhenBuildingLibrary++
+                // We limit the number of indexing notification updates sent here. It seems Android will throttle
+                // if too many notifications are posted and the last important notification indicating "finished" might be
+                // ignored if too many are sent
+                // Below 100 entries send more updates to indicate to user early this is actually working
+                if (numFileDirsSeenWhenBuildingLibrary % UPDATE_INDEX_NOTIF_FOR_EACH_NUM_ITEMS == 0
+                    || (numFileDirsSeenWhenBuildingLibrary < 100 && numFileDirsSeenWhenBuildingLibrary % 20 == 0)) {
+                    gui.updateIndexingNotification(numFileDirsSeenWhenBuildingLibrary)
+                    logger.setFlushToUSBFlag()
+                    callback()
                 }
             } else {
                 logger.debug(TAG, "Library build has been cancelled")
@@ -414,9 +414,9 @@ class AudioItemLibrary(
                         val numTracks: Int
                         val numAlbums: Int
                         if (audioItem.artist.isNotBlank()) {
-                            setTitle(audioItem.artist)
+                            setTitle(localizeArtistName(audioItem.artist))
                         } else {
-                            setTitle(audioItem.albumArtist)
+                            setTitle(localizeArtistName(audioItem.albumArtist))
                         }
                         if (contentHierarchyID.albumArtistID >= DATABASE_ID_UNKNOWN) {
                             numTracks = getNumTracksForAlbumArtist(contentHierarchyID.albumArtistID)
@@ -444,10 +444,10 @@ class AudioItemLibrary(
                         setTitle(context.getString(R.string.browse_tree_unknown_album))
                     }
                     if (audioItem.albumArtist.isNotBlank()) {
-                        setSubtitle(audioItem.albumArtist)
+                        setSubtitle(localizeArtistName(audioItem.albumArtist))
                     } else {
                         if (audioItem.artist.isNotBlank()) {
-                            setSubtitle(audioItem.artist)
+                            setSubtitle(localizeArtistName(audioItem.artist))
                         } else {
                             setSubtitle(context.getString(R.string.browse_tree_unknown_artist))
                         }
@@ -462,7 +462,7 @@ class AudioItemLibrary(
                 ContentHierarchyType.TRACK -> {
                     setTitle(audioItem.title)
                     if (audioItem.artist.isNotBlank()) {
-                        setSubtitle(audioItem.artist)
+                        setSubtitle(localizeArtistName(audioItem.artist))
                     } else {
                         setSubtitle(context.getString(R.string.browse_tree_unknown_artist))
                     }
@@ -492,6 +492,18 @@ class AudioItemLibrary(
         }
         extras?.let { builder.setExtras(it) }
         return builder.build()
+    }
+
+    /**
+     * Convert internal artist name "Various artists" into localized string if necessary
+     */
+    private fun localizeArtistName(artistName: String): String {
+        val repo = getPrimaryRepository() ?: return artistName
+        val variousArtistsEnglish = repo.getPseudoCompilationArtistNameEnglish()
+        if (artistName.lowercase() != variousArtistsEnglish.lowercase()) {
+            return artistName
+        }
+        return context.getString(R.string.browse_tree_various_artists)
     }
 
     private suspend fun getNumTracksForArtist(artistID: Long): Int {

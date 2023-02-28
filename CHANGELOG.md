@@ -4,13 +4,28 @@ All notable changes to this project will be documented in this file.
 
 Listed here are only software version that have been made public. A jump in the version number (e.g. from 0.2.5 to
 0.3.4) without any inbetween version means that multiple internal releases were made that were not made available to the
-public. This is required for in-car-testing due to the way the Google Play Store works.
+public. 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+and this project loosely follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [Unreleased]
+## [2.3.7] - 2023-02-28
+
+### Fixed
+
+- when writing log files to the USB drive in rare cases the filesystem got corrupted. This has been fixed 
+  [#105](https://github.com/MoleMan1024/audiowagon/issues/105)
+- the pseudo artist "Various artists" used for compilation albums could show up multiple times in multiple cases when
+  users would tag such files as "Various Artists" (note the capital in 'Artists' versus lowercase 'artists'). Now any 
+  casing of "Various artists" in metadata will be used for the pseudo compilation artist. Also this pseudo artist will 
+  now be localized in the GUI (e.g. "Verschiedene Künstler" in German). To make full use of this fix you will need to 
+  re-index your database [#110](https://github.com/MoleMan1024/audiowagon/issues/110)
+
+### Changed
+
+- the musical note icon for tracks did not look very nice in the Volvo GUI, it was replaced with a microphone icon
+
 
 ## [2.3.6] - 2023-01-27
 
@@ -127,7 +142,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- when persisting the playback queue only upcoming tracks were stored. This has been changed to persist the complete
+- when persisting the playback queue, only upcoming tracks were stored. This has been changed to persist the complete
   playback queue instead [#78](https://github.com/MoleMan1024/audiowagon/issues/78)
 - when a user cancelled the permission popup, or if the permission request was denied automatically, you had to re-plug
   the USB drive to make the permission pop-up appear again. Now the permission popup will be triggered again when
@@ -158,7 +173,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.0.0] - 2022-06-23
 
 This release contains some major new features. When upgrading you will be required to re-index metadata from your USB
-drives (if your were using that feature) because the database structure has changed significantly. If you find any
+drives (if you were using that feature) because the database structure has changed significantly. If you find any
 issues, please [contact me](https://moleman1024.github.io/audiowagon/index.html#how-do-i-report-an-issue).
 
 ### Fixed

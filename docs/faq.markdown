@@ -21,7 +21,7 @@ maker probably put some extra security in the car that will always trigger this 
 help from the car maker or Google to improve this to allow the user to select *AudioWagon* to be the default app for 
 USB devices.
 
-### Why is there a popup abbout "USB device is not supported" when the USB device works fine?
+### Why is there a popup about "USB device is not supported" when the USB device works fine?
 
 ![Not supported popup](/img/not_supported.jpg)
 
@@ -116,10 +116,10 @@ the metadata. Different tools have different ways to achieve this, for example:
 - in [MusicBee](https://www.getmusicbee.com/) edit the track, go to *settings* tab and tick *iTunes compilation*
   ![compilation in MusicBee](/img/compilation_musicbee.jpg)
 
-Alternatively you can also put "Various Artists" in the *album artist* tag, this will have the same effect as the
+Alternatively you can also put "Various artists" in the *album artist* tag, this will have the same effect as the
 compilation field above.
 
-Afterwards the compilation album will show up in the album view with a pseudo artist "Various Artists"
+Afterwards the compilation album will show up in the album view with a pseudo artist "Various artists"
 
 ![compilation](/img/compilation.jpg)
 

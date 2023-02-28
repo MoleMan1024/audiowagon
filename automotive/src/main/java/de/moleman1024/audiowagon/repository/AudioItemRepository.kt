@@ -14,6 +14,7 @@ import de.moleman1024.audiowagon.medialibrary.ART_URI_PART
 import de.moleman1024.audiowagon.medialibrary.ART_URI_PART_ALBUM
 import de.moleman1024.audiowagon.medialibrary.ART_URI_PART_TRACK
 import de.moleman1024.audiowagon.medialibrary.AudioItem
+import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyID
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.DATABASE_ID_UNKNOWN
 import de.moleman1024.audiowagon.repository.entities.Album
 import de.moleman1024.audiowagon.repository.entities.Artist
@@ -377,6 +378,15 @@ class AudioItemRepository(
 
     suspend fun getPseudoCompilationArtistID(): Long? {
         return repoUpdate.getPseudoCompilationArtistID()
+    }
+
+    fun getPseudoCompilationArtistNameEnglish(): String {
+        return repoUpdate.getPseudoCompilationArtistNameEnglish()
+    }
+
+    suspend fun isVariousArtistsAlbum(id: ContentHierarchyID): Boolean {
+        val pseudoCompilationArtistID: Long? = getPseudoCompilationArtistID()
+        return pseudoCompilationArtistID == id.albumArtistID || pseudoCompilationArtistID == id.artistID
     }
 
     fun close() {

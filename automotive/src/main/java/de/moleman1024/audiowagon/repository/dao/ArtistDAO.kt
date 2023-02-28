@@ -32,7 +32,7 @@ interface ArtistDAO {
     @Query("SELECT * FROM artist WHERE artistId = :artistId")
     fun queryByID(artistId: Long): Artist?
 
-    @Query("SELECT * FROM artist WHERE name = :name")
+    @Query("SELECT * FROM artist WHERE name = :name COLLATE NOCASE")
     fun queryByName(name: String): Artist?
 
     @Query(

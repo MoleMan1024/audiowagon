@@ -20,8 +20,8 @@ android {
         applicationId "de.moleman1024.audiowagon"
         minSdkVersion rootProject.minSdkVersion
         targetSdkVersion rootProject.targetSdkVersion
-        versionCode 236
-        versionName "2.3.6"
+        versionCode 237
+        versionName "2.3.7"
         resValue "string", "VERSION_NAME", versionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         signingConfig signingConfigs.debug
@@ -80,7 +80,7 @@ dependencies {
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.5.1'
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-core:$kotlinxSerializationVersion"
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion"
-    implementation files("libs/libaums-0.9.3.aar")
+    implementation files("libs/libaums-0.9.4.aar")
     // Firebase requires a file google-services.json that contains Firebase secrets, not uploaded to version control
     implementation 'com.google.firebase:firebase-crashlytics-ktx:18.2.13'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.6.4'

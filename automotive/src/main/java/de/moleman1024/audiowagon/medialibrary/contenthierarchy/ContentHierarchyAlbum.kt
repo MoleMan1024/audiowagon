@@ -72,10 +72,7 @@ class ContentHierarchyAlbum(
         val repo: AudioItemRepository = audioItemLibrary.getRepoForContentHierarchyID(id) ?: return mutableListOf()
         val tracks: List<AudioItem>
         try {
-            val pseudoCompilationArtistID: Long? = repo.getPseudoCompilationArtistID()
-            val isVariousArtistsAlbum = pseudoCompilationArtistID == id.albumArtistID
-                    || pseudoCompilationArtistID == id.artistID
-            tracks = if (id.albumArtistID < 0 || isVariousArtistsAlbum) {
+            tracks = if (id.albumArtistID < 0 || repo.isVariousArtistsAlbum(id)) {
                 repo.getTracksForAlbum(id.albumID)
             } else {
                 repo.getTracksForAlbumAndArtist(id.albumID, id.albumArtistID)
