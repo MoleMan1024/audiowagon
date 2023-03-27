@@ -8,11 +8,9 @@ package de.moleman1024.audiowagon
 import android.content.Intent
 import android.content.res.AssetManager
 import android.hardware.usb.UsbManager
-import android.net.Uri
 import android.os.ParcelFileDescriptor
 import android.support.v4.media.MediaBrowserCompat
 import androidx.test.platform.app.InstrumentationRegistry
-import androidx.test.rule.provider.ProviderTestRule
 import com.mpatric.mp3agic.Mp3File
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.mocks.MockUSBDevice
@@ -20,7 +18,10 @@ import de.moleman1024.audiowagon.util.MediaBrowserTraversal
 import de.moleman1024.audiowagon.util.ServiceFixture
 import de.moleman1024.audiowagon.util.TestUtils
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import org.junit.*
+import org.junit.After
+import org.junit.Assert
+import org.junit.Before
+import org.junit.Test
 
 private const val TAG = "AlbumArtTest"
 private const val TEMPLATE_MP3_NAME = "test.mp3"

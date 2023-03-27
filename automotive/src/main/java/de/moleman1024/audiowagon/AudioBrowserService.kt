@@ -121,6 +121,8 @@ const val CMD_REQUEST_USB_PERMISSION = "de.moleman1024.audiowagon.CMD_REQUEST_US
 // TODO: class getting too large
 class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     private var lifecycleRegistry: LifecycleRegistry = LifecycleRegistry(this)
+    override val lifecycle: Lifecycle
+        get() = lifecycleRegistry
     private lateinit var audioItemLibrary: AudioItemLibrary
     private lateinit var audioFileStorage: AudioFileStorage
     private lateinit var usbDevicePermissions: USBDevicePermissions
@@ -1073,10 +1075,6 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             logger.debug(TAG, "Got ${mediaItems.size} mediaItems in onSearch()")
             result.sendResult(mediaItems)
         }
-    }
-
-    override fun getLifecycle(): Lifecycle {
-        return lifecycleRegistry
     }
 
     private fun setUncaughtExceptionHandler() {

@@ -28,7 +28,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
     <string name="no_next_track">Kein nächster Titel</string>
     <string name="no_prev_track">Kein vorheriger Titel</string>
     <string name="eject_completed">USB-Stick wurde ausgeworfen, er kann jetzt abgesteckt werden</string>
-    <string name="error">FEHLER: %1$s</string>a
+    <string name="error">FEHLER: %1$s</string>
     <string name="error_audio_focus_denied">Audiofokus nicht erhalten</string>
     <string name="error_USB_init">Fehler bei Verbindung zum USB-Stick</string>
     <string name="error_no_filesystem">Kein unterstütztes Dateisystem</string>

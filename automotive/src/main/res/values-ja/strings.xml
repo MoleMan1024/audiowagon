@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AudioWagon</string>
+    <string name="queue_title">Play queue</string>
+    <string name="search_group_tracks">曲</string>
+    <string name="search_group_artists">アーティスト</string>
+    <string name="search_group_albums">アルバム</string>
+    <string name="search_group_files">ファイル</string>
+    <string name="browse_tree_category_tracks">曲</string>
+    <string name="browse_tree_category_artists">アーティスト</string>
+    <string name="browse_tree_category_albums">アルバム</string>
+    <string name="browse_tree_pseudo_track_shuffle_all">全てシャッフル</string>
+    <string name="browse_tree_pseudo_play_all">全て再生</string>
+    <string name="browse_tree_unknown_album">不明なアルバム</string>
+    <string name="browse_tree_unknown_artist">不明なアーティスト</string>
+    <string name="browse_tree_various_artists">様々なアーティスト</string>
+    <string name="browse_tree_no_entries_title">音楽ファイルがありません</string>
+    <string name="browse_tree_no_usb_drive">USBドライブを接続してください</string>
+    <string name="browse_tree_usb_drive_ejected">USBドライブが取り出されたか、読み取れませんでした</string>
+    <string name="browse_tree_need_to_agree_legal_title">法的免責事項に同意されていません</string>
+    <string name="browse_tree_need_to_agree_legal_desc">設定を確認してください</string>
+    <string name="toast_indexing_started">USBインデックス作成を開始しました …</string>
+    <string name="toast_indexing_completed">USBインデックス作成が完了しました</string>
+    <string name="no_next_track">次の曲はありません</string>
+    <string name="no_prev_track">前の曲はありません</string>
+    <string name="eject_completed">USB デバイスが取り出されました。取り外しても安全です</string>
+    <string name="error">エラー: %1$s</string>
+    <string name="error_audio_focus_denied">Audio Focusが取得できませんでした</string>
+    <string name="error_USB_init">USBドライブ接続でエラーが発生しました</string>
+    <string name="error_no_filesystem">サポートされていないファイルシステムです</string>
+    <string name="error_library_creation_fail">ライブラリの作成に失敗しました</string>
+    <string name="error_invalid_state">無効な状態です</string>
+    <string name="error_IO">I/O エラー</string>
+    <string name="error_malformed_data">不正なデータ</string>
+    <string name="error_timeout">タイムアウト</string>
+    <string name="error_not_supported">サポート対象外</string>
+    <string name="error_no_USB_device">USBデバイスなし</string>
+    <string name="error_unknown">不明なエラー</string>
+    <string name="notif_action_play">再生</string>
+    <string name="notif_action_pause">一時停止</string>
+    <string name="notif_action_stop">停止</string>
+    <string name="notif_action_next">次の曲</string>
+    <string name="notif_action_prev">前の曲</string>
+    <string name="notif_channel_name">AudioWagon 通知</string>
+    <string name="notif_channel_desc">AudioWagon 通知チャンネル</string>
+    <string name="notif_channel_name_indexing">AudioWagon インデックス通知</string>
+    <string name="notif_channel_desc_indexing">AudioWagon インデックス通知チャンネル</string>
+    <string name="notif_indexing_title">USB インデックス状態</string>
+    <string name="notif_indexing_text_in_progress">進行中 …</string>
+    <string name="notif_indexing_text_in_progress_num_items">見つかったアイテム: %1$d …</string>
+    <string name="notif_indexing_text_completed">完了</string>
+    <string name="action_shuffle_turn_on">シャッフル on</string>
+    <string name="action_shuffle_turn_off">シャッフル off</string>
+    <string name="action_repeat_turn_on">リピート on</string>
+    <string name="action_repeat_turn_off">リピート off</string>
+    <string name="action_eject">取り出し</string>
+    <string name="action_rewind">巻き戻し</string>
+    <string name="settings_title">設定</string>
+    <string name="setting_enable_equalizer_title">イコライザー</string>
+    <string name="setting_sound_category_title">サウンド</string>
+    <string name="setting_equalizer_preset_title">イコライザー プリセット</string>
+    <string name="equalizer_preset_less_bass">Less bass</string>
+    <string name="equalizer_preset_more_bass">More bass</string>
+    <string name="equalizer_preset_less_treble">Less treble</string>
+    <string name="equalizer_preset_more_treble">More treble</string>
+    <string name="equalizer_preset_P2">P2</string>
+    <string name="equalizer_preset_P2_plus">P2+</string>
+    <string name="equalizer_preset_V_shape">V-shape</string>
+    <string name="setting_general_category_title">一般</string>
+    <string name="setting_log_to_USB_title">ログファイルをUSBドライブに書き込む</string>
+    <string name="setting_log_to_USB_desc">バグレポートを作成する際、ログファイルを開発者に提供します。</string>
+    <string name="setting_USB_status_title">USBステータス</string>
+    <string name="setting_USB_status_ok">OK</string>
+    <string name="setting_USB_status_not_connected">接続されていません</string>
+    <string name="setting_USB_status_unknown">不明なエラー。USBドライブを再接続するか、Androidを再起動してみてください</string>
+    <string name="setting_USB_status_connected_no_permission">接続されました。Permissionがありません。</string>
+    <string name="setting_USB_status_error">読み取り/書き込みエラーです。USBドライブの再接続を試してください。改善されない場合、
+ファイルシステム (FAT32)の修復／再フォーマットを行ってください。
+</string>
+    <string name="setting_USB_status_ejected">取り出されました。USBドライブを安全に取り外す事ができます。</string>
+    <string name="setting_USB_status_not_compatible">互換性がありません。
+FAT32ファイルシステムを使用してUSBドライブをフォーマットしてください</string>
+    <string name="setting_show_legal_disclaimer_title">法的免責事項を表示</string>
+    <string name="setting_show_legal_disclaimer_desc">アプリを使用する前に、法的免責事項に同意する必要があります。</string>
+    <string name="setting_version">バージョン</string>
+    <string name="legal_disclaimer_title">AudioWagon: 法的免責事項</string>
+    <string name="legal_disclaimer_distraction_heading">ドライバーの注意散漫</string>
+    <string name="legal_disclaimer_distraction_text">あなたは、該当するすべての連邦法を遵守することに同意します。
+このソフトウェア使用中のドライバーの注意散漫および車載インフォテインメントシステムの操作に関する州および地域の法律
+\nこのソフトウェアは、交通状況が安全に許可されている場合にのみ使用してください。</string>
+    <string name="legal_disclaimer_liability_heading">保証・責任</string>
+    <string name="legal_disclaimer_liability_text">このソフトウェアは \"as-is\" で提供され, 明示的または暗黙的ないかなる保証もしません。
+    いかなる場合でも、このソフトウェアの使用によって生じたいかなる損害についても、作成者は責任を負いません。</string>
+    <string name="legal_disclaimer_license_heading">ライセンス</string>
+    <string name="legal_disclaimer_license_text">このソフトウェアはGPLv3ライセンスです。\n MoleMan1024が作成しました。</string>
+    <string name="legal_disclaimer_third_party_licenses_heading">サードパーティライセンス</string>
+    <string name="legal_disclaimer_third_party_licenses_text">このアプリケーションは、Apache 2.0:
+ライセンスで提供された次のコンテンツを使用しています。\n\n&#x2013; Android Open Source Projectで作成されたさまざまなライブラリ\n&#x2013; Magnus Jahnenによって作成されたlibaums library\n&#x2013; Googleによって作成されたMaterial design vector icons
+\n&#x2013; Firebase Crashlytics\n\nLicense texts:\nwww.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/licenses/gpl-3.0.html
+    </string>
+    <string name="legal_disclaimer_confirm_btn">同意</string>
+    <string name="legal_disclaimer_cancel_btn">キャンセル</string>
+    <string name="error_no_tracks">楽曲なし</string>
+    <string name="error_not_enough_space_for_log">ログファイルを書き込むための十分なスペースがありません</string>
+    <string name="browse_tree_category_files">ファイル</string>
+    <string name="setting_library_category_title">メディア</string>
+    <string name="setting_read_metadata">メタデータ読み込み</string>
+    <string name="setting_delete_databases">データベース削除</string>
+    <string name="setting_database_status_title">データベース</string>
+    <string name="setting_enable_replaygain">ReplayGain</string>
+    <string name="searching_voice_input">音声検索: \"%1$s\"</string>
+    <string name="setting_read_metadata_when_connected">USBドライブが接続された時</string>
+    <string name="setting_read_metadata_manual">マニュアル</string>
+    <string name="setting_read_metadata_filepaths_only">ファイルパスのみ</string>
+    <string name="setting_read_metadata_off">Off</string>
+    <string name="setting_read_metadata_start_now">今すぐメタデータを読み込む</string>
+    <string name="browse_tree_metadata_not_yet_indexed_title">メタデータがまだインデックスされていません</string>
+    <string name="browse_tree_metadata_not_yet_indexed_desc">設定を確認してください</string>
+    <string name="setting_audiofocus_behavior">ルート案内時の挙動</string>
+    <string name="setting_audiofocus_pause">一時停止</string>
+    <string name="setting_audiofocus_duck">音量を下げる</string>
+    <string name="setting_crash_reporting_title">クラッシュレポートの送信</string>
+    <string name="setting_crash_reporting_desc">クラッシュレポートを自動的に開発者に送信してアプリの改善を支援する
+(インターネット接続が必要です)。</string>
+    <string name="cannot_read_file">ファイルが読み込めません: %1$s</string>
+    <string name="setting_website_title">ウェブサイト</string>
+    <string name="setting_album_display">アルバム表示方法</string>
+    <string name="setting_album_display_grid">Grid</string>
+    <string name="setting_album_display_list">List</string>
+    <string name="setting_requires_media_center_restart">(変更には \"Media Center\" アプリの再起動が必要です)</string>
+    <string name="error_no_results">見つかりませんでした: \"%1$s\"</string>
+</resources>

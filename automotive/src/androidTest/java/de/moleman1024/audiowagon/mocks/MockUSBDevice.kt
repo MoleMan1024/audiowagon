@@ -98,16 +98,16 @@ class MockUSBDevice(
         return 0
     }
 
-    override fun writeToParcel(dest: Parcel?, flags: Int) {
-        dest?.writeInt(configurationCount)
-        dest?.writeInt(deviceClass)
-        dest?.writeString(deviceName)
-        dest?.writeInt(interfaceCount)
-        dest?.writeString(manufacturerName)
-        dest?.writeInt(productId)
-        dest?.writeString(productName)
-        dest?.writeInt(vendorId)
-        dest?.writeString(serialNumber)
+    override fun writeToParcel(dest: Parcel, flags: Int) {
+        dest.writeInt(configurationCount)
+        dest.writeInt(deviceClass)
+        dest.writeString(deviceName)
+        dest.writeInt(interfaceCount)
+        dest.writeString(manufacturerName)
+        dest.writeInt(productId)
+        dest.writeString(productName)
+        dest.writeInt(vendorId)
+        dest.writeString(serialNumber)
     }
 
     companion object {

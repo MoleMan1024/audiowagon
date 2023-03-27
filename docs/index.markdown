@@ -122,8 +122,8 @@ at my email (see below, or you can use [GitHub](https://github.com/MoleMan1024/a
 ### Native speakers
 
 I am still looking for **volunteer native speakers to translate** the GUI texts in the app to all languages (already
-translated: German, English, Dutch, Swedish, Norwegian, Danish, French, Russian, Polish, Italian). You can get the
-[English strings to translate here](https://github.com/MoleMan1024/audiowagon/blob/master/automotive/src/main/res/values/strings.xml).
+translated: German, English, Dutch, Swedish, Norwegian, Danish, French, Russian, Polish, Italian, Japanese). You can 
+get the [English strings to translate here](https://github.com/MoleMan1024/audiowagon/blob/master/automotive/src/main/res/values/strings.xml).
 
 
 ## Contact

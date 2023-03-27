@@ -10,6 +10,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project loosely follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.3.8] - 2023-03-26
+
+### Changed
+
+- indexing speed was a bit slow when having many directories on the USB drive without any changes compared to last time
+  the drive was indexed. The indexing speed has been improved by removing some not-necessary database operations
+  [#112](https://github.com/MoleMan1024/audiowagon/issues/112)
+- updated some Google library dependencies to latest version
+
+### Added
+
+- translation for Japanese
+
+
 ## [2.3.7] - 2023-02-28
 
 ### Fixed
@@ -17,14 +31,18 @@ and this project loosely follows [Semantic Versioning](https://semver.org/spec/v
 - when writing log files to the USB drive in rare cases the filesystem got corrupted. This has been fixed 
   [#105](https://github.com/MoleMan1024/audiowagon/issues/105)
 - the pseudo artist "Various artists" used for compilation albums could show up multiple times in multiple cases when
-  users would tag such files as "Various Artists" (note the capital in 'Artists' versus lowercase 'artists'). Now any 
-  casing of "Various artists" in metadata will be used for the pseudo compilation artist. Also this pseudo artist will 
-  now be localized in the GUI (e.g. "Verschiedene Künstler" in German). To make full use of this fix you will need to 
-  re-index your database [#110](https://github.com/MoleMan1024/audiowagon/issues/110)
+  users would tag such files as "Various Artists" (note the capital letter 'A' in 'Artists' versus lowercase 'artists').
+  Now any casing of "Various artists" in metadata will be used for the pseudo compilation artist. Also this pseudo
+  artist will now be localized in the GUI (e.g. "Verschiedene Künstler" in German). To make full use of this fix you
+  will need to re-index your database [#110](https://github.com/MoleMan1024/audiowagon/issues/110)
 
 ### Changed
 
 - the musical note icon for tracks did not look very nice in the Volvo GUI, it was replaced with a microphone icon
+- the number of items found during indexing on the GUI did not include files/directories, only audiofiles with metadata
+  were shown. Now files/directories will be counted as well, resulting in a higher total number. During indexing you
+  will first see the items increasing quickly based on the directories, and later a bit more slowly when the actual
+  metadata in the audio files is read
 
 
 ## [2.3.6] - 2023-01-27

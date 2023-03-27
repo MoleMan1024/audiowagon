@@ -111,6 +111,7 @@ class AudioItemLibrary(
     @ExperimentalCoroutinesApi
     suspend fun buildLibrary(channel: ReceiveChannel<FileLike>, callback: () -> Unit) {
         logger.verbose(TAG, "buildLibrary(channel$channel)")
+        val startTime = System.nanoTime()
         val metadataReadSetting = sharedPrefs.getMetadataReadSettingEnum(context, logger, TAG)
         val isReadAudioFileMetadata =
             metadataReadSetting in listOf(MetadataReadSetting.WHEN_USB_CONNECTED, MetadataReadSetting.MANUALLY)
@@ -163,6 +164,9 @@ class AudioItemLibrary(
         }
         isBuildingLibrary = false
         isBuildLibraryCancelled = false
+        val endTime = System.nanoTime()
+        val timeTakenMS = (endTime - startTime) / 1000000L
+        logger.debug(TAG, "Building library took ${timeTakenMS}ms")
     }
 
     private suspend fun updateLibraryTracksFromAudioFile(file: AudioFile, repo: AudioItemRepository) {
@@ -206,10 +210,8 @@ class AudioItemLibrary(
                     }
                 }
                 is Directory -> {
-                    // in FAT32 directory timestamps are not updated when the contents change, must always update
-                    repo.removePath(pathIDInDatabase)
-                    repo.populateDatabaseFromFileOrDir(fileOrDir)
-                    repo.hasUpdatedDatabase = true
+                    // in FAT32 directory timestamps are not updated when the contents change, keep as-is
+                    repo.pathIDsToKeep.add(pathIDInDatabase)
                 }
                 else -> {
                     throw RuntimeException("Not supported file type: $fileOrDir")
