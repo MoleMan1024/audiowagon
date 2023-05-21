@@ -179,6 +179,7 @@ class AudioItemLibrary(
                 val audioFileHasChanged =
                     repo.hasAudioFileChangedForTrack(file, trackIDInDatabase)
                 if (!audioFileHasChanged) {
+                    logger.debug(TAG, "Track $trackIDInDatabase already in database for file: $file")
                     repo.trackIDsToKeep.add(trackIDInDatabase)
                 } else {
                     repo.removeTrack(trackIDInDatabase)

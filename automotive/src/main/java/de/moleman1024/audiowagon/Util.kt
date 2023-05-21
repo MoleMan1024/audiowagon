@@ -44,6 +44,7 @@ class Util {
         // https://github.com/MoleMan1024/audiowagon/issues/107 : ignore Apple OSX resource fork files
         val FILES_TO_IGNORE_REGEX = ("^\\._.*").toRegex()
         private const val URI_SCHEME = "usbAudio"
+        val BUILD_VARIANT_EMULATOR_SD_CARD = "emulatorSDCard"
 
         fun convertStringToShort(numberAsString: String): Short {
             return convertStringToInt(numberAsString).toShort()

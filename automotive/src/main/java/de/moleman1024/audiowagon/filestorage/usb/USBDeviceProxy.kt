@@ -151,7 +151,9 @@ class USBDeviceProxy(
     override fun toString(): String {
         return "USBDeviceProxy(deviceName='$deviceName', " +
                 "productId=$productId, " +
-                "vendorId=$vendorId, serialNumber=${serialNumber?.take(14)}, " +
-                "massStorageDevice=${massStorageDevice.hashCode()})"
+                "vendorId=$vendorId, " +
+                "serialNumber=${serialNumber?.take(14)}, " +
+                "massStorageDevice.hashCode=${massStorageDevice.hashCode()}" +
+                "androidUSBDevice.hashCode=${androidUSBDevice.hashCode()}"
     }
 }

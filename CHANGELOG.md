@@ -4,10 +4,28 @@ All notable changes to this project will be documented in this file.
 
 Listed here are only software version that have been made public. A jump in the version number (e.g. from 0.2.5 to
 0.3.4) without any inbetween version means that multiple internal releases were made that were not made available to the
-public. 
+public.
+
+The date given for a release is when the app is pushed into Google Play Store. However it will be visible only after
+Google's review process which can take a couple of days.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project loosely follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [2.3.10] - 2023-05-21
+
+### Fixed
+
+- when converting audio files from one file type to another (e.g. from .m4a to .mp3) and using embedded album art the
+  database could still point to the old filename. In such cases no album art was shown, a database deletion was needed
+  to recover. This has been improved: modification of album art in existing audio files or changes of file extensions
+  will now correctly update the album art location in the database
+  [#118](https://github.com/MoleMan1024/audiowagon/issues/118)
+
+### Changed
+
+- ignore built-in USB devices found in GMC Sierra trucks
+- updated some library dependencies to latest version
 
 
 ## [2.3.8] - 2023-03-26
@@ -28,7 +46,7 @@ and this project loosely follows [Semantic Versioning](https://semver.org/spec/v
 
 ### Fixed
 
-- when writing log files to the USB drive in rare cases the filesystem got corrupted. This has been fixed 
+- when writing log files to the USB drive in rare cases the filesystem got corrupted. This has been fixed
   [#105](https://github.com/MoleMan1024/audiowagon/issues/105)
 - the pseudo artist "Various artists" used for compilation albums could show up multiple times in multiple cases when
   users would tag such files as "Various Artists" (note the capital letter 'A' in 'Artists' versus lowercase 'artists').
@@ -55,13 +73,13 @@ and this project loosely follows [Semantic Versioning](https://semver.org/spec/v
 ### Changed
 
 - extraction of metadata is now faster [#103](https://github.com/MoleMan1024/audiowagon/issues/103)
-- hidden resource fork files created by Apple OS X are now ignored when indexing 
+- hidden resource fork files created by Apple OS X are now ignored when indexing
   [#107](https://github.com/MoleMan1024/audiowagon/issues/107)
 - avoid spamming logfile with stacktraces when there are lots of mismatches between media library and persisted playback
   queue
 - ignore another built-in USB device found in some car using AAOS
-- the indexing notification visible to the user is now updated earlier to indicate more clearly that the media library 
-  indexing is actually in progress (from 0 to 100 it is now updated every 20 files. Above 100 files it is unchanged 
+- the indexing notification visible to the user is now updated earlier to indicate more clearly that the media library
+  indexing is actually in progress (from 0 to 100 it is now updated every 20 files. Above 100 files it is unchanged
   and is updated every 100 files)
 - increased log file write frequency
 
@@ -140,18 +158,18 @@ and this project loosely follows [Semantic Versioning](https://semver.org/spec/v
 
 ### Fixed
 
-- album art was not shown for tracks that did not have an album name in metadata, this has been fixed 
-  [#79](https://github.com/MoleMan1024/audiowagon/issues/79) 
+- album art was not shown for tracks that did not have an album name in metadata, this has been fixed
+  [#79](https://github.com/MoleMan1024/audiowagon/issues/79)
 - confined all access to *libaums* to a single thread because the library is not thread-safe. Hopefully this will fix a
   rare filesystem corruption [#80](https://github.com/MoleMan1024/audiowagon/issues/80)
 - sometimes albums/artists with no associated tracks were kept in database, those are now properly cleaned up
-  [#82](https://github.com/MoleMan1024/audiowagon/issues/82) 
+  [#82](https://github.com/MoleMan1024/audiowagon/issues/82)
 - when starting a new playback queue with shuffle mode turned on, the first track was never shuffled. This issue was
   related to the intended behaviour that the currently playing track shall not be modified when toggling shuffle mode.
-  The issue been fixed [#83](https://github.com/MoleMan1024/audiowagon/issues/83) 
+  The issue been fixed [#83](https://github.com/MoleMan1024/audiowagon/issues/83)
 - try to avoid hangs (ANRs) in different places by refactoring blocking coroutines
 - try to avoid a `IllegalStateException` that could occur in Settings screen sometimes
-- fixed an issue during quick service startup/shutdown where coroutines were not cancelled properly during 
+- fixed an issue during quick service startup/shutdown where coroutines were not cancelled properly during
   restoring of persistent state
 - fixed multiple issues when writing log files to USB drive
 - fixed some problems in `LogActivity`
@@ -164,15 +182,15 @@ and this project loosely follows [Semantic Versioning](https://semver.org/spec/v
   playback queue instead [#78](https://github.com/MoleMan1024/audiowagon/issues/78)
 - when a user cancelled the permission popup, or if the permission request was denied automatically, you had to re-plug
   the USB drive to make the permission pop-up appear again. Now the permission popup will be triggered again when
-  entering *AudioWagon* settings (in case the permission was not yet given) 
+  entering *AudioWagon* settings (in case the permission was not yet given)
   [#76](https://github.com/MoleMan1024/audiowagon/issues/76)
 - the eject icon could be tapped accidentally while driving because it was nearby the skip backwards icon. To avoid
   accidental presses the eject icon has been moved into the extra icon drawer next to shuffle and repeat icons. A
-  seek-backwards icon was added in its original place which is less annoying if tapped accidentally 
+  seek-backwards icon was added in its original place which is less annoying if tapped accidentally
   [#74](https://github.com/MoleMan1024/audiowagon/issues/74)
 - for *Crashlytics* exception catching we now log the maximum amount of log lines possible (64 kB) instead of just the
   last 100 lines (because it was confusing during analysis of logs)
-- *libaums* and other library version updates 
+- *libaums* and other library version updates
 - update of icons
 - internal refactoring (mainly in coroutines)
 

@@ -216,14 +216,16 @@ class SettingsFragment : PreferenceFragmentCompat() {
         usbStatusPref?.isVisible = true
         ejectPref?.isVisible = true
         usbStatusPref?.summary = text
-        if (value in listOf(R.string.setting_USB_status_ejected, R.string.setting_USB_status_not_connected)) {
-            disableSettingsThatNeedUSBDrive()
+        @Suppress("KotlinConstantConditions")
+        if (BuildConfig.BUILD_TYPE != Util.BUILD_VARIANT_EMULATOR_SD_CARD
+            && value in listOf(R.string.setting_USB_status_ejected, R.string.setting_USB_status_not_connected)) {
+            disableSettingsThatNeedRemovableDrive()
         } else {
-            enableSettingsThatNeedUSBDrive(sharedPreferences)
+            enableSettingsThatNeedRemovableDrive(sharedPreferences)
         }
     }
 
-    private fun enableSettingsThatNeedUSBDrive(sharedPreferences: SharedPreferences?) {
+    private fun enableSettingsThatNeedRemovableDrive(sharedPreferences: SharedPreferences?) {
         val ejectPref = findPreference<Preference>(PREF_EJECT)
         ejectPref?.isEnabled = true
         val isMetadataReadSetToManual = isMetadataReadSetToManual(sharedPreferences)
@@ -234,7 +236,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         readMetadataNowPref?.isEnabled = true
     }
 
-    private fun disableSettingsThatNeedUSBDrive() {
+    private fun disableSettingsThatNeedRemovableDrive() {
         val ejectPref = findPreference<Preference>(PREF_EJECT)
         ejectPref?.isEnabled = false
         val readMetadataNowPref = findPreference<Preference>(PREF_READ_METADATA_NOW)

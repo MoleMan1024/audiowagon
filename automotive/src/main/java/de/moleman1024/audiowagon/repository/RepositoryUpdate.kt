@@ -108,8 +108,13 @@ class RepositoryUpdate(private val repo: AudioItemRepository, private val contex
                 albumArtistID = makePseudoCompilationArtist()
             }
             val albumInDB: Album? = repo.getDatabase()?.albumDAO()?.queryByNameAndArtist(metadata.album, albumArtistID)
-            albumID = if (albumInDB?.albumId != null) {
-               albumInDB.albumId
+            val albumArtURINeedsUpdate = doesAlbumArtURINeedUpdate(albumInDB, albumArtSource)
+            if (albumArtURINeedsUpdate) {
+                // delete the album with the outdated album art info and create new one below
+                albumInDB?.albumId?.let { repo.getDatabase()?.albumDAO()?.deleteByID(it) }
+            }
+            albumID = if (albumInDB?.albumId != null && !albumArtURINeedsUpdate) {
+                albumInDB.albumId
             } else {
                 val album = Album(
                     name = metadata.album,
@@ -150,8 +155,12 @@ class RepositoryUpdate(private val repo: AudioItemRepository, private val contex
         val lastModifiedTime = fileLike.lastModifiedDate.toInstant().truncatedTo(ChronoUnit.SECONDS).toEpochMilli()
         val parentPathID =
             repo.getDatabase()?.pathDAO()?.queryParentPath(fileLike.parentPath)?.pathId ?: DATABASE_ID_UNKNOWN
-        val path = Path(parentPathId = parentPathID, parentPath = fileLike.parentPath, name = fileLike.name,
-            lastModifiedEpochTime = lastModifiedTime)
+        val path = Path(
+            parentPathId = parentPathID,
+            parentPath = fileLike.parentPath,
+            name = fileLike.name,
+            lastModifiedEpochTime = lastModifiedTime
+        )
         if (fileLike is Directory) {
             path.isDirectory = true
         }
@@ -196,7 +205,7 @@ class RepositoryUpdate(private val repo: AudioItemRepository, private val contex
         logger.debug(TAG, "num items in group $audioItemType: $numItems")
         var offset = 0
         val lastGroupIndex = numItems / CONTENT_HIERARCHY_MAX_NUM_ITEMS
-        for (groupIndex in 0 .. lastGroupIndex) {
+        for (groupIndex in 0..lastGroupIndex) {
             val offsetRows = if (groupIndex < lastGroupIndex) {
                 offset + CONTENT_HIERARCHY_MAX_NUM_ITEMS - 1
             } else {
@@ -359,6 +368,37 @@ class RepositoryUpdate(private val repo: AudioItemRepository, private val contex
                 repo.getDatabase()?.artistDAO()?.deleteByID(artistID)
             }
         }
+    }
+
+    // In case an audio file is converted into another file type (e.g. .m4a to .mp3) the album art URI might be
+    // pointing to the old file. Check if this is the case by comparing filename URIs without the extension
+    // https://github.com/MoleMan1024/audiowagon/issues/118
+    private fun doesAlbumArtURINeedUpdate(albumInDB: Album?, albumArtSource: FileLike?): Boolean {
+        if (albumInDB == null || albumArtSource == null) {
+            return false
+        }
+        if (albumInDB.albumArtSourceURIString == albumArtSource.uri.toString()) {
+            // nothing has changed
+            return false
+        }
+        if (albumInDB.albumArtSourceURIString.isEmpty() && albumArtSource.uri.toString().isNotEmpty()) {
+            // someone has added album art when previously there was none, we need to update album in database
+            logger.debug(TAG, "New album art URI to add: ${albumArtSource.uri}")
+            return true
+        }
+        if (albumInDB.albumArtSourceURIString.isNotEmpty() && albumArtSource.uri.toString().isEmpty()) {
+            // someone has removed album art, we need to update album in database
+            logger.debug(TAG, "Album art URI to remove: ${albumInDB.albumArtSourceURIString}")
+            return true
+        }
+        val albumArtURIInDBNoExtension = albumInDB.albumArtSourceURIString.substringBeforeLast(".")
+        val albumArtURINoExtension = albumArtSource.uri.toString().substringBeforeLast(".")
+        if (albumArtURIInDBNoExtension != albumArtURINoExtension) {
+            return false
+        }
+        // if just the extension for the album art source URI differs, it was likely converted between file formats
+        logger.debug(TAG, "Album art URI needs update from: ${albumInDB.albumArtURIString} to ${albumArtSource.uri}")
+        return true
     }
 
 }

@@ -28,7 +28,6 @@ private const val TEMPLATE_MP3_NAME = "test.mp3"
 private const val TEMPLATE_MP3_PATH = "/.template/$TEMPLATE_MP3_NAME"
 private const val MUSIC_ROOT = "/Music"
 private const val STORAGE_ID = "\"storage\":\"123456789ABC-5118-7715\""
-private const val PLAY_ALL = "Play all"
 
 @ExperimentalCoroutinesApi
 class PlaybackTest {

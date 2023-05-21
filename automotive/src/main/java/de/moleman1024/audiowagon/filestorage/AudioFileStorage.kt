@@ -134,7 +134,7 @@ open class AudioFileStorage(
             } catch (exc: Exception) {
                 logger.exception(TAG, exc.message.toString(), exc)
             }
-        } else if (BuildConfig.BUILD_TYPE == "emulatorSDCard") {
+        } else if (BuildConfig.BUILD_TYPE == Util.BUILD_VARIANT_EMULATOR_SD_CARD) {
             logger.debug(TAG, "Loading SD card for testing in emulator")
             val sdCardMediaDevice = SDCardMediaDevice(SD_CARD_ID, "/many_files")
             mediaDevicesForTest.add(sdCardMediaDevice)

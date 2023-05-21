@@ -89,6 +89,7 @@ class USBDeviceConnections(
             val usbDeviceWrapper: USBMediaDevice
             try {
                 usbDeviceWrapper = getUSBMassStorageDeviceFromIntent(intent)
+                logger.debug(TAG, "Broadcast with action ${intent.action} received for USB device: $usbDeviceWrapper")
             } catch (exc: DeviceIgnoredException) {
                 // one of the built-in USB devices (e.g. bluetooth dongle) has attached/detached, ignore these
                 return
@@ -333,6 +334,7 @@ class USBDeviceConnections(
     private fun isDeviceAttached(usbMediaDevice: USBMediaDevice): Boolean {
         getAttachedFilteredDevicesFromUSBManager().forEach {
             if (it == usbMediaDevice) {
+                logger.debug(TAG, "Device is attached: $usbMediaDevice")
                 return true
             }
         }
@@ -341,8 +343,9 @@ class USBDeviceConnections(
 
     private fun getAttachedFilteredDevicesFromUSBManager(): List<USBMediaDevice> {
         val filteredUSBDevices = mutableListOf<USBMediaDevice>()
-        getUSBManager().deviceList.values.forEach {
-            val deviceProxy = USBDeviceProxy(it, getUSBManager())
+        getUSBManager().deviceList.values.forEach { usbDevice ->
+            logger.debug(TAG, "USBManager.deviceList has device @${usbDevice.hashCode()}: $usbDevice")
+            val deviceProxy = USBDeviceProxy(usbDevice, getUSBManager())
             val usbMediaDevice = USBMediaDevice(context, deviceProxy)
             if (!usbMediaDevice.isToBeIgnored()) {
                 filteredUSBDevices.add(usbMediaDevice)

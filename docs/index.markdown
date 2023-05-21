@@ -38,19 +38,19 @@ Please see Github for a [list of changes for each version of the app](https://gi
 ## Limitations
 
 - The app will *not* work with Polestar/Volvo OTA car software version 2.0 nor 2.1. You will need the car software
-  version 2.2 or higher that includes the CarPlay Update (or 1.9 or lower) which re-enables the USB data connection.  
+  version 2.2 or higher that includes the CarPlay Update (or 1.9 or lower) which re-enables the USB data connection.
 - The app can *not* play back **.wma** files. Also Android does not support files encoded with "Apple Lossless Audio
   (alac)" codec.
 - The app does *not* work with music stored on *iPod*, *iPhone* nor *Android phone*, you need to use a *USB mass storage
   device* formatted as *FAT32* (for example a USB flash drive)
-- One person has [reported a problem](https://github.com/MoleMan1024/audiowagon/issues/85) with a *SanDisk 2TB
-  Extreme Portable SSD*
-- The app does *not* work with a *BDYING Car USB CD Player* (see issue 
+- *SanDisk Extreme Portable SSD* is not supported, because it
+  [behaves differently than most regular USB flash drives](https://github.com/MoleMan1024/audiowagon/issues/85)
+- The app does *not* work with a *BDYING Car USB CD Player* (see issue
   [#95](https://github.com/MoleMan1024/audiowagon/issues/95))
 - *Some* people have reported issues when using the app with a **USB to micro SD card adapter** where no files could be
   played back and lots of error messages were shown. In such cases the adapter is probably not compatible with the
   library I use to read the filesystem, please try with a USB flash drive instead, I have not heard about problems with
-  those. 
+  those.
 
   *This problem applies only to certain adapters*, I also have reports where similar adapters were working normally.
 
@@ -72,7 +72,7 @@ Please see Github for a [list of changes for each version of the app](https://gi
 
 ![Permission popup](/img/allow_access.jpg)
 
-- If you have installed the app for the first time, you have to do the following 3 extra steps: you get a warning that 
+- If you have installed the app for the first time, you have to do the following 3 extra steps: you get a warning that
   you need to accept the legal disclaimer in the settings. Open the AudioWagon settings using the gear icon.
 
 ![Legal disclaimer not agreed](/img/legal_disclaimer_not_agreed.jpg)
@@ -122,7 +122,7 @@ at my email (see below, or you can use [GitHub](https://github.com/MoleMan1024/a
 ### Native speakers
 
 I am still looking for **volunteer native speakers to translate** the GUI texts in the app to all languages (already
-translated: German, English, Dutch, Swedish, Norwegian, Danish, French, Russian, Polish, Italian, Japanese). You can 
+translated: German, English, Dutch, Swedish, Norwegian, Danish, French, Russian, Polish, Italian, Japanese). You can
 get the [English strings to translate here](https://github.com/MoleMan1024/audiowagon/blob/master/automotive/src/main/res/values/strings.xml).
 
 

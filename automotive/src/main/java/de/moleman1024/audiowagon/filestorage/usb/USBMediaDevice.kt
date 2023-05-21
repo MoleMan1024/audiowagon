@@ -106,6 +106,8 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
         logger.debug(TAG, "isToBeIgnored($vendorProductID / $vendorProductIDHex)")
         // Volvo, Polestar, General Motors, Renault
         if (vendorProductID in listOf(
+                // Generic USB device (unknown vendor)
+                Pair(17, 30600),
                 // Microchip AN20021 USB to UART Bridge with USB 2.0 hub 0x2530
                 Pair(1060, 9520),
                 // USB Ethernet 0X9E08
@@ -130,6 +132,12 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
                 Pair(7531, 2),
                 // Linux xHCI Host Controller
                 Pair(7531, 3),
+                // Aptiv H2H Bridge
+                Pair(10646, 261),
+                // Aptiv Vendor
+                Pair(10646, 288),
+                // Aptiv GM V10  E2 PD
+                Pair(10646, 306),
                 // Delphi Host to Host Bridge
                 Pair(11336, 261),
                 // Delphi Vendor
@@ -137,7 +145,7 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
                 // Delphi Hub
                 Pair(11336, 306),
                 // Microchip USB2 Controller Hub
-                Pair(18752, 1060)
+                Pair(18752, 1060),
             )
         ) {
             return true
