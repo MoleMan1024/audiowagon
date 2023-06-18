@@ -25,6 +25,8 @@ private val logger = Logger
 
 @ExperimentalCoroutinesApi
 /**
+ * Shows the settings screen
+ *
  * See https://developer.android.com/guide/topics/ui/settings
  */
 class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPreferenceStartFragmentCallback {

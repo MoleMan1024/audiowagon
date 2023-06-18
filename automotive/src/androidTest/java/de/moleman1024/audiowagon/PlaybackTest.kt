@@ -8,6 +8,7 @@ package de.moleman1024.audiowagon
 import android.content.Intent
 import android.content.res.AssetManager
 import android.hardware.usb.UsbManager
+import android.os.Bundle
 import android.support.v4.media.MediaBrowserCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import androidx.test.platform.app.InstrumentationRegistry
@@ -150,6 +151,31 @@ class PlaybackTest {
         if (!differentItemFound) {
             throw AssertionError("First item in playback queue was not shuffled")
         }
+    }
+
+    /**
+     * https://github.com/MoleMan1024/audiowagon/issues/119
+     */
+    @Test
+    fun onPlayFromSearch_voiceSearchWithArtist_playsArtist() {
+        val artistName = "Billy Talent"
+        val numTracks = 10
+        for (index in 0 until numTracks) {
+            createMP3().apply {
+                id3v2Tag.artist = artistName
+                id3v2Tag.title = "Track${index}"
+            }.also { storeMP3(it, "$MUSIC_ROOT/${artistName}/track${index}.mp3")}
+        }
+        attachUSBDevice(mockUSBDevice)
+        TestUtils.waitForIndexingCompleted(audioBrowserService)
+        Thread.sleep(1000)
+        serviceFixture.transportControls?.stop()
+        val queryExtras = Bundle().apply {
+            putString("android.intent.extra.focus", "vnd.android.cursor.item/artist")
+        }
+        serviceFixture.transportControls?.playFromSearch(artistName, queryExtras)
+        TestUtils.waitForAudioPlayerState(PlaybackStateCompat.STATE_PLAYING, audioBrowserService)
+        Assert.assertEquals(numTracks, serviceFixture.playbackQueue?.size)
     }
 
 }

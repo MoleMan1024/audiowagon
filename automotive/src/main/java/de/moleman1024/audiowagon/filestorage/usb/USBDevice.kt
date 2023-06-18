@@ -7,7 +7,9 @@ package de.moleman1024.audiowagon.filestorage.usb
 
 import android.app.PendingIntent
 import android.content.Context
-import me.jahnen.libaums.core.fs.FileSystem
+import de.moleman1024.audiowagon.filestorage.FileSystem
+import de.moleman1024.audiowagon.filestorage.usb.lowlevel.USBDeviceConfig
+import de.moleman1024.audiowagon.filestorage.usb.lowlevel.USBInterface
 
 interface USBDevice {
     var configurationCount: Int
@@ -26,4 +28,5 @@ interface USBDevice {
     fun getInterface(interfaceIndex: Int): USBInterface
     fun initFilesystem(context: Context): FileSystem?
     fun close()
+    fun isCompatible(): Boolean
 }

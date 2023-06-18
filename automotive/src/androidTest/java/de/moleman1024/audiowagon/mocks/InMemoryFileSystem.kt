@@ -5,11 +5,12 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 package de.moleman1024.audiowagon.mocks
 
-import me.jahnen.libaums.core.fs.FileSystem
-import me.jahnen.libaums.core.fs.UsbFile
-import me.jahnen.libaums.core.partition.PartitionTypes
 import com.google.common.jimfs.Configuration
 import com.google.common.jimfs.Jimfs
+import de.moleman1024.audiowagon.filestorage.FileSystem
+import de.moleman1024.audiowagon.filestorage.usb.lowlevel.USBFile
+import de.moleman1024.audiowagon.filestorage.usb.lowlevel.USBFileInputStream
+import de.moleman1024.audiowagon.filestorage.usb.lowlevel.USBFileOutputStream
 import de.moleman1024.audiowagon.log.Logger
 import java.io.InputStream
 import java.nio.ByteBuffer
@@ -24,20 +25,13 @@ private const val TAG = "InMemoryFS"
 class InMemoryFileSystem : FileSystem {
     private val defaultMaxSizeBytes = Configuration.Builder.DEFAULT_MAX_SIZE
     private val defaultChunkSizeBytes = Configuration.Builder.DEFAULT_BLOCK_SIZE
-    override val capacity: Long
-        get() = defaultMaxSizeBytes
     override val chunkSize: Int
         get() = defaultChunkSizeBytes
     override val freeSpace: Long
         // TODO
         get() = defaultMaxSizeBytes
-    override val occupiedSpace: Long
-        // TODO
-        get() = 0
-    override val rootDirectory: UsbFile
+    override val rootDirectory: USBFile
         get() = getRoot()
-    override val type: Int
-        get() = PartitionTypes.FAT32
     override val volumeLabel: String
         get() = "InMemoryFSForTests"
     private val configBuilder =
@@ -72,8 +66,8 @@ class InMemoryFileSystem : FileSystem {
         outStream.close()
     }
 
-    private fun getRoot(): UsbFile {
-        return object : UsbFile {
+    private fun getRoot(): USBFile {
+        return object : USBFile {
             override val absolutePath: String
                 get() = "/"
             override val isDirectory: Boolean
@@ -86,49 +80,30 @@ class InMemoryFileSystem : FileSystem {
             override var name: String
                 get() = "rootDir"
                 set(value) {}
-            override val parent: UsbFile?
+            override val parent: USBFile?
                 get() = null
+            override val lastModified: Long
+                get() = 0L
 
             override fun close() {
                 // no op
             }
 
-            override fun createDirectory(name: String): UsbFile {
+            override fun createDirectory(name: String): USBFile {
                 TODO()
             }
 
-            override fun createFile(name: String): UsbFile {
+            override fun createFile(name: String): USBFile {
                 TODO()
-            }
-
-            override fun createdAt(): Long {
-                return 0L
-            }
-
-            override fun delete() {
-                // no op
             }
 
             override fun flush() {
                 // no op
             }
 
-            override fun lastAccessed(): Long {
-                return 0L
-            }
-
-            override fun lastModified(): Long {
-                return 0L
-            }
-
-            override fun list(): Array<String> {
-                Logger.debug(TAG, "list()")
-                return arrayOf()
-            }
-
-            override fun listFiles(): Array<UsbFile> {
+            override fun listFiles(): Array<USBFile> {
                 Logger.debug(TAG, "listFiles(path=/)")
-                val usbFiles = mutableListOf<UsbFile>()
+                val usbFiles = mutableListOf<USBFile>()
                 filesystem.rootDirectories.forEach { rootDir ->
                     Files.list(rootDir).forEach {
                         // ignore "work" JimFS internal directory(?)
@@ -141,26 +116,30 @@ class InMemoryFileSystem : FileSystem {
                 return usbFiles.toTypedArray()
             }
 
-            override fun moveTo(destination: UsbFile) {
+            override fun read(offset: Long, outBuf: ByteBuffer) {
                 // no op
             }
 
-            override fun read(offset: Long, destination: ByteBuffer) {
-                // no op
-            }
-
-            override fun search(path: String): UsbFile? {
+            override fun search(path: String): USBFile? {
                 return convertPathToUsbFile(filesystem.getPath(path))
             }
 
-            override fun write(offset: Long, source: ByteBuffer) {
+            override fun write(offset: Long, inBuf: ByteBuffer) {
                 // no op
+            }
+
+            override fun getOutputStream(): USBFileOutputStream {
+                TODO("Not yet implemented")
+            }
+
+            override fun getInputStream(): USBFileInputStream {
+                TODO("Not yet implemented")
             }
         }
     }
 
-    private fun convertPathToUsbFile(path: Path): UsbFile {
-        return object : UsbFile {
+    private fun convertPathToUsbFile(path: Path): USBFile {
+        return object : USBFile {
             var byteChannel: SeekableByteChannel? = null
 
             override val absolutePath: String
@@ -179,8 +158,10 @@ class InMemoryFileSystem : FileSystem {
                 set(value) {
                     TODO()
                 }
-            override val parent: UsbFile
+            override val parent: USBFile
                 get() = convertPathToUsbFile(path.parent)
+            override val lastModified: Long
+                get() = 0L
 
             override fun close() {
                 Logger.debug(TAG, "close(path=$path)")
@@ -188,74 +169,53 @@ class InMemoryFileSystem : FileSystem {
                 byteChannel = null
             }
 
-            override fun createDirectory(name: String): UsbFile {
+            override fun createDirectory(name: String): USBFile {
                 TODO()
             }
 
-            override fun createFile(name: String): UsbFile {
+            override fun createFile(name: String): USBFile {
                 TODO()
-            }
-
-            override fun createdAt(): Long {
-                return 0L
-            }
-
-            override fun delete() {
-                Files.delete(path)
             }
 
             override fun flush() {
                 TODO()
             }
 
-            override fun lastAccessed(): Long {
-                return 0L
-            }
-
-            override fun lastModified(): Long {
-                return Files.getLastModifiedTime(path).toMillis()
-            }
-
-            override fun list(): Array<String> {
-                val paths = mutableListOf<String>()
-                Files.list(path).forEach {
-                    // TODO absolute path?
-                    paths.add(it.name)
-                }
-                return paths.toTypedArray()
-            }
-
-            override fun listFiles(): Array<UsbFile> {
-                val usbFiles = mutableListOf<UsbFile>()
+            override fun listFiles(): Array<USBFile> {
+                val usbFiles = mutableListOf<USBFile>()
                 Files.list(path).forEach {
                     usbFiles.add(convertPathToUsbFile(it))
                 }
                 return usbFiles.toTypedArray()
             }
 
-            override fun moveTo(destination: UsbFile) {
-                TODO()
-            }
-
-            override fun read(offset: Long, destination: ByteBuffer) {
-                Logger.verbose(TAG, "read(offset=$offset,destination=$destination) for $path")
+            override fun read(offset: Long, outBuf: ByteBuffer) {
+                Logger.verbose(TAG, "read(offset=$offset,outBuf=$outBuf) for $path")
                 if (byteChannel == null) {
                     byteChannel = Files.newByteChannel(path)
                 }
                 byteChannel?.position(offset)
-                byteChannel?.read(destination) ?: return
+                byteChannel?.read(outBuf) ?: return
             }
 
-            override fun search(path: String): UsbFile {
+            override fun search(path: String): USBFile {
                 return convertPathToUsbFile(filesystem.getPath(path))
             }
 
-            override fun write(offset: Long, source: ByteBuffer) {
+            override fun write(offset: Long, inBuf: ByteBuffer) {
                 if (byteChannel == null) {
                     byteChannel = Files.newByteChannel(path)
                 }
                 byteChannel?.position(offset)
-                byteChannel?.write(source)
+                byteChannel?.write(inBuf)
+            }
+
+            override fun getOutputStream(): USBFileOutputStream {
+                TODO("Not yet implemented")
+            }
+
+            override fun getInputStream(): USBFileInputStream {
+                TODO("Not yet implemented")
             }
         }
     }

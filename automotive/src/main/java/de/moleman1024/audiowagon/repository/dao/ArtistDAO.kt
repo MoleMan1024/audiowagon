@@ -9,7 +9,6 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
 import de.moleman1024.audiowagon.repository.MAX_DATABASE_SEARCH_ROWS
-import de.moleman1024.audiowagon.repository.entities.AlbumGroup
 import de.moleman1024.audiowagon.repository.entities.Artist
 import de.moleman1024.audiowagon.repository.entities.ArtistGroup
 
@@ -49,8 +48,11 @@ interface ArtistDAO {
     fun queryArtistGroupByIndex(groupIndex: Int): ArtistGroup?
 
     @Query(
-        "SELECT DISTINCT artist.* FROM artist JOIN artistfts ON artist.name = artistfts.name WHERE artistfts " +
-                "MATCH :query LIMIT $MAX_DATABASE_SEARCH_ROWS"
+        "SELECT DISTINCT artist.* FROM artist " +
+                "JOIN artistfts ON artist.name = artistfts.name " +
+                "WHERE artistfts MATCH :query " +
+                "ORDER BY COALESCE(NULLIF(artist.sortName,''), artist.name) COLLATE NOCASE ASC " +
+                "LIMIT $MAX_DATABASE_SEARCH_ROWS"
     )
     fun search(query: String): List<Artist>
 

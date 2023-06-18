@@ -38,7 +38,27 @@ const val CONTENT_HIERARCHY_MAX_NUM_ITEMS = 400
 // "Another One Bite … Bullet With Butt"
 const val DEFAULT_NUM_TITLE_CHARS_FOR_GROUP = 24
 
-// TODO: document possible hierarchies
+/**
+ * The root element that the media item content hierarchy is based on.
+ *
+ * The hierarchy of the media browser looks like this:
+ * - Root elements are: TRACKS, ALBUMS, ARTISTS, FILELIKES (files/directories)
+ * - ALBUMS contains TRACKS
+ * - ARTIST contain ALBUMS (which contain TRACKS)
+ * - optionally there are GROUPS (if number of items in one category exceeds [CONTENT_HIERARCHY_MAX_NUM_ITEMS], e.g.
+ *   a "maximum" hierarchy that could be encountered would look like
+ *   ROOT_ARTISTS
+ *     has ARTIST_GROUPs (each 400 ARTISTS)
+ *       has ARTIST
+ *         has ALBUM(*)
+ *           has TRACK_GROUP (each 400 tracks)
+ *             has TRACK
+ *
+ *  (*) the app does not yet support artists with more than [CONTENT_HIERARCHY_MAX_NUM_ITEMS] albums (unlikely to occur)
+ *
+ *  [ContentHierarchyID]s represent the [MediaDescriptionCompat.mMediaId] which are serialized as JSON e.g.
+ *  {"type":"ARTIST","storage":"18091809000547-6309-579","albArt":168}
+ */
 @ExperimentalCoroutinesApi
 abstract class ContentHierarchyElement(
     val id: ContentHierarchyID,

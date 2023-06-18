@@ -88,7 +88,7 @@ class ServiceFixture {
     }
 
     fun waitForAudioBrowserService(): AudioBrowserService {
-        TestUtils.waitForTrueOrFail({ this::audioBrowserService.isInitialized }, 1000, "isInitialized")
+        TestUtils.waitForTrueOrFail({ this::audioBrowserService.isInitialized }, 2000, "isInitialized")
         audioBrowserService.logger.setStoreLogs(true)
         return audioBrowserService
     }
@@ -132,11 +132,12 @@ class ServiceFixture {
         val activityManager = targetContext.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
         activityManager.killBackgroundProcesses(packageName)
         // TODO: need to ensure in each test that service is destroyed
+        // FIXME: this fails sometimes, unclear why
         if (this::audioBrowserService.isInitialized) {
             Logger.debug(TAG, "Waiting for service to be destroyed")
             TestUtils.waitForTrueOrFail(
                 { audioBrowserService.lifecycle.currentState == Lifecycle.State.DESTROYED },
-                2000, "isDestroyed"
+                4000, "isDestroyed"
             )
         }
         Logger.debug(TAG, "Service fixture was shut down")

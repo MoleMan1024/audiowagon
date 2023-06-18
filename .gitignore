@@ -36,6 +36,7 @@ local.properties
 measurements/
 obj/
 output.json
+releases/
 release/
 venv/
 tools/generate_files/.idea
@@ -43,3 +44,5 @@ tools/generate_files/.idea
 docs/Gemfile.lock
 google-services.json
 .idea/deploymentTargetDropDown.xml
+**/.cxx
+

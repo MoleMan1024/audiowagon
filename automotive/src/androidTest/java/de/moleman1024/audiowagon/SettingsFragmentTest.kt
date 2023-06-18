@@ -16,6 +16,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import kotlin.concurrent.thread
 
 private const val TAG = "SettingsFragmentTest"
 
@@ -48,8 +49,12 @@ class SettingsFragmentTest {
     @Test
     fun onCreate_noDatabaseDir_doesNotCrash() {
         TestUtils.deleteDatabaseDirectory()
+        // FIXME: this leaves a service instance lingering
         val scenario = launchFragmentInContainer<SettingsFragment>()
-        scenario.moveToState(Lifecycle.State.DESTROYED)
+        thread(start=true) {
+            scenario.moveToState(Lifecycle.State.DESTROYED)
+        }
+        scenario.close()
     }
 
 }

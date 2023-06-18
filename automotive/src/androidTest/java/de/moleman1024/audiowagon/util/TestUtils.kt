@@ -36,7 +36,13 @@ object TestUtils {
     fun waitForIndexingCompleted(audioBrowserService: AudioBrowserService, timeoutMS: Int = 1000 * 10) {
         Logger.debug(TAG, "waitForIndexingCompleted()")
         waitForTrueOrFail(
-            { audioBrowserService.getIndexingStatus().any { it == IndexingStatus.COMPLETED } },
+            {
+                val isIndexingCompleted = audioBrowserService.getIndexingStatus().any {
+                    it == IndexingStatus.COMPLETED
+                }
+                Thread.sleep(100)
+                return@waitForTrueOrFail isIndexingCompleted
+            },
             timeoutMS, "waitForIndexingCompleted()"
         )
     }

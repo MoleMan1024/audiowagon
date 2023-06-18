@@ -9,11 +9,11 @@ import android.app.PendingIntent
 import android.content.Context
 import android.os.Parcel
 import android.os.Parcelable
-import me.jahnen.libaums.core.fs.FileSystem
+import de.moleman1024.audiowagon.filestorage.FileSystem
 import de.moleman1024.audiowagon.filestorage.usb.USBDevice
-import de.moleman1024.audiowagon.filestorage.usb.USBDeviceConfig
-import de.moleman1024.audiowagon.filestorage.usb.USBEndpoint
-import de.moleman1024.audiowagon.filestorage.usb.USBInterface
+import de.moleman1024.audiowagon.filestorage.usb.lowlevel.USBDeviceConfig
+import de.moleman1024.audiowagon.filestorage.usb.lowlevel.USBEndpoint
+import de.moleman1024.audiowagon.filestorage.usb.lowlevel.USBInterface
 
 private const val TAG = "MockUSBDevice"
 
@@ -54,6 +54,10 @@ class MockUSBDevice(
 
     override fun getInterface(interfaceIndex: Int): USBInterface {
         return object : USBInterface {
+            override val interfaceIndex: Int
+                get() = 0
+            override val id: Int
+                get() = 42
             override val interfaceClass: Int
                 get() = 8
             override val interfaceSubclass: Int
@@ -65,6 +69,10 @@ class MockUSBDevice(
 
             override fun getEndpoint(endpointIndex: Int): USBEndpoint {
                 return object : USBEndpoint {
+                    override val index: Int
+                        get() = 0
+                    override val address: Int
+                        get() = 42
                     override val type: Int
                         get() = 2
                     override val direction: Int
@@ -83,7 +91,7 @@ class MockUSBDevice(
         }
     }
 
-    override fun initFilesystem(context: Context): FileSystem {
+    override fun initFilesystem(context: Context): FileSystem? {
         fileSystem.init()
         usbDeviceToFileSystemMap[hashCode().toString()] = fileSystem
         return fileSystem
@@ -92,6 +100,10 @@ class MockUSBDevice(
     override fun close() {
         usbDeviceToFileSystemMap.remove(hashCode().toString())
         fileSystem.close()
+    }
+
+    override fun isCompatible(): Boolean {
+        return true
     }
 
     override fun describeContents(): Int {

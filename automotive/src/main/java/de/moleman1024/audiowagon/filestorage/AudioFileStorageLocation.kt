@@ -14,6 +14,7 @@ import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.produce
 import java.io.File
 import java.io.IOException
+import java.io.InputStream
 import java.util.*
 
 interface AudioFileStorageLocation {
@@ -25,7 +26,6 @@ interface AudioFileStorageLocation {
     var indexingStatus: IndexingStatus
     var isDetached: Boolean
     var isIndexingCancelled: Boolean
-    var libaumsDispatcher: CoroutineDispatcher?
 
     @ExperimentalCoroutinesApi
     fun indexAudioFiles(
@@ -46,10 +46,9 @@ interface AudioFileStorageLocation {
             isIndexingCancelled = false
             postIndexAudioFiles()
         }
-        return scope.produce(dispatcher + exceptionHandler) {
+        return scope.produce(exceptionHandler + dispatcher) {
             val startDirectory = device.getFileFromURI(directory.uri)
             try {
-                // walkTopDown is locked internally for USB
                 for (file in walkTopDown(startDirectory, this)) {
                     if (isIndexingCancelled) {
                         logger.debug(TAG, "Cancel indexAudioFiles()")
@@ -74,16 +73,12 @@ interface AudioFileStorageLocation {
                             }
                         }
                     }
-                    libaumsDispatcher?.let {
-                        withContext(it) {
-                            createTypedFileLambda()
-                        }
-                    } ?: run {
+                    run {
                         createTypedFileLambda()
                     }
                 }
             } catch (exc: CancellationException) {
-                logger.warning(TAG, "Coroutine for indexAudioFiles() was cancelled")
+                logger.exception(TAG, "Coroutine for indexAudioFiles() was cancelled", exc)
             } catch (exc: RuntimeException) {
                 logger.exception(TAG, exc.message.toString(), exc)
             } finally {
@@ -115,19 +110,19 @@ interface AudioFileStorageLocation {
     suspend fun getDataSourceForURI(uri: Uri): MediaDataSource
     suspend fun getBufferedDataSourceForURI(uri: Uri): MediaDataSource
     suspend fun getByteArrayForURI(uri: Uri): ByteArray
-    suspend fun getInputStreamForURI(uri: Uri): LockableInputStream
+    suspend fun getInputStreamForURI(uri: Uri): InputStream
     fun close()
     fun setDetached()
 
     /**
      * Returns all content (files/directories) in the given directory. Non-recursive
      */
-    fun getDirectoryContents(directory: Directory): List<FileLike>
+    suspend fun getDirectoryContents(directory: Directory): List<FileLike>
 
     /**
      * Returns all directories and audio files in the given directory. Non-recursive
      */
-    fun getDirectoryContentsPlayable(directory: Directory): List<FileLike>
+    suspend fun getDirectoryContentsPlayable(directory: Directory): List<FileLike>
 
     /**
      * Returns the URI of the root directory of the storage location

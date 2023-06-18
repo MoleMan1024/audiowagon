@@ -281,6 +281,10 @@ class RepositoryQuery(
         repo.getDatabase()?.trackDAO()?.queryNumTracks() ?: 0
     }
 
+    suspend fun getNumTracksNoLock(): Int = withContext(dispatcher) {
+        repo.getDatabaseNoLock()?.trackDAO()?.queryNumTracks() ?: 0
+    }
+
     suspend fun getNumPaths(): Int = withContext(dispatcher) {
         repo.getDatabase()?.pathDAO()?.queryNumPaths() ?: 0
     }
@@ -467,6 +471,10 @@ class RepositoryQuery(
         repo.getDatabase()?.albumDAO()?.queryNumAlbums() ?: 0
     }
 
+    suspend fun getNumAlbumsNoLock(): Int = withContext(dispatcher) {
+        repo.getDatabaseNoLock()?.albumDAO()?.queryNumAlbums() ?: 0
+    }
+
     suspend fun getAlbumsLimitOffset(maxNumRows: Int, offsetRows: Int): List<AudioItem> {
         val items: MutableList<AudioItem> = mutableListOf()
         val albumsAtOffset: List<Album> = withContext(dispatcher) {
@@ -601,6 +609,10 @@ class RepositoryQuery(
 
     suspend fun getNumAlbumAndCompilationArtists(): Int = withContext(dispatcher) {
         repo.getDatabase()?.artistDAO()?.queryNumAlbumAndCompilationArtists() ?: 0
+    }
+
+    suspend fun getNumAlbumAndCompilationArtistsNoLock(): Int = withContext(dispatcher) {
+        repo.getDatabaseNoLock()?.artistDAO()?.queryNumAlbumAndCompilationArtists() ?: 0
     }
 
     suspend fun getArtistsLimitOffset(maxNumRows: Int, offsetRows: Int): List<AudioItem> {

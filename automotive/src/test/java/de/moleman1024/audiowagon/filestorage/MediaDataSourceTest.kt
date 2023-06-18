@@ -68,22 +68,19 @@ class MediaDataSourceTest(
     @Test
     fun usbAudioDataSourceReadAt_multipleConfigs_readsData() {
         val mockUSBFile = createMockUSBFile(100)
-        val dispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
-        testMediaDataSource(USBAudioDataSource(mockUSBFile, chunkSize, dispatcher), mockUSBFile.bytes)
+        testMediaDataSource(USBAudioDataSource(mockUSBFile, chunkSize), mockUSBFile.bytes)
     }
 
     @Test
     fun usbAudioCachedDataSourceReadAt_multipleConfigs_readsData() {
         val mockUSBFile = createMockUSBFile(100)
-        val dispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
-        testMediaDataSource(USBAudioDataSource(mockUSBFile, chunkSize, dispatcher), mockUSBFile.bytes)
+        testMediaDataSource(USBAudioDataSource(mockUSBFile, chunkSize), mockUSBFile.bytes)
     }
 
     @Test
     fun usbMetaDataSourceReadAt_multipleConfigs_readsData() {
         val mockUSBFile = createMockUSBFile(100)
-        val dispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
-        testMediaDataSource(USBMetaDataSource(mockUSBFile, chunkSize, dispatcher), mockUSBFile.bytes)
+        testMediaDataSource(USBMetaDataSource(mockUSBFile, chunkSize), mockUSBFile.bytes)
     }
 
     private fun testMediaDataSource(dataSource: MediaDataSource, bytes: ByteArray) {

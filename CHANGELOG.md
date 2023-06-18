@@ -12,6 +12,34 @@ Google's review process which can take a couple of days.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project loosely follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.5] - 2023-06-18
+
+### Fixed
+
+- Google has fixed an [issue](https://issuetracker.google.com/issues/212779546) meanwhile that was preventing a
+  feature in voice search to work properly. It was discovered there is an issue when using this feature in AudioWagon
+  to search for artist or album by voice. This has been fixed.
+  [#119](https://github.com/MoleMan1024/audiowagon/issues/119)
+- When shuffle mode was on and the user selected a track inside an album or a file inside a directory, the playback
+  queue would start in random order, but not with the selected track/file. This was confusing and has been fixed, a
+  shuffled playback queue will now always start with the item the user selected.
+  [#120](https://github.com/MoleMan1024/audiowagon/issues/120)
+- The fix for issue [#83](https://github.com/MoleMan1024/audiowagon/issues/83) was only applied for all tracks on a
+  single album but not for playlists nor when playing all tracks of an artist. This has been fixed.
+
+### Changed
+
+- search results within one media type will now be sorted alphabetically
+- major internal refactoring was done to be able to experiment with different libraries more easily (*libusb* does not
+  bring any improvement over accessing USB via Android Java code)
+- *libaums* library source code was integrated into version control and modified in many places to make it thread-safe
+- performance was improved during indexing of metadata (fine grained locks and multiple coroutines to build
+  the media library are now used)
+- creating a shuffled playback queue of tracks is now a bit faster
+  [#121](https://github.com/MoleMan1024/audiowagon/discussions/121)
+- improvements to exception handling and some error messages
+
+
 ## [2.3.10] - 2023-05-21
 
 ### Fixed

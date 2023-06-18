@@ -9,13 +9,12 @@ import android.annotation.SuppressLint
 import android.util.Log
 import android.util.Log.getStackTraceString
 import androidx.annotation.VisibleForTesting
-import me.jahnen.libaums.core.fs.UsbFile
-import me.jahnen.libaums.core.fs.UsbFileOutputStream
+import de.moleman1024.audiowagon.filestorage.usb.lowlevel.USBFile
+import de.moleman1024.audiowagon.filestorage.usb.lowlevel.USBFileOutputStream
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.io.IOException
-import java.io.OutputStream
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
@@ -29,15 +28,14 @@ private const val USB_LOGFILE_WRITE_PERIOD_MS: Long = 500L
 
 object Logger : LoggerInterface {
     private var scope: CoroutineScope? = null
-    private var usbFile: UsbFile? = null
-    private var outStream: OutputStream? = null
+    private var usbFile: USBFile? = null
+    private var outStream: USBFileOutputStream? = null
     private var usbFileHasError: Boolean = false
     private var chunkSize: Int = 32768
     private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")
     private var isStoreLogs = false
     private val observers = mutableListOf<(String) -> Unit>()
     private val buffer = LogBuffer()
-    private var libaumsDispatcher: CoroutineDispatcher? = null
     private val writeToFileMutex: Mutex = Mutex()
     private var isFlushOnNextWrite: Boolean = false
     private var usbLogFileWriteJob: Job? = null
@@ -49,16 +47,15 @@ object Logger : LoggerInterface {
         buffer.init(scope)
     }
 
-    // confined by libaumsDispatcher
+    // confined by usbLibDispatcher
     @Suppress("BlockingMethodInNonBlockingContext")
-    suspend fun setUSBFile(usbFileForLogging: UsbFile, chunkSize: Int, libaumsDispatcher: CoroutineDispatcher?) {
-        this.libaumsDispatcher = libaumsDispatcher
+    suspend fun setUSBFile(usbFileForLogging: USBFile, chunkSize: Int) {
         usbFileHasError = false
         this.chunkSize = chunkSize
         usbFile = usbFileForLogging
         try {
             // do not use a a BufferedOutputStream here, libaums has issues with that
-            outStream = UsbFileOutputStream(usbFileForLogging)
+            outStream = usbFileForLogging.getOutputStream()
             val logLines = buffer.getNewestEntriesForLogFile()
             if (logLines.isNotEmpty()) {
                 outStream?.write("Flushing ${logLines.size} lines from buffer to log file\n".toByteArray())
@@ -74,27 +71,23 @@ object Logger : LoggerInterface {
     }
 
     fun closeUSBFile() {
-        libaumsDispatcher?.let {
-            runBlocking(it) {
-                try {
-                    outStream?.close()
-                } catch (exc: IOException) {
-                    exceptionLogcatOnly(TAG, "I/O exception when closing buffered output stream on USB drive", exc)
-                    usbFileHasError = true
-                    throw exc
-                }
-                try {
-                    usbFile?.close()
-                    Log.d(TAG, "USB log file was closed")
-                } catch (exc: IOException) {
-                    exceptionLogcatOnly(TAG, "I/O exception when closing log file on USB drive", exc)
-                    usbFileHasError = true
-                    throw exc
-                } finally {
-                    outStream = null
-                    usbFile = null
-                }
-            }
+        try {
+            outStream?.close()
+        } catch (exc: IOException) {
+            exceptionLogcatOnly(TAG, "I/O exception when closing buffered output stream on USB drive", exc)
+            usbFileHasError = true
+            throw exc
+        }
+        try {
+            usbFile?.close()
+            Log.d(TAG, "USB log file was closed")
+        } catch (exc: IOException) {
+            exceptionLogcatOnly(TAG, "I/O exception when closing log file on USB drive", exc)
+            usbFileHasError = true
+            throw exc
+        } finally {
+            outStream = null
+            usbFile = null
         }
     }
 
@@ -108,25 +101,23 @@ object Logger : LoggerInterface {
         }
         verbose(TAG, "flushToUSB()")
         isFlushOnNextWrite = false
-        libaumsDispatcher?.let {
-            val exceptionHandler = CoroutineExceptionHandler { coroutineContext, exc ->
-                exceptionLogcatOnly(TAG, "$coroutineContext threw ${exc.message} when flushing to USB", exc)
-            }
-            withContext(it + exceptionHandler) {
+        val exceptionHandler = CoroutineExceptionHandler { coroutineContext, exc ->
+            exceptionLogcatOnly(TAG, "$coroutineContext threw ${exc.message} when flushing to USB", exc)
+        }
+        withContext(exceptionHandler) {
+            try {
                 try {
-                    try {
-                        outStream?.flush()
-                    } catch (exc: IOException) {
-                        exceptionLogcatOnly(TAG, "I/O exception when flushing buffered output stream on USB drive", exc)
-                    }
-                    usbFile?.flush()
+                    outStream?.flush()
                 } catch (exc: IOException) {
-                    exceptionLogcatOnly(TAG, "I/O exception when flushing log to USB device", exc)
-                    usbFileHasError = true
-                } catch (exc: RuntimeException) {
-                    exceptionLogcatOnly(TAG, "Runtime exception when flushing log to USB device", exc)
-                    usbFileHasError = true
+                    exceptionLogcatOnly(TAG, "I/O exception when flushing buffered output stream on USB drive", exc)
                 }
+                usbFile?.flush()
+            } catch (exc: IOException) {
+                exceptionLogcatOnly(TAG, "I/O exception when flushing log to USB device", exc)
+                usbFileHasError = true
+            } catch (exc: RuntimeException) {
+                exceptionLogcatOnly(TAG, "Runtime exception when flushing log to USB device", exc)
+                usbFileHasError = true
             }
         }
     }
@@ -200,30 +191,26 @@ object Logger : LoggerInterface {
         }
         val logLines = buffer.getNewestEntriesForLogFile()
         if (logLines.isNotEmpty()) {
-            libaumsDispatcher?.let { dispatcher ->
-                withContext(dispatcher) {
-                    if (outStream == null) {
-                        return@withContext
-                    }
-                    verbose(TAG, "Writing ${logLines.size} log lines to USB")
-                    try {
-                        // we yield to other coroutines that want to read from, but we use a mutex to prevent
-                        // interleaved writing to logfile on USB
-                        writeToFileMutex.withLock {
-                            logLines.forEachIndexed { index, line ->
-                                outStream?.write(line.toByteArray())
-                                if (index % 100 == 0) {
-                                    yield()
-                                }
-                            }
-                        }
-                    } catch (exc: IOException) {
-                        exceptionLogcatOnly(TAG, "Could not write to USB buffered output stream for logging", exc)
-                        usbFileHasError = true
-                    }
-                    verbose(TAG, "Finished log write to USB")
-                }
+            if (outStream == null) {
+                return
             }
+            verbose(TAG, "Writing ${logLines.size} log lines to USB")
+            try {
+                // we yield to other coroutines that want to read from, but we use a mutex to prevent interleaved
+                // writing to logfile on USB
+                writeToFileMutex.withLock {
+                    logLines.forEachIndexed { index, line ->
+                        outStream?.write(line.toByteArray())
+                        if (index % 100 == 0) {
+                            yield()
+                        }
+                    }
+                }
+            } catch (exc: IOException) {
+                exceptionLogcatOnly(TAG, "Could not write to USB buffered output stream for logging", exc)
+                usbFileHasError = true
+            }
+            verbose(TAG, "Finished log write to USB")
             if (isFlushOnNextWrite) {
                 flushToUSB()
             }
@@ -232,12 +219,8 @@ object Logger : LoggerInterface {
 
     fun setUSBFileStreamToNull() {
         Log.d(TAG, "Setting USB log file stream to null")
-        libaumsDispatcher?.let {
-            runBlocking(it) {
-                outStream = null
-                usbFile = null
-            }
-        }
+        outStream = null
+        usbFile = null
     }
 
     fun launchLogFileWriteJob() {
@@ -297,7 +280,5 @@ object Logger : LoggerInterface {
         debug(TAG, "Removing observer")
         observers.remove(func)
     }
-
-
 
 }

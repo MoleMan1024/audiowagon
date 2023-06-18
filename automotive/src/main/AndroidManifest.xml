@@ -4,6 +4,8 @@
         xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <!-- needed in Android 13 only -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- The app implicitly uses android.permission.INTERNET and android.permission.ACCESS_NETWORK_STATE for
     Firebase Crashlytics -->
 

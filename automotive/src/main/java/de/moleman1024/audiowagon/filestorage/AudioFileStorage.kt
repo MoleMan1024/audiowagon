@@ -35,6 +35,7 @@ import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.channels.produce
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.io.InputStream
 import kotlin.coroutines.coroutineContext
 
 private const val TAG = "AudioFileStor"
@@ -424,7 +425,14 @@ open class AudioFileStorage(
         runBlocking(dispatcher) {
             dataSourcesMutex.withLock {
                 dataSources.forEach {
-                    it.close()
+                    try {
+                        withTimeout(1000) {
+                            @Suppress("BlockingMethodInNonBlockingContext")
+                            it.close()
+                        }
+                    } catch (exc: TimeoutCancellationException) {
+                        logger.exception(TAG, "Could not close data source in time", exc)
+                    }
                 }
                 dataSources.clear()
             }
@@ -492,7 +500,7 @@ open class AudioFileStorage(
         return audioFileStorageLocations.isNotEmpty()
     }
 
-    fun getAlbumArtFileInDirectoryForURI(uri: Uri): FileLike? {
+    suspend fun getAlbumArtFileInDirectoryForURI(uri: Uri): FileLike? {
         val directory = Util.getParentPath(AudioFile(uri).path)
         logger.debug(TAG, "Looking for album art in directory: $directory")
         if (recentDirToAlbumArtMap.containsKey(directory)) {
@@ -521,7 +529,7 @@ open class AudioFileStorage(
         return storageLocation.getByteArrayForURI(uri)
     }
 
-    suspend fun getInputStream(uri: Uri): LockableInputStream {
+    suspend fun getInputStream(uri: Uri): InputStream {
         val storageLocation = getStorageLocationForURI(uri)
         return storageLocation.getInputStreamForURI(uri)
     }

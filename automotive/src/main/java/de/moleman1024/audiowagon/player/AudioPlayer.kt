@@ -38,7 +38,7 @@ const val MEDIA_ERROR_AUDIO_FOCUS_DENIED = -1249
 const val SKIP_PREVIOUS_THRESHOLD_MSEC = 10000L
 
 /**
- * Manages two [MediaPlayer] instances + equalizer etc.
+ * Manages two [MediaPlayer] instances + equalizer
  *
  * API: https://developer.android.com/reference/android/media/MediaPlayer
  * Guide: https://developer.android.com/guide/topics/media/mediaplayer
@@ -46,7 +46,7 @@ const val SKIP_PREVIOUS_THRESHOLD_MSEC = 10000L
  * For valid/invalid state transitions of [MediaPlayer] see:
  * https://developer.android.com/reference/android/media/MediaPlayer#valid-and-invalid-states
  */
-// TODO: class too big, split
+// TODO: class getting too big, find a way to split
 @ExperimentalCoroutinesApi
 class AudioPlayer(
     private val audioFileStorage: AudioFileStorage,
@@ -439,13 +439,13 @@ class AudioPlayer(
                     logger.debug(TAG, "Shuffle is already turned on")
                     return@withContext
                 }
-                playbackQueue.setShuffleOnExceptFirstItem()
+                playbackQueue.shuffleExceptCurrentItem()
             } else {
                 if (!playerStatus.isShuffling) {
                     logger.debug(TAG, "Shuffle is already turned off")
                     return@withContext
                 }
-                playbackQueue.setShuffleOff()
+                playbackQueue.unshuffle()
             }
             playerStatus.isShuffling = isOn
         }
@@ -826,10 +826,10 @@ class AudioPlayer(
         }
     }
 
-    suspend fun maybeShuffleNewQueue() {
+    suspend fun maybeShuffleNewQueue(startIndex: Int) {
         withContext(dispatcher) {
             if (isShuffling()) {
-                playbackQueue.setShuffleOn()
+                playbackQueue.shuffle(startIndex)
             }
         }
     }

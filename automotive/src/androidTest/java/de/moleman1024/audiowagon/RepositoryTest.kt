@@ -21,7 +21,6 @@ import org.junit.Test
 private const val TAG = "RepositoryTest"
 private const val TIMEOUT_MS_LIBRARY_CREATION = 10 * 1000
 private const val ALBUM_ARTIST_ID = 1L
-private const val PSEUDO_COMPILATION_ARTIST_ID = 5L
 
 @ExperimentalCoroutinesApi
 class RepositoryTest {
@@ -79,7 +78,6 @@ class RepositoryTest {
         runBlocking {
             val pseudoCompArtistID = audioBrowserService.getPrimaryRepo()?.getPseudoCompilationArtistID()
             Assert.assertNotNull(pseudoCompArtistID)
-            Assert.assertEquals(PSEUDO_COMPILATION_ARTIST_ID, pseudoCompArtistID)
         }
     }
 

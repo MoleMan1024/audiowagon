@@ -19,6 +19,9 @@ private const val TAG = "LogActivity"
 private val logger = Logger
 private const val NUM_LOG_BYTES_TO_SHOW = 32768
 
+/**
+ * "Hidden" activity that shows contents of log file on screen (for quick inspection inside the car without computer)
+ */
 class LogActivity : AppCompatActivity() {
     private val showLineCallback = { line: String ->
         Util.launchInScopeSafely(lifecycleScope, Dispatchers.Main, logger, TAG, crashReporting = null) {

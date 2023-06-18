@@ -62,13 +62,16 @@ class AudioItemLibrary(
     var libraryExceptionObservers = mutableListOf<(Exception) -> Unit>()
     private var isBuildLibraryCancelled: Boolean = false
     private val recentAudioItemToAlbumArtMap: AudioItemToAlbumArtMapCache = AudioItemToAlbumArtMapCache()
+
     private class AudioItemToAlbumArtMapCache : LinkedHashMap<String, ByteArray>() {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, ByteArray>?): Boolean {
             return size > MAX_NUM_ALBUM_ART_TO_CACHE
         }
     }
+
     var albumArtStyleSetting: AlbumStyleSetting = sharedPrefs.getAlbumStyleSettingEnum(context, logger, TAG)
     var useInMemoryDatabase: Boolean = false
+    private val buildLibraryJobs = mutableListOf<Job>()
 
     fun initRepository(storageID: String) {
         recentAudioItemToAlbumArtMap.clear()
@@ -122,32 +125,41 @@ class AudioItemLibrary(
         callback()
         val repo = getPrimaryRepository() ?: throw RuntimeException("No repository")
         repo.hasUpdatedDatabase = false
-        channel.consumeEach { fileOrDirectory ->
-            logger.debug(TAG, "buildLibrary() received: $fileOrDirectory")
-            if (!isBuildLibraryCancelled) {
-                if (fileOrDirectory is AudioFile) {
-                    if (isReadAudioFileMetadata) {
-                        updateLibraryTracksFromAudioFile(fileOrDirectory, repo)
+        repeat(4) {
+            val buildLibraryCoroutineJob = CoroutineScope(coroutineContext).launch {
+                channel.consumeEach { fileOrDirectory ->
+                    logger.debug(TAG, "buildLibrary() received: $fileOrDirectory")
+                    if (!isBuildLibraryCancelled) {
+                        if (fileOrDirectory is AudioFile) {
+                            if (isReadAudioFileMetadata) {
+                                updateLibraryTracksFromAudioFile(fileOrDirectory, repo)
+                            }
+                            if (!isBuildLibraryCancelled) {
+                                updateLibraryPathsFromFileOrDir(fileOrDirectory, repo)
+                            }
+                        } else if (fileOrDirectory is Directory) {
+                            updateLibraryPathsFromFileOrDir(fileOrDirectory, repo)
+                        }
+                        numFileDirsSeenWhenBuildingLibrary++
+                        // We limit the number of indexing notification updates sent here. It seems Android will throttle
+                        // if too many notifications are posted and the last important notification indicating "finished"
+                        // might be ignored if too many are sent
+                        // Below 100 entries send more updates to indicate to user early this is actually working
+                        if (numFileDirsSeenWhenBuildingLibrary % UPDATE_INDEX_NOTIF_FOR_EACH_NUM_ITEMS == 0
+                            || (numFileDirsSeenWhenBuildingLibrary < 100 && numFileDirsSeenWhenBuildingLibrary % 20 == 0)
+                        ) {
+                            gui.updateIndexingNotification(numFileDirsSeenWhenBuildingLibrary)
+                            logger.setFlushToUSBFlag()
+                            callback()
+                        }
+                    } else {
+                        logger.debug(TAG, "Library build has been cancelled")
                     }
-                    updateLibraryPathsFromFileOrDir(fileOrDirectory, repo)
-                } else if (fileOrDirectory is Directory) {
-                    updateLibraryPathsFromFileOrDir(fileOrDirectory, repo)
                 }
-                numFileDirsSeenWhenBuildingLibrary++
-                // We limit the number of indexing notification updates sent here. It seems Android will throttle
-                // if too many notifications are posted and the last important notification indicating "finished" might be
-                // ignored if too many are sent
-                // Below 100 entries send more updates to indicate to user early this is actually working
-                if (numFileDirsSeenWhenBuildingLibrary % UPDATE_INDEX_NOTIF_FOR_EACH_NUM_ITEMS == 0
-                    || (numFileDirsSeenWhenBuildingLibrary < 100 && numFileDirsSeenWhenBuildingLibrary % 20 == 0)) {
-                    gui.updateIndexingNotification(numFileDirsSeenWhenBuildingLibrary)
-                    logger.setFlushToUSBFlag()
-                    callback()
-                }
-            } else {
-                logger.debug(TAG, "Library build has been cancelled")
             }
+            buildLibraryJobs.add(buildLibraryCoroutineJob)
         }
+        buildLibraryJobs.joinAll()
         logger.debug(TAG, "Channel drained in buildLibrary()")
         if (!isBuildLibraryCancelled) {
             if (metadataReadSetting != MetadataReadSetting.OFF) {
@@ -245,7 +257,10 @@ class AudioItemLibrary(
             val startTime = System.nanoTime()
             logger.debug(TAG, "Extracting metadata for: ${audioFile.name}")
             val dataSource = audioFileStorage.getDataSourceForAudioFile(audioFile)
-            val metadataRetriever = metadataMaker.setupMetadataRetrieverFromDataSource(dataSource)
+            val metadataRetriever = metadataMaker.setupMetadataRetrieverWithDataSource(dataSource)
+            if (isBuildLibraryCancelled) {
+                return
+            }
             val metadata: AudioItem = extractMetadataFrom(audioFile, metadataRetriever)
             val albumArtSourceURI: FileLike? = findAlbumArtFor(audioFile, metadataRetriever)
             metadataMaker.cleanMetadataRetriever(metadataRetriever, dataSource)
@@ -259,8 +274,8 @@ class AudioItemLibrary(
         } catch (exc: IOException) {
             // this can happen for example for files with strange filenames, the file will be ignored
             logger.exception(TAG, "I/O exception when processing file: $audioFile", exc)
-            if ("MAX_RECOVERY_ATTEMPTS|No filesystem|DataSource error".toRegex()
-                    .containsMatchIn(exc.stackTraceToString())
+            if (("MAX_RECOVERY_ATTEMPTS|No filesystem|DataSource error|" +
+                        "Communication was closed").toRegex().containsMatchIn(exc.stackTraceToString())
             ) {
                 logger.exceptionLogcatOnly(TAG, "I/O exception when processing file: $audioFile", exc)
                 coroutineContext.cancel(CancellationException("Unrecoverable I/O exception in buildLibrary()"))
@@ -279,7 +294,7 @@ class AudioItemLibrary(
     ): AudioItem {
         return if (metadataRetriever == null) {
             val dataSource = audioFileStorage.getDataSourceForAudioFile(audioFile)
-            val mediaMetadataRetriever = metadataMaker.setupMetadataRetrieverFromDataSource(dataSource)
+            val mediaMetadataRetriever = metadataMaker.setupMetadataRetrieverWithDataSource(dataSource)
             val audioItemForMetadata = metadataMaker.extractMetadataFrom(audioFile, mediaMetadataRetriever)
             metadataMaker.cleanMetadataRetriever(mediaMetadataRetriever, dataSource)
             audioItemForMetadata
@@ -338,7 +353,12 @@ class AudioItemLibrary(
             ContentHierarchyType.DIRECTORY -> ContentHierarchyDirectory(
                 contentHierarchyID, context, this, audioFileStorage, sharedPrefs
             )
-            ContentHierarchyType.PLAYLIST -> ContentHierarchyPlaylist(contentHierarchyID, context, this, audioFileStorage)
+            ContentHierarchyType.PLAYLIST -> ContentHierarchyPlaylist(
+                contentHierarchyID,
+                context,
+                this,
+                audioFileStorage
+            )
             ContentHierarchyType.TRACK_GROUP -> ContentHierarchyGroupTracks(contentHierarchyID, context, this)
             ContentHierarchyType.ALBUM_GROUP -> ContentHierarchyGroupAlbums(contentHierarchyID, context, this)
             ContentHierarchyType.ARTIST_GROUP -> ContentHierarchyGroupArtists(contentHierarchyID, context, this)
@@ -435,8 +455,12 @@ class AudioItemLibrary(
                     } else {
                         setTitle(context.getString(R.string.browse_tree_unknown_artist))
                     }
-                    setIconUri(Uri.parse(RESOURCE_ROOT_URI
-                            + context.resources.getResourceEntryName(R.drawable.baseline_person_24)))
+                    setIconUri(
+                        Uri.parse(
+                            RESOURCE_ROOT_URI
+                                    + context.resources.getResourceEntryName(R.drawable.baseline_person_24)
+                        )
+                    )
                 }
                 ContentHierarchyType.ALBUM,
                 ContentHierarchyType.UNKNOWN_ALBUM,
@@ -458,8 +482,12 @@ class AudioItemLibrary(
                     if (audioItem.albumArtURI != Uri.EMPTY) {
                         setIconUri(audioItem.albumArtURI)
                     } else {
-                        setIconUri(Uri.parse(RESOURCE_ROOT_URI
-                                + context.resources.getResourceEntryName(R.drawable.baseline_album_24)))
+                        setIconUri(
+                            Uri.parse(
+                                RESOURCE_ROOT_URI
+                                        + context.resources.getResourceEntryName(R.drawable.baseline_album_24)
+                            )
+                        )
                     }
                 }
                 ContentHierarchyType.TRACK -> {
@@ -472,19 +500,31 @@ class AudioItemLibrary(
                     if (audioItem.albumArtURI != Uri.EMPTY) {
                         setIconUri(audioItem.albumArtURI)
                     } else {
-                        setIconUri(Uri.parse(RESOURCE_ROOT_URI
-                                + context.resources.getResourceEntryName(R.drawable.baseline_music_note_24)))
+                        setIconUri(
+                            Uri.parse(
+                                RESOURCE_ROOT_URI
+                                        + context.resources.getResourceEntryName(R.drawable.baseline_music_note_24)
+                            )
+                        )
                     }
                 }
                 ContentHierarchyType.FILE -> {
                     setTitle(audioItem.title)
-                    setIconUri(Uri.parse(RESOURCE_ROOT_URI
-                            + context.resources.getResourceEntryName(R.drawable.baseline_insert_drive_file_24)))
+                    setIconUri(
+                        Uri.parse(
+                            RESOURCE_ROOT_URI
+                                    + context.resources.getResourceEntryName(R.drawable.baseline_insert_drive_file_24)
+                        )
+                    )
                 }
                 ContentHierarchyType.DIRECTORY -> {
                     setTitle(audioItem.title)
-                    setIconUri(Uri.parse(RESOURCE_ROOT_URI
-                            + context.resources.getResourceEntryName(R.drawable.baseline_folder_24)))
+                    setIconUri(
+                        Uri.parse(
+                            RESOURCE_ROOT_URI
+                                    + context.resources.getResourceEntryName(R.drawable.baseline_folder_24)
+                        )
+                    )
                 }
                 else -> {
                     throw AssertionError("Cannot create audio item description for type: ${contentHierarchyID.type}")
@@ -598,11 +638,11 @@ class AudioItemLibrary(
         return searchResults
     }
 
-    suspend fun searchArtists(query: String): MutableList<AudioItem> {
+    suspend fun searchTracksForArtist(query: String): MutableList<AudioItem> {
         return searchByType(query, AudioItemType.ARTIST)
     }
 
-    suspend fun searchAlbums(query: String): MutableList<AudioItem> {
+    suspend fun searchTracksForAlbum(query: String): MutableList<AudioItem> {
         return searchByType(query, AudioItemType.ALBUM)
     }
 
@@ -647,8 +687,8 @@ class AudioItemLibrary(
         }
         val repo = getPrimaryRepository() ?: return searchResults
         searchResults += when (type) {
-            AudioItemType.ARTIST -> repo.searchArtists(query)
-            AudioItemType.ALBUM -> repo.searchAlbums(query)
+            AudioItemType.ARTIST -> repo.searchTracksForArtist(query)
+            AudioItemType.ALBUM -> repo.searchTracksForAlbum(query)
             AudioItemType.TRACK -> repo.searchTracks(query)
             AudioItemType.UNSPECIFIC -> searchUnspecific(query)
         }
@@ -777,8 +817,7 @@ class AudioItemLibrary(
     }
 
     private suspend fun findAlbumArtFor(
-        audioFile: AudioFile,
-        metadataRetriever: MediaMetadataRetriever? = null
+        audioFile: AudioFile, metadataRetriever: MediaMetadataRetriever? = null
     ): FileLike? {
         val audioItem = createAudioItemForFile(audioFile)
         val hasEmbeddedAlbumArt = if (metadataRetriever != null) {
@@ -835,6 +874,9 @@ class AudioItemLibrary(
             logger.debug(TAG, "cancelBuildLibrary()")
             isBuildLibraryCancelled = true
             isBuildingLibrary = false
+            buildLibraryJobs.forEach {
+                it.cancel()
+            }
         }
     }
 

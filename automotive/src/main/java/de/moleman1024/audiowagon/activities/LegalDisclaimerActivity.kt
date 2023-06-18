@@ -19,6 +19,9 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 private const val TAG = "LegalDisclAct"
 private val logger = Logger
 
+/**
+ * Shows the legal disclaimer to the car driver
+ */
 @ExperimentalCoroutinesApi
 class LegalDisclaimerActivity : AppCompatActivity() {
     private val sharedPrefs = SharedPrefs()

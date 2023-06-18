@@ -138,7 +138,11 @@ class PlaybackQueue(private val dispatcher: CoroutineDispatcher) {
         }
     }
 
-    suspend fun setShuffleOnExceptFirstItem() {
+    /**
+     * Shuffles the playback queue.
+     * The currently active item is kept and will move to first position in playback queue after shuffling
+     */
+    suspend fun shuffleExceptCurrentItem() {
         withContext(dispatcher) {
             val currentItem = getCurrentItem() ?: return@withContext
             playbackQueue.removeAt(currentIndex)
@@ -149,19 +153,26 @@ class PlaybackQueue(private val dispatcher: CoroutineDispatcher) {
         }
     }
 
-    suspend fun setShuffleOn() {
+    /**
+     * Shuffles the playback queue.
+     * https://github.com/MoleMan1024/audiowagon/issues/120 : the item at the given starting index in the original
+     * playback queue shall be at the beginning of the shuffled queue
+     */
+    suspend fun shuffle(startIndex: Int) {
         withContext(dispatcher) {
+            val startItem = playbackQueue[startIndex]
+            playbackQueue.removeAt(startIndex)
             playbackQueue.shuffle()
             currentIndex = 0
+            playbackQueue.add(currentIndex, startItem)
             notifyQueueChanged()
         }
     }
 
-    suspend fun setShuffleOff() {
+    suspend fun unshuffle() {
         withContext(dispatcher) {
             val currentItem = getCurrentItem() ?: return@withContext
-            playbackQueue =
-                playbackQueue.sortedBy { originalQueueOrder[it.queueId] }.toMutableList()
+            playbackQueue = playbackQueue.sortedBy { originalQueueOrder[it.queueId] }.toMutableList()
             val newIndex = originalQueueOrder[currentItem.queueId]
             newIndex?.let { currentIndex = it }
             notifyQueueChanged()

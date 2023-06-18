@@ -5,7 +5,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 package de.moleman1024.audiowagon.filestorage.usb
 
-import me.jahnen.libaums.core.fs.UsbFile
+import de.moleman1024.audiowagon.filestorage.usb.lowlevel.USBFile
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.CoroutineDispatcher
 
@@ -22,10 +22,9 @@ private val logger = Logger
 private const val MAX_BYTES_TO_CACHE = 1200 * 1024
 
 class USBMetaDataSource(
-    private val usbFile: UsbFile?,
+    private val usbFile: USBFile?,
     private val chunkSize: Int,
-    libaumsDispatcher: CoroutineDispatcher
-) : USBAudioCachedDataSource(usbFile, chunkSize, libaumsDispatcher) {
+) : USBAudioCachedDataSource(usbFile, chunkSize) {
 
     override fun increaseCacheAge() {
         // do nothing, we limit using size instead

@@ -20,9 +20,9 @@ android {
         applicationId "de.moleman1024.audiowagon"
         minSdkVersion rootProject.minSdkVersion
         targetSdkVersion rootProject.targetSdkVersion
-        versionName "2.3.10"
+        versionName "2.4.5"
         // major * 10000 + minor * 100 + patch
-        versionCode 20310
+        versionCode 20405
         resValue "string", "VERSION_NAME", versionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         signingConfig signingConfigs.debug
@@ -30,6 +30,11 @@ android {
         javaCompileOptions {
             annotationProcessorOptions {
                 arguments += ["room.schemaLocation": "$projectDir/schemas".toString()]
+            }
+        }
+        externalNativeBuild {
+            cmake {
+                abiFilters "arm64-v8a", "armeabi-v7a", "x86", "x86_64"
             }
         }
     }
@@ -52,14 +57,38 @@ android {
     sourceSets {
         // for testing Android Room database migrations
         getByName("androidTest").assets.srcDir("$projectDir/schemas")
-    }
-    packagingOptions {
-        resources {
-            excludes += ['META-INF/spring.factories', 'META-INF/spring.handlers', 'META-INF/spring.schemas', 'META-INF/spring.tooling', 'META-INF/license.txt', 'META-INF/notice.txt']
+
+        main {
+            java {
+                // libusb/usb4java is not used right now as it did not improve performance
+                exclude "**/LibusbAndroidUSBCommunicator.kt"
+            }
         }
     }
 
-    namespace 'de.moleman1024.audiowagon'
+    packagingOptions {
+        resources {
+            excludes += ['META-INF/spring.factories', 'META-INF/spring.handlers', 'META-INF/spring.schemas',
+                         'META-INF/spring.tooling', 'META-INF/license.txt', 'META-INF/notice.txt']
+        }
+    }
+
+    namespace "de.moleman1024.audiowagon"
+
+    externalNativeBuild {
+        cmake {
+            path "CMakeLists.txt"
+        }
+        ndkVersion "23.1.7779620"
+    }
+
+    /* libusb / usb4java is not being used right now
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
+        }
+    }
+    */
 }
 
 dependencies {
@@ -68,7 +97,7 @@ dependencies {
     def mockitoVersion = "3.11.1"
     def roomVersion = "2.5.1"
 
-    implementation "com.google.android.material:material:1.8.0"
+    implementation "com.google.android.material:material:1.9.0"
     implementation "androidx.preference:preference-ktx:1.2.0"
     implementation "androidx.media:media:1.6.0"
     implementation "androidx.appcompat:appcompat:1.6.1"
@@ -81,7 +110,6 @@ dependencies {
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.1'
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-core:$kotlinxSerializationVersion"
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion"
-    implementation files("libs/libaums-0.9.4.aar")
     // Firebase requires a file google-services.json that contains Firebase secrets, not uploaded to version control
     implementation 'com.google.firebase:firebase-crashlytics-ktx:18.3.7'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.6.4'

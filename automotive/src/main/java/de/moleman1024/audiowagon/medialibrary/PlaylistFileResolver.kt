@@ -9,9 +9,9 @@ import android.net.Uri
 import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.filestorage.*
 import de.moleman1024.audiowagon.log.Logger
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.yield
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserException
 import org.xmlpull.v1.XmlPullParserFactory
@@ -23,7 +23,7 @@ private const val TAG = "PlaylistFileResolver"
 private const val UTF8_BOM = "\uFEFF"
 private val WINDOWS_ROOT_BACKSLASH_REGEX = Regex("^([A-Za-z]:)?\\\\")
 private val WINDOWS_SEPARATORS_REGEX = Regex("\\\\(?=\\S)")
-private val PLS_FILE_PREFIX = Regex("^File[0-9]+=")
+private val PLS_FILE_PREFIX = Regex("^File\\d+=")
 private val XSPF_PREFIX = Regex("^file:///[A-Za-z]:")
 private val IP_PREFIX = Regex("^(https?|rtsp)://")
 
@@ -32,11 +32,11 @@ class PlaylistFileResolver(
     private val playlistFileUri: Uri,
     private val audioFileStorage: AudioFileStorage
 ) {
-    private var lockableInputStream: LockableInputStream
+    private var inputStream: InputStream
 
     init {
-        runBlocking {
-            lockableInputStream = audioFileStorage.getInputStream(playlistFileUri)
+        runBlocking(Dispatchers.IO) {
+            inputStream = audioFileStorage.getInputStream(playlistFileUri)
         }
     }
 
@@ -103,37 +103,33 @@ class PlaylistFileResolver(
     private fun parseXSPF(): MutableList<AudioItem> {
         logger.debug(TAG, "Parsing .xspf playlist file")
         val audioItems = mutableListOf<AudioItem>()
-        lockableInputStream.libaumsDispatcher?.let {
-            runBlocking(it) {
-                try {
-                    val parserFactory = XmlPullParserFactory.newInstance()
-                    val parser: XmlPullParser = parserFactory.newPullParser()
-                    parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
-                    parser.setInput(lockableInputStream.inputStream, null)
-                    var tag: String?
-                    var text = ""
-                    var xmlEvent = parser.eventType
-                    while (xmlEvent != XmlPullParser.END_DOCUMENT) {
-                        tag = parser.name
-                        when (xmlEvent) {
-                            XmlPullParser.TEXT -> {
-                                text = parser.text
-                            }
-                            XmlPullParser.END_TAG -> {
-                                if (tag == "location") {
-                                    val filePath = XSPF_PREFIX.replace(Uri.decode(text), "")
-                                    val pathInPlaylist = Paths.get(filePath)
-                                    val audioItem = convertPathToAudioItem(pathInPlaylist.toString())
-                                    audioItems.add(audioItem)
-                                }
-                            }
-                        }
-                        xmlEvent = parser.next()
+        try {
+            val parserFactory = XmlPullParserFactory.newInstance()
+            val parser: XmlPullParser = parserFactory.newPullParser()
+            parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
+            parser.setInput(inputStream, null)
+            var tag: String?
+            var text = ""
+            var xmlEvent = parser.eventType
+            while (xmlEvent != XmlPullParser.END_DOCUMENT) {
+                tag = parser.name
+                when (xmlEvent) {
+                    XmlPullParser.TEXT -> {
+                        text = parser.text
                     }
-                } catch (exc: XmlPullParserException) {
-                    logger.exception(TAG, exc.message.toString(), exc)
+                    XmlPullParser.END_TAG -> {
+                        if (tag == "location") {
+                            val filePath = XSPF_PREFIX.replace(Uri.decode(text), "")
+                            val pathInPlaylist = Paths.get(filePath)
+                            val audioItem = convertPathToAudioItem(pathInPlaylist.toString())
+                            audioItems.add(audioItem)
+                        }
+                    }
                 }
+                xmlEvent = parser.next()
             }
+        } catch (exc: XmlPullParserException) {
+            logger.exception(TAG, exc.message.toString(), exc)
         }
         return audioItems
     }
@@ -163,28 +159,22 @@ class PlaylistFileResolver(
 
     private fun getLines(): List<String> {
         val lines: MutableList<String> = mutableListOf()
-        lockableInputStream.libaumsDispatcher?.let { dispatcher ->
-            runBlocking(dispatcher) {
-                try {
-                    BufferedReader(InputStreamReader(lockableInputStream.inputStream)).use { br ->
-                        var line: String?
-                        while (br.readLine().also { line = it } != null) {
-                            line?.let {
-                                logger.debug(TAG, "Playlist content: $it")
-                                val lineSanitized = removeBOM(it.trim())
-                                if (lineSanitized.isNotBlank()) {
-                                    lines.add(lineSanitized)
-                                }
-                            }
-                            yield()
+        try {
+            BufferedReader(InputStreamReader(inputStream)).use { br ->
+                var line: String?
+                while (br.readLine().also { line = it } != null) {
+                    line?.let {
+                        logger.debug(TAG, "Playlist content: $it")
+                        val lineSanitized = removeBOM(it.trim())
+                        if (lineSanitized.isNotBlank()) {
+                            lines.add(lineSanitized)
                         }
                     }
-                } catch (exc: IOException) {
-                    logger.exception(TAG, exc.message.toString(), exc)
-                    lines.clear()
-                    return@runBlocking
                 }
             }
+        } catch (exc: IOException) {
+            logger.exception(TAG, exc.message.toString(), exc)
+            lines.clear()
         }
         return lines
     }

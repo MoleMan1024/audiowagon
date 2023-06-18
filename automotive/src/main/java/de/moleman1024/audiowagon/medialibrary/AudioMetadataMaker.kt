@@ -11,7 +11,6 @@ import android.media.MediaDataSource
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.support.v4.media.MediaMetadataCompat
-import de.moleman1024.audiowagon.AUTHORITY
 import de.moleman1024.audiowagon.AlbumArtContentProvider
 import de.moleman1024.audiowagon.DEFAULT_JPEG_QUALITY_PERCENTAGE
 import de.moleman1024.audiowagon.Util
@@ -32,6 +31,7 @@ const val ART_URI_PART = "art"
 const val ART_URI_PART_ALBUM = "album"
 const val ART_URI_PART_TRACK = "track"
 const val ART_URI_PART_FILE = "file"
+const val AUTHORITY = "de.moleman1024.audiowagon"
 
 /**
  * Extract metadata from audio files.
@@ -134,7 +134,7 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
         return year
     }
 
-    fun setupMetadataRetrieverFromDataSource(dataSource: MediaDataSource): MediaMetadataRetriever {
+    fun setupMetadataRetrieverWithDataSource(dataSource: MediaDataSource): MediaMetadataRetriever {
         val metadataRetriever = MediaMetadataRetriever()
         // TODO: find out reason for
         //  java.lang.RuntimeException: setDataSourceCallback failed: status = 0x80000000
@@ -152,10 +152,6 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
     }
 
     fun cleanMetadataRetriever(metadataRetriever: MediaMetadataRetriever, dataSource: MediaDataSource) {
-        metadataRetriever.release()
-        if (dataSource is USBAudioDataSource && dataSource.hasError) {
-            throw IOException("DataSource error")
-        }
         metadataRetriever.close()
         if (dataSource is USBAudioDataSource && dataSource.hasError) {
             throw IOException("DataSource error")

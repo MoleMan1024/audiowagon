@@ -7,16 +7,12 @@ package de.moleman1024.audiowagon.filestorage.usb
 
 import android.media.MediaDataSource
 import android.net.Uri
-import me.jahnen.libaums.core.fs.UsbFile
-import me.jahnen.libaums.core.fs.UsbFileInputStream
 import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.Util.Companion.determinePlayableFileType
 import de.moleman1024.audiowagon.filestorage.*
+import de.moleman1024.audiowagon.filestorage.usb.lowlevel.USBFile
 import de.moleman1024.audiowagon.log.Logger
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.util.*
@@ -29,79 +25,72 @@ class USBDeviceStorageLocation(override val device: USBMediaDevice) : AudioFileS
     override var indexingStatus: IndexingStatus = IndexingStatus.NOT_INDEXED
     override var isDetached: Boolean = false
     override var isIndexingCancelled: Boolean = false
-    override var libaumsDispatcher: CoroutineDispatcher? = device.libaumsDispatcher
 
     override fun walkTopDown(startDirectory: Any, scope: CoroutineScope): Sequence<Any> {
-        // locked internally by usbMutex
-        return device.walkTopDown(startDirectory as UsbFile, scope)
+        return device.walkTopDown(startDirectory as USBFile, scope)
     }
 
-    // locked externally
     override fun createDirectoryFromFileInIndex(file: Any): FileLike {
-        val usbFile = file as UsbFile
+        val usbFile = file as USBFile
         val uri = Util.createURIForPath(storageID, usbFile.absolutePath)
         val dir = Directory(uri)
         // libaums does not support extracting lastModifiedDate from root directory
         if (dir.path != "/") {
-            dir.lastModifiedDate = Date(usbFile.lastModified())
+            dir.lastModifiedDate = Date(usbFile.lastModified)
         }
         return dir
     }
 
-    // locked externally
     override fun createAudioFileFromFileInIndex(file: Any): FileLike {
-        return createAudioFileFromUSBFile(file as UsbFile)
+        return createAudioFileFromUSBFile(file as USBFile)
     }
 
     override fun postIndexAudioFiles() {
         device.clearRecentFilepathToFileMap()
     }
 
-    // locked externally
-    private fun createAudioFileFromUSBFile(usbFile: UsbFile): AudioFile {
+    private fun createAudioFileFromUSBFile(usbFile: USBFile): AudioFile {
         val uri = Util.createURIForPath(storageID, usbFile.absolutePath)
         val audioFile = AudioFile(uri)
-        audioFile.lastModifiedDate = Date(usbFile.lastModified())
+        audioFile.lastModifiedDate = Date(usbFile.lastModified)
         return audioFile
     }
 
-    override fun getDirectoryContents(directory: Directory): List<FileLike> {
+    override suspend fun getDirectoryContents(directory: Directory): List<FileLike> {
         return getDirectoryContentsWithOptionalFilter(directory)
     }
 
-    override fun getDirectoryContentsPlayable(directory: Directory): List<FileLike> {
+    override suspend fun getDirectoryContentsPlayable(directory: Directory): List<FileLike> {
         return getDirectoryContentsWithOptionalFilter(directory, ::determinePlayableFileType)
     }
 
     private fun getDirectoryContentsWithOptionalFilter(
         directory: Directory,
-        fileTypeGuesser: ((UsbFile) -> FileLike?)? = null
+        fileTypeGuesser: ((USBFile) -> FileLike?)? = null
     ): List<FileLike> {
         val itemsInDir = mutableListOf<FileLike>()
         device.getDirectoryContents(directory.uri).forEach { usbFile ->
-            runBlocking(device.libaumsDispatcher) {
-                if (usbFile.isDirectory) {
+            if (usbFile.isDirectory) {
+                val uri = Util.createURIForPath(storageID, usbFile.absolutePath)
+                itemsInDir.add(Directory(uri))
+            } else {
+                if (fileTypeGuesser == null) {
                     val uri = Util.createURIForPath(storageID, usbFile.absolutePath)
-                    itemsInDir.add(Directory(uri))
+                    val generalFile = GeneralFile(uri)
+                    itemsInDir.add(generalFile)
                 } else {
-                    if (fileTypeGuesser == null) {
-                        val uri = Util.createURIForPath(storageID, usbFile.absolutePath)
-                        val generalFile = GeneralFile(uri)
-                        itemsInDir.add(generalFile)
-                    } else {
-                        when (fileTypeGuesser(usbFile)) {
-                            is AudioFile -> {
-                                val audioFile = createAudioFileFromUSBFile(usbFile)
-                                itemsInDir.add(audioFile)
-                            }
-                            is PlaylistFile -> {
-                                val uri = Util.createURIForPath(storageID, usbFile.absolutePath)
-                                val playlistFile = PlaylistFile(uri)
-                                itemsInDir.add(playlistFile)
-                            }
-                            else -> {
-                                logger.warning(TAG, "Ignoring file type of: $usbFile")
-                            }
+                    when (fileTypeGuesser(usbFile)) {
+                        is AudioFile -> {
+                            val audioFile = createAudioFileFromUSBFile(usbFile)
+                            itemsInDir.add(audioFile)
+                        }
+                        is PlaylistFile -> {
+                            val uri = Util.createURIForPath(storageID, usbFile.absolutePath)
+                            val playlistFile = PlaylistFile(uri)
+                            itemsInDir.add(playlistFile)
+                        }
+                        else -> {
+                            logger.warning(TAG, "Ignoring file type of: $usbFile")
                         }
                     }
                 }
@@ -111,10 +100,7 @@ class USBDeviceStorageLocation(override val device: USBMediaDevice) : AudioFileS
     }
 
     override fun getRootURI(): Uri {
-        val path: String
-        runBlocking(device.libaumsDispatcher) {
-            path = device.getRoot().absolutePath
-        }
+        val path: String = device.getRoot().absolutePath
         return Util.createURIForPath(storageID, path)
     }
 
@@ -128,28 +114,19 @@ class USBDeviceStorageLocation(override val device: USBMediaDevice) : AudioFileS
 
     @Suppress("BlockingMethodInNonBlockingContext")
     override suspend fun getByteArrayForURI(uri: Uri): ByteArray {
-        val lockableInputStream = getInputStreamForURI(uri)
-        if (lockableInputStream.libaumsDispatcher == null) {
-            return ByteArray(0)
+        val inputStream = getInputStreamForURI(uri)
+        val byteArrayOutputStream = ByteArrayOutputStream()
+        val buffer = ByteArray(device.getChunkSize())
+        var bytesRead = 0
+        while (bytesRead > -1) {
+            bytesRead = inputStream.read(buffer)
+            byteArrayOutputStream.write(buffer)
         }
-        return withContext(lockableInputStream.libaumsDispatcher) {
-            val byteArrayOutputStream = ByteArrayOutputStream()
-            val buffer = ByteArray(device.getChunkSize())
-            var bytesRead = 0
-            while (bytesRead > -1) {
-                bytesRead = lockableInputStream.inputStream.read(buffer)
-                byteArrayOutputStream.write(buffer)
-            }
-            return@withContext byteArrayOutputStream.toByteArray()
-        }
+        return byteArrayOutputStream.toByteArray()
     }
 
-    override suspend fun getInputStreamForURI(uri: Uri): LockableInputStream {
-        val inputStream: InputStream
-        withContext(device.libaumsDispatcher) {
-            inputStream = UsbFileInputStream(device.getUSBFileFromURI(uri))
-        }
-        return LockableInputStream(inputStream, device.libaumsDispatcher)
+    override suspend fun getInputStreamForURI(uri: Uri): InputStream {
+        return device.getUSBFileFromURI(uri).getInputStream()
     }
 
     override fun close() {

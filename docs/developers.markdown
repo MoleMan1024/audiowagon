@@ -76,9 +76,9 @@ Make sure to have the following settings in the Google Play Store developer cons
 ### Releasing
 
 Right now "Internal Testing" is not supported for apps using AAOS features, so each release you create for the app needs
-to go through Google's review process. Initially this can take a week, later it should go down to a couple of hours for
-each release you make. Also note that any larger change you make (e.g. change country availability of the app) will also
-trigger Google's review process.
+to go through Google's review process (2023-06-01 UPDATE: internal test tracks are supported meanwhile). Initially this
+can take a week, later it should go down to a couple of hours for each release you make. Also note that any larger
+change you make (e.g. change country availability of the app) will also trigger Google's review process.
 
 - In Closed testing, switch category in top right to *Automotive OS only* and create a closed test track (NOTE: closed 
   tests were giving me trouble at some point, the app was not visible in the car for some days. Also note that "Open

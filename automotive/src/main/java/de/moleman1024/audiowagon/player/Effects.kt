@@ -88,7 +88,7 @@ class Effects(audioSessionID: Int) {
         val equalizer = DynamicsProcessing.Eq(true, false, NUM_EQ_BANDS)
         dynamicsProcessing.setPreEqAllChannelsTo(equalizer)
         isEQEnabled = false
-        if (!isEQEnabled && !isGainEnabled) {
+        if (!isGainEnabled) {
             disableEffects()
         }
     }
@@ -106,7 +106,7 @@ class Effects(audioSessionID: Int) {
         logger.debug(TAG, "Disabling gain: $dynamicsProcessing")
         dynamicsProcessing.setInputGainAllChannelsTo(0f)
         isGainEnabled = false
-        if (!isEQEnabled && !isGainEnabled) {
+        if (!isEQEnabled) {
             disableEffects()
         }
     }

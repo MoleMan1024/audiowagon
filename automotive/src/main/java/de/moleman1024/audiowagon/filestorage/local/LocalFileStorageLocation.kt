@@ -14,6 +14,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import java.io.ByteArrayOutputStream
 import java.io.FileInputStream
+import java.io.InputStream
 
 // not used right now
 class LocalFileStorageLocation(override val device: LocalFileMediaDevice) : AudioFileStorageLocation {
@@ -24,8 +25,6 @@ class LocalFileStorageLocation(override val device: LocalFileMediaDevice) : Audi
     override var indexingStatus: IndexingStatus = IndexingStatus.NOT_INDEXED
     override var isDetached: Boolean = false
     override var isIndexingCancelled: Boolean = false
-    // does not need a thread confinement
-    override var libaumsDispatcher: CoroutineDispatcher? = null
 
     override fun walkTopDown(startDirectory: Any, scope: CoroutineScope): Sequence<Any> {
         return device.walkTopDown(startDirectory)
@@ -41,21 +40,21 @@ class LocalFileStorageLocation(override val device: LocalFileMediaDevice) : Audi
 
     @Suppress("BlockingMethodInNonBlockingContext")
     override suspend fun getByteArrayForURI(uri: Uri): ByteArray {
-        val lockableInputStream = getInputStreamForURI(uri)
+        val inputStream = getInputStreamForURI(uri)
         val byteArrayOutputStream = ByteArrayOutputStream()
         val buffer = ByteArray(device.chunkSize)
         var bytesRead = 0
         while (bytesRead > -1) {
-            bytesRead = lockableInputStream.inputStream.read(buffer)
+            bytesRead = inputStream.read(buffer)
             byteArrayOutputStream.write(buffer)
         }
         return byteArrayOutputStream.toByteArray()
     }
 
     @Suppress("BlockingMethodInNonBlockingContext")
-    override suspend fun getInputStreamForURI(uri: Uri): LockableInputStream {
+    override suspend fun getInputStreamForURI(uri: Uri): InputStream {
         val file = device.getFileFromURI(uri)
-        return LockableInputStream(FileInputStream(file))
+        return FileInputStream(file)
     }
 
     override fun close() {
@@ -66,7 +65,7 @@ class LocalFileStorageLocation(override val device: LocalFileMediaDevice) : Audi
         // no op
     }
 
-    override fun getDirectoryContents(directory: Directory): List<FileLike> {
+    override suspend fun getDirectoryContents(directory: Directory): List<FileLike> {
         val itemsInDir = mutableListOf<FileLike>()
         device.getDirectoryContents(directory.uri).forEach { file ->
             if (file.isDirectory) {
@@ -83,7 +82,7 @@ class LocalFileStorageLocation(override val device: LocalFileMediaDevice) : Audi
         return itemsInDir
     }
 
-    override fun getDirectoryContentsPlayable(directory: Directory): List<FileLike> {
+    override suspend fun getDirectoryContentsPlayable(directory: Directory): List<FileLike> {
         return getDirectoryContents(directory)
     }
 

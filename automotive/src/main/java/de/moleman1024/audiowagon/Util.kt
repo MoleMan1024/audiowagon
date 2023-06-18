@@ -16,10 +16,10 @@ import android.util.DisplayMetrics
 import android.view.WindowInsets
 import android.view.WindowManager
 import android.view.WindowMetrics
-import me.jahnen.libaums.core.fs.UsbFile
 import de.moleman1024.audiowagon.exceptions.NoAudioItemException
 import de.moleman1024.audiowagon.filestorage.*
 import de.moleman1024.audiowagon.filestorage.usb.LOG_DIRECTORY
+import de.moleman1024.audiowagon.filestorage.usb.lowlevel.USBFile
 import de.moleman1024.audiowagon.log.CrashReporting
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.*
@@ -44,7 +44,49 @@ class Util {
         // https://github.com/MoleMan1024/audiowagon/issues/107 : ignore Apple OSX resource fork files
         val FILES_TO_IGNORE_REGEX = ("^\\._.*").toRegex()
         private const val URI_SCHEME = "usbAudio"
-        val BUILD_VARIANT_EMULATOR_SD_CARD = "emulatorSDCard"
+        const val BUILD_VARIANT_EMULATOR_SD_CARD = "emulatorSDCard"
+        val USB_DEVICES_TO_IGNORE = listOf(
+            // Generic USB device (unknown vendor)
+            Pair(17, 30600),
+            // Microchip AN20021 USB to UART Bridge with USB 2.0 hub 0x2530
+            Pair(1060, 9520),
+            // USB Ethernet 0X9E08
+            Pair(1060, 40456),
+            // MicroChip OS81118 network interface card 0x0424
+            Pair(1060, 53016),
+            // Microchip Tech USB49XX NCM/IAP Bridge
+            Pair(1060, 18704),
+            // Microchip USB4913
+            Pair(1060, 18707),
+            // Microchip Tech USB2 Controller Hub
+            Pair(1060, 18752),
+            // Microchip MCP2200 USB to UART converter 0x04D8
+            Pair(1240, 223),
+            // Mitsubishi USB to Modem Bridge 0x06D3
+            Pair(1747, 10272),
+            // Cambridge Silicon Radio Bluetooth dongle 0x0A12
+            Pair(2578, 1),
+            // Cambridge Silicon Radio Bluetooth dongle 0x0A12
+            Pair(2578, 3),
+            // Linux xHCI Host Controller
+            Pair(7531, 2),
+            // Linux xHCI Host Controller
+            Pair(7531, 3),
+            // Aptiv H2H Bridge
+            Pair(10646, 261),
+            // Aptiv Vendor
+            Pair(10646, 288),
+            // Aptiv GM V10  E2 PD
+            Pair(10646, 306),
+            // Delphi Host to Host Bridge
+            Pair(11336, 261),
+            // Delphi Vendor
+            Pair(11336, 288),
+            // Delphi Hub
+            Pair(11336, 306),
+            // Microchip USB2 Controller Hub
+            Pair(18752, 1060),
+        )
 
         fun convertStringToShort(numberAsString: String): Short {
             return convertStringToInt(numberAsString).toShort()
@@ -154,7 +196,7 @@ class Util {
                     }
                     return determinePlayableFileType(file.name)
                 }
-                is UsbFile -> {
+                is USBFile -> {
                     if (file.isDirectory || file.isRoot) {
                         return Directory()
                     }

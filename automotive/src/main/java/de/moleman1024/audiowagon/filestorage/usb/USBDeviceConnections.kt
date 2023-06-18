@@ -11,6 +11,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
+import android.os.Build
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.SharedPrefs
 import de.moleman1024.audiowagon.SingletonCoroutine
@@ -86,10 +87,10 @@ class USBDeviceConnections(
                 updateAttachedDevices()
                 return
             }
-            val usbDeviceWrapper: USBMediaDevice
+            val usbMediaDevice: USBMediaDevice
             try {
-                usbDeviceWrapper = getUSBMassStorageDeviceFromIntent(intent)
-                logger.debug(TAG, "Broadcast with action ${intent.action} received for USB device: $usbDeviceWrapper")
+                usbMediaDevice = getUSBMassStorageDeviceFromIntent(intent)
+                logger.debug(TAG, "Broadcast with action ${intent.action} received for USB device: $usbMediaDevice")
             } catch (exc: DeviceIgnoredException) {
                 // one of the built-in USB devices (e.g. bluetooth dongle) has attached/detached, ignore these
                 return
@@ -102,7 +103,7 @@ class USBDeviceConnections(
                     ACTION_USB_ATTACHED -> {
                         usbAttachedSingletonCoroutine.launch {
                             usbAttachedDelayedSingletonCoroutine.cancel()
-                            onAttachedUSBMassStorageDeviceFound(usbDeviceWrapper)
+                            onAttachedUSBMassStorageDeviceFound(usbMediaDevice)
                         }
                     }
                     UsbManager.ACTION_USB_DEVICE_ATTACHED -> {
@@ -110,7 +111,7 @@ class USBDeviceConnections(
                             // wait a bit to give USBDummyActivity a chance to catch this instead and send
                             // ACTION_USB_ATTACHED (see above)
                             delay(400)
-                            onAttachedUSBMassStorageDeviceFound(usbDeviceWrapper)
+                            onAttachedUSBMassStorageDeviceFound(usbMediaDevice)
                         }
                     }
                     UsbManager.ACTION_USB_DEVICE_DETACHED -> {
@@ -118,17 +119,17 @@ class USBDeviceConnections(
                             usbAttachedDelayedSingletonCoroutine.cancel()
                             usbAttachedSingletonCoroutine.cancel()
                             updateAttachedDevicesSingletonCoroutine.cancel()
-                            onUSBDeviceDetached(usbDeviceWrapper)
+                            onUSBDeviceDetached(usbMediaDevice)
                         }
                     }
                     ACTION_USB_PERMISSION_CHANGE -> {
                         usbPermissionSingletonCoroutine.launch {
-                            if (!isDeviceAttached(usbDeviceWrapper)) {
+                            if (!isDeviceAttached(usbMediaDevice)) {
                                 logger.warning(TAG, "Received permission change for USB device that is not attached")
                                 return@launch
                             }
-                            usbDevicePermissions.onUSBPermissionChanged(intent, usbDeviceWrapper)
-                            onUSBPermissionChanged(usbDeviceWrapper)
+                            usbDevicePermissions.onUSBPermissionChanged(intent, usbMediaDevice)
+                            onUSBPermissionChanged(usbMediaDevice)
                         }
                     }
                 }
@@ -181,20 +182,32 @@ class USBDeviceConnections(
         if (!usbDeviceWrapper.isMassStorageDevice()) {
             throw DeviceNotApplicableException("Not a mass storage device: $usbDeviceWrapper")
         }
-        if (!usbDeviceWrapper.isCompatibleWithLib()) {
+        if (!usbDeviceWrapper.isCompatible()) {
             throw DeviceNotCompatible("Not compatible device: $usbDeviceWrapper")
         }
     }
 
     private fun getUSBMassStorageDeviceFromIntent(intent: Intent): USBMediaDevice {
         val usbMediaDevice: USBMediaDevice? = try {
-            val androidUSBDevice: UsbDevice = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE)
-                ?: throw NoSuchDeviceException("No USB device in intent")
-            val usbDeviceProxy = USBDeviceProxy(androidUSBDevice, getUSBManager())
+            val androidUSBDevice: UsbDevice = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                intent.getParcelableExtra(UsbManager.EXTRA_DEVICE, UsbDevice::class.java)
+                    ?: throw NoSuchDeviceException("No USB device in intent")
+            } else {
+                @Suppress("DEPRECATION")
+                intent.getParcelableExtra(UsbManager.EXTRA_DEVICE)
+                    ?: throw NoSuchDeviceException("No USB device in intent")
+            }
+            val usbDeviceProxy = AndroidUSBDeviceProxy(androidUSBDevice, getUSBManager())
             USBMediaDevice(context, usbDeviceProxy)
         } catch (exc: ClassCastException) {
-            val mockUSBDevice: USBDevice = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE)
-                ?: throw NoSuchDeviceException("Cannot extract mock USB device for test")
+            val mockUSBDevice: USBDevice = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                intent.getParcelableExtra(UsbManager.EXTRA_DEVICE, USBDevice::class.java)
+                    ?: throw NoSuchDeviceException("Cannot extract mock USB device for test")
+            } else {
+                @Suppress("DEPRECATION")
+                intent.getParcelableExtra(UsbManager.EXTRA_DEVICE)
+                    ?: throw NoSuchDeviceException("Cannot extract mock USB device for test")
+            }
             USBMediaDevice(context, mockUSBDevice)
         }
         if (usbMediaDevice?.isToBeIgnored() == true) {
@@ -251,8 +264,12 @@ class USBDeviceConnections(
         } catch (exc: IOException) {
             logger.exception(TAG, "I/O exception when attaching USB drive", exc)
             updateUSBStatusInSettings(R.string.setting_USB_status_error)
-            val deviceChange = exc.message?.let { DeviceChange(error = it) }
-            deviceChange?.let { notifyObservers(it) }
+            val deviceChange = if (exc.message != null) {
+                DeviceChange(error = exc.message!!)
+            } else {
+                DeviceChange(error = context.getString(R.string.error_USB_init))
+            }
+            notifyObservers(deviceChange)
             crashReporting.logLastMessagesAndRecordException(exc)
             return
         } catch (exc: NoPartitionsException) {
@@ -345,7 +362,7 @@ class USBDeviceConnections(
         val filteredUSBDevices = mutableListOf<USBMediaDevice>()
         getUSBManager().deviceList.values.forEach { usbDevice ->
             logger.debug(TAG, "USBManager.deviceList has device @${usbDevice.hashCode()}: $usbDevice")
-            val deviceProxy = USBDeviceProxy(usbDevice, getUSBManager())
+            val deviceProxy = AndroidUSBDeviceProxy(usbDevice, getUSBManager())
             val usbMediaDevice = USBMediaDevice(context, deviceProxy)
             if (!usbMediaDevice.isToBeIgnored()) {
                 filteredUSBDevices.add(usbMediaDevice)

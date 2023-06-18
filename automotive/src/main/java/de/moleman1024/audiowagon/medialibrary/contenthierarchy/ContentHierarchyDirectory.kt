@@ -126,7 +126,7 @@ class ContentHierarchyDirectory(
         throw RuntimeException("Not playable")
     }
 
-    fun getDirectoryContents(): List<FileLike> {
+    suspend fun getDirectoryContents(): List<FileLike> {
         val storageLocation: AudioFileStorageLocation
         try {
             storageLocation = audioFileStorage.getPrimaryStorageLocation()

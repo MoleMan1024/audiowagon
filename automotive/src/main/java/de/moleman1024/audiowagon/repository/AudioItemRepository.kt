@@ -65,9 +65,7 @@ class AudioItemRepository(
     init {
         runBlocking(dispatcher) {
             databaseMutex.withLock {
-
                 // TODO: some duplicate queries when I turn on logging, check that
-
                 database = dbBuilder.build()
                 isClosed = false
             }
@@ -75,62 +73,80 @@ class AudioItemRepository(
     }
 
     suspend fun populateDatabaseFrom(audioFile: AudioFile, metadata: AudioItem, albumArtSource: FileLike?) {
-        repoUpdate.populateDatabaseFrom(audioFile, metadata, albumArtSource)
+        databaseMutex.withLock {
+            repoUpdate.populateDatabaseFrom(audioFile, metadata, albumArtSource)
+        }
     }
 
     suspend fun populateDatabaseFromFileOrDir(fileOrDir: FileLike) {
-        repoUpdate.populateDatabaseFromFileOrDir(fileOrDir)
+        databaseMutex.withLock {
+            repoUpdate.populateDatabaseFromFileOrDir(fileOrDir)
+        }
     }
 
     suspend fun updateGroups() {
-        if (!hasUpdatedDatabase) {
-            logger.debug(TAG, "Database has not changed, no update of groups needed")
-            return
+        databaseMutex.withLock {
+            if (!hasUpdatedDatabase) {
+                logger.debug(TAG, "Database has not changed, no update of groups needed")
+                return
+            }
+            repoUpdate.cleanGroups()
+            repoUpdate.createGroups()
         }
-        repoUpdate.cleanGroups()
-        repoUpdate.createGroups()
     }
 
     suspend fun clean() {
-        repoUpdate.clean()
+        databaseMutex.withLock {
+            repoUpdate.clean()
+        }
     }
 
     suspend fun hasAudioFileChangedForTrack(audioFile: AudioFile, trackID: Long): Boolean {
-        val track =
-            getDatabase()?.trackDAO()?.queryByID(trackID) ?: throw RuntimeException("No track for id: $trackID")
-        val trackLastModSec = track.lastModifiedEpochTime
-        val audioFileLastModSec = audioFile.lastModifiedDate.toInstant().truncatedTo(ChronoUnit.SECONDS).toEpochMilli()
-        val audioFileHasChanged = trackLastModSec != audioFileLastModSec
-        if (audioFileHasChanged) {
-            logger.verbose(
-                TAG, "AudioFile modification date differs from track in database: " +
-                        "track=${track.lastModifiedEpochTime} != audioFile=${audioFile.lastModifiedDate.time}"
-            )
+        databaseMutex.withLock {
+            val track = getDatabaseNoLock()?.trackDAO()?.queryByID(trackID)
+                ?: throw RuntimeException("No track for id: $trackID")
+            val trackLastModSec = track.lastModifiedEpochTime
+            val audioFileLastModSec =
+                audioFile.lastModifiedDate.toInstant().truncatedTo(ChronoUnit.SECONDS).toEpochMilli()
+            val audioFileHasChanged = trackLastModSec != audioFileLastModSec
+            if (audioFileHasChanged) {
+                logger.verbose(
+                    TAG, "AudioFile modification date differs from track in database: " +
+                            "track=${track.lastModifiedEpochTime} != audioFile=${audioFile.lastModifiedDate.time}"
+                )
+            }
+            return audioFileHasChanged
         }
-        return audioFileHasChanged
     }
 
     suspend fun hasAudioFileChangedForPath(fileOrDir: FileLike, pathID: Long): Boolean {
-        val path =
-            getDatabase()?.pathDAO()?.queryByID(pathID) ?: throw RuntimeException("No path for id: $pathID")
-        val pathLastModSec = path.lastModifiedEpochTime
-        val audioFileLastModSec = fileOrDir.lastModifiedDate.toInstant().truncatedTo(ChronoUnit.SECONDS).toEpochMilli()
-        val audioFileHasChanged = pathLastModSec != audioFileLastModSec
-        if (audioFileHasChanged) {
-            logger.verbose(
-                TAG, "AudioFile modification date differs from path in database: " +
-                        "path=${path.lastModifiedEpochTime} != audioFile=${fileOrDir.lastModifiedDate.time}"
-            )
+        databaseMutex.withLock {
+            val path =
+                getDatabaseNoLock()?.pathDAO()?.queryByID(pathID) ?: throw RuntimeException("No path for id: $pathID")
+            val pathLastModSec = path.lastModifiedEpochTime
+            val audioFileLastModSec =
+                fileOrDir.lastModifiedDate.toInstant().truncatedTo(ChronoUnit.SECONDS).toEpochMilli()
+            val audioFileHasChanged = pathLastModSec != audioFileLastModSec
+            if (audioFileHasChanged) {
+                logger.verbose(
+                    TAG, "AudioFile modification date differs from path in database: " +
+                            "path=${path.lastModifiedEpochTime} != audioFile=${fileOrDir.lastModifiedDate.time}"
+                )
+            }
+            return audioFileHasChanged
         }
-        return audioFileHasChanged
     }
 
     suspend fun removeTrack(trackID: Long) {
-        repoUpdate.removeTrack(trackID)
+        databaseMutex.withLock {
+            repoUpdate.removeTrack(trackID)
+        }
     }
 
     suspend fun removePath(pathID: Long) {
-        repoUpdate.removePath(pathID)
+        databaseMutex.withLock {
+            repoUpdate.removePath(pathID)
+        }
     }
 
     suspend fun getTrack(id: Long): AudioItem {
@@ -209,6 +225,10 @@ class AudioItemRepository(
         return repoQuery.getNumTracks()
     }
 
+    suspend fun getNumTracksNoLock(): Int {
+        return repoQuery.getNumTracksNoLock()
+    }
+
     suspend fun getNumPaths(): Int {
         return repoQuery.getNumPaths()
     }
@@ -261,6 +281,10 @@ class AudioItemRepository(
         return repoQuery.getNumAlbums()
     }
 
+    suspend fun getNumAlbumsNoLock(): Int {
+        return repoQuery.getNumAlbumsNoLock()
+    }
+
     suspend fun getAlbumsLimitOffset(maxNumRows: Int, offsetRows: Int): List<AudioItem> {
         return repoQuery.getAlbumsLimitOffset(maxNumRows, offsetRows)
     }
@@ -287,6 +311,10 @@ class AudioItemRepository(
 
     suspend fun getNumAlbumAndCompilationArtists(): Int {
         return repoQuery.getNumAlbumAndCompilationArtists()
+    }
+
+    suspend fun getNumAlbumAndCompilationArtistsNoLock(): Int {
+        return repoQuery.getNumAlbumAndCompilationArtistsNoLock()
     }
 
     suspend fun getArtistsLimitOffset(maxNumRows: Int, offsetRows: Int): List<AudioItem> {
@@ -373,6 +401,13 @@ class AudioItemRepository(
         databaseMutex.withLock {
             return database
         }
+    }
+
+    fun getDatabaseNoLock(): AudioItemDatabase? {
+        if (isClosed) {
+            return null
+        }
+        return database
     }
 
     suspend fun getPseudoCompilationArtistID(): Long? {

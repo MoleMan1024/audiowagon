@@ -36,12 +36,14 @@ interface PathDAO {
     @Query("SELECT pathId FROM path WHERE parentPath || '/' || name = :path OR parentPath || name = :path")
     fun queryIDByURI(path: String): Long?
 
-    @Query("SELECT * FROM path WHERE pathId = :pathId ORDER BY  name COLLATE NOCASE ASC")
+    @Query("SELECT * FROM path WHERE pathId = :pathId ORDER BY name COLLATE NOCASE ASC")
     fun queryByID(pathId: Long): Path?
 
     @Query(
-        "SELECT DISTINCT path.* FROM path JOIN pathfts ON path.name = pathfts.name WHERE pathfts MATCH :query " +
-                "LIMIT $MAX_DATABASE_SEARCH_ROWS"
+        "SELECT DISTINCT path.* FROM path " +
+                "JOIN pathfts ON path.name = pathfts.name " +
+                "WHERE pathfts MATCH :query " +
+                "ORDER BY path.name COLLATE NOCASE ASC LIMIT $MAX_DATABASE_SEARCH_ROWS"
     )
     fun search(query: String): List<Path>
 

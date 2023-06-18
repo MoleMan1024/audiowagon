@@ -5,10 +5,9 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 package de.moleman1024.audiowagon.filestorage.usb
 
-import me.jahnen.libaums.core.fs.UsbFile
 import de.moleman1024.audiowagon.log.Logger
 import android.media.MediaDataSource
-import kotlinx.coroutines.CoroutineDispatcher
+import de.moleman1024.audiowagon.filestorage.usb.lowlevel.USBFile
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.util.*
@@ -30,15 +29,15 @@ private val logger = Logger
  * reads files sequentially for most of the time, older cached chunks are not required usually).
  */
 open class USBAudioCachedDataSource(
-    usbFile: UsbFile?,
-    chunkSize: Int,
-    libaumsDispatcher: CoroutineDispatcher
-) : USBAudioDataSource(usbFile, chunkSize, libaumsDispatcher) {
+    usbFile: USBFile?,
+    chunkSize: Int
+) : USBAudioDataSource(usbFile, chunkSize) {
     protected val cacheMap: TreeMap<Long, AgingCache> = TreeMap<Long, AgingCache>()
     private val bufSize: Int = chunkSize
 
     inner class AgingCache {
         // do not use ByteBuffer.allocateDirect() here, it causes errors to appear randomly in MediaPlayer
+        // TODO: check this
         val buffer: ByteBuffer = ByteBuffer.wrap(ByteArray(bufSize))
         var age: Short = 0
 

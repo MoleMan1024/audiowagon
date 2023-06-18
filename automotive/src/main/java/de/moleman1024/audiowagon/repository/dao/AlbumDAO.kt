@@ -66,15 +66,22 @@ interface AlbumDAO {
     fun queryAlbumByAlbumArt(uriString: String): Album?
 
     @Query(
-        "SELECT DISTINCT album.* FROM album JOIN albumfts ON album.name = albumfts.name WHERE albumfts MATCH :query " +
+        "SELECT DISTINCT album.* FROM album " +
+                "JOIN albumfts ON album.name = albumfts.name " +
+                "WHERE albumfts MATCH :query " +
+                "ORDER BY COALESCE(NULLIF(album.sortName,''), album.name) COLLATE NOCASE ASC " +
                 "LIMIT $MAX_DATABASE_SEARCH_ROWS"
     )
     fun search(query: String): List<Album>
 
     @Query(
-        "SELECT DISTINCT album.* FROM album JOIN albumfts ON album.name = albumfts.name JOIN artist ON " +
-                "album.parentArtistId = artist.artistId JOIN artistfts ON artist.name = artistfts.name " +
-                "WHERE albumfts MATCH :album AND artistfts MATCH :artist LIMIT $MAX_DATABASE_SEARCH_ROWS"
+        "SELECT DISTINCT album.* FROM album " +
+                "JOIN albumfts ON album.name = albumfts.name " +
+                "JOIN artist ON album.parentArtistId = artist.artistId " +
+                "JOIN artistfts ON artist.name = artistfts.name " +
+                "WHERE albumfts MATCH :album AND artistfts MATCH :artist " +
+                "ORDER BY COALESCE(NULLIF(album.sortName,''), album.name) COLLATE NOCASE ASC " +
+                "LIMIT $MAX_DATABASE_SEARCH_ROWS"
     )
     fun searchWithArtist(album: String, artist: String): List<Album>
 

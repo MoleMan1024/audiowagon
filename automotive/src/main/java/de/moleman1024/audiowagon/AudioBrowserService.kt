@@ -72,39 +72,11 @@ import kotlinx.coroutines.*
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.coroutineContext
 import kotlin.system.exitProcess
 
-
 private const val TAG = "AudioBrowserService"
-const val NOTIFICATION_ID: Int = 25575
-private const val ALBUM_ART_MIN_NUM_PIXELS: Int = 128
-const val ACTION_RESTART_SERVICE: String = "de.moleman1024.audiowagon.ACTION_RESTART_SERVICE"
-const val IDLE_TIMEOUT_MS = 30000L
-
-// This PLAY_USB action seems to be essential for getting Google Assistant to accept voice commands such as
-// "play <artist | album | track>"
-const val ACTION_PLAY_USB: String = "android.car.intent.action.PLAY_USB"
-const val ACTION_MEDIA_BUTTON: String = "android.intent.action.MEDIA_BUTTON"
-const val CMD_ENABLE_LOG_TO_USB = "de.moleman1024.audiowagon.CMD_ENABLE_LOG_TO_USB"
-const val CMD_DISABLE_LOG_TO_USB = "de.moleman1024.audiowagon.CMD_DISABLE_LOG_TO_USB"
-const val CMD_ENABLE_EQUALIZER = "de.moleman1024.audiowagon.CMD_ENABLE_EQUALIZER"
-const val CMD_DISABLE_EQUALIZER = "de.moleman1024.audiowagon.CMD_DISABLE_EQUALIZER"
-const val CMD_ENABLE_REPLAYGAIN = "de.moleman1024.audiowagon.CMD_ENABLE_REPLAYGAIN"
-const val CMD_DISABLE_REPLAYGAIN = "de.moleman1024.audiowagon.CMD_DISABLE_REPLAYGAIN"
-const val CMD_SET_EQUALIZER_PRESET = "de.moleman1024.audiowagon.CMD_SET_EQUALIZER_PRESET"
-const val EQUALIZER_PRESET_KEY = "preset"
-const val CMD_SET_METADATAREAD_SETTING = "de.moleman1024.audiowagon.CMD_SET_METADATAREAD_SETTING"
-const val METADATAREAD_SETTING_KEY = "metadata_read_setting"
-const val CMD_READ_METADATA_NOW = "de.moleman1024.audiowagon.CMD_READ_METADATA_NOW"
-const val CMD_EJECT = "de.moleman1024.audiowagon.CMD_EJECT"
-const val AUDIOFOCUS_SETTING_KEY = "audiofocus_setting"
-const val ALBUM_STYLE_KEY = "album_style"
-const val CMD_SET_AUDIOFOCUS_SETTING = "de.moleman1024.audiowagon.CMD_SET_AUDIOFOCUS_SETTING"
-const val CMD_SET_ALBUM_STYLE_SETTING = "de.moleman1024.audiowagon.CMD_SET_ALBUM_STYLE_SETTING"
-const val CMD_ENABLE_CRASH_REPORTING = "de.moleman1024.audiowagon.CMD_ENABLE_CRASH_REPORTING"
-const val CMD_DISABLE_CRASH_REPORTING = "de.moleman1024.audiowagon.CMD_DISABLE_CRASH_REPORTING"
-const val CMD_REQUEST_USB_PERMISSION = "de.moleman1024.audiowagon.CMD_REQUEST_USB_PERMISSION"
 
 @ExperimentalCoroutinesApi
 /**
@@ -171,6 +143,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     val logger = Logger
     private val binder = LocalBinder()
     private val lifecycleObserversMap = mutableMapOf<String, (event: LifecycleEvent) -> Unit>()
+    private val isUSBNotRecoverable = AtomicBoolean()
 
     init {
         isShuttingDown = false
@@ -182,6 +155,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
 
     override fun onCreate() {
         logger.debug(TAG, "onCreate()")
+        isUSBNotRecoverable.set(false)
         isShuttingDown = false
         super.onCreate()
         sharedPrefs = SharedPrefs()
@@ -229,12 +203,16 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         audioFileStorage =
             AudioFileStorage(this, lifecycleScope, dispatcher, usbDevicePermissions, sharedPrefs, crashReporting)
         audioItemLibrary = AudioItemLibrary(this, audioFileStorage, lifecycleScope, dispatcher, gui, sharedPrefs)
+        audioItemLibrary.libraryExceptionObservers.clear()
         audioItemLibrary.libraryExceptionObservers.add { exc ->
             when (exc) {
                 is CannotRecoverUSBException -> {
-                    cancelMostJobs()
-                    notifyLibraryCreationFailure()
-                    crashReporting.logLastMessagesAndRecordException(exc)
+                    if (isUSBNotRecoverable.compareAndSet(false, true)) {
+                        logger.error(TAG, "CannotRecoverUSBException thrown in startup()")
+                        cancelMostJobs()
+                        notifyLibraryCreationFailure()
+                        crashReporting.logLastMessagesAndRecordException(exc)
+                    }
                 }
             }
         }
@@ -246,7 +224,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             sessionToken = audioSession.sessionToken
             logger.debug(TAG, "New media session token: $sessionToken")
             // This avoids "RemoteServiceException: Context.startForegroundService() did not then call
-            // Service.startForeground" when previously started foreground service is restarted
+            // Service.startForeground" when previously started foreground service is restarted.
             // If the service was not started previously, startForeground() should do nothing
             audioSessionNotification = audioSession.getNotification()
             startForeground(NOTIFICATION_ID, audioSessionNotification)
@@ -264,6 +242,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
 
     private fun observeAudioFileStorage() {
         audioFileStorage.storageObservers.add { storageChange ->
+            logger.verbose(TAG, "Received storageChange: $storageChange")
             val allStorageIDs = audioItemLibrary.getAllStorageIDs()
             logger.debug(TAG, "Storage IDs in library before change: $allStorageIDs")
             if (storageChange.error.isNotBlank()) {
@@ -482,13 +461,14 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
      */
     private fun moveServiceToBackground() {
         logger.debug(TAG, "Moving service to background")
-        stopForeground(false)
+        stopForeground(STOP_FOREGROUND_REMOVE)
         servicePriority = ServicePriority.BACKGROUND
     }
 
     private fun onStorageLocationAdded(storageID: String) {
         logger.info(TAG, "onStorageLocationAdded(storageID=$storageID)")
         cancelMostJobs()
+        isUSBNotRecoverable.set(false)
         if (!sharedPrefs.isLegalDisclaimerAgreed(this)) {
             logger.warning(TAG, "User did not agree to legal disclaimer yet")
             notifyBrowserChildrenChangedAllLevels()
@@ -515,7 +495,8 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     }
 
     private fun launchLibraryCreationJobForStorage(storageID: String) {
-        // TODO: the error handling is all over the place, need more structure
+        // TODO: messy: this exception handler is not used because CannotRecoverUSBException will be triggered before
+        //  it comes into play which will cancel coroutines
         libraryCreationSingletonCoroutine.exceptionHandler = CoroutineExceptionHandler { _, exc ->
             notifyLibraryCreationFailure()
             crashReporting.logLastMessagesAndRecordException(exc)
@@ -527,6 +508,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                     logger.exception(TAG, "Exception while building library", exc)
                 }
             }
+            audioItemLibrary.cancelBuildLibrary()
         }
         libraryCreationSingletonCoroutine.launch {
             var cancellationException: CancellationException? = null
@@ -782,6 +764,9 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         }
         if (servicePriority != ServicePriority.FOREGROUND_REQUESTED) {
             moveServiceToBackground()
+            // We can't stop service before we have moved it to background. Without this sleep() this fails often in
+            // instrumented tests
+            Thread.sleep(10)
             stopSelf()
             lastServiceStartReason = ServiceStartStopReason.UNKNOWN
             isServiceStarted = false
@@ -864,12 +849,20 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             return
         }
         cancelMostJobs()
+        // before removing audio session notification the service must be in background
+        stopForeground(STOP_FOREGROUND_REMOVE)
         audioSessionCloseSingletonCoroutine.launch {
             audioSession.storePlaybackState()
             audioSession.shutdown()
         }
-        runBlocking {
-            audioSessionCloseSingletonCoroutine.join()
+        runBlocking(dispatcher) {
+            try {
+                withTimeout(4000) {
+                    audioSessionCloseSingletonCoroutine.join()
+                }
+            } catch (exc: TimeoutCancellationException) {
+                logger.exception(TAG, "Could not close audio session in time", exc)
+            }
         }
         try {
             audioItemLibrary.removeRepository(audioFileStorage.getPrimaryStorageLocation().storageID)
@@ -881,6 +874,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         gui.shutdown()
         stopService(ServiceStartStopReason.LIFECYCLE)
         audioFileStorage.shutdown()
+        isUSBNotRecoverable.set(false)
         logger.debug(TAG, "shutdown() is done")
     }
 
@@ -1010,6 +1004,8 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
      * We don't use EXTRA_PAGE ( https://developer.android.com/reference/android/media/browse/MediaBrowser#EXTRA_PAGE )
      * (IIRC the AAOS client did not send it) instead we use groups of media items to reduce the number of items on a
      * single screen.
+     *
+     * The media item hierarchy is described in [ContentHierarchyElement]
      */
     override fun onLoadChildren(parentId: String, result: Result<MutableList<MediaItem>>) {
         logger.debug(TAG, "onLoadChildren(parentId=$parentId) from package ${currentBrowserInfo.packageName}")

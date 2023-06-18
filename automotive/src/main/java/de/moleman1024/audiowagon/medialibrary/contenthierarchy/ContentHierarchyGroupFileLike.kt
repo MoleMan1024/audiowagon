@@ -37,7 +37,7 @@ class ContentHierarchyGroupFileLike(
         throw RuntimeException("Not playable")
     }
 
-    private fun getDirectoryContents(): List<FileLike> {
+    private suspend fun getDirectoryContents(): List<FileLike> {
         val contentHierarchyDirectory =
             ContentHierarchyDirectory(id, context, audioItemLibrary, audioFileStorage, sharedPrefs)
         val directoryContents = contentHierarchyDirectory.getDirectoryContents()

@@ -12,6 +12,7 @@ import de.moleman1024.audiowagon.filestorage.*
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import java.io.InputStream
 import java.util.*
 
 private const val TEST_MP3_FILENAME = "test.mp3"
@@ -27,18 +28,16 @@ class AssetStorageLocation(override val device: AssetMediaDevice) : AudioFileSto
     override var indexingStatus: IndexingStatus = IndexingStatus.NOT_INDEXED
     override var isDetached: Boolean = false
     override var isIndexingCancelled: Boolean = false
-    // does not need a thread confinement
-    override var libaumsDispatcher: CoroutineDispatcher? = null
 
     override fun walkTopDown(startDirectory: Any, scope: CoroutineScope): Sequence<Any> {
         return sequenceOf(createTestAudioFile())
     }
 
-    override fun getDirectoryContents(directory: Directory): List<FileLike> {
+    override suspend fun getDirectoryContents(directory: Directory): List<FileLike> {
         return listOf(createTestAudioFile())
     }
 
-    override fun getDirectoryContentsPlayable(directory: Directory): List<FileLike> {
+    override suspend fun getDirectoryContentsPlayable(directory: Directory): List<FileLike> {
         return getDirectoryContents(directory)
     }
 
@@ -61,7 +60,7 @@ class AssetStorageLocation(override val device: AssetMediaDevice) : AudioFileSto
         TODO("Not yet implemented")
     }
 
-    override suspend fun getInputStreamForURI(uri: Uri): LockableInputStream {
+    override suspend fun getInputStreamForURI(uri: Uri): InputStream {
         TODO("Not yet implemented")
     }
 

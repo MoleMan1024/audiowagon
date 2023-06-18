@@ -16,12 +16,19 @@ import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.AlbumStyleSetting
 import de.moleman1024.audiowagon.medialibrary.AudioItemType
 import de.moleman1024.audiowagon.medialibrary.MetadataReadSetting
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import android.support.v4.media.session.MediaControllerCompat
+import de.moleman1024.audiowagon.activities.SettingsActivity
 
 private const val TAG = "AudioSessCB"
 private val logger = Logger
 
 /**
+ * This class will handle callbacks that are called by Android when e.g. user haptically interacts with the
+ * MediaBrowser GUI. It will also handle [MediaControllerCompat] commands sent from e.g. the [SettingsActivity]
+ *
  * See https://developer.android.com/reference/android/support/v4/media/session/MediaSessionCompat.Callback
  */
 @ExperimentalCoroutinesApi
@@ -29,7 +36,7 @@ class AudioSessionCallback(
     private val audioPlayer: AudioPlayer,
     scope: CoroutineScope,
     dispatcher: CoroutineDispatcher,
-    crashReporting: CrashReporting
+    crashReporting: CrashReporting,
 ) : MediaSessionCompat.Callback() {
     val observers = mutableListOf<(AudioSessionChange) -> Unit>()
     private val skipToNextSingletonCoroutine =
@@ -37,6 +44,7 @@ class AudioSessionCallback(
     private val skipToPrevSingletonCoroutine =
         SingletonCoroutine("skipToPrev", dispatcher, scope.coroutineContext, crashReporting)
     private val stopSingletonCoroutine = SingletonCoroutine("stop", dispatcher, scope.coroutineContext, crashReporting)
+    private val playSingletonCoroutine = SingletonCoroutine("play", dispatcher, scope.coroutineContext, crashReporting)
     private val pauseSingletonCoroutine =
         SingletonCoroutine("pause", dispatcher, scope.coroutineContext, crashReporting)
     private val seekSingletonCoroutine = SingletonCoroutine("seek", dispatcher, scope.coroutineContext, crashReporting)
@@ -177,8 +185,10 @@ class AudioSessionCallback(
 
     override fun onPlay() {
         logger.debug(TAG, "onPlay()")
-        notifyObservers(AudioSessionChange(AudioSessionChangeType.ON_PLAY))
         super.onPlay()
+        playSingletonCoroutine.launch {
+            notifyObservers(AudioSessionChange(AudioSessionChangeType.ON_PLAY))
+        }
     }
 
     override fun onPlayFromMediaId(mediaId: String?, extras: Bundle?) {
@@ -208,8 +218,7 @@ class AudioSessionCallback(
             val audioSessionChange = AudioSessionChange(AudioSessionChangeType.ON_PLAY_FROM_SEARCH)
             if (!query.isNullOrEmpty()) {
                 audioSessionChange.queryToPlay = query
-                // Aug 2022: it looks like this extra media focus is broken in Google Assistant:
-                // https://issuetracker.google.com/issues/212779546
+                // Google has fixed EXTRA_MEDIA_FOCUS meanwhile ( https://github.com/MoleMan1024/audiowagon/issues/119 )
                 val extraMediaFocus = extras?.getString(MediaStore.EXTRA_MEDIA_FOCUS)
                 extraMediaFocus?.let {
                     when (it) {

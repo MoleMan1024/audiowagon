@@ -6,10 +6,8 @@ SPDX-License-Identifier: GPL-3.0-or-later
 package de.moleman1024.audiowagon.filestorage.usb
 
 import android.media.MediaDataSource
-import me.jahnen.libaums.core.fs.UsbFile
+import de.moleman1024.audiowagon.filestorage.usb.lowlevel.USBFile
 import de.moleman1024.audiowagon.log.Logger
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.runBlocking
 import java.io.IOException
 import java.nio.ByteBuffer
 import kotlin.math.min
@@ -24,20 +22,17 @@ private val logger = Logger
  * Use [USBAudioCachedDataSource] instead for playback.
  */
 open class USBAudioDataSource(
-    private var usbFile: UsbFile?,
-    private val chunkSize: Int,
-    private val libaumsDispatcher: CoroutineDispatcher
+    private var usbFile: USBFile?,
+    private val chunkSize: Int
 ) : MediaDataSource() {
     var isClosed = false
     var hasError = false
     var fileSize: Long = -1L
 
     init {
-        runBlocking(libaumsDispatcher) {
-            logger.verbose(
-                TAG, "Init data source with chunk size $chunkSize for file with length ${usbFile?.length}: $usbFile"
-            )
-        }
+        logger.verbose(
+            TAG, "Init data source with chunk size $chunkSize for file with length ${usbFile?.length}: $usbFile"
+        )
     }
 
     override fun close() {
@@ -45,16 +40,14 @@ open class USBAudioDataSource(
             usbFile = null
             return
         }
-        runBlocking(libaumsDispatcher) {
-            try {
-                usbFile?.close()
-                isClosed = true
-                usbFile = null
-            } catch (exc: IOException) {
-                // If we rethrow this, it will trigger a fatal SIGABRT and the app will be restarted.
-                logger.exceptionLogcatOnly(TAG, "Error while closing USB file, did you unplug the device?", exc)
-                hasError = true
-            }
+        try {
+            usbFile?.close()
+            isClosed = true
+            usbFile = null
+        } catch (exc: IOException) {
+            // If we rethrow this, it will trigger a fatal SIGABRT and the app will be restarted.
+            logger.exceptionLogcatOnly(TAG, "Error while closing USB file, did you unplug the device?", exc)
+            hasError = true
         }
     }
 
@@ -119,10 +112,8 @@ open class USBAudioDataSource(
         if (fileSize >= 0) {
             return fileSize
         }
-        return runBlocking(libaumsDispatcher) {
-            fileSize = usbFile?.length ?: 0
-            return@runBlocking fileSize
-        }
+        fileSize = usbFile?.length ?: 0
+        return fileSize
     }
 
     private fun readFromUSBFileSystem(position: Long, outBuffer: ByteBuffer): Int {
@@ -135,9 +126,7 @@ open class USBAudioDataSource(
 
     fun read(position: Long, outBuffer: ByteBuffer) {
         try {
-            runBlocking(libaumsDispatcher) {
-                usbFile?.read(position, outBuffer)
-            }
+            usbFile?.read(position, outBuffer)
         } catch (exc: IOException) {
             logger.exception(TAG, exc.message.toString(), exc)
             hasError = true

@@ -14,9 +14,8 @@ import kotlinx.coroutines.*
 
 private const val TAG = "AudioBrowserGUI"
 private val logger = Logger
-const val INDEXING_NOTIF_CHANNEL: String = "IndexingNotifChan"
 const val INDEXING_NOTIFICATION_ID: Int = 25468
-const val POPUP_TIMEOUT_MS: Long = 4000L
+const val INDEXING_NOTIF_CHANNEL: String = "IndexingNotifChan"
 
 open class GUI(private val scope: CoroutineScope, private val context: Context) {
     private var changeIndexingNotifJob: Job? = null

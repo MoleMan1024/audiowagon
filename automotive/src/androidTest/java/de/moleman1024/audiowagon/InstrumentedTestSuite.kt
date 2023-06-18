@@ -30,7 +30,6 @@ import org.junit.runners.Suite
     AudioItemLibraryTest::class,
     RepositoryTest::class,
     IndexingTest::class,
-    SettingsFragmentTest::class,
     SharedPrefsTest::class,
     DatabaseMigrationTest::class,
     DatabaseTest::class,
@@ -39,6 +38,9 @@ import org.junit.runners.Suite
 /* WIP
     AlbumArtTest::class,
 */
+    // TODO: tests are slow
     MediaBrowserTest::class,
+    // FIXME: this leaves a service instance lingering
+    SettingsFragmentTest::class,
 )
 class InstrumentedTestSuite

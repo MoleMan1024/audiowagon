@@ -22,11 +22,8 @@ import java.io.ByteArrayOutputStream
 import java.lang.Integer.min
 import java.nio.ByteBuffer
 
-
 private const val TAG = "AlbumArtContentProv"
 private val logger = Logger
-const val AUTHORITY = "de.moleman1024.audiowagon"
-const val DEFAULT_JPEG_QUALITY_PERCENTAGE = 60
 
 /**
  * See https://developer.android.com/guide/topics/providers/content-provider-creating
@@ -119,8 +116,7 @@ class AlbumArtContentProvider : ContentProvider() {
         return proxyFileDescriptor
     }
 
-    @Suppress("BlockingMethodInNonBlockingContext")
-    private fun createProxyFileDescriptor(uri: Uri): ParcelFileDescriptor? = runBlocking {
+    private fun createProxyFileDescriptor(uri: Uri): ParcelFileDescriptor? = runBlocking(Dispatchers.IO) {
         logger.verbose(TAG, "Creating proxy file descriptor for: $uri")
         val future: Deferred<ParcelFileDescriptor?> = async {
             var albumArtByteArray = defaultAlbumArtTracks

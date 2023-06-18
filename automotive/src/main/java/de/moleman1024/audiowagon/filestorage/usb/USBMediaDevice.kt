@@ -8,40 +8,29 @@ package de.moleman1024.audiowagon.filestorage.usb
 import android.app.PendingIntent
 import android.content.Context
 import android.content.pm.PackageManager
-import android.hardware.usb.UsbConstants
 import android.hardware.usb.UsbConstants.USB_CLASS_MASS_STORAGE
 import android.hardware.usb.UsbDevice
 import android.media.MediaDataSource
 import android.net.Uri
-import me.jahnen.libaums.core.UsbMassStorageDevice
-import me.jahnen.libaums.core.fs.FileSystem
-import me.jahnen.libaums.core.fs.UsbFile
 import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.exceptions.DriveAlmostFullException
 import de.moleman1024.audiowagon.exceptions.NoFileSystemException
 import de.moleman1024.audiowagon.filestorage.AudioFile
+import de.moleman1024.audiowagon.filestorage.FileSystem
 import de.moleman1024.audiowagon.filestorage.MediaDevice
+import de.moleman1024.audiowagon.filestorage.usb.lowlevel.USBFile
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.*
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.io.UnsupportedEncodingException
-import java.lang.IllegalArgumentException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 import java.util.concurrent.Executors
-import kotlin.NoSuchElementException
-import kotlin.collections.LinkedHashMap
 
 private const val MINIMUM_FREE_SPACE_FOR_LOGGING_MB = 10
 const val LOG_DIRECTORY = "aw_logs"
-
-// subclass 6 means that the usb mass storage device implements the SCSI transparent command set
-private const val INTERFACE_SUBCLASS_SCSI = 6
-
-// protocol 80 means the communication happens only via bulk transfers
-private const val INTERFACE_PROTOCOL_BULK_TRANSFER = 80
 
 private const val DEFAULT_FILESYSTEM_CHUNK_SIZE = 32768
 
@@ -54,17 +43,15 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
     private var fileSystem: FileSystem? = null
     private var serialNum: String = ""
     private var isSerialNumAvail: Boolean? = null
-    private var logFile: UsbFile? = null
+    private var logFile: USBFile? = null
     private var volumeLabel: String = ""
     private var logDirectoryNum: Int = 0
     private val recentFilepathToFileMap: FilePathToFileMapCache = FilePathToFileMapCache()
+    // thread confinement for certain actions on this USB device
+    private val usbLibDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
 
-    // libaums is not thread-safe. My changes made it a bit more safe but still having some threading problems here and
-    // there, so will try thread confinement
-    val libaumsDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
-
-    private class FilePathToFileMapCache : LinkedHashMap<String, UsbFile>() {
-        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, UsbFile>?): Boolean {
+    private class FilePathToFileMapCache : LinkedHashMap<String, USBFile>() {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, USBFile>?): Boolean {
             return size > MAX_NUM_FILEPATHS_TO_CACHE
         }
     }
@@ -104,127 +91,33 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
         val vendorProductID = Pair(usbDevice.vendorId, usbDevice.productId)
         val vendorProductIDHex = Pair("0x%x".format(usbDevice.vendorId), "0x%x".format(usbDevice.productId))
         logger.debug(TAG, "isToBeIgnored($vendorProductID / $vendorProductIDHex)")
-        // Volvo, Polestar, General Motors, Renault
-        if (vendorProductID in listOf(
-                // Generic USB device (unknown vendor)
-                Pair(17, 30600),
-                // Microchip AN20021 USB to UART Bridge with USB 2.0 hub 0x2530
-                Pair(1060, 9520),
-                // USB Ethernet 0X9E08
-                Pair(1060, 40456),
-                // MicroChip OS81118 network interface card 0x0424
-                Pair(1060, 53016),
-                // Microchip Tech USB49XX NCM/IAP Bridge
-                Pair(1060, 18704),
-                // Microchip USB4913
-                Pair(1060, 18707),
-                // Microchip Tech USB2 Controller Hub
-                Pair(1060, 18752),
-                // Microchip MCP2200 USB to UART converter 0x04D8
-                Pair(1240, 223),
-                // Mitsubishi USB to Modem Bridge 0x06D3
-                Pair(1747, 10272),
-                // Cambridge Silicon Radio Bluetooth dongle 0x0A12
-                Pair(2578, 1),
-                // Cambridge Silicon Radio Bluetooth dongle 0x0A12
-                Pair(2578, 3),
-                // Linux xHCI Host Controller
-                Pair(7531, 2),
-                // Linux xHCI Host Controller
-                Pair(7531, 3),
-                // Aptiv H2H Bridge
-                Pair(10646, 261),
-                // Aptiv Vendor
-                Pair(10646, 288),
-                // Aptiv GM V10  E2 PD
-                Pair(10646, 306),
-                // Delphi Host to Host Bridge
-                Pair(11336, 261),
-                // Delphi Vendor
-                Pair(11336, 288),
-                // Delphi Hub
-                Pair(11336, 306),
-                // Microchip USB2 Controller Hub
-                Pair(18752, 1060),
-            )
-        ) {
-            return true
-        }
-        return false
+        return vendorProductID in Util.USB_DEVICES_TO_IGNORE
     }
 
     private fun isBitfieldMassStorage(bitfield: Int): Boolean {
         return bitfield == USB_CLASS_MASS_STORAGE
     }
 
-    /**
-     * This re-implements some of the checks done in libaums class [UsbMassStorageDevice]. The content of this
-     * function is originally licensed under Apache 2.0. I modified it slightly.
-     *
-     * @see [library source code](https://github.com/magnusja/libaums/blob/develop/libaums/src/main/java/me.jahnen.libaums.core/UsbMassStorageDevice.kt)
-     * TODO: avoid code duplication with libaums library
-     *
-     * (C) Copyright 2014-2019 magnusja <github@mgns.tech>
-     *
-     * Licensed under the Apache License, Version 2.0 (the "License");
-     * you may not use this file except in compliance with the License.
-     * You may obtain a copy of the License at
-     *
-     *     http://www.apache.org/licenses/LICENSE-2.0
-     *
-     * Unless required by applicable law or agreed to in writing, software
-     * distributed under the License is distributed on an "AS IS" BASIS,
-     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-     * See the License for the specific language governing permissions and
-     * limitations under the License.
-     */
-    fun isCompatibleWithLib(): Boolean {
-        return (0 until usbDevice.interfaceCount)
-            .map { usbDevice.getInterface(it) }
-            .filter {
-                // libaums currently only supports SCSI transparent command set with bulk transfers
-                it.interfaceSubclass == INTERFACE_SUBCLASS_SCSI
-                        && it.interfaceProtocol == INTERFACE_PROTOCOL_BULK_TRANSFER
-            }
-            .map { usbInterface ->
-                // Every mass storage device should have exactly two endpoints: One IN and one OUT endpoint
-                // Some people connect strange devices e.g. Transcend MP3 players that have more endpoints but also
-                // support USB mass storage
-                val endpointCount = usbInterface.endpointCount
-                if (endpointCount != 2) {
-                    logger.warning(TAG, "Interface endpoint count: $endpointCount != 2 for $usbInterface")
-                }
-                var outEndpoint: USBEndpoint? = null
-                var inEndpoint: USBEndpoint? = null
-                for (j in 0 until endpointCount) {
-                    val endpoint = usbInterface.getEndpoint(j)
-                    if (endpoint.type == UsbConstants.USB_ENDPOINT_XFER_BULK) {
-                        if (endpoint.direction == UsbConstants.USB_DIR_OUT) {
-                            outEndpoint = endpoint
-                        } else {
-                            inEndpoint = endpoint
-                        }
-                    }
-                }
-                if (outEndpoint == null || inEndpoint == null) {
-                    logger.error(TAG, "Not all needed endpoints found")
-                    return false
-                }
-            }.isNotEmpty()
+    fun isCompatible(): Boolean {
+        return usbDevice.isCompatible()
     }
 
     suspend fun initFilesystem() {
         if (hasFileSystem()) {
             return
         }
-        withContext(libaumsDispatcher) {
-            fileSystem = usbDevice.initFilesystem(context)
-            if (fileSystem == null) {
-                logger.error(TAG, "No filesystem after initFilesystem() for: $this")
-                return@withContext
+        try {
+            withContext(usbLibDispatcher) {
+                fileSystem = usbDevice.initFilesystem(context)
+                if (fileSystem == null) {
+                    logger.error(TAG, "No filesystem after initFilesystem() for: $this")
+                    return@withContext
+                }
+                volumeLabel = fileSystem?.volumeLabel?.trim() ?: ""
+                logger.debug(TAG, "Initialized filesystem with volume label: $volumeLabel")
             }
-            volumeLabel = fileSystem?.volumeLabel?.trim() ?: ""
-            logger.debug(TAG, "Initialized filesystem with volume label: $volumeLabel")
+        } catch (exc: Exception) {
+            throw exc
         }
     }
 
@@ -244,19 +137,15 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
         val now = LocalDateTime.now()
         val logFileName = "audiowagon_${now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"))}.log"
         try {
-            withContext(libaumsDispatcher) {
-                var logDirectory: UsbFile?
+            withContext(usbLibDispatcher) {
+                var logDirectory: USBFile?
                 logDirectory = getRoot().search("${LOG_DIRECTORY}_$logDirectoryNum")
                 if (logDirectory == null) {
                     logDirectory = getRoot().createDirectory("${LOG_DIRECTORY}_$logDirectoryNum")
                 }
                 logFile = logDirectory.createFile(logFileName)
                 logger.debug(TAG, "Logging to file on USB device: ${logFile!!.absolutePath}")
-                logger.setUSBFile(
-                    logFile!!,
-                    fileSystem?.chunkSize ?: DEFAULT_FILESYSTEM_CHUNK_SIZE,
-                    libaumsDispatcher
-                )
+                logger.setUSBFile(logFile!!, getChunkSize())
             }
             logVersionToUSBLogfile()
         } catch (exc: IOException) {
@@ -278,8 +167,14 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
             logger.setFlushToUSBFlag()
             runBlocking(Dispatchers.IO) {
                 logger.writeBufferedLogToUSBFile()
+                try {
+                    withTimeout(3000) {
+                        logger.closeUSBFile()
+                    }
+                } catch (exc: TimeoutCancellationException) {
+                    logger.exception(TAG, "Could not close log file on USB in time", exc)
+                }
             }
-            logger.closeUSBFile()
         } catch (exc: IOException) {
             logFile = null
             throw exc
@@ -303,7 +198,6 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
         }
     }
 
-    // confined by libaumsDispatcher internally
     fun close() {
         logger.debug(TAG, "Closing: ${getName()}")
         try {
@@ -315,14 +209,13 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
     }
 
     fun closeMassStorageFilesystem() {
-        runBlocking(libaumsDispatcher) {
+        runBlocking(usbLibDispatcher) {
             fileSystem = null
             usbDevice.close()
         }
     }
 
-    // needs to be confied via libaumsDispatcher externally
-    fun getRoot(): UsbFile {
+    fun getRoot(): USBFile {
         if (!hasFileSystem()) {
             throw NoSuchElementException("No filesystem in getRoot() for: $this")
         }
@@ -331,28 +224,21 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
     }
 
     /**
-     * Traverses files/directories breadth-first. Locked internally by usbMutex
+     * Traverses files/directories breadth-first
      */
-    fun walkTopDown(rootDirectory: UsbFile, scope: CoroutineScope): Sequence<UsbFile> = sequence {
-        val queue = LinkedList<UsbFile>()
+    fun walkTopDown(rootDirectory: USBFile, scope: CoroutineScope): Sequence<USBFile> = sequence {
+        val queue = LinkedList<USBFile>()
         val allFilesDirs = mutableMapOf<String, Unit>()
         clearRecentFilepathToFileMap()
-        runBlocking(libaumsDispatcher) {
-            allFilesDirs[rootDirectory.absolutePath] = Unit
-        }
+        allFilesDirs[rootDirectory.absolutePath] = Unit
         queue.add(rootDirectory)
         while (queue.isNotEmpty()) {
             scope.ensureActive()
             val fileOrDirectory = queue.removeFirst()
             assertFileSystemAvailable()
-            var isDirectory: Boolean
-            var absPath: String
-            var name: String
-            runBlocking(libaumsDispatcher) {
-                isDirectory = fileOrDirectory.isDirectory
-                absPath = fileOrDirectory.absolutePath
-                name = fileOrDirectory.name
-            }
+            val isDirectory: Boolean = fileOrDirectory.isDirectory
+            val absPath: String = fileOrDirectory.absolutePath
+            val name: String = fileOrDirectory.name
             if (!isDirectory) {
                 if (name.contains(Util.FILES_TO_IGNORE_REGEX)) {
                     logger.debug(TAG, "Ignoring file: $name")
@@ -368,20 +254,15 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
                     logger.debug(TAG, "Walking directory: $absPath")
                     recentFilepathToFileMap[absPath] = fileOrDirectory
                     yield(fileOrDirectory)
-                    var subFilesDirs: List<UsbFile>
-                    runBlocking(libaumsDispatcher) {
-                        subFilesDirs = fileOrDirectory.listFiles().sortedBy { it.name.lowercase() }
-                    }
+                    val subFilesDirs: List<USBFile> = fileOrDirectory.listFiles().sortedBy { it.name.lowercase() }
                     for (subFileOrDir in subFilesDirs) {
                         assertFileSystemAvailable()
-                        runBlocking(libaumsDispatcher) {
-                            if (!allFilesDirs.containsKey(subFileOrDir.absolutePath)) {
-                                allFilesDirs[subFileOrDir.absolutePath] = Unit
-                                if (subFileOrDir.isDirectory) {
-                                    logger.verbose(TAG, "Found directory: ${subFileOrDir.absolutePath}")
-                                }
-                                queue.add(subFileOrDir)
+                        if (!allFilesDirs.containsKey(subFileOrDir.absolutePath)) {
+                            allFilesDirs[subFileOrDir.absolutePath] = Unit
+                            if (subFileOrDir.isDirectory) {
+                                logger.verbose(TAG, "Found directory: ${subFileOrDir.absolutePath}")
                             }
+                            queue.add(subFileOrDir)
                         }
                     }
                 }
@@ -399,25 +280,23 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
         }
     }
 
-    fun getDirectoryContents(directoryURI: Uri): List<UsbFile> {
+    fun getDirectoryContents(directoryURI: Uri): List<USBFile> {
         logger.verbose(TAG, "getDirectoryContents(directoryURI=$directoryURI)")
-        return runBlocking(libaumsDispatcher) {
-            val directory = getUSBFileFromURI(directoryURI)
-            if (!directory.isDirectory) {
-                throw IllegalArgumentException("Is not a directory: $directory")
-            }
-            return@runBlocking directory.listFiles().sortedBy { it.name }.toList()
+        val directory = getUSBFileFromURI(directoryURI)
+        if (!directory.isDirectory) {
+            throw IllegalArgumentException("Is not a directory: $directory")
         }
+        return directory.listFiles().sortedBy { it.name }.toList()
     }
 
     override fun getName(): String {
         val stringBuilder: StringBuilder = StringBuilder()
         stringBuilder.append("${USBMediaDevice::class.simpleName}{")
         if (usbDevice.manufacturerName?.isBlank() == false) {
-            stringBuilder.append(usbDevice.manufacturerName)
+            stringBuilder.append(usbDevice.manufacturerName?.trimEnd())
         }
         if (usbDevice.productName?.isBlank() == false) {
-            stringBuilder.append(" ${usbDevice.productName}")
+            stringBuilder.append(" ${usbDevice.productName?.trimEnd()}")
         }
         stringBuilder.append("(")
         if (usbDevice.vendorId >= 0) {
@@ -446,38 +325,26 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
         if (!hasFileSystem()) {
             throw IOException("No filesystem for data source")
         }
-        val chunkSize: Int
-        val usbFile: UsbFile
-        withContext(libaumsDispatcher) {
-            chunkSize = fileSystem!!.chunkSize
-            usbFile = getUSBFileFromURI(uri)
-        }
-        return USBMetaDataSource(usbFile, chunkSize, libaumsDispatcher)
+        val usbFile: USBFile = getUSBFileFromURI(uri)
+        return USBMetaDataSource(usbFile, getChunkSize())
     }
 
     override suspend fun getBufferedDataSourceForURI(uri: Uri): MediaDataSource {
         if (!hasFileSystem()) {
             throw IOException("No filesystem for data source")
         }
-        val chunkSize: Int
-        val usbFile: UsbFile
-        withContext(libaumsDispatcher) {
-            chunkSize = fileSystem!!.chunkSize
-            usbFile = getUSBFileFromURI(uri)
-        }
-        return USBAudioCachedDataSource(usbFile, chunkSize, libaumsDispatcher)
+        val usbFile: USBFile = getUSBFileFromURI(uri)
+        return USBAudioCachedDataSource(usbFile, getChunkSize())
     }
 
-    // locked externally
     override fun getFileFromURI(uri: Uri): Any {
         return getUSBFileFromURI(uri)
     }
 
-    // needs to be confied via libaumsDispatcher externally
-    fun getUSBFileFromURI(uri: Uri): UsbFile {
+    fun getUSBFileFromURI(uri: Uri): USBFile {
         val audioFile = AudioFile(uri)
         val filePath = audioFile.path
-        val usbFileFromCache: UsbFile? = recentFilepathToFileMap[filePath]
+        val usbFileFromCache: USBFile? = recentFilepathToFileMap[filePath]
         if (usbFileFromCache != null) {
             logger.verbose(TAG, "Returning file/dir from cache: $uri")
             return usbFileFromCache
@@ -556,19 +423,15 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
         return serialNum
     }
 
-    private suspend fun isDriveAlmostFull(): Boolean {
+    private fun isDriveAlmostFull(): Boolean {
         if (!hasFileSystem()) {
             throw NoFileSystemException()
         }
-        return withContext(libaumsDispatcher) {
-            return@withContext fileSystem!!.freeSpace < 1024 * 1024 * MINIMUM_FREE_SPACE_FOR_LOGGING_MB
-        }
+        return fileSystem!!.freeSpace < 1024 * 1024 * MINIMUM_FREE_SPACE_FOR_LOGGING_MB
     }
 
-    suspend fun getChunkSize(): Int {
-        return withContext(libaumsDispatcher) {
-            return@withContext fileSystem?.chunkSize ?: DEFAULT_FILESYSTEM_CHUNK_SIZE
-        }
+    fun getChunkSize(): Int {
+        return fileSystem?.chunkSize ?: DEFAULT_FILESYSTEM_CHUNK_SIZE
     }
 
     override fun equals(other: Any?): Boolean {

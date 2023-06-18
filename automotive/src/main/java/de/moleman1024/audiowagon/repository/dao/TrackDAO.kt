@@ -25,7 +25,11 @@ interface TrackDAO {
     @Query("SELECT * FROM track ORDER BY COALESCE(NULLIF(sortName,''), name) COLLATE NOCASE ASC")
     fun queryAll(): List<Track>
 
-    @Query("SELECT * FROM track ORDER BY random() LIMIT :maxNumItems")
+    @Query(
+        "SELECT * FROM track as t1 " +
+                "JOIN (SELECT trackId FROM track ORDER BY RANDOM() LIMIT :maxNumItems) as t2 " +
+                "ON t1.trackId = t2.trackId"
+    )
     fun queryRandom(maxNumItems: Int): List<Track>
 
     @Query("SELECT * FROM track WHERE uriString = :uri ORDER BY COALESCE(NULLIF(sortName,''), name) COLLATE NOCASE ASC")
@@ -158,29 +162,40 @@ interface TrackDAO {
     fun queryNumTracksByArtistAndAlbum(artistId: Long, albumId: Long): Int
 
     @Query(
-        "SELECT COUNT(*) FROM track WHERE parentAlbumArtistId = :artistId AND parentAlbumId = :albumId ORDER BY " +
-                "COALESCE(NULLIF(sortName,''), name) " +
-                "COLLATE NOCASE ASC"
+        "SELECT COUNT(*) FROM track " +
+                "WHERE parentAlbumArtistId = :artistId AND parentAlbumId = :albumId " +
+                "ORDER BY COALESCE(NULLIF(sortName,''), name) COLLATE NOCASE ASC"
     )
     fun queryNumTracksByAlbumArtistAndAlbum(artistId: Long, albumId: Long): Int
 
     @Query(
-        "SELECT track.* FROM track JOIN trackfts ON track.name = trackfts.name WHERE trackfts MATCH :query " +
+        "SELECT track.* FROM track " +
+                "JOIN trackfts ON track.name = trackfts.name " +
+                "WHERE trackfts MATCH :query " +
+                "ORDER BY COALESCE(NULLIF(track.sortName,''), track.name) COLLATE NOCASE ASC " +
                 "LIMIT $MAX_DATABASE_SEARCH_ROWS"
     )
     fun search(query: String): List<Track>
 
     @Query(
-        "SELECT DISTINCT track.* FROM track JOIN trackfts ON track.name = trackfts.name JOIN artist ON " +
-                "track.parentArtistId = artist.artistId JOIN artistfts ON artist.name = artistfts.name " +
-                "WHERE trackfts MATCH :track AND artistfts MATCH :artist LIMIT $MAX_DATABASE_SEARCH_ROWS"
+        "SELECT DISTINCT track.* FROM track " +
+                "JOIN trackfts ON track.name = trackfts.name " +
+                "JOIN artist ON (track.parentArtistId = artist.artistId OR track.parentAlbumArtistId = artist.artistId) " +
+                "JOIN artistfts ON artist.name = artistfts.name " +
+                "WHERE trackfts MATCH :track AND artistfts MATCH :artist " +
+                "ORDER BY COALESCE(NULLIF(track.sortName,''), track.name) COLLATE NOCASE ASC " +
+                "LIMIT $MAX_DATABASE_SEARCH_ROWS"
     )
     fun searchWithArtist(track: String, artist: String): List<Track>
 
     @Query(
-        "SELECT DISTINCT track.* FROM track JOIN trackfts ON track.name = trackfts.name JOIN album ON " +
-                "track.parentAlbumId = album.albumId JOIN albumfts ON album.name = albumfts.name " +
-                "WHERE trackfts MATCH :track AND albumfts MATCH :album LIMIT $MAX_DATABASE_SEARCH_ROWS"
+        "SELECT DISTINCT track.* FROM track " +
+                "JOIN trackfts ON track.name = trackfts.name " +
+                "JOIN album ON track.parentAlbumId = album.albumId " +
+                "JOIN albumfts ON album.name = albumfts.name " +
+                "WHERE trackfts MATCH :track AND albumfts MATCH :album " +
+                "ORDER BY COALESCE(NULLIF(track.sortName,''), track.name) COLLATE NOCASE ASC " +
+                "LIMIT $MAX_DATABASE_SEARCH_ROWS"
     )
     fun searchWithAlbum(track: String, album: String): List<Track>
 

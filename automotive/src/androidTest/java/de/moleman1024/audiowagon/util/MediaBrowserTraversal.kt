@@ -20,6 +20,7 @@ class MediaBrowserTraversal(private val browser: MediaBrowserCompat) {
     val future = CompletableFuture<Unit>()
     private val callback = object : MediaBrowserCompat.SubscriptionCallback() {
         override fun onChildrenLoaded(parentId: String, children: MutableList<MediaBrowserCompat.MediaItem>) {
+            Logger.debug(TAG, "Received onChildrenLoaded() for num items: ${children.size}")
             children.forEach {
                 if (parentId in hierarchy) {
                     hierarchy[parentId]?.add(it)
@@ -30,6 +31,7 @@ class MediaBrowserTraversal(private val browser: MediaBrowserCompat) {
                     nodes.push(it.mediaId)
                 }
             }
+            Logger.debug(TAG, "nodes=$nodes")
             if (!nodes.empty()) {
                 val node = nodes.pop()
                 traverse(node)
@@ -40,10 +42,12 @@ class MediaBrowserTraversal(private val browser: MediaBrowserCompat) {
     }
 
     private fun traverse(key: String) {
+        Logger.debug(TAG, "traverse(key=$key)")
         browser.subscribe(key, callback)
     }
 
     fun start(root: String) {
+        Logger.debug(TAG, "Starting media traversal from: $root")
         browser.subscribe(root, callback)
         try {
             future.get(10, TimeUnit.SECONDS)
