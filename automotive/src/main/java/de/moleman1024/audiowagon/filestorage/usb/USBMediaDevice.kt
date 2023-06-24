@@ -121,7 +121,6 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
         }
     }
 
-    @Suppress("BlockingMethodInNonBlockingContext")
     suspend fun enableLogging() {
         logger.verbose(TAG, "enableLogging()")
         if (logFile != null) {
@@ -166,13 +165,13 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
             logger.info(TAG, "Disabling log to file on USB device")
             logger.setFlushToUSBFlag()
             runBlocking(Dispatchers.IO) {
-                logger.writeBufferedLogToUSBFile()
                 try {
-                    withTimeout(3000) {
+                    withTimeout(4000) {
+                        logger.writeBufferedLogToUSBFile()
                         logger.closeUSBFile()
                     }
                 } catch (exc: TimeoutCancellationException) {
-                    logger.exception(TAG, "Could not close log file on USB in time", exc)
+                    logger.exception(TAG, "Could not write/close log file on USB in time", exc)
                 }
             }
         } catch (exc: IOException) {

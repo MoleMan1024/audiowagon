@@ -12,6 +12,18 @@ Google's review process which can take a couple of days.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project loosely follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [2.4.6] - 2023-06-23
+
+### Fixed
+
+- fixed some concurrency issues related to new multi-threaded library creation
+- catch OutOfMemoryException when loading large embedded album art
+- cache only downsized album art instead of full-sized album art to save memory
+- try to avoid an ANR when writing remaining logging during shutdown
+- minor library update
+
+
 ## [2.4.5] - 2023-06-18
 
 ### Fixed

@@ -6,6 +6,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 package de.moleman1024.audiowagon.medialibrary
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -17,17 +18,21 @@ class AudioItemLibraryTest {
     fun initRepository_default_createsRepository() {
         val audioItemLibrary = AudioItemLibraryFixture().audioItemLibrary
         val storageID = "FOOBAR"
-        audioItemLibrary.initRepository(storageID)
-        assertTrue(audioItemLibrary.areAnyReposAvail())
+        runBlocking {
+            audioItemLibrary.initRepository(storageID)
+            assertTrue(audioItemLibrary.areAnyReposAvail())
+        }
     }
 
     @Test
     fun removeRepository_repositoryExists_deletesRepository() {
         val audioItemLibrary = AudioItemLibraryFixture().audioItemLibrary
         val storageID = "FOOBAR"
-        audioItemLibrary.initRepository(storageID)
-        audioItemLibrary.removeRepository(storageID)
-        assertFalse(audioItemLibrary.areAnyReposAvail())
+        runBlocking {
+            audioItemLibrary.initRepository(storageID)
+            audioItemLibrary.removeRepository(storageID)
+            assertFalse(audioItemLibrary.areAnyReposAvail())
+        }
     }
 
 }

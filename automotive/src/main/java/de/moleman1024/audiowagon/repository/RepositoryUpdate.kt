@@ -24,6 +24,7 @@ import de.moleman1024.audiowagon.repository.entities.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import java.time.temporal.ChronoUnit
 import java.util.*
+import java.util.concurrent.ConcurrentLinkedQueue
 
 
 private const val TAG = "RepositoryUpdate"
@@ -33,8 +34,8 @@ private val logger = Logger
 class RepositoryUpdate(private val repo: AudioItemRepository, private val context: Context) {
     private var pseudoCompilationArtistID: Long? = null
     private var pseudoCompilationArtistName: String? = null
-    val trackIDsToKeep = mutableListOf<Long>()
-    val pathIDsToKeep = mutableListOf<Long>()
+    val trackIDsToKeep = ConcurrentLinkedQueue<Long>()
+    val pathIDsToKeep = ConcurrentLinkedQueue<Long>()
 
     /**
      * Adds a new entries into database (tracks, artists, albums, paths).
@@ -151,7 +152,7 @@ class RepositoryUpdate(private val repo: AudioItemRepository, private val contex
         )
         logger.debug(TAG, "Inserting track: $track")
         val trackID: Long = repo.getDatabaseNoLock()?.trackDAO()?.insert(track) ?: DATABASE_ID_UNKNOWN
-        repo.trackIDsToKeep.add(trackID)
+        trackIDsToKeep.add(trackID)
     }
 
     // locked externally
@@ -170,7 +171,7 @@ class RepositoryUpdate(private val repo: AudioItemRepository, private val contex
         }
         logger.debug(TAG, "Inserting file/directory: $path")
         val pathDatabaseID: Long = repo.getDatabaseNoLock()?.pathDAO()?.insert(path) ?: DATABASE_ID_UNKNOWN
-        repo.pathIDsToKeep.add(pathDatabaseID)
+        pathIDsToKeep.add(pathDatabaseID)
     }
 
     // locked externally

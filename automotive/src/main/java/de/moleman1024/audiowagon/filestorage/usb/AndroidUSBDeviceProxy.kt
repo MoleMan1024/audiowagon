@@ -366,6 +366,10 @@ class AndroidUSBDeviceProxy(
                         }
                     }
                 }
+
+                override fun toString(): String {
+                    return "wrappedUSBFile($libaumsUSBFile)"
+                }
             }
         }
     }

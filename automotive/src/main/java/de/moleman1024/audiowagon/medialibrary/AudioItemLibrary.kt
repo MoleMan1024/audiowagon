@@ -30,6 +30,8 @@ import de.moleman1024.audiowagon.repository.entities.Status
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.io.IOException
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.coroutineContext
@@ -57,6 +59,7 @@ class AudioItemLibrary(
 ) {
     private val metadataMaker = AudioMetadataMaker(audioFileStorage)
     val storageToRepoMap = mutableMapOf<String, AudioItemRepository>()
+    private val libraryMutex = Mutex()
     var isBuildingLibrary = false
     var numFileDirsSeenWhenBuildingLibrary = 0
     var libraryExceptionObservers = mutableListOf<(Exception) -> Unit>()
@@ -73,30 +76,34 @@ class AudioItemLibrary(
     var useInMemoryDatabase: Boolean = false
     private val buildLibraryJobs = mutableListOf<Job>()
 
-    fun initRepository(storageID: String) {
-        recentAudioItemToAlbumArtMap.clear()
-        if (storageToRepoMap.containsKey(storageID)) {
-            return
+    suspend fun initRepository(storageID: String) {
+        libraryMutex.withLock {
+            recentAudioItemToAlbumArtMap.clear()
+            if (storageToRepoMap.containsKey(storageID)) {
+                return
+            }
+            val dbName = AudioItemRepository.createDatabaseName(storageID)
+            var dbBuilder = Room.databaseBuilder(context, AudioItemDatabase::class.java, dbName)
+                .fallbackToDestructiveMigration()
+            if (useInMemoryDatabase) {
+                dbBuilder =
+                    Room.inMemoryDatabaseBuilder(context, AudioItemDatabase::class.java).fallbackToDestructiveMigration()
+            }
+            val repo = AudioItemRepository(storageID, context, dispatcher, dbBuilder)
+            storageToRepoMap[storageID] = repo
         }
-        val dbName = AudioItemRepository.createDatabaseName(storageID)
-        var dbBuilder = Room.databaseBuilder(context, AudioItemDatabase::class.java, dbName)
-            .fallbackToDestructiveMigration()
-        if (useInMemoryDatabase) {
-            dbBuilder =
-                Room.inMemoryDatabaseBuilder(context, AudioItemDatabase::class.java).fallbackToDestructiveMigration()
-        }
-        val repo = AudioItemRepository(storageID, context, dispatcher, dbBuilder)
-        storageToRepoMap[storageID] = repo
     }
 
-    fun removeRepository(storageID: String) {
-        recentAudioItemToAlbumArtMap.clear()
-        if (!storageToRepoMap.containsKey(storageID)) {
-            return
+    suspend fun removeRepository(storageID: String) {
+        libraryMutex.withLock {
+            recentAudioItemToAlbumArtMap.clear()
+            if (!storageToRepoMap.containsKey(storageID)) {
+                return
+            }
+            val repo = storageToRepoMap[storageID] ?: return
+            repo.close()
+            storageToRepoMap.remove(storageID)
         }
-        val repo = storageToRepoMap[storageID] ?: return
-        repo.close()
-        storageToRepoMap.remove(storageID)
     }
 
     /**
@@ -540,7 +547,7 @@ class AudioItemLibrary(
     /**
      * Convert internal artist name "Various artists" into localized string if necessary
      */
-    private fun localizeArtistName(artistName: String): String {
+    private suspend fun localizeArtistName(artistName: String): String {
         val repo = getPrimaryRepository() ?: return artistName
         val variousArtistsEnglish = repo.getPseudoCompilationArtistNameEnglish()
         if (artistName.lowercase() != variousArtistsEnglish.lowercase()) {
@@ -551,8 +558,10 @@ class AudioItemLibrary(
 
     private suspend fun getNumTracksForArtist(artistID: Long): Int {
         var numTracks = 0
-        storageToRepoMap.values.forEach { repo ->
-            numTracks += repo.getNumTracksForArtist(artistID)
+        libraryMutex.withLock {
+            storageToRepoMap.values.forEach { repo ->
+                numTracks += repo.getNumTracksForArtist(artistID)
+            }
         }
         return numTracks
     }
@@ -749,7 +758,7 @@ class AudioItemLibrary(
                     val albumArtResized = metadataMaker.resizeAlbumArt(albumArtBytes)
                     if (albumArtResized != null) {
                         logger.debug(TAG, "Got album art with size ${albumArtResized.size} for: ${audioItem.uri}")
-                        recentAudioItemToAlbumArtMap[file.uri.toString()] = albumArtBytes
+                        recentAudioItemToAlbumArtMap[file.uri.toString()] = albumArtResized
                     }
                     return albumArtResized
                 }
@@ -759,7 +768,7 @@ class AudioItemLibrary(
                 val albumArtResized = metadataMaker.resizeAlbumArt(albumArtBytes)
                 if (albumArtResized != null) {
                     logger.debug(TAG, "Found album art in directory with size ${albumArtResized.size} for: ${file.uri}")
-                    recentAudioItemToAlbumArtMap[file.uri.toString()] = albumArtBytes
+                    recentAudioItemToAlbumArtMap[file.uri.toString()] = albumArtResized
                 }
                 return albumArtResized
             }
@@ -838,31 +847,34 @@ class AudioItemLibrary(
         return null
     }
 
-    fun getRepoForContentHierarchyID(contentHierarchyID: ContentHierarchyID): AudioItemRepository? {
+    suspend fun getRepoForContentHierarchyID(contentHierarchyID: ContentHierarchyID): AudioItemRepository? {
         val storageID = contentHierarchyID.storageID
-        return storageToRepoMap[storageID]
+        libraryMutex.withLock {
+            return storageToRepoMap[storageID]
+        }
     }
 
     fun getAllStorageIDs(): List<String> {
-        return storageToRepoMap.keys.toList()
+        return runBlocking(dispatcher) {
+            libraryMutex.withLock {
+                return@runBlocking storageToRepoMap.keys.toList()
+            }
+        }
     }
 
-    fun areAnyReposAvail(): Boolean {
-        return storageToRepoMap.isNotEmpty()
+    suspend fun areAnyReposAvail(): Boolean {
+        libraryMutex.withLock {
+            return storageToRepoMap.isNotEmpty()
+        }
     }
 
-    fun shutdown() {
-        logger.debug(TAG, "shutdown()")
-        storageToRepoMap.values.forEach { it.close() }
-        storageToRepoMap.clear()
-        recentAudioItemToAlbumArtMap.clear()
-    }
-
-    fun suspend() {
+    suspend fun suspend() {
         logger.debug(TAG, "suspend()")
-        storageToRepoMap.values.forEach { it.close() }
-        storageToRepoMap.clear()
-        recentAudioItemToAlbumArtMap.clear()
+        libraryMutex.withLock {
+            storageToRepoMap.values.forEach { it.close() }
+            storageToRepoMap.clear()
+            recentAudioItemToAlbumArtMap.clear()
+        }
     }
 
     private fun notifyObservers(exc: Exception) {
@@ -881,11 +893,13 @@ class AudioItemLibrary(
     }
 
     // we do not support multiple repositories
-    fun getPrimaryRepository(): AudioItemRepository? {
-        if (storageToRepoMap.isEmpty()) {
-            return null
+    suspend fun getPrimaryRepository(): AudioItemRepository? {
+        libraryMutex.withLock {
+            if (storageToRepoMap.isEmpty()) {
+                return null
+            }
+            return storageToRepoMap.values.toTypedArray()[0]
         }
-        return storageToRepoMap.values.toTypedArray()[0]
     }
 
     suspend fun getPseudoCompilationArtistID(): Long? {

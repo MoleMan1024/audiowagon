@@ -643,7 +643,9 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         if (storageID.isNotBlank()) {
             try {
                 val storageLocation = audioFileStorage.getStorageLocationForID(storageID)
-                audioItemLibrary.removeRepository(storageLocation.storageID)
+                runBlocking(dispatcher) {
+                    audioItemLibrary.removeRepository(storageLocation.storageID)
+                }
             } catch (exc: IllegalArgumentException) {
                 logger.warning(TAG, exc.toString())
             }
@@ -863,13 +865,13 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             } catch (exc: TimeoutCancellationException) {
                 logger.exception(TAG, "Could not close audio session in time", exc)
             }
-        }
-        try {
-            audioItemLibrary.removeRepository(audioFileStorage.getPrimaryStorageLocation().storageID)
-        } catch (exc: (NoSuchElementException)) {
-            logger.warning(TAG, exc.toString())
-        } catch (exc: (IllegalArgumentException)) {
-            logger.warning(TAG, exc.toString())
+            try {
+                audioItemLibrary.removeRepository(audioFileStorage.getPrimaryStorageLocation().storageID)
+            } catch (exc: (NoSuchElementException)) {
+                logger.warning(TAG, exc.toString())
+            } catch (exc: (IllegalArgumentException)) {
+                logger.warning(TAG, exc.toString())
+            }
         }
         gui.shutdown()
         stopService(ServiceStartStopReason.LIFECYCLE)
@@ -1180,7 +1182,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.NONE)
-    fun getPrimaryRepo(): AudioItemRepository? {
+    suspend fun getPrimaryRepo(): AudioItemRepository? {
         return audioItemLibrary.getPrimaryRepository()
     }
 

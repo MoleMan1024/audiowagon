@@ -12,6 +12,7 @@ import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.mocks.MockUSBDevice
 import de.moleman1024.audiowagon.util.ServiceFixture
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -56,6 +57,8 @@ class AudioItemLibraryTest {
     fun usbDeviceAttachedBroadcast_default_isHandled() {
         attachUSBDevice()
         val audioItemLibrary = audioBrowserService.getAudioItemLibrary()
-        assertTrue("No repositories", audioItemLibrary.areAnyReposAvail())
+        runBlocking {
+            assertTrue("No repositories", audioItemLibrary.areAnyReposAvail())
+        }
     }
 }

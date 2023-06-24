@@ -13,7 +13,6 @@ import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.util.ServiceFixture
 import de.moleman1024.audiowagon.util.TestUtils
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.runBlocking
 import org.junit.*
 import java.io.File
 

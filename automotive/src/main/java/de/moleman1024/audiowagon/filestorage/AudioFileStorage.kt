@@ -60,6 +60,7 @@ open class AudioFileStorage(
 ) {
     // TODO: this was originally intended to support multiple storage locations, but we only allow a single one now
     private val audioFileStorageLocations: MutableList<AudioFileStorageLocation> = mutableListOf()
+    private val audioFileStorageLocationMutex = Mutex()
     private var usbDeviceConnections: USBDeviceConnections = USBDeviceConnections(
         context, scope, usbDevicePermissions, sharedPrefs, crashReporting
     )
@@ -123,7 +124,6 @@ open class AudioFileStorage(
             return
         }
         logger.verbose(TAG, "Running on emulator")
-        @Suppress("KotlinConstantConditions")
         if (!Util.isDebugBuild(context)) {
             logger.debug(TAG, "initAssetsForEmulator()")
             try {
@@ -152,11 +152,15 @@ open class AudioFileStorage(
         try {
             val storageLocation = createStorageLocationForDevice(device)
             logger.debug(TAG, "Created storage location: $storageLocation")
-            if (audioFileStorageLocations.size > 0) {
-                logger.warning(TAG, "Already a device in storage, clearing: ${audioFileStorageLocations}}")
-                audioFileStorageLocations.clear()
+            runBlocking(dispatcher) {
+                audioFileStorageLocationMutex.withLock {
+                    if (audioFileStorageLocations.size > 0) {
+                        logger.warning(TAG, "Already a device in storage, clearing: ${audioFileStorageLocations}}")
+                        audioFileStorageLocations.clear()
+                    }
+                    audioFileStorageLocations.add(storageLocation)
+                }
             }
-            audioFileStorageLocations.add(storageLocation)
             val storageChange = StorageChange(storageLocation.storageID, StorageAction.ADD)
             notifyObservers(storageChange)
         } catch (exc: RuntimeException) {
@@ -181,10 +185,13 @@ open class AudioFileStorage(
         }
     }
 
-    private fun removeDevice(device: MediaDevice) {
-        logger.debug(TAG, "Removing device from storage: ${device.getName()}")
-        val storageLocations: List<AudioFileStorageLocation> = audioFileStorageLocations.filter { it.device == device }
-        logger.debug(TAG, "audioFileStorageLocations at start of removeDevice(): $audioFileStorageLocations")
+    private suspend fun removeDevice(device: MediaDevice) {
+        var storageLocations: List<AudioFileStorageLocation> = listOf()
+        audioFileStorageLocationMutex.withLock {
+            logger.debug(TAG, "Removing device from storage: ${device.getName()}")
+            storageLocations = audioFileStorageLocations.filter { it.device == device }
+            logger.debug(TAG, "audioFileStorageLocations at start of removeDevice(): $audioFileStorageLocations")
+        }
         if (storageLocations.isEmpty()) {
             logger.warning(TAG, "Device ${device.getID()} is not in storage (storage is empty)")
             val storageChange = StorageChange(id = "", StorageAction.REMOVE)
@@ -195,19 +202,24 @@ open class AudioFileStorage(
         // we first notify the observers before removing the storage location, the observer will access it
         val storageChange = StorageChange(storageLocation.storageID, StorageAction.REMOVE)
         notifyObservers(storageChange)
-        // TODO: the initial design of the app allowed for multiple audio file storage locations in parallel, I
-        //  gave up on that midway, should re-design the classes a bit
-        audioFileStorageLocations.clear()
-        logger.debug(TAG, "audioFileStorageLocations cleared at end of removeDevice()")
+        audioFileStorageLocationMutex.withLock {
+            // TODO: the initial design of the app allowed for multiple audio file storage locations in parallel, I
+            //  gave up on that midway, should re-design the classes a bit
+            audioFileStorageLocations.clear()
+            logger.debug(TAG, "audioFileStorageLocations cleared at end of removeDevice()")
+        }
     }
 
-    private fun detachStorageForDevice(device: MediaDevice) {
-        logger.debug(TAG, "Setting storage location for device as already detached: ${device.getName()}")
-        val storageLocations: List<AudioFileStorageLocation> = audioFileStorageLocations.filter { it.device == device }
-        if (storageLocations.isEmpty()) {
-            return
+    private suspend fun detachStorageForDevice(device: MediaDevice) {
+        audioFileStorageLocationMutex.withLock {
+            logger.debug(TAG, "Setting storage location for device as already detached: ${device.getName()}")
+            val storageLocations: List<AudioFileStorageLocation> =
+                audioFileStorageLocations.filter { it.device == device }
+            if (storageLocations.isEmpty()) {
+                return
+            }
+            storageLocations.first().setDetached()
         }
-        storageLocations.first().setDetached()
     }
 
     fun updateAttachedDevices() {
@@ -267,8 +279,12 @@ open class AudioFileStorage(
 
     fun cancelIndexing(cause: CancellationException? = null) {
         logger.debug(TAG, "cancelIndexing()")
-        audioFileStorageLocations.forEach {
-            it.cancelIndexAudioFiles()
+        runBlocking(dispatcher) {
+            audioFileStorageLocationMutex.withLock {
+                audioFileStorageLocations.forEach {
+                    it.cancelIndexAudioFiles()
+                }
+            }
         }
         fileProducerChannels.forEach {
             logger.debug(TAG, "Cancelling audio file producer channel: $it")
@@ -282,10 +298,14 @@ open class AudioFileStorage(
     }
 
     fun getStorageLocationForID(storageID: String): AudioFileStorageLocation {
-        if (!isStorageIDKnown(storageID)) {
-            throw RuntimeException("Unknown storage id: $storageID")
+        return runBlocking(dispatcher) {
+            audioFileStorageLocationMutex.withLock {
+                if (!isStorageIDKnown(storageID)) {
+                    throw RuntimeException("Unknown storage id: $storageID")
+                }
+                return@runBlocking audioFileStorageLocations.first { it.storageID == storageID }
+            }
         }
-        return audioFileStorageLocations.first { it.storageID == storageID }
     }
 
     fun getPrimaryStorageLocation(): AudioFileStorageLocation {

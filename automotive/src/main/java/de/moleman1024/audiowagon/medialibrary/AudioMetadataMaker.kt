@@ -243,7 +243,12 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
     }
 
     fun getAlbumArtFromMetadataRetriever(metadataRetriever: MediaMetadataRetriever): ByteArray? {
-        return metadataRetriever.embeddedPicture
+        try {
+            return metadataRetriever.embeddedPicture
+        } catch (exc: OutOfMemoryError) {
+            logger.exception(TAG, "Out of memory when retrieving embedded album art", exc)
+        }
+        return null
     }
 
     fun resizeAlbumArt(albumArtBytes: ByteArray): ByteArray? {
