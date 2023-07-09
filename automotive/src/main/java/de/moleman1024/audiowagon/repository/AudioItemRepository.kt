@@ -317,8 +317,8 @@ class AudioItemRepository(
         return repoQuery.getNumAlbumAndCompilationArtistsNoLock()
     }
 
-    suspend fun getArtistsLimitOffset(maxNumRows: Int, offsetRows: Int): List<AudioItem> {
-        return repoQuery.getArtistsLimitOffset(maxNumRows, offsetRows)
+    suspend fun getAlbumAndCompilationArtistsLimitOffset(maxNumRows: Int, offsetRows: Int): List<AudioItem> {
+        return repoQuery.getAlbumAndCompilationArtistsLimitOffset(maxNumRows, offsetRows)
     }
 
     suspend fun getArtistGroup(groupIndex: Int): Pair<AudioItem, AudioItem> {
@@ -374,8 +374,8 @@ class AudioItemRepository(
         return repoSearch.searchTracksForAlbum(query)
     }
 
-    suspend fun searchArtists(query: String): List<AudioItem> {
-        return repoSearch.searchArtists(query)
+    suspend fun searchAlbumAndCompilationArtists(query: String): List<AudioItem> {
+        return repoSearch.searchAlbumAndCompilationArtists(query)
     }
 
     suspend fun searchTracksForArtist(query: String): List<AudioItem> {

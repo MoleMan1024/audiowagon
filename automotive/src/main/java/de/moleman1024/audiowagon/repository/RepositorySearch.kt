@@ -8,7 +8,6 @@ package de.moleman1024.audiowagon.repository
 import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.filestorage.AudioFile
 import de.moleman1024.audiowagon.filestorage.Directory
-import de.moleman1024.audiowagon.filestorage.FileLike
 import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -43,9 +42,9 @@ class RepositorySearch(private val repo: AudioItemRepository) {
         return audioItems
     }
 
-    suspend fun searchArtists(query: String): List<AudioItem> {
+    suspend fun searchAlbumAndCompilationArtists(query: String): List<AudioItem> {
         val audioItems = mutableListOf<AudioItem>()
-        val artists = repo.getDatabase()?.artistDAO()?.search(sanitizeSearchQuery(query))
+        val artists = repo.getDatabase()?.artistDAO()?.searchAlbumAndCompilationArtists(sanitizeSearchQuery(query))
         artists?.forEach {
             audioItems += repo.createAudioItemForArtist(it)
         }

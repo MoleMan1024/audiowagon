@@ -50,7 +50,7 @@ class MediaBrowserTraversal(private val browser: MediaBrowserCompat) {
         Logger.debug(TAG, "Starting media traversal from: $root")
         browser.subscribe(root, callback)
         try {
-            future.get(10, TimeUnit.SECONDS)
+            future.get(20, TimeUnit.SECONDS)
         } catch (exc: TimeoutException) {
             Logger.error(TAG, "MediaBrowser traversal did not finish in time")
             throw exc

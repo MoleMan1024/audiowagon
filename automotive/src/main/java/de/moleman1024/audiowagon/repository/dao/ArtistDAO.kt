@@ -36,10 +36,11 @@ interface ArtistDAO {
 
     @Query(
         "SELECT * FROM artist WHERE artistId IN (SELECT artistId FROM artist " +
+                "WHERE (isAlbumArtist OR isCompilationArtist) " +
                 "ORDER BY COALESCE(NULLIF(sortName,''), name) COLLATE NOCASE ASC " +
                 "LIMIT :maxNumRows OFFSET :offsetRows) ORDER BY COALESCE(NULLIF(sortName,''), name) COLLATE NOCASE ASC"
     )
-    fun queryArtistsLimitOffset(maxNumRows: Int, offsetRows: Int): List<Artist>
+    fun queryAlbumAndCompilationArtistsLimitOffset(maxNumRows: Int, offsetRows: Int): List<Artist>
 
     @Query("SELECT COUNT(*) FROM artist WHERE isAlbumArtist OR isCompilationArtist")
     fun queryNumAlbumAndCompilationArtists(): Int
@@ -56,9 +57,22 @@ interface ArtistDAO {
     )
     fun search(query: String): List<Artist>
 
+    @Query(
+        "SELECT DISTINCT artist.* FROM artist " +
+                "JOIN artistfts ON artist.name = artistfts.name " +
+                "WHERE artistfts MATCH :query " +
+                "AND (isAlbumArtist OR isCompilationArtist)" +
+                "ORDER BY COALESCE(NULLIF(artist.sortName,''), artist.name) COLLATE NOCASE ASC " +
+                "LIMIT $MAX_DATABASE_SEARCH_ROWS"
+    )
+    fun searchAlbumAndCompilationArtists(query: String): List<Artist>
+
     @Query("DELETE FROM artist where artistId = :artistId")
     fun deleteByID(artistId: Long)
 
     @Query("DELETE FROM artistGroup")
     fun deleteAllArtistGroups()
+
+    @Query("UPDATE artist SET isAlbumArtist = 1 WHERE artistId = :artistId")
+    fun setIsAlbumArtistByID(artistId: Long)
 }

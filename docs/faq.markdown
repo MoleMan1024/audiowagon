@@ -246,6 +246,13 @@ However it has some strange behaviour, I am still trying to figure out why this 
   can *not* switch to AudioWagon when a different *media app* is running (for example Spotify). Commands such as "Play
   Michael Jackson on AudioWagon" appear to *not* work
 
+When using a voice command, if you hear a voice prompt from Google Assistant that goes like "To do that, you'll need to
+install &lt;Pandora/YouTube Music/Spotify/...&gt; then you have likely selected a default music app in your *Google
+Assistant settings*. To change that, go to the Google Assistant settings *on your Android phone* (using the same Google
+account as in your car).  In here go to "Music" and select "No default provider":
+
+![Google Assistant default music provider](/img/music_provider.jpg)
+
 ### Does the app support video? Will you add support for videos?
 
 No.

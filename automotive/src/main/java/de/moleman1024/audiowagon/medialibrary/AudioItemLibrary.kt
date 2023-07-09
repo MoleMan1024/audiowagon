@@ -611,7 +611,7 @@ class AudioItemLibrary(
             val description = createAudioItemDescription(it, trackExtras)
             searchResults += MediaItem(description, it.browsPlayableFlags)
         }
-        val artists = repo?.searchArtists(query)
+        val artists = repo?.searchAlbumAndCompilationArtists(query)
         artists?.forEach {
             val artistExtras = Bundle()
             artistExtras.putString(

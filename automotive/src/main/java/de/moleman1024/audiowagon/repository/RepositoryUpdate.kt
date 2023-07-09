@@ -46,10 +46,11 @@ class RepositoryUpdate(private val repo: AudioItemRepository, private val contex
         var artistID: Long = DATABASE_ID_UNKNOWN
         var albumArtistID: Long = DATABASE_ID_UNKNOWN
         var newArtist: Artist? = null
+        var artistInDB: Artist? = null
         var newAlbumArtist: Artist? = null
         if (metadata.artist.isNotBlank()) {
             // multiple artists with same name are unlikely, ignore this case
-            val artistInDB: Artist? = repo.getDatabaseNoLock()?.artistDAO()?.queryByName(metadata.artist)
+            artistInDB = repo.getDatabaseNoLock()?.artistDAO()?.queryByName(metadata.artist)
             if (artistInDB?.artistId != null) {
                 artistID = artistInDB.artistId
             } else {
@@ -63,11 +64,18 @@ class RepositoryUpdate(private val repo: AudioItemRepository, private val contex
             if (metadata.albumArtist == metadata.artist) {
                 albumArtistID = artistID
                 newArtist?.isAlbumArtist = true
+                if (artistInDB?.isAlbumArtist == false) {
+                    // this artist was previously added without being an album artist, need to change
+                    logger.debug(TAG, "Need to update isAlbumArtist=true for: $artistInDB")
+                    repo.getDatabaseNoLock()?.artistDAO()?.setIsAlbumArtistByID(artistInDB.artistId)
+                    artistInDB.isAlbumArtist = true
+                }
             } else {
                 // this will support album artists https://github.com/MoleMan1024/audiowagon/issues/22
                 // (these are not considered compilations, the album artist is treated as the "main" artist)
                 if (!metadata.isInCompilation) {
-                    val albumArtistInDB: Artist? = repo.getDatabaseNoLock()?.artistDAO()?.queryByName(metadata.albumArtist)
+                    val albumArtistInDB: Artist? =
+                        repo.getDatabaseNoLock()?.artistDAO()?.queryByName(metadata.albumArtist)
                     if (albumArtistInDB?.artistId != null) {
                         albumArtistID = albumArtistInDB.artistId
                     } else {
@@ -247,8 +255,10 @@ class RepositoryUpdate(private val repo: AudioItemRepository, private val contex
                     repo.getDatabaseNoLock()?.albumDAO()?.insertGroup(albumGroup)
                 }
                 AudioItemType.ARTIST -> {
-                    val firstItemInGroup = repo.getDatabaseNoLock()?.artistDAO()?.queryArtistsLimitOffset(1, offset)
-                    val lastItemInGroup = repo.getDatabaseNoLock()?.artistDAO()?.queryArtistsLimitOffset(1, offsetRows)
+                    val firstItemInGroup =
+                        repo.getDatabaseNoLock()?.artistDAO()?.queryAlbumAndCompilationArtistsLimitOffset(1, offset)
+                    val lastItemInGroup =
+                        repo.getDatabaseNoLock()?.artistDAO()?.queryAlbumAndCompilationArtistsLimitOffset(1, offsetRows)
                     if (firstItemInGroup.isNullOrEmpty() || lastItemInGroup.isNullOrEmpty()) {
                         break
                     }
@@ -374,7 +384,8 @@ class RepositoryUpdate(private val repo: AudioItemRepository, private val contex
         val artistIDs = repo.getDatabaseNoLock()?.artistDAO()?.queryAll()?.map { it.artistId }
         artistIDs?.forEach { artistID ->
             val numTracksForArtist = repo.getDatabaseNoLock()?.trackDAO()?.queryNumTracksForArtist(artistID) ?: 0
-            val numTracksForAlbumArtist = repo.getDatabaseNoLock()?.trackDAO()?.queryNumTracksForAlbumArtist(artistID) ?: 0
+            val numTracksForAlbumArtist =
+                repo.getDatabaseNoLock()?.trackDAO()?.queryNumTracksForAlbumArtist(artistID) ?: 0
             if (numTracksForArtist <= 0 && numTracksForAlbumArtist <= 0) {
                 logger.verbose(TAG, "Removing artist from database: $artistID")
                 repo.getDatabaseNoLock()?.artistDAO()?.deleteByID(artistID)

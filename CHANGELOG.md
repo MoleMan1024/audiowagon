@@ -13,6 +13,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project loosely follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.4.7] - 2023-07-09
+
+### Fixed
+
+- artist groups were not being created correctly, because they did not take into account the rules for album artists
+  in ticket [#22](https://github.com/MoleMan1024/audiowagon/issues/22). This had the effect that the last artist group
+  was missing some artists. This has been fixed. To get this change working, you will need to re-index your database
+  [#122](https://github.com/MoleMan1024/audiowagon/issues/122)
+- As described in the [FAQ](https://moleman1024.github.io/audiowagon/faq.html#album-artists), only album artists shall be
+  shown in the artists view. When an artist was added to the database, and it was not marked as an album artist in the
+  first track found for that artist, it would not be shown, even if marked as album artist in other tracks. This has
+  been improved: the behaviour is no longer determined only by the first track found.
+
+
 ## [2.4.6] - 2023-06-23
 
 ### Fixed

@@ -52,7 +52,7 @@ class ContentHierarchyGroupArtists(id: ContentHierarchyID, context: Context, aud
         }
         val items: MutableList<AudioItem> = mutableListOf()
         val repo = audioItemLibrary.getPrimaryRepository() ?: return emptyList()
-        items += repo.getArtistsLimitOffset(
+        items += repo.getAlbumAndCompilationArtistsLimitOffset(
             CONTENT_HIERARCHY_MAX_NUM_ITEMS, CONTENT_HIERARCHY_MAX_NUM_ITEMS * id.artistGroupIndex
         )
         return items

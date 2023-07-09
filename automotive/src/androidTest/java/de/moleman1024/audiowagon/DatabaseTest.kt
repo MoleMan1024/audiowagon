@@ -141,4 +141,44 @@ class DatabaseTest {
             Assert.assertEquals(artist, traversal.hierarchy[artistsRoot]?.get(index)?.description?.title)
         }
     }
+
+    /**
+     * https://github.com/MoleMan1024/audiowagon/issues/122
+     */
+    @Test
+    fun artistGroups_hasLotsOfAlbumArtists_createsGroupsProperly() {
+        val numAlbumArtists = 500
+        for (index in 0 until numAlbumArtists) {
+            val indexStrPadded = index.toString().padStart(4, '0')
+            createMP3().apply {
+                id3v2Tag.artist = "ARTIST_$indexStrPadded"
+                id3v2Tag.albumArtist = "ALBUMARTIST_$indexStrPadded"
+                id3v2Tag.album = "ALBUM_$indexStrPadded"
+                id3v2Tag.title = "TITLE_$indexStrPadded"
+            }.also { storeMP3(it, "$MUSIC_ROOT/ARTIST_$indexStrPadded/ALBUM_$indexStrPadded/TITLE_$indexStrPadded.mp3") }
+        }
+        val lastAlbumArtist = "ZEBRA"
+        createMP3().apply {
+            id3v2Tag.artist = lastAlbumArtist
+            id3v2Tag.albumArtist = lastAlbumArtist
+            id3v2Tag.album = "ZEBRA_ALBUM"
+            id3v2Tag.title = "ZEBRA_TITLE"
+        }.also { storeMP3(it, "$MUSIC_ROOT/ZEBRA/ZEBRA_ALBUM/ZEBRA_TITLE.mp3") }
+        createMP3().apply {
+            id3v2Tag.artist = "XYLOPHONE"
+            id3v2Tag.albumArtist = lastAlbumArtist
+            id3v2Tag.album = "XYLO_ALBUM"
+            id3v2Tag.title = "XYLO_TITLE"
+        }.also { storeMP3(it, "$MUSIC_ROOT/XYLO/XYLO_ALBUM/XYLOPHONE.mp3") }
+        attachUSBDevice(mockUSBDevice)
+        TestUtils.waitForIndexingCompleted(audioBrowserService)
+        val traversal = MediaBrowserTraversal(browser)
+        val artistsRoot = "{\"type\":\"ROOT_ARTISTS\"}"
+        traversal.start(artistsRoot)
+        // should get 2 artist groups
+        Assert.assertEquals(2, traversal.hierarchy[artistsRoot]?.size)
+        val secondArtistGroup = traversal.hierarchy["{\"type\":\"ARTIST_GROUP\",\"artGrp\":1}"]
+        Assert.assertEquals(numAlbumArtists - 400 + 1, secondArtistGroup?.size)
+        Assert.assertEquals(lastAlbumArtist, secondArtistGroup?.get(secondArtistGroup.size-1)?.description?.title)
+    }
 }

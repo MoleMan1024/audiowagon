@@ -186,8 +186,8 @@ abstract class ContentHierarchyElement(
                     if (firstLastItemInGroup.first.uri == Uri.EMPTY
                         || firstLastItemInGroup.second.uri== Uri.EMPTY) {
                         logger.warning(TAG, "No artists in group, fallback to slow method")
-                        firstItemInGroup = repo.getArtistsLimitOffset(1, offset)
-                        lastItemInGroup = repo.getArtistsLimitOffset(1, offsetRows)
+                        firstItemInGroup = repo.getAlbumAndCompilationArtistsLimitOffset(1, offset)
+                        lastItemInGroup = repo.getAlbumAndCompilationArtistsLimitOffset(1, offsetRows)
                     }
                 }
                 else -> throw AssertionError("createGroups() not supported for type: ${groupContentHierarchyID.type}")

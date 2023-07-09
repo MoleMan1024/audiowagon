@@ -615,10 +615,10 @@ class RepositoryQuery(
         repo.getDatabaseNoLock()?.artistDAO()?.queryNumAlbumAndCompilationArtists() ?: 0
     }
 
-    suspend fun getArtistsLimitOffset(maxNumRows: Int, offsetRows: Int): List<AudioItem> {
+    suspend fun getAlbumAndCompilationArtistsLimitOffset(maxNumRows: Int, offsetRows: Int): List<AudioItem> {
         val items: MutableList<AudioItem> = mutableListOf()
         val artistsAtOffset: List<Artist> = withContext(dispatcher) {
-            repo.getDatabase()?.artistDAO()?.queryArtistsLimitOffset(maxNumRows, offsetRows) ?: listOf()
+            repo.getDatabase()?.artistDAO()?.queryAlbumAndCompilationArtistsLimitOffset(maxNumRows, offsetRows) ?: listOf()
         }
         for (artist in artistsAtOffset) {
             yield()
