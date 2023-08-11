@@ -140,4 +140,11 @@ verbeteren (vereist een internetverbinding).</string>
     <string name="setting_requires_media_center_restart">(elke wijziging vereist herstart van de app
 \"Media Center\")</string>
     <string name="error_no_results">Niets gevonden: \"%1$s\"</string>
+    <string name="setting_view_category_title">Weergave</string>
+    <string name="setting_view_tab_1">Tabblad 1</string>
+    <string name="setting_view_tab_2">Tabblad 2</string>
+    <string name="setting_view_tab_3">Tabblad 3</string>
+    <string name="setting_view_tab_4">Tabblad 4</string>
+    <string name="setting_view_tab_none">Geen</string>
+    <string name="browse_tree_please_wait">Een ogenblik geduld …</string>
 </resources>

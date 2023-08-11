@@ -17,7 +17,7 @@ import androidx.lifecycle.lifecycleScope
 
 private const val TAG = "LogActivity"
 private val logger = Logger
-private const val NUM_LOG_BYTES_TO_SHOW = 32768
+private const val NUM_LOG_BYTES_TO_SHOW = 65536
 
 /**
  * "Hidden" activity that shows contents of log file on screen (for quick inspection inside the car without computer)
@@ -40,7 +40,7 @@ class LogActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
         supportActionBar?.setHomeButtonEnabled(true)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        toolbar.setNavigationIcon(R.drawable.baseline_west_24)
+        toolbar.setNavigationIcon(R.drawable.west)
     }
 
     override fun onStart() {

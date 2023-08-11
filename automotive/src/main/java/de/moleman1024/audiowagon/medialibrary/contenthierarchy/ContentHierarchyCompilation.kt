@@ -60,7 +60,7 @@ class ContentHierarchyCompilation(
             setMediaId(serialize(playAllTracksForCompilationID))
             setTitle(context.getString(R.string.browse_tree_pseudo_play_all))
             setIconUri(
-                Uri.parse(RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.baseline_playlist_play_24))
+                Uri.parse(RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.playlist_play))
             )
         }.build()
         return MediaItem(description, MediaItem.FLAG_PLAYABLE)

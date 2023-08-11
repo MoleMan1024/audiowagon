@@ -13,7 +13,6 @@ import de.moleman1024.audiowagon.util.MediaBrowserTraversal
 import de.moleman1024.audiowagon.util.ServiceFixture
 import de.moleman1024.audiowagon.util.TestUtils
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.runBlocking
 import org.junit.*
 
 private const val TAG = "MediaBrowserTest"
@@ -31,6 +30,7 @@ class MediaBrowserTest {
     companion object {
         private lateinit var serviceFixture: ServiceFixture
         private lateinit var browser: MediaBrowserCompat
+        private lateinit var audioBrowserService: AudioBrowserService
 
         @BeforeClass
         @JvmStatic
@@ -39,7 +39,7 @@ class MediaBrowserTest {
             serviceFixture = ServiceFixture()
             browser = serviceFixture.createMediaBrowser()
             browser.connect()
-            val audioBrowserService = serviceFixture.waitForAudioBrowserService()
+            audioBrowserService = serviceFixture.waitForAudioBrowserService()
             // use in-memory database to speed-up tests
             audioBrowserService.setUseInMemoryDatabase()
             // TODO: find a way to provide .img files, too big for repository
@@ -157,6 +157,33 @@ class MediaBrowserTest {
         val directoryRoot = "{\"type\":\"DIRECTORY\",\"path\":\"/storage/$SD_CARD_ID$ROOT_DIR/dirWithManyFiles\"}"
         traversal.start(directoryRoot)
         Assert.assertEquals(3, traversal.hierarchy[directoryRoot]?.size)
+    }
+
+    /**
+     * Tests for customized browse view tabs order ( https://github.com/MoleMan1024/audiowagon/issues/124 )
+     */
+    @Test
+    fun onLoadChildren_defaultCategoryOrder_showsTracksAlbumsArtistsFiles() {
+        val traversal = MediaBrowserTraversal(browser)
+        val root = "{\"type\":\"ROOT\"}"
+        traversal.start(root)
+        Assert.assertEquals(4, traversal.hierarchy[root]?.size)
+        listOf("Tracks", "Albums", "Artists", "Files").forEachIndexed { index, category ->
+            Assert.assertEquals(category, traversal.hierarchy[root]?.get(index)?.description?.title)
+        }
+    }
+
+    @Test
+    fun onLoadChildren_viewTabsOrderFilesNoneAlbumsNone_hasGivenViewTabs() {
+        val viewTabs = listOf(ViewTabSetting.FILES, ViewTabSetting.NONE, ViewTabSetting.ALBUMS, ViewTabSetting.NONE)
+        audioBrowserService.getAudioItemLibrary().setViewTabs(viewTabs)
+        val traversal = MediaBrowserTraversal(browser)
+        val root = "{\"type\":\"ROOT\"}"
+        traversal.start(root)
+        Assert.assertEquals(4, traversal.hierarchy[root]?.size)
+        listOf("Files", null, "Albums", null).forEachIndexed { index, category ->
+            Assert.assertEquals(category, traversal.hierarchy[root]?.get(index)?.description?.title)
+        }
     }
 
 }

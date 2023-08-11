@@ -114,6 +114,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     private lateinit var audioSessionCloseSingletonCoroutine: SingletonCoroutine
     private lateinit var suspendSingletonCoroutine: SingletonCoroutine
     private lateinit var wakeSingletonCoroutine: SingletonCoroutine
+    private lateinit var startupSingletonCoroutine: SingletonCoroutine
     private lateinit var notifyIdleSingletonCoroutine: SingletonCoroutine
     private lateinit var powerManager: PowerManager
     @Volatile
@@ -150,6 +151,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         lifecycleRegistry.currentState = Lifecycle.State.INITIALIZED
         instance = this
         logger.init(lifecycleScope)
+        logger.verbose(TAG, "init")
         setUncaughtExceptionHandler()
     }
 
@@ -176,6 +178,8 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         wakeSingletonCoroutine =
             SingletonCoroutine("Wakeup", dispatcher, lifecycleScope.coroutineContext, crashReporting)
         wakeSingletonCoroutine.behaviour = SingletonCoroutineBehaviour.PREFER_FINISH
+        startupSingletonCoroutine =
+            SingletonCoroutine("Startup", dispatcher, lifecycleScope.coroutineContext, crashReporting)
         notifyIdleSingletonCoroutine =
             SingletonCoroutine("NotifyIdle", dispatcher, lifecycleScope.coroutineContext, crashReporting)
         powerEventReceiver = PowerEventReceiver()
@@ -236,7 +240,9 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         observeAudioFileStorage()
         observeAudioSessionStateChanges()
         if (powerManager.isInteractive) {
-            updateAttachedDevices()
+            startupSingletonCoroutine.launch {
+                updateAttachedDevices()
+            }
         }
     }
 
@@ -349,7 +355,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                 audioFileStorage.cancelIndexing()
                 audioItemLibrary.cancelBuildLibrary()
                 cancelLibraryCreation()
-                when (event.value) {
+                when (event.value as? String) {
                     MetadataReadSetting.WHEN_USB_CONNECTED.name,
                     MetadataReadSetting.FILEPATHS_ONLY.name -> {
                         updateAttachedDevices()
@@ -364,7 +370,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                 updateAttachedDevices()
             }
             SettingKey.ALBUM_STYLE_SETTING -> {
-                when (event.value) {
+                when (event.value as? String) {
                     AlbumStyleSetting.GRID.name -> {
                         audioItemLibrary.albumArtStyleSetting = AlbumStyleSetting.GRID
                     }
@@ -375,6 +381,13 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                         throw RuntimeException("Invalid album style setting: ${event.value}")
                     }
                 }
+            }
+            SettingKey.VIEW_TABS_SETTING -> {
+                @Suppress("UNCHECKED_CAST")
+                val viewTabs = event.value as? List<ViewTabSetting>
+                    ?: throw RuntimeException("Invalid view tabs setting: ${event.value}")
+                audioItemLibrary.setViewTabs(viewTabs)
+                notifyBrowserChildrenChangedAllLevels()
             }
         }
     }
@@ -724,7 +737,6 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         return Service.START_STICKY
     }
 
-    @Suppress("RedundantNullableReturnType")
     /**
      * See https://developer.android.com/guide/components/bound-services#Lifecycle
      */
@@ -851,6 +863,9 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             return
         }
         cancelMostJobs()
+        suspendSingletonCoroutine.cancel()
+        wakeSingletonCoroutine.cancel()
+        startupSingletonCoroutine.cancel()
         // before removing audio session notification the service must be in background
         stopForeground(STOP_FOREGROUND_REMOVE)
         audioSessionCloseSingletonCoroutine.launch {
@@ -902,6 +917,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         isSuspended = true
         cancelMostJobs()
         wakeSingletonCoroutine.cancel()
+        startupSingletonCoroutine.cancel()
         suspendSingletonCoroutine.launch {
             audioSessionCloseSingletonCoroutine.launch {
                 audioSession.storePlaybackState()

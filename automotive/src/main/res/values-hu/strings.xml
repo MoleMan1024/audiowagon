@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+SPDX-FileCopyrightText: 2023 MoleMan1024 <moleman1024dev@gmail.com>
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
+<!-- initial translation by: Tóth L. -->
+<resources>
+    <string name="app_name">AudioWagon</string>
+    <string name="queue_title">Lejátszási sor</string>
+    <string name="search_group_tracks">Számok</string>
+    <string name="search_group_artists">Előadók</string>
+    <string name="search_group_albums">Albumok</string>
+    <string name="search_group_files">Fájlok</string>
+    <string name="browse_tree_category_tracks">Számok</string>
+    <string name="browse_tree_category_artists">Előadók</string>
+    <string name="browse_tree_category_albums">Albumok</string>
+    <string name="browse_tree_pseudo_track_shuffle_all">Véletlenszerű lejátszás</string>
+    <string name="browse_tree_pseudo_play_all">Összes lejátszása</string>
+    <string name="browse_tree_unknown_album">Ismeretlen album</string>
+    <string name="browse_tree_unknown_artist">Ismeretlen előadó</string>
+    <string name="browse_tree_various_artists">Több előadó</string>
+    <string name="browse_tree_no_entries_title">Nincs lejátszható fájl</string>
+    <string name="browse_tree_no_usb_drive">Csatlakoztasson USB meghajtót</string>
+    <string name="browse_tree_usb_drive_ejected">USB meghajtó nincs csatlakoztatva vagy nem olvasható</string>
+    <string name="browse_tree_need_to_agree_legal_title">Jogi nyilatkozat nincs elfogadva</string>
+    <string name="browse_tree_need_to_agree_legal_desc">Ellenőrizze a beállításokat</string>
+    <string name="toast_indexing_started">USB indexelés elkezdődött …</string>
+    <string name="toast_indexing_completed">USB indexelés kész</string>
+    <string name="no_next_track">Nincs következő szám</string>
+    <string name="no_prev_track">Nincs előző szám</string>
+    <string name="eject_completed">USB eszköz biztonságosan eltávolítható</string>
+    <string name="error">Hiba: %1$s</string>
+    <string name="error_audio_focus_denied">Hanglejátszást más folyamat használja</string>
+    <string name="error_USB_init">USB meghajtó csatlakoztatási hiba</string>
+    <string name="error_no_filesystem">Nem támogatott fájlrendszer</string>
+    <string name="error_library_creation_fail">Könyvtár létrehozás sikertelen</string>
+    <string name="error_invalid_state">Alkalmazás hiba</string>
+    <string name="error_IO">I/O hiba</string>
+    <string name="error_malformed_data">Adathiba</string>
+    <string name="error_timeout">Időtúllépés</string>
+    <string name="error_not_supported">Nem támogatott</string>
+    <string name="error_no_USB_device">Nincs USB eszköz</string>
+    <string name="error_unknown">Ismeretlen hiba</string>
+    <string name="notif_action_play">Lejátszás</string>
+    <string name="notif_action_pause">Szünet</string>
+    <string name="notif_action_stop">Állj</string>
+    <string name="notif_action_next">Következő</string>
+    <string name="notif_action_prev">Előző</string>
+    <string name="notif_channel_name">AudioWagon értesítések</string>
+    <string name="notif_channel_desc">AudioWagon értesítési csatorna</string>
+    <string name="notif_channel_name_indexing">AudioWagon indexelés értesítések</string>
+    <string name="notif_channel_desc_indexing">AudioWagon indexelés értesítési csatorna</string>
+    <string name="notif_indexing_title">USB indexelés állapota</string>
+    <string name="notif_indexing_text_in_progress">Folyamatban …</string>
+    <string name="notif_indexing_text_in_progress_num_items">Talált elemek: %1$d …</string>
+    <string name="notif_indexing_text_completed">Befejezve</string>
+    <string name="action_shuffle_turn_on">Véletlenszerű lejátszás be</string>
+    <string name="action_shuffle_turn_off">Véletlenszerű lejátszás ki</string>
+    <string name="action_repeat_turn_on">Ismétlés be</string>
+    <string name="action_repeat_turn_off">Ismétlés ki</string>
+    <string name="action_eject">Leválasztás</string>
+    <string name="action_rewind">Visszapörgetés</string>
+    <string name="settings_title">Beállítások</string>
+    <string name="setting_enable_equalizer_title">Equalizer</string>
+    <string name="setting_sound_category_title">Hang</string>
+    <string name="setting_equalizer_preset_title">Equalizer beállítás</string>
+    <string name="equalizer_preset_less_bass">Kevesebb basszus</string>
+    <string name="equalizer_preset_more_bass">Több basszus</string>
+    <string name="equalizer_preset_less_treble">Kevesebb magas</string>
+    <string name="equalizer_preset_more_treble">Több magas</string>
+    <string name="equalizer_preset_P2">P2</string>
+    <string name="equalizer_preset_P2_plus">P2+</string>
+    <string name="equalizer_preset_V_shape">V-alak</string>
+    <string name="setting_general_category_title">Általános</string>
+    <string name="setting_log_to_USB_title">Log fájlok írása az USB meghajtóra</string>
+    <string name="setting_log_to_USB_desc">A log fájlokat adja át a fejlesztőnek amikor hibajelentést készít.</string>
+    <string name="setting_USB_status_title">USB állapota</string>
+    <string name="setting_USB_status_ok">OK</string>
+    <string name="setting_USB_status_not_connected">Nincs csatlakoztatva</string>
+    <string name="setting_USB_status_unknown">Ismeretlen. Csatlakoztassa újra a meghajtót, vagy indítsa újra az
+Androidot</string>
+    <string name="setting_USB_status_connected_no_permission">Csatlakoztatva. Nincs hozzáférés</string>
+    <string name="setting_USB_status_error">Írás/olvasási hiba, csatlakoztassa újra a meghajtót. Ha sikertelen
+próbálkozzon javítással vagy formázza újra (FAT32)</string>
+    <string name="setting_USB_status_ejected">Leválasztva. Most már biztonságosan eltávolíthatja az USB meghajtót</string>
+    <string name="setting_USB_status_not_compatible">Nem kompatibilis. Kérem formázza az USB meghajtót FAT32
+fájlrendszerre</string>
+    <string name="setting_show_legal_disclaimer_title">Jogi nyilatkozat megjelenítése</string>
+    <string name="setting_show_legal_disclaimer_desc">Az alkalmazás használata előtt el kell fogadnia a jogi
+nyilatkozatot</string>
+    <string name="setting_version">Verzió</string>
+    <string name="legal_disclaimer_title">AudioWagon: Jogi nyilatkozat</string>
+    <string name="legal_disclaimer_distraction_heading">Biztonságos járművezetés</string>
+    <string name="legal_disclaimer_distraction_text">Ezen szoftver használatával ön beleegyezik a jármű-fedélzeti
+rendszerek vezetés közbeni kezelésére vonatkozó összes törvényi és egyéb szabályozás és előírás betartásába.\n
+Csak akkor használja ezt a szoftvert, ha a forgalmi körülmények lehetővé teszik a biztonságos használatot.</string>
+    <string name="legal_disclaimer_liability_heading">Jótállás / Felelősség</string>
+    <string name="legal_disclaimer_liability_text">Jelen szoftver adott \"ahogy-van\" állapotban áll rendelkezésre, 
+minden kifejezett vagy hallgatólagos garancia nélkül. A szerzők semmilyen körülmények között nem vállalnak felelősséget 
+a szoftver használatából eredő károkért.</string>
+    <string name="legal_disclaimer_license_heading">Licenc</string>
+    <string name="legal_disclaimer_license_text">Ez a szoftver GPLv3 licenc alatt áll.\nKészítette MoleMan1024</string>
+    <string name="legal_disclaimer_third_party_licenses_heading">Harmadik féltől származó licencek</string>
+    <string name="legal_disclaimer_third_party_licenses_text">Az alkalmazás a következő Apache 2.0 licenc alatt álló
+tartalmakat használja:\n\n&#x2013; Az Android Open Source Project által létrehozott különböző könyvtárak\n&#x2013;
+a Magnus Jahnen által létrehozott libaums könyvtár\n&#x2013; A Google által létrehozott Material Design vektor ikonok\n&#x2013; 
+Firebase Crashlytics\n\nLicenc leírások:\nwww.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/licenses/gpl-3.0.html
+    </string>
+    <string name="legal_disclaimer_confirm_btn">Elfogadom</string>
+    <string name="legal_disclaimer_cancel_btn">Vissza</string>
+    <string name="error_no_tracks">Nincsenek számok</string>
+    <string name="error_not_enough_space_for_log">Nincs elég hely a log fájlok írásához</string>
+    <string name="browse_tree_category_files">Fájlok</string>
+    <string name="setting_library_category_title">Média</string>
+    <string name="setting_read_metadata">Metaadatok olvasása</string>
+    <string name="setting_delete_databases">Adatbázis törlése</string>
+    <string name="setting_database_status_title">Adatbázis</string>
+    <string name="setting_enable_replaygain">ReplayGain hangerőkiegyenlítés</string>
+    <string name="searching_voice_input">Hangalapú keresés: \"%1$s\"</string>
+    <string name="setting_read_metadata_when_connected">USB meghajtó csatlakoztatásakor</string>
+    <string name="setting_read_metadata_manual">Manuális</string>
+    <string name="setting_read_metadata_filepaths_only">Csak fájl elérési útvonalak</string>
+    <string name="setting_read_metadata_off">Kikapcsolva</string>
+    <string name="setting_read_metadata_start_now">Metaadatok olvasása most</string>
+    <string name="browse_tree_metadata_not_yet_indexed_title">Metaadatok még nincsenek indexelve</string>
+    <string name="browse_tree_metadata_not_yet_indexed_desc">Ellenőrizze a beállításokat</string>
+    <string name="setting_audiofocus_behavior">Navigáció közbeni viselkedés</string>
+    <string name="setting_audiofocus_pause">Szünet</string>
+    <string name="setting_audiofocus_duck">Hangerő csökkentése</string>
+    <string name="setting_crash_reporting_title">Alkalmazás hibajelentések küldése</string>
+    <string name="setting_crash_reporting_desc">A hibajelentések automatikus elküldése a fejlesztőnek, az alkalmazás
+továbbfejlesztése céljából (internetkapcsolat szükséges).</string>
+    <string name="cannot_read_file">Fájl olvasási hiba: %1$s</string>
+    <string name="setting_website_title">Website</string>
+    <string name="setting_album_display">Albumok elrendezése</string>
+    <string name="setting_album_display_grid">Rács</string>
+    <string name="setting_album_display_list">Lista</string>
+    <string name="setting_requires_media_center_restart">(A \"Media Center\" alkalmazás újraindítása szükséges)</string>
+    <string name="error_no_results">Nincs találat: \"%1$s\"</string>
+    <string name="setting_view_category_title">Kijelző</string>
+    <string name="setting_view_tab_1">Tab 1</string>
+    <string name="setting_view_tab_2">Tab 2</string>
+    <string name="setting_view_tab_3">Tab 3</string>
+    <string name="setting_view_tab_4">Tab 4</string>
+    <string name="setting_view_tab_none">Egyik sem</string>
+    <string name="browse_tree_please_wait">Kérjük, várjon …</string>
+</resources>

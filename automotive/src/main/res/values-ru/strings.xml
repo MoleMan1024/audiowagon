@@ -103,11 +103,10 @@ SPDX-License-Identifier: GPL-3.0-or-later
     <string name="legal_disclaimer_license_text">Это программное обеспечение лицензировано под GPLv3.
 Создано MoleMan1024</string>
     <string name="legal_disclaimer_third_party_licenses_heading">Сторонние лицензии</string>
-    <string name="legal_disclaimer_third_party_licenses_text">Это приложение использует контентот
-следующих разработчиков, под лицензией Apache 2.0:\n\n&#x2013; множество библиотек созданных Android Open
-Source Project\n&#x2013; libaums библиотеку созданную Magnus Jahnen\n&#x2013; Material Визуальный стиль от
-Google\n&#x2013; Firebase Crashlytics\n\nLicense
-texts:\nwww.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/licenses/gpl-3.0.html</string>
+    <string name="legal_disclaimer_third_party_licenses_text">Это приложение использует контентот следующих
+разработчиков, под лицензией Apache 2.0:\n\n&#x2013; множество библиотек созданных Android Open Source
+Project\n&#x2013; libaums библиотеку созданную Magnus Jahnen\n&#x2013; Material Визуальный стиль от Google\n&#x2013;
+Firebase Crashlytics\n\nLicense texts: www.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/licenses/gpl-3.0.html</string>
     <string name="legal_disclaimer_confirm_btn">Согласен</string>
     <string name="legal_disclaimer_cancel_btn">Отмена</string>
     <string name="error_no_tracks">Композиции отсутствуют</string>
@@ -140,4 +139,11 @@ texts:\nwww.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/licenses/gpl-3.0.html</
     <string name="setting_requires_media_center_restart">(любое изменение требует перезапуска
 приложения \"Медиацентр\")</string>
     <string name="error_no_results">Ничего не найдено: \"%1$s\"</string>
+    <string name="setting_view_category_title">Экрана</string>
+    <string name="setting_view_tab_1">Вкладка 1</string>
+    <string name="setting_view_tab_2">Вкладка 2</string>
+    <string name="setting_view_tab_3">Вкладка 3</string>
+    <string name="setting_view_tab_4">Вкладка 4</string>
+    <string name="setting_view_tab_none">Никто</string>
+    <string name="browse_tree_please_wait">Подождите …</string>
 </resources>

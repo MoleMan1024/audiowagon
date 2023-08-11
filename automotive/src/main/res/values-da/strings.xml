@@ -139,4 +139,11 @@ forbedre appen (kræver internetforbindelse).</string>
     <string name="setting_requires_media_center_restart">(enhver ændring kræver genstart af
 \"Media Center\"-appen)</string>
     <string name="error_no_results">Intet fundet: \"%1$s\"</string>
+    <string name="setting_view_category_title">Visning</string>
+    <string name="setting_view_tab_1">Fane 1</string>
+    <string name="setting_view_tab_2">Fane 2</string>
+    <string name="setting_view_tab_3">Fane 3</string>
+    <string name="setting_view_tab_4">Fane 4</string>
+    <string name="setting_view_tab_none">Ingen</string>
+    <string name="browse_tree_please_wait">Vent …</string>
 </resources>

@@ -530,6 +530,10 @@ class AudioSession(
                         SettingChangeEvent(SettingKey.ALBUM_STYLE_SETTING, audioSessionChange.albumStyleSetting)
                     )
                 }
+                AudioSessionChangeType.ON_SET_VIEW_TABS -> {
+                    // https://github.com/MoleMan1024/audiowagon/issues/124
+                    notifyObservers(SettingChangeEvent(SettingKey.VIEW_TABS_SETTING, audioSessionChange.viewTabs))
+                }
                 AudioSessionChangeType.ON_EJECT -> {
                     audioFocusChangeListener.lastUserRequestedStateChange = AudioSessionChangeType.ON_STOP
                     launchInScopeSafely(audioSessionChange.type.name) {

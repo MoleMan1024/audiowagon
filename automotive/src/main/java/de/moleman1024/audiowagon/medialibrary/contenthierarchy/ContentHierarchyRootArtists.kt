@@ -8,6 +8,8 @@ package de.moleman1024.audiowagon.medialibrary.contenthierarchy
 import android.content.Context
 import android.os.Bundle
 import android.support.v4.media.MediaBrowserCompat.MediaItem
+import de.moleman1024.audiowagon.SharedPrefs
+import de.moleman1024.audiowagon.filestorage.AudioFileStorage
 import de.moleman1024.audiowagon.medialibrary.AlbumStyleSetting
 import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
@@ -19,13 +21,26 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 @ExperimentalCoroutinesApi
 class ContentHierarchyRootArtists(
     context: Context,
-    audioItemLibrary: AudioItemLibrary
+    audioItemLibrary: AudioItemLibrary,
+    private val audioFileStorage: AudioFileStorage,
+    private val sharedPrefs: SharedPrefs
 ) :
     ContentHierarchyElement(ContentHierarchyID(ContentHierarchyType.ROOT_ARTISTS), context, audioItemLibrary) {
 
     override suspend fun getMediaItems(): List<MediaItem> {
         var items = mutableListOf<MediaItem>()
         val numArtists = getNumArtists()
+        val hasUnknownArtist = hasUnknownArtist()
+        if (!audioItemLibrary.areAnyReposAvail()
+            || (!hasUnknownArtist && numArtists <= 0 && !audioItemLibrary.isBuildingLibrary)
+        ) {
+            items += createPseudoNoEntriesItem(audioFileStorage, sharedPrefs)
+            return items
+        }
+        if (audioItemLibrary.isBuildingLibrary) {
+            items += createPseudoFoundXItems()
+            return items
+        }
         if (!hasTooManyItems(numArtists)) {
             val audioItems = getAudioItems()
             var extras: Bundle? = null
@@ -57,11 +72,9 @@ class ContentHierarchyRootArtists(
         return items
     }
 
-    suspend fun getNumArtists(): Int {
-        var numArtists = 0
-        val repo = audioItemLibrary.getPrimaryRepository() ?: return 0
-        numArtists += repo.getNumAlbumAndCompilationArtists()
-        return numArtists
+    private suspend fun hasUnknownArtist(): Boolean {
+        val repo = audioItemLibrary.getPrimaryRepository() ?: return false
+        return repo.getAudioItemForUnknownArtist() != null
     }
 
 }

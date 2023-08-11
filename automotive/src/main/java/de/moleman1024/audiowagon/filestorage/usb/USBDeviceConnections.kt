@@ -26,6 +26,7 @@ import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.*
 import java.io.IOException
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicBoolean
 
 private const val TAG = "USBDevConn"
 const val ACTION_USB_ATTACHED = "de.moleman1024.audiowagon.authorization.USB_ATTACHED"
@@ -56,6 +57,7 @@ class USBDeviceConnections(
     private var isLogToUSBPreferenceSet = false
     private val attachedAndPermittedDevices = mutableListOf<USBMediaDevice>()
     var isSuspended = false
+    val isUpdatingDevices = AtomicBoolean()
     private var isBroadcastRecvRegistered = false
     // use a single thread here to avoid race conditions updating the USB attached/detached status from multiple threads
     private val singleThreadDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
@@ -142,6 +144,7 @@ class USBDeviceConnections(
 
     init {
         logger.debug(TAG, "Init USBDeviceConnections()")
+        isUpdatingDevices.set(false)
         val logToUSBPreference = sharedPrefs.isLogToUSBEnabled(context)
         if (logToUSBPreference) {
             isLogToUSBPreferenceSet = true
@@ -151,6 +154,7 @@ class USBDeviceConnections(
 
     fun updateAttachedDevices() {
         updateAttachedDevicesSingletonCoroutine.launch {
+            isUpdatingDevices.set(true)
             for (usbMediaDevice in getAttachedUSBMassStorageDevices()) {
                 onAttachedUSBMassStorageDeviceFound(usbMediaDevice)
             }
@@ -303,6 +307,7 @@ class USBDeviceConnections(
             }
         }
         updateUSBStatusInSettings(R.string.setting_USB_status_ok)
+        isUpdatingDevices.set(false)
         val deviceChange = DeviceChange(attachedPermittedDevice, DeviceAction.CONNECT)
         notifyObservers(deviceChange)
     }
@@ -329,6 +334,7 @@ class USBDeviceConnections(
             device.closeMassStorageFilesystem()
             removeAttachedPermittedDevice(device)
             updateUSBStatusInSettings(R.string.setting_USB_status_not_connected)
+            notifyObservers(DeviceChange(null, DeviceAction.REFRESH))
         }
     }
 

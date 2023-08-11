@@ -50,4 +50,18 @@ SPDX-License-Identifier: GPL-3.0-or-later
         <item>GRID</item>
         <item>LIST</item>
     </string-array>
+    <string-array name="view_tab_settings">
+        <item>@string/browse_tree_category_tracks</item>
+        <item>@string/browse_tree_category_albums</item>
+        <item>@string/browse_tree_category_artists</item>
+        <item>@string/browse_tree_category_files</item>
+        <item>@string/setting_view_tab_none</item>
+    </string-array>
+    <string-array name="view_tab_settings_values">
+        <item>TRACKS</item>
+        <item>ALBUMS</item>
+        <item>ARTISTS</item>
+        <item>FILES</item>
+        <item>NONE</item>
+    </string-array>
 </resources>

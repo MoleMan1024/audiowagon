@@ -113,6 +113,16 @@ class AudioSessionCallback(
                     args?.getString(ALBUM_STYLE_KEY, AlbumStyleSetting.GRID.name).toString()
                 notifyObservers(audioSessionChange)
             }
+            CMD_SET_VIEW_TABS -> {
+                // https://github.com/MoleMan1024/audiowagon/issues/124
+                val audioSessionChange = AudioSessionChange(AudioSessionChangeType.ON_SET_VIEW_TABS)
+                val viewTabsStr = args?.getStringArray(VIEW_TABS_SETTING_KEY)?.toList() ?: listOf()
+                viewTabsStr.forEach { viewTab ->
+                    val viewTabEnumValue = ViewTabSetting.valueOf(viewTab)
+                    audioSessionChange.viewTabs.add(viewTabEnumValue)
+                }
+                notifyObservers(audioSessionChange)
+            }
             CMD_EJECT -> {
                 notifyObservers(AudioSessionChange(AudioSessionChangeType.ON_EJECT))
             }

@@ -129,4 +129,11 @@ FAT32ファイルシステムを使用してUSBドライブをフォーマット
     <string name="setting_album_display_list">List</string>
     <string name="setting_requires_media_center_restart">(変更には \"Media Center\" アプリの再起動が必要です)</string>
     <string name="error_no_results">見つかりませんでした: \"%1$s\"</string>
+    <string name="setting_view_category_title">ディスプレイ</string>
+    <string name="setting_view_tab_1">タブ 1</string>
+    <string name="setting_view_tab_2">タブ 2</string>
+    <string name="setting_view_tab_3">タブ 3</string>
+    <string name="setting_view_tab_4">タブ 4</string>
+    <string name="setting_view_tab_none">なし</string>
+    <string name="browse_tree_please_wait">お待ちください …</string>
 </resources>

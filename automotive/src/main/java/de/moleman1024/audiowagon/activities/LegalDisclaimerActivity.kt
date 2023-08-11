@@ -34,7 +34,7 @@ class LegalDisclaimerActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
         supportActionBar?.setHomeButtonEnabled(true)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        toolbar.setNavigationIcon(R.drawable.baseline_west_24)
+        toolbar.setNavigationIcon(R.drawable.west)
         val agreeButton = findViewById<Button>(R.id.legalDisclaimerAgreeBtn)
         agreeButton.setOnClickListener { onAgree() }
         val cancelButton = findViewById<Button>(R.id.legalDisclaimerCancelBtn)

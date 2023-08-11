@@ -15,7 +15,6 @@ import de.moleman1024.audiowagon.filestorage.AudioFileStorage
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
-import de.moleman1024.audiowagon.medialibrary.MetadataReadSetting
 import de.moleman1024.audiowagon.medialibrary.RESOURCE_ROOT_URI
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 
@@ -39,8 +38,7 @@ class ContentHierarchyRootTracks(
         val items = mutableListOf<MediaItem>()
         val numTracksInRepo = audioItemLibrary.getPrimaryRepository()?.getNumTracks() ?: 0
         if (!audioItemLibrary.areAnyReposAvail() || (numTracksInRepo <= 0 && !audioItemLibrary.isBuildingLibrary)) {
-            items += createPseudoNoEntriesItem()
-            logger.debug(TAG, "Showing pseudo MediaItem 'No entries available': ${items[0].description.title}'")
+            items += createPseudoNoEntriesItem(audioFileStorage, sharedPrefs)
             return items
         }
         if (audioItemLibrary.isBuildingLibrary) {
@@ -75,47 +73,10 @@ class ContentHierarchyRootTracks(
             setMediaId(serialize(ContentHierarchyID(ContentHierarchyType.SHUFFLE_ALL_TRACKS)))
             setTitle(context.getString(R.string.browse_tree_pseudo_track_shuffle_all))
             setIconUri(
-                Uri.parse(RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.baseline_shuffle_24))
+                Uri.parse(RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.shuffle))
             )
         }.build()
         return MediaItem(description, MediaItem.FLAG_PLAYABLE)
-    }
-
-    private fun createPseudoNoEntriesItem(): MediaItem {
-        val numConnectedDevices = audioFileStorage.getNumAvailableDevices()
-        var title = context.getString(R.string.browse_tree_no_entries_title)
-        var subtitle: String
-        subtitle = context.getString(R.string.browse_tree_no_usb_drive)
-        if (numConnectedDevices > 0) {
-            if (sharedPrefs.isLegalDisclaimerAgreed(context)) {
-                if (audioFileStorage.areAnyStoragesAvail()) {
-                    val metadataReadSetting = sharedPrefs.getMetadataReadSettingEnum(context, logger, TAG)
-                    if (metadataReadSetting == MetadataReadSetting.MANUALLY
-                        || metadataReadSetting == MetadataReadSetting.FILEPATHS_ONLY) {
-                        title = context.getString(R.string.browse_tree_metadata_not_yet_indexed_title)
-                        subtitle = context.getString(R.string.browse_tree_metadata_not_yet_indexed_desc)
-                    } else {
-                        subtitle = context.getString(R.string.browse_tree_usb_drive_ejected)
-                    }
-                } else {
-                    subtitle = context.getString(R.string.browse_tree_usb_drive_ejected)
-                }
-            } else {
-                title = context.getString(R.string.browse_tree_need_to_agree_legal_title)
-                subtitle = context.getString(R.string.browse_tree_need_to_agree_legal_desc)
-            }
-        }
-        val description = MediaDescriptionCompat.Builder().apply {
-            setMediaId(serialize(ContentHierarchyID(ContentHierarchyType.NONE)))
-            setTitle(title)
-            setSubtitle(subtitle)
-            setIconUri(
-                Uri.parse(RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.baseline_report_problem_24))
-            )
-        }.build()
-        // Tapping this should do nothing. We use BROWSABLE flag here, when clicked an empty subfolder will open.
-        // This is the better alternative than flag PLAYABLE which will open the playback view in front of the browser
-        return MediaItem(description, MediaItem.FLAG_BROWSABLE)
     }
 
     override suspend fun getAudioItems(): List<AudioItem> {

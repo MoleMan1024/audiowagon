@@ -5,4 +5,4 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 package de.moleman1024.audiowagon
 
-data class SettingChangeEvent(val key: SettingKey, val value: String = "")
+data class SettingChangeEvent(val key: SettingKey, val value: Any? = null)

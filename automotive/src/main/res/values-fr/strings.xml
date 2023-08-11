@@ -138,4 +138,11 @@ l\'aider améliorer l\'application (nécessite une connexion Internet).</string>
     <string name="setting_requires_media_center_restart">(toute modification nécessite le redémarrage
 de l\'application \"Media Center\")</string>
     <string name="error_no_results">Rien trouvé: \"%1$s\"</string>
+    <string name="setting_view_category_title">Voir</string>
+    <string name="setting_view_tab_1">Onglet 1</string>
+    <string name="setting_view_tab_2">Onglet 2</string>
+    <string name="setting_view_tab_3">Onglet 3</string>
+    <string name="setting_view_tab_4">Onglet 4</string>
+    <string name="setting_view_tab_none">Aucun</string>
+    <string name="browse_tree_please_wait">Veuillez patienter …</string>
 </resources>

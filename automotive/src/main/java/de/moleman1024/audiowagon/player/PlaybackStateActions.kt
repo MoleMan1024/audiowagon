@@ -30,37 +30,37 @@ class PlaybackStateActions(private val context: Context) {
      */
     fun createCustomActionShuffleIsOff(): PlaybackStateCompat.CustomAction {
         return PlaybackStateCompat.CustomAction.Builder(
-            ACTION_SHUFFLE_ON, context.getString(R.string.action_shuffle_turn_on), R.drawable.baseline_shuffle_24
+            ACTION_SHUFFLE_ON, context.getString(R.string.action_shuffle_turn_on), R.drawable.shuffle
         ).build()
     }
 
     fun createCustomActionShuffleIsOn(): PlaybackStateCompat.CustomAction {
         return PlaybackStateCompat.CustomAction.Builder(
-            ACTION_SHUFFLE_OFF, context.getString(R.string.action_shuffle_turn_off), R.drawable.baseline_shuffle_on_24
+            ACTION_SHUFFLE_OFF, context.getString(R.string.action_shuffle_turn_off), R.drawable.shuffle_on
         ).build()
     }
 
     fun createCustomActionRepeatIsOff(): PlaybackStateCompat.CustomAction {
         return PlaybackStateCompat.CustomAction.Builder(
-            ACTION_REPEAT_ON, context.getString(R.string.action_repeat_turn_on), R.drawable.baseline_repeat_24
+            ACTION_REPEAT_ON, context.getString(R.string.action_repeat_turn_on), R.drawable.repeat
         ).build()
     }
 
     fun createCustomActionRepeatIsOn(): PlaybackStateCompat.CustomAction {
         return PlaybackStateCompat.CustomAction.Builder(
-            ACTION_REPEAT_OFF, context.getString(R.string.action_repeat_turn_off), R.drawable.baseline_repeat_on_24
+            ACTION_REPEAT_OFF, context.getString(R.string.action_repeat_turn_off), R.drawable.repeat_on
         ).build()
     }
 
     fun createCustomActionEject(): PlaybackStateCompat.CustomAction {
         return PlaybackStateCompat.CustomAction.Builder(
-            ACTION_EJECT, context.getString(R.string.action_eject), R.drawable.baseline_eject_24
+            ACTION_EJECT, context.getString(R.string.action_eject), R.drawable.eject
         ).build()
     }
 
     fun createCustomActionRewind10(): PlaybackStateCompat.CustomAction {
         return PlaybackStateCompat.CustomAction.Builder(
-            ACTION_REWIND_10, context.getString(R.string.action_rewind), R.drawable.baseline_replay_10_24
+            ACTION_REWIND_10, context.getString(R.string.action_rewind), R.drawable.replay_10
         ).build()
     }
 

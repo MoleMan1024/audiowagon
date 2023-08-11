@@ -44,7 +44,7 @@ class ContentHierarchyGroupArtists(id: ContentHierarchyID, context: Context, aud
     }
 
     override suspend fun getAudioItems(): List<AudioItem> {
-        val numArtists = ContentHierarchyRootArtists(context, audioItemLibrary).getNumArtists()
+        val numArtists = getNumArtists()
         val numArtistGroups: Int = ceil(numArtists.toDouble() / CONTENT_HIERARCHY_MAX_NUM_ITEMS).toInt()
         if (id.artistGroupIndex >= numArtistGroups || id.artistGroupIndex < 0) {
             logger.error(TAG, "Group index ${id.artistGroupIndex} does not fit for $numArtistGroups artist groups")

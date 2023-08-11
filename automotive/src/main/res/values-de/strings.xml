@@ -125,7 +125,7 @@ Vektorgrafiken, entwickelt von Google\n&#x2013; Firebase Crashlytics\n\nLizenzve
     <string name="setting_read_metadata_filepaths_only">Nur Dateipfade</string>
     <string name="setting_read_metadata_off">Aus</string>
     <string name="setting_read_metadata_start_now">Jetzt Metadaten auslesen</string>
-    <string name="browse_tree_metadata_not_yet_indexed_title">Metadata noch nicht ausgelesen</string>
+    <string name="browse_tree_metadata_not_yet_indexed_title">Metadaten noch nicht ausgelesen</string>
     <string name="browse_tree_metadata_not_yet_indexed_desc">Siehe Einstellungen</string>
     <string name="setting_audiofocus_behavior">Verhalten bei Routenführung</string>
     <string name="setting_audiofocus_pause">Pause</string>
@@ -140,4 +140,11 @@ verbessern (benötigt Internetverbindung).</string>
     <string name="setting_album_display_list">Liste</string>
     <string name="setting_requires_media_center_restart">(Änderung erfordert Neustart der \"Media Center\" App)</string>
     <string name="error_no_results">Nichts gefunden: \"%1$s\"</string>
+    <string name="setting_view_category_title">Ansicht</string>
+    <string name="setting_view_tab_1">Tab 1</string>
+    <string name="setting_view_tab_2">Tab 2</string>
+    <string name="setting_view_tab_3">Tab 3</string>
+    <string name="setting_view_tab_4">Tab 4</string>
+    <string name="setting_view_tab_none">Nichts</string>
+    <string name="browse_tree_please_wait">Bitte warten …</string>
 </resources>

@@ -190,4 +190,11 @@ improve the app (requires internet connection).</string>
     <string name="setting_album_display_list">List</string>
     <string name="setting_requires_media_center_restart">(any change requires restart of \"Media Center\" app)</string>
     <string name="error_no_results">Nothing found: \"%1$s\"</string>
+    <string name="setting_view_category_title">Display</string>
+    <string name="setting_view_tab_1">Tab 1</string>
+    <string name="setting_view_tab_2">Tab 2</string>
+    <string name="setting_view_tab_3">Tab 3</string>
+    <string name="setting_view_tab_4">Tab 4</string>
+    <string name="setting_view_tab_none">None</string>
+    <string name="browse_tree_please_wait">Please wait …</string>
 </resources>

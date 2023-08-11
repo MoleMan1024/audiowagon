@@ -100,13 +100,13 @@ class AudioSessionNotifications(
 
     private fun prepareMediaNotifications() {
         // TODO: this seems to have no effect in Android Automotive
-        val playIcon = IconCompat.createWithResource(context, R.drawable.baseline_play_arrow_24)
+        val playIcon = IconCompat.createWithResource(context, R.drawable.play_arrow)
         val playAction = createNotificationAction(ACTION_PLAY, playIcon, R.string.notif_action_play)
-        val pauseIcon = IconCompat.createWithResource(context, R.drawable.baseline_pause_24)
+        val pauseIcon = IconCompat.createWithResource(context, R.drawable.pause)
         val pauseAction = createNotificationAction(ACTION_PAUSE, pauseIcon, R.string.notif_action_pause)
-        val nextIcon = IconCompat.createWithResource(context, R.drawable.baseline_skip_next_24)
+        val nextIcon = IconCompat.createWithResource(context, R.drawable.skip_next)
         val nextAction = createNotificationAction(ACTION_NEXT, nextIcon, R.string.notif_action_next)
-        val prevIcon = IconCompat.createWithResource(context, R.drawable.baseline_skip_previous_24)
+        val prevIcon = IconCompat.createWithResource(context, R.drawable.skip_previous)
         val prevAction = createNotificationAction(ACTION_PREV, prevIcon, R.string.notif_action_prev)
         isPlayingNotificationBuilder = NotificationCompat.Builder(context, AUDIO_SESS_NOTIF_CHANNEL).apply {
             addAction(prevAction)

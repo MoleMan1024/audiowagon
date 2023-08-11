@@ -22,11 +22,14 @@ const val CMD_SET_ALBUM_STYLE_SETTING = "de.moleman1024.audiowagon.CMD_SET_ALBUM
 const val CMD_SET_AUDIOFOCUS_SETTING = "de.moleman1024.audiowagon.CMD_SET_AUDIOFOCUS_SETTING"
 const val CMD_SET_EQUALIZER_PRESET = "de.moleman1024.audiowagon.CMD_SET_EQUALIZER_PRESET"
 const val CMD_SET_METADATAREAD_SETTING = "de.moleman1024.audiowagon.CMD_SET_METADATAREAD_SETTING"
+const val CMD_SET_VIEW_TABS = "de.moleman1024.audiowagon.CMD_SET_VIEW_TABS"
 const val ALBUM_STYLE_KEY = "album_style"
 const val AUDIOFOCUS_SETTING_KEY = "audiofocus_setting"
 const val EQUALIZER_PRESET_KEY = "preset"
 const val METADATAREAD_SETTING_KEY = "metadata_read_setting"
+const val VIEW_TABS_SETTING_KEY = "view_tabs"
 
 const val NOTIFICATION_ID: Int = 25575
 const val DEFAULT_JPEG_QUALITY_PERCENTAGE = 60
 const val POPUP_TIMEOUT_MS: Long = 4000L
+const val NUM_VIEW_TABS: Int = 4

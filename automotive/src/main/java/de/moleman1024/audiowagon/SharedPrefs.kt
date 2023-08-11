@@ -7,7 +7,6 @@ package de.moleman1024.audiowagon
 
 import android.content.Context
 import android.content.SharedPreferences
-import androidx.preference.PreferenceManager
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.AlbumStyleSetting
 import de.moleman1024.audiowagon.medialibrary.MetadataReadSetting
@@ -25,6 +24,7 @@ const val SHARED_PREF_ENABLE_REPLAYGAIN = "enableReplayGain"
 const val SHARED_PREF_AUDIOFOCUS = "audioFocus"
 const val SHARED_PREF_ALBUM_STYLE = "albumStyle"
 const val SHARED_PREF_CRASH_REPORTING = "crashReporting"
+const val SHARED_PREF_VIEW_TAB_PREFIX = "viewTab"
 val SHARED_PREF_EQUALIZER_PRESET_DEFAULT = EqualizerPreset.LESS_BASS.name
 
 open class SharedPrefs {
@@ -144,6 +144,48 @@ open class SharedPrefs {
             logger.exception(tag, exc.message.toString(), exc)
         }
         return albumStyleSetting
+    }
+
+    private fun getViewTabSetting(tabNum: Int, context: Context): String {
+        return getViewTabSetting(tabNum, getDefaultSharedPreferences(context))
+    }
+
+    // https://github.com/MoleMan1024/audiowagon/issues/124
+    fun getViewTabSetting(tabNum: Int, sharedPreferences: SharedPreferences?): String {
+        val defaultValue: String
+        when (tabNum) {
+            0 -> {
+                defaultValue = ViewTabSetting.TRACKS.name
+            }
+            1 -> {
+                defaultValue = ViewTabSetting.ALBUMS.name
+            }
+            2 -> {
+                defaultValue = ViewTabSetting.ARTISTS.name
+            }
+            3 -> {
+                defaultValue = ViewTabSetting.FILES.name
+            }
+            else -> {
+                throw AssertionError("Invalid view tab number: $tabNum")
+            }
+        }
+        return sharedPreferences?.getString("${SHARED_PREF_VIEW_TAB_PREFIX}${tabNum}", defaultValue) ?: defaultValue
+    }
+
+    fun getViewTabSettings(context: Context, logger: Logger, tag: String): List<ViewTabSetting> {
+        val viewTabs = mutableListOf<ViewTabSetting>()
+        for (tabNum in 0 until NUM_VIEW_TABS) {
+            val viewTabSettingStr = getViewTabSetting(tabNum, context)
+            var viewTabSetting: ViewTabSetting = ViewTabSetting.FILES
+            try {
+                viewTabSetting = ViewTabSetting.valueOf(viewTabSettingStr)
+            } catch (exc: IllegalArgumentException) {
+                logger.exception(tag, exc.message.toString(), exc)
+            }
+            viewTabs.add(viewTabSetting)
+        }
+        return viewTabs
     }
 
     fun isLogToUSBEnabled(context: Context): Boolean {

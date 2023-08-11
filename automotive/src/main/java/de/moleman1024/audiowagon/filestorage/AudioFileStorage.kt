@@ -36,6 +36,7 @@ import kotlinx.coroutines.channels.produce
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.io.InputStream
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.coroutineContext
 
 private const val TAG = "AudioFileStor"
@@ -106,6 +107,9 @@ open class AudioFileStorage(
                     setAllDataSourcesClosed()
                     detachStorageForDevice(it)
                     removeDevice(it)
+                }
+                DeviceAction.REFRESH -> {
+                    notifyObservers(StorageChange("", StorageAction.REFRESH))
                 }
                 else -> {
                     // ignore
@@ -477,7 +481,7 @@ open class AudioFileStorage(
         val builder = MediaDescriptionCompat.Builder().apply {
             setTitle(file.name)
             setIconUri(Uri.parse(
-                RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.baseline_insert_drive_file_24)
+                RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.draft)
             ))
             setMediaId(ContentHierarchyElement.serialize(contentHierarchyID))
             setMediaUri(file.uri)
@@ -494,7 +498,7 @@ open class AudioFileStorage(
         val builder = MediaDescriptionCompat.Builder().apply {
             setTitle(directory.name)
             setIconUri(Uri.parse(
-                RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.baseline_folder_24)
+                RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.folder)
             ))
             setMediaId(ContentHierarchyElement.serialize(contentHierarchyID))
             setMediaUri(directory.uri)
@@ -508,7 +512,7 @@ open class AudioFileStorage(
         val builder = MediaDescriptionCompat.Builder().apply {
             setTitle(file.name)
             setIconUri(Uri.parse(
-                RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.baseline_description_24)
+                RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.description)
             ))
             setMediaId(ContentHierarchyElement.serialize(contentHierarchyID))
             setMediaUri(file.uri)
@@ -542,6 +546,10 @@ open class AudioFileStorage(
 
     fun cleanAlbumArtCache() {
         recentDirToAlbumArtMap.clear()
+    }
+
+    fun isUpdatingDevices(): Boolean {
+        return usbDeviceConnections.isUpdatingDevices.get()
     }
 
     suspend fun getByteArrayForURI(uri: Uri): ByteArray {

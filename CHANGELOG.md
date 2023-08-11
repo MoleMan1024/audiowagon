@@ -13,6 +13,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project loosely follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.5.1] - 2023-08-11
+
+### Fixed
+
+- minor translation inconsistency in German
+
+### Changed
+
+- some icons were updated
+
+### Added
+
+- the 4 view tabs at the top of the browse view ("Tracks", "Albums", "Artists", "Files") are now configurable in the 
+  AudioWagon settings. You can now show only those categories that you use and order them however you want (feature 
+  request [#124](https://github.com/MoleMan1024/audiowagon/issues/124)).
+- translation for Hungarian
+- some icons were added
+
+
 ## [2.4.7] - 2023-07-09
 
 ### Fixed

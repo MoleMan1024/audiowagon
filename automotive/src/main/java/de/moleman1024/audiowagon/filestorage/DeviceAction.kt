@@ -7,5 +7,6 @@ package de.moleman1024.audiowagon.filestorage
 
 enum class DeviceAction {
     CONNECT,
-    DISCONNECT
+    DISCONNECT,
+    REFRESH
 }

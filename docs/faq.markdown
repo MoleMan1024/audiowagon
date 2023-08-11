@@ -274,8 +274,11 @@ built into certain car models.
 I am fine, thanks. If you really want to give something in return, please put it towards a good cause, for example
 to protect the environment (reforestation, solar power, right-to-repair, local projects, etc.).
 
-*Update Nov 2021:* Oh wow, people are actually doing this and notifying me, this is amazing! 😄
+*Update:* Oh wow, people are actually doing this and notifying me, this is amazing! 😄
 
 - Thank you Timo for planting 100 trees in Madagascar!
+- Thank you Bill for donating to a local animal shelter!
+- Thank you Vasimo for donating to Vancouver Food Runners!
+- Thank you Trevor for donating to Northern India Flood Relief!
 
 

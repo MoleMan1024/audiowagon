@@ -7,7 +7,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
         xmlns:android="http://schemas.android.com/apk/res/android">
     <PreferenceCategory
             app:title="@string/setting_sound_category_title"
-            app:icon="@drawable/baseline_speaker_24">
+            app:icon="@drawable/speaker">
         <SwitchPreferenceCompat
                 app:key="enableEqualizer"
                 app:title="@string/setting_enable_equalizer_title"
@@ -38,15 +38,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
     </PreferenceCategory>
     <PreferenceCategory
             app:title="@string/setting_library_category_title"
-            app:icon="@drawable/baseline_library_music_24">
-        <ListPreference
-                app:key="albumStyle"
-                app:title="@string/setting_album_display"
-                app:persistent="true"
-                app:defaultValue="GRID"
-                app:useSimpleSummaryProvider="false"
-                app:entries="@array/album_display_settings"
-                app:entryValues="@array/album_display_settings_values" />
+            app:icon="@drawable/library_music">
         <ListPreference
                 app:key="readMetaData"
                 app:title="@string/setting_read_metadata"
@@ -81,8 +73,52 @@ SPDX-License-Identifier: GPL-3.0-or-later
                 app:persistent="false" />
     </PreferenceCategory>
     <PreferenceCategory
+            app:title="@string/setting_view_category_title"
+            app:icon="@drawable/visibility">
+        <ListPreference
+                app:key="albumStyle"
+                app:title="@string/setting_album_display"
+                app:persistent="true"
+                app:defaultValue="GRID"
+                app:useSimpleSummaryProvider="false"
+                app:entries="@array/album_display_settings"
+                app:entryValues="@array/album_display_settings_values" />
+        <ListPreference
+                app:key="viewTab0"
+                app:title="@string/setting_view_tab_1"
+                app:persistent="true"
+                app:defaultValue="TRACKS"
+                app:useSimpleSummaryProvider="true"
+                app:entries="@array/view_tab_settings"
+                app:entryValues="@array/view_tab_settings_values" />
+        <ListPreference
+                app:key="viewTab1"
+                app:title="@string/setting_view_tab_2"
+                app:persistent="true"
+                app:defaultValue="ALBUMS"
+                app:useSimpleSummaryProvider="true"
+                app:entries="@array/view_tab_settings"
+                app:entryValues="@array/view_tab_settings_values" />
+        <ListPreference
+                app:key="viewTab2"
+                app:title="@string/setting_view_tab_3"
+                app:persistent="true"
+                app:defaultValue="ARTISTS"
+                app:useSimpleSummaryProvider="true"
+                app:entries="@array/view_tab_settings"
+                app:entryValues="@array/view_tab_settings_values" />
+        <ListPreference
+                app:key="viewTab3"
+                app:title="@string/setting_view_tab_4"
+                app:persistent="true"
+                app:defaultValue="FILES"
+                app:useSimpleSummaryProvider="true"
+                app:entries="@array/view_tab_settings"
+                app:entryValues="@array/view_tab_settings_values" />
+    </PreferenceCategory>
+    <PreferenceCategory
             app:title="@string/setting_general_category_title"
-            app:icon="@drawable/baseline_handyman_24">
+            app:icon="@drawable/handyman">
         <SwitchPreferenceCompat
                 app:key="logToUSB"
                 app:title="@string/setting_log_to_USB_title"

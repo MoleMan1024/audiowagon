@@ -73,7 +73,7 @@ class ContentHierarchyRootFiles(
             setMediaId(serialize(playAllFilesForDirectoryID))
             setTitle(context.getString(R.string.browse_tree_pseudo_play_all))
             setIconUri(
-                Uri.parse(RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.baseline_playlist_play_24))
+                Uri.parse(RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.playlist_play))
             )
         }.build()
         return MediaItem(description, MediaItem.FLAG_PLAYABLE)
@@ -99,7 +99,7 @@ class ContentHierarchyRootFiles(
             setSubtitle(subtitle)
             setIconUri(
                 Uri.parse(RESOURCE_ROOT_URI
-                        + context.resources.getResourceEntryName(R.drawable.baseline_report_problem_24))
+                        + context.resources.getResourceEntryName(R.drawable.report))
             )
         }.build()
         // Tapping this should do nothing. We use BROWSABLE flag here, when clicked an empty subfolder will open.

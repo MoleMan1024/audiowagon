@@ -78,7 +78,16 @@ class SettingsFragment : PreferenceFragmentCompat() {
                     getParentSettingsActivity().setAlbumStyleSetting(albumStyleStr)
                 }
                 else -> {
-                    // ignore
+                    if (key.startsWith(SHARED_PREF_VIEW_TAB_PREFIX)) {
+                        updateViewTabs(sharedPreferences)
+                        val viewTabs = mutableListOf<String>()
+                        for (viewTabNum in 0 until NUM_VIEW_TABS) {
+                            viewTabs.add(getSharedPrefs().getViewTabSetting(viewTabNum, sharedPreferences))
+                        }
+                        getParentSettingsActivity().setViewTabSettings(viewTabs)
+                    } else {
+                        // ignore
+                    }
                 }
             }
         }
@@ -131,6 +140,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         updateReplayGainSwitch(sharedPreferences)
         updateAudioFocusList(sharedPreferences)
         updateAlbumStyleList(sharedPreferences)
+        updateViewTabs(sharedPreferences)
         updateReadMetadataList(sharedPreferences)
         updateReadMetadataNowButton(sharedPreferences)
         updateUSBAndEjectStatus(sharedPreferences)
@@ -141,32 +151,38 @@ class SettingsFragment : PreferenceFragmentCompat() {
         logToUSBPref?.isVisible = true
         val value = getSharedPrefs().isLogToUSBEnabled(sharedPreferences)
         logToUSBPref?.isChecked = value
+        logger.debug(TAG, "${SHARED_PREF_LOG_TO_USB}=${value}")
     }
 
     private fun updateCrashReporting(sharedPreferences: SharedPreferences?) {
         val value = getSharedPrefs().isCrashReportingEnabled(sharedPreferences)
         findPreference<SwitchPreferenceCompat>(SHARED_PREF_CRASH_REPORTING)?.isChecked = value
+        logger.debug(TAG, "${SHARED_PREF_CRASH_REPORTING}=${value}")
     }
 
     private fun updateEqualizerSwitch(sharedPreferences: SharedPreferences?) {
         val value = getSharedPrefs().isEQEnabled(sharedPreferences)
         findPreference<SwitchPreferenceCompat>(SHARED_PREF_ENABLE_EQUALIZER)?.isChecked = value
         findPreference<ListPreference>(SHARED_PREF_EQUALIZER_PRESET)?.isEnabled = value
+        logger.debug(TAG, "${SHARED_PREF_ENABLE_EQUALIZER}=${value}")
     }
 
     private fun updateEqualizerPreset(sharedPreferences: SharedPreferences?) {
         val eqPreset = getSharedPrefs().getEQPreset(sharedPreferences)
         findPreference<ListPreference>(SHARED_PREF_EQUALIZER_PRESET)?.value = eqPreset
+        logger.debug(TAG, "${SHARED_PREF_EQUALIZER_PRESET}=${eqPreset}")
     }
 
     private fun updateReplayGainSwitch(sharedPreferences: SharedPreferences?) {
         val value = getSharedPrefs().isReplayGainEnabled(sharedPreferences)
         findPreference<SwitchPreferenceCompat>(SHARED_PREF_ENABLE_REPLAYGAIN)?.isChecked = value
+        logger.debug(TAG, "${SHARED_PREF_ENABLE_REPLAYGAIN}=${value}")
     }
 
     private fun updateReadMetadataList(sharedPreferences: SharedPreferences?) {
         val metadataReadSetting = getSharedPrefs().getMetadataReadSetting(sharedPreferences)
         findPreference<ListPreference>(SHARED_PREF_READ_METADATA)?.value = metadataReadSetting
+        logger.debug(TAG, "${SHARED_PREF_READ_METADATA}=${metadataReadSetting}")
     }
 
     private fun updateReadMetadataNowButton(sharedPreferences: SharedPreferences?) {
@@ -191,11 +207,19 @@ class SettingsFragment : PreferenceFragmentCompat() {
     private fun updateAudioFocusList(sharedPreferences: SharedPreferences?) {
         val audioFocusSetting = getSharedPrefs().getAudioFocusSetting(sharedPreferences)
         findPreference<ListPreference>(SHARED_PREF_AUDIOFOCUS)?.value = audioFocusSetting
+        logger.debug(TAG, "${SHARED_PREF_AUDIOFOCUS}=${audioFocusSetting}")
     }
 
     private fun updateAlbumStyleList(sharedPreferences: SharedPreferences?) {
         val albumStyleSetting = getSharedPrefs().getAlbumStyleSetting(sharedPreferences)
         findPreference<ListPreference>(SHARED_PREF_ALBUM_STYLE)?.value = albumStyleSetting
+    }
+
+    private fun updateViewTabs(sharedPreferences: SharedPreferences?) {
+        for (viewTabNum in 0 until NUM_VIEW_TABS) {
+            val viewTabSetting = getSharedPrefs().getViewTabSetting(viewTabNum, sharedPreferences)
+            findPreference<ListPreference>("${SHARED_PREF_VIEW_TAB_PREFIX}${viewTabNum}")?.value = viewTabSetting
+        }
     }
 
     private fun updateUSBAndEjectStatus(sharedPreferences: SharedPreferences?) {
@@ -216,7 +240,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
         usbStatusPref?.isVisible = true
         ejectPref?.isVisible = true
         usbStatusPref?.summary = text
-        @Suppress("KotlinConstantConditions")
         if (BuildConfig.BUILD_TYPE != Util.BUILD_VARIANT_EMULATOR_SD_CARD
             && value in listOf(R.string.setting_USB_status_ejected, R.string.setting_USB_status_not_connected)) {
             disableSettingsThatNeedRemovableDrive()

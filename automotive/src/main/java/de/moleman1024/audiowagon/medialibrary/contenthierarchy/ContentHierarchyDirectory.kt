@@ -69,7 +69,7 @@ class ContentHierarchyDirectory(
             setMediaId(serialize(playAllFilesForDirectoryID))
             setTitle(context.getString(R.string.browse_tree_pseudo_play_all))
             setIconUri(
-                Uri.parse(RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.baseline_playlist_play_24))
+                Uri.parse(RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.playlist_play))
             )
         }.build()
         return MediaItem(description, MediaItem.FLAG_PLAYABLE)
@@ -113,7 +113,7 @@ class ContentHierarchyDirectory(
                             "… ${lastItemInGroup.title.take(numTitleCharsPerGroup)}"
                 )
                 setIconUri(Uri.parse(RESOURCE_ROOT_URI
-                        + context.resources.getResourceEntryName(R.drawable.baseline_summarize_24)))
+                        + context.resources.getResourceEntryName(R.drawable.summarize)))
                 setMediaId(serialize(groupContentHierarchyID))
             }.build()
             groups += MediaItem(description, MediaItem.FLAG_BROWSABLE)

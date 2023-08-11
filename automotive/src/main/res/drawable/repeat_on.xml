@@ -1,0 +1,12 @@
+<!-- taken from https://fonts.google.com/icons licensed under Apache 2.0 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+        android:width="24dp"
+        android:height="24dp"
+        android:viewportWidth="960"
+        android:viewportHeight="960"
+        android:tint="?attr/colorControlNormal">
+    <path
+            android:fillColor="@android:color/white"
+            android:pathData="M144.62,880Q117,880 98.5,861.5Q80,843 80,815.39L80,144.61Q80,117 98.5,98.5Q117,80 144.62,80L815.39,80Q843,80 861.5,98.5Q880,117 880,144.61L880,815.39Q880,843 861.5,861.5Q843,880 815.39,880L144.62,880ZM287.69,844.62L316,815.85L232.46,732.31L732.31,732.31L732.31,532.31L692.31,532.31L692.31,692.31L232.46,692.31L316,608.77L287.69,580L155.38,712.31L287.69,844.62ZM227.69,427.69L267.69,427.69L267.69,267.69L727.54,267.69L644,351.23L672.31,380L804.62,247.69L672.31,115.38L644,144.15L727.54,227.69L227.69,227.69L227.69,427.69Z"/>
+</vector>
+

@@ -176,13 +176,13 @@ class AlbumArtContentProvider : ContentProvider() {
         if (binderStatus == BinderStatus.UNBOUND) {
             val intent =
                 Intent(AudioBrowserService::class.java.name, Uri.EMPTY, context, AudioBrowserService::class.java)
-            logger.verbose(TAG, "bindService(intent=$intent, connection=$connection)")
+            logger.debug(TAG, "bindService(intent=$intent, connection=$connection)")
             context?.bindService(intent, connection, Context.BIND_AUTO_CREATE)
             binderStatus = BinderStatus.BIND_REQUESTED
         }
         if (defaultAlbumArtAlbums.size <= 1) {
             val drawable =
-                context?.resources?.let { ResourcesCompat.getDrawable(it, R.drawable.baseline_album_24, null) }
+                context?.resources?.let { ResourcesCompat.getDrawable(it, R.drawable.album, null) }
             if (drawable != null) {
                 defaultAlbumArtAlbums = createDefaultAlbumArt(drawable)
             }

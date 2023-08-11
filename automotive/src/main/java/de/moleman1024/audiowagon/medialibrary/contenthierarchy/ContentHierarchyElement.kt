@@ -12,12 +12,14 @@ import android.support.v4.media.MediaBrowserCompat.MediaItem
 import android.support.v4.media.MediaDescriptionCompat
 import androidx.media.utils.MediaConstants
 import de.moleman1024.audiowagon.R
+import de.moleman1024.audiowagon.SharedPrefs
 import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.filestorage.*
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.AlbumStyleSetting
 import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
+import de.moleman1024.audiowagon.medialibrary.MetadataReadSetting
 import de.moleman1024.audiowagon.medialibrary.RESOURCE_ROOT_URI
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.serialization.decodeFromString
@@ -205,19 +207,19 @@ abstract class ContentHierarchyElement(
                 ContentHierarchyType.TRACK_GROUP -> {
                     firstItemTitle = firstItemInGroup[0].title
                     lastItemTitle = lastItemInGroup[0].title
-                    iconID = R.drawable.baseline_library_music_24
+                    iconID = R.drawable.library_music
                     groupContentHierarchyID.trackGroupIndex = groupIndex
                 }
                 ContentHierarchyType.ALBUM_GROUP -> {
                     firstItemTitle = firstItemInGroup[0].album
                     lastItemTitle = lastItemInGroup[0].album
-                    iconID = R.drawable.baseline_burst_mode_24
+                    iconID = R.drawable.burst_mode
                     groupContentHierarchyID.albumGroupIndex = groupIndex
                 }
                 ContentHierarchyType.ARTIST_GROUP -> {
                     firstItemTitle = firstItemInGroup[0].albumArtist.ifBlank { firstItemInGroup[0].artist }
                     lastItemTitle = lastItemInGroup[0].albumArtist.ifBlank { lastItemInGroup[0].artist }
-                    iconID = R.drawable.baseline_recent_actors_24
+                    iconID = R.drawable.recent_actors
                     groupContentHierarchyID.artistGroupIndex = groupIndex
                 }
                 else -> {
@@ -279,9 +281,60 @@ abstract class ContentHierarchyElement(
             setTitle(context.getString(R.string.notif_indexing_text_in_progress))
             setSubtitle(numItemsFoundText)
             setIconUri(
-                Uri.parse(RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.sync_animated))
+                Uri.parse(RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.directory_sync))
             )
         }.build()
+        return MediaItem(description, MediaItem.FLAG_BROWSABLE)
+    }
+
+    protected fun createPseudoNoEntriesItem(audioFileStorage: AudioFileStorage, sharedPrefs: SharedPrefs): MediaItem {
+        var title = context.getString(R.string.browse_tree_no_entries_title)
+        var subtitle: String
+        subtitle = context.getString(R.string.browse_tree_no_usb_drive)
+        var iconID: Int = R.drawable.usb_off
+        if (!audioFileStorage.isUpdatingDevices()) {
+            val numConnectedDevices = audioFileStorage.getNumAvailableDevices()
+            if (numConnectedDevices > 0) {
+                if (sharedPrefs.isLegalDisclaimerAgreed(context)) {
+                    if (audioFileStorage.areAnyStoragesAvail()) {
+                        val metadataReadSetting = sharedPrefs.getMetadataReadSettingEnum(context, logger, TAG)
+                        if (metadataReadSetting == MetadataReadSetting.MANUALLY
+                            || metadataReadSetting == MetadataReadSetting.FILEPATHS_ONLY
+                        ) {
+                            title = context.getString(R.string.browse_tree_metadata_not_yet_indexed_title)
+                            subtitle = context.getString(R.string.browse_tree_metadata_not_yet_indexed_desc)
+                            iconID = R.drawable.usb
+                        } else {
+                            subtitle = context.getString(R.string.browse_tree_usb_drive_ejected)
+                            iconID = R.drawable.report
+                        }
+                    } else {
+                        subtitle = context.getString(R.string.browse_tree_usb_drive_ejected)
+                        iconID = R.drawable.report
+                    }
+                } else {
+                    title = context.getString(R.string.browse_tree_need_to_agree_legal_title)
+                    subtitle = context.getString(R.string.browse_tree_need_to_agree_legal_desc)
+                    iconID = R.drawable.policy
+                }
+            }
+        } else {
+            title = context.getString(R.string.browse_tree_please_wait)
+            subtitle = ""
+            iconID = R.drawable.hourglass
+        }
+        val description = MediaDescriptionCompat.Builder().apply {
+            setMediaId(serialize(ContentHierarchyID(ContentHierarchyType.NONE)))
+            setTitle(title)
+            setSubtitle(subtitle)
+            setIconUri(Uri.parse(RESOURCE_ROOT_URI + context.resources.getResourceEntryName(iconID)))
+        }.build()
+        logger.debug(
+            TAG,
+            "Showing pseudo MediaItem 'No entries available': ${description.title} (${description.subtitle})'"
+        )
+        // Tapping this should do nothing. We use BROWSABLE flag here, when clicked an empty subfolder will open.
+        // This is the better alternative than flag PLAYABLE which will open the playback view in front of the browser
         return MediaItem(description, MediaItem.FLAG_BROWSABLE)
     }
 
@@ -297,6 +350,13 @@ abstract class ContentHierarchyElement(
                 DATABASE_ID_UNKNOWN
             }
         }
+    }
+
+    suspend fun getNumArtists(): Int {
+        var numArtists = 0
+        val repo = audioItemLibrary.getPrimaryRepository() ?: return 0
+        numArtists += repo.getNumAlbumAndCompilationArtists()
+        return numArtists
     }
 
 }

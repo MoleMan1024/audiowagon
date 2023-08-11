@@ -138,4 +138,11 @@ förbättra appen (kräver internetanslutning).</string>
     <string name="setting_requires_media_center_restart">(alla ändringar kräver omstart av appen
 \"Media Center\")</string>
     <string name="error_no_results">Inget hittat: \"%1$s\"</string>
+    <string name="setting_view_category_title">Skärmen</string>
+    <string name="setting_view_tab_1">Flik 1</string>
+    <string name="setting_view_tab_2">Flik 2</string>
+    <string name="setting_view_tab_3">Flik 3</string>
+    <string name="setting_view_tab_4">Flik 4</string>
+    <string name="setting_view_tab_none">Ingen</string>
+    <string name="browse_tree_please_wait">Vänta …</string>
 </resources>

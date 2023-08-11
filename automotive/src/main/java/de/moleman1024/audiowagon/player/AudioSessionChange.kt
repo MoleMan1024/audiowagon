@@ -5,6 +5,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 package de.moleman1024.audiowagon.player
 
+import de.moleman1024.audiowagon.ViewTabSetting
 import de.moleman1024.audiowagon.medialibrary.AudioItemType
 
 // TODO: rework this, these items are kind of unrelated
@@ -20,13 +21,16 @@ data class AudioSessionChange(val type: AudioSessionChangeType) {
     var metadataReadSetting: String = ""
     var audioFocusSetting: String = ""
     var albumStyleSetting: String = ""
+    // https://github.com/MoleMan1024/audiowagon/issues/124
+    val viewTabs: MutableList<ViewTabSetting> = mutableListOf()
 
     override fun toString(): String {
         return "AudioSessionChange(type=$type, queueID=$queueID, " +
                 "contentHierarchyID='$contentHierarchyID', artistToPlay='$artistToPlay', albumToPlay='$albumToPlay', " +
                 "trackToPlay='$trackToPlay', queryToPlay='$queryToPlay', queryFocus='$queryFocus' " +
                 "equalizerPreset='$equalizerPreset', metadataReadSetting='$metadataReadSetting', " +
-                "audioFocusSetting='$audioFocusSetting', albumStyleSetting='$albumStyleSetting')"
+                "audioFocusSetting='$audioFocusSetting', albumStyleSetting='$albumStyleSetting', " +
+                "viewTabs=$viewTabs)"
     }
 
 }

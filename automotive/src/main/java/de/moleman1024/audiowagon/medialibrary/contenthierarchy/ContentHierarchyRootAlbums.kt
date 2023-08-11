@@ -7,6 +7,8 @@ package de.moleman1024.audiowagon.medialibrary.contenthierarchy
 
 import android.content.Context
 import android.support.v4.media.MediaBrowserCompat.MediaItem
+import de.moleman1024.audiowagon.SharedPrefs
+import de.moleman1024.audiowagon.filestorage.AudioFileStorage
 import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -17,13 +19,26 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 @ExperimentalCoroutinesApi
 class ContentHierarchyRootAlbums(
     context: Context,
-    audioItemLibrary: AudioItemLibrary
+    audioItemLibrary: AudioItemLibrary,
+    private val audioFileStorage: AudioFileStorage,
+    private val sharedPrefs: SharedPrefs
 ) :
     ContentHierarchyElement(ContentHierarchyID(ContentHierarchyType.ROOT_ALBUMS), context, audioItemLibrary) {
 
     override suspend fun getMediaItems(): List<MediaItem> {
         var items = mutableListOf<MediaItem>()
         val numAlbums = getNumAlbums()
+        val hasUnknownAlbum = hasUnknownAlbum()
+        if (!audioItemLibrary.areAnyReposAvail()
+            || (!hasUnknownAlbum && numAlbums <= 0 && !audioItemLibrary.isBuildingLibrary)
+        ) {
+            items += createPseudoNoEntriesItem(audioFileStorage, sharedPrefs)
+            return items
+        }
+        if (audioItemLibrary.isBuildingLibrary) {
+            items += createPseudoFoundXItems()
+            return items
+        }
         if (!hasTooManyItems(numAlbums)) {
             val audioItems = getAudioItems()
             for (album in audioItems) {
@@ -57,6 +72,11 @@ class ContentHierarchyRootAlbums(
         val repo = audioItemLibrary.getPrimaryRepository() ?: return 0
         numAlbums += repo.getNumAlbums()
         return numAlbums
+    }
+
+    private suspend fun hasUnknownAlbum(): Boolean {
+        val repo = audioItemLibrary.getPrimaryRepository() ?: return false
+        return repo.getAudioItemForUnknownAlbum() != null
     }
 
 }

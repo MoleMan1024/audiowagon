@@ -136,4 +136,11 @@ to w ulepszeniu aplikacji (funkcja wymaga połączenia z internetem).</string>
     <string name="setting_requires_media_center_restart">(każda zmiana wymaga ponownego uruchomienia aplikacji
 \"Media Center\")</string>
     <string name="error_no_results">Nic nie znaleziono: \"%1$s\"</string>
+    <string name="setting_view_category_title">Ekranu</string>
+    <string name="setting_view_tab_1">Karta 1</string>
+    <string name="setting_view_tab_2">Karta 2</string>
+    <string name="setting_view_tab_3">Karta 3</string>
+    <string name="setting_view_tab_4">Karta 4</string>
+    <string name="setting_view_tab_none">Brak</string>
+    <string name="browse_tree_please_wait">Proszę czekać …</string>
 </resources>

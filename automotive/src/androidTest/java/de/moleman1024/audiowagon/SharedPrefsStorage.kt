@@ -12,6 +12,7 @@ import de.moleman1024.audiowagon.persistence.*
 
 private const val TAG = "SharedPrefsStorage"
 
+@Suppress("unused")
 open class SharedPrefsStorage {
     val mockPreferencesMap = mutableMapOf<String, Any>()
 
@@ -26,6 +27,10 @@ open class SharedPrefsStorage {
         mockPreferencesMap[SHARED_PREF_LEGAL_DISCLAIMER_AGREED] = "1.1"
         mockPreferencesMap[SHARED_PREF_READ_METADATA] = "WHEN_USB_CONNECTED"
         mockPreferencesMap[SHARED_PREF_EQUALIZER_PRESET] = "LESS_BASS"
+        mockPreferencesMap["${SHARED_PREF_VIEW_TAB_PREFIX}0"] = "TRACKS"
+        mockPreferencesMap["${SHARED_PREF_VIEW_TAB_PREFIX}1"] = "ALBUMS"
+        mockPreferencesMap["${SHARED_PREF_VIEW_TAB_PREFIX}2"] = "ARTISTS"
+        mockPreferencesMap["${SHARED_PREF_VIEW_TAB_PREFIX}3"] = "FILES"
         mockPreferencesMap[PERSISTENT_STORAGE_CURRENT_TRACK_ID] = ""
         mockPreferencesMap[PERSISTENT_STORAGE_CURRENT_TRACK_POS] = 0L
         mockPreferencesMap[PERSISTENT_STORAGE_QUEUE_INDEX] = 0

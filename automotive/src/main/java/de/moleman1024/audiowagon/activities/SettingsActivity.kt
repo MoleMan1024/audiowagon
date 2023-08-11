@@ -69,7 +69,7 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
         setSupportActionBar(toolbar)
         supportActionBar?.setHomeButtonEnabled(true)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        toolbar.setNavigationIcon(R.drawable.baseline_west_24)
+        toolbar.setNavigationIcon(R.drawable.west)
         if (savedInstanceState == null) {
             supportFragmentManager.beginTransaction().replace(R.id.settings_container, SettingsFragment()).commit()
         }
@@ -119,6 +119,13 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
         val bundle = Bundle()
         bundle.putString(ALBUM_STYLE_KEY, albumStyleStr)
         mediaController.sendCommand(CMD_SET_ALBUM_STYLE_SETTING, bundle, null)
+    }
+
+    fun setViewTabSettings(viewTabs: List<String>) {
+        assertMediaControllerInitialized()
+        val bundle = Bundle()
+        bundle.putStringArray(VIEW_TABS_SETTING_KEY, viewTabs.toTypedArray())
+        mediaController.sendCommand(CMD_SET_VIEW_TABS, bundle, null)
     }
 
     fun enableEqualizer() {

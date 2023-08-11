@@ -17,8 +17,8 @@ open class SenseException(response: ScsiRequestSenseResponse?, msg: String) :
             return if (response == null) {
                 ""
             } else {
-                " (ASC: " + response.additionalSenseCode +
-                        ", ASCQ: " + response.additionalSenseCodeQualifier + ")"
+                " (ASC: " + String.format("%02x", response.additionalSenseCode) +
+                        ", ASCQ: " + String.format("%02x", response.additionalSenseCodeQualifier) + ")"
             }
         }
     }

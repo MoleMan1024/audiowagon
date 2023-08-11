@@ -10,7 +10,7 @@ import android.net.Uri
 import android.support.v4.media.MediaBrowserCompat.MediaItem
 import android.support.v4.media.MediaDescriptionCompat
 import de.moleman1024.audiowagon.R
-import de.moleman1024.audiowagon.SharedPrefs
+import de.moleman1024.audiowagon.ViewTabSetting
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -23,50 +23,72 @@ private val logger = Logger
  */
 @ExperimentalCoroutinesApi
 class ContentHierarchyRoot(
-    context: Context, audioItemLibrary: AudioItemLibrary, private val sharedPrefs: SharedPrefs
+    context: Context, audioItemLibrary: AudioItemLibrary
 ) :
     ContentHierarchyElement(ContentHierarchyID(ContentHierarchyType.ROOT), context, audioItemLibrary) {
+    private val albumCategoryTitle = R.string.browse_tree_category_albums
+
     data class CategoryData(val contentHierarchyID: ContentHierarchyID) {
         var titleID: Int = -1
         var iconID: Int = -1
+        var viewTab: ViewTabSetting = ViewTabSetting.NONE
     }
 
     override suspend fun getMediaItems(): List<MediaItem> {
-        val items: MutableList<MediaItem> = mutableListOf()
-        val categories = mutableListOf<CategoryData>()
-        val metadataReadSetting = sharedPrefs.getMetadataReadSettingEnum(context, logger, TAG)
-        val albumCategoryTitle = R.string.browse_tree_category_albums
-        if (metadataReadSetting !in listOf(MetadataReadSetting.OFF, MetadataReadSetting.FILEPATHS_ONLY)) {
-            val tracksCategory = CategoryData(ContentHierarchyID(ContentHierarchyType.ROOT_TRACKS))
-            tracksCategory.titleID = R.string.browse_tree_category_tracks
-            // we use a copy of the music note icon here, because of a bug in the GUI where the highlight color is
-            // copied to each item with the same icon ID when selected
-            tracksCategory.iconID = R.drawable.category_track
-            categories += tracksCategory
-            val numTracksInRepo = audioItemLibrary.getPrimaryRepository()?.getNumTracks() ?: 0
-            if (audioItemLibrary.areAnyReposAvail() && !audioItemLibrary.isBuildingLibrary && numTracksInRepo > 0) {
-                val albumsCategory = CategoryData(ContentHierarchyID(ContentHierarchyType.ROOT_ALBUMS))
-                albumsCategory.titleID = albumCategoryTitle
-                albumsCategory.iconID = R.drawable.category_album
-                categories += albumsCategory
-                val artistsCategory = CategoryData(ContentHierarchyID(ContentHierarchyType.ROOT_ARTISTS))
-                artistsCategory.titleID = R.string.browse_tree_category_artists
-                artistsCategory.iconID = R.drawable.category_artist
-                categories += artistsCategory
-            }
-        }
-        // we show the "files" even when no USB connected as a container for the "indexing" pseudo-items
+        var categories = mutableListOf<CategoryData>()
+        val tracksCategory = CategoryData(ContentHierarchyID(ContentHierarchyType.ROOT_TRACKS))
+        tracksCategory.titleID = R.string.browse_tree_category_tracks
+        // we use a copy of the music note icon here, because of a bug in the GUI where the highlight color is
+        // copied to each item with the same icon ID when selected
+        tracksCategory.iconID = R.drawable.category_track
+        tracksCategory.viewTab = ViewTabSetting.TRACKS
+        categories += tracksCategory
+        val albumsCategory = CategoryData(ContentHierarchyID(ContentHierarchyType.ROOT_ALBUMS))
+        albumsCategory.titleID = albumCategoryTitle
+        albumsCategory.iconID = R.drawable.category_album
+        albumsCategory.viewTab = ViewTabSetting.ALBUMS
+        categories += albumsCategory
+        val artistsCategory = CategoryData(ContentHierarchyID(ContentHierarchyType.ROOT_ARTISTS))
+        artistsCategory.titleID = R.string.browse_tree_category_artists
+        artistsCategory.iconID = R.drawable.category_artist
+        artistsCategory.viewTab = ViewTabSetting.ARTISTS
+        categories += artistsCategory
         val filesCategory = CategoryData(ContentHierarchyID(ContentHierarchyType.ROOT_FILES))
         filesCategory.titleID = R.string.browse_tree_category_files
         filesCategory.iconID = R.drawable.category_folder
+        filesCategory.viewTab = ViewTabSetting.FILES
         categories += filesCategory
+        categories = resortCategories(categories)
+        return createMediaItemsForCategories(categories)
+    }
+
+    // https://github.com/MoleMan1024/audiowagon/issues/124
+    private fun resortCategories(categories: List<CategoryData>): MutableList<CategoryData> {
+        val resortedViewTabs: MutableList<CategoryData> = mutableListOf()
+        audioItemLibrary.viewTabs.forEach { viewTab ->
+            if (viewTab != ViewTabSetting.NONE) {
+                categories.find { it.viewTab == viewTab }?.let { resortedViewTabs.add(it) }
+            } else {
+                val emptyCategory = CategoryData(ContentHierarchyID(ContentHierarchyType.NONE))
+                resortedViewTabs.add(emptyCategory)
+            }
+        }
+        return resortedViewTabs
+    }
+
+    private fun createMediaItemsForCategories(categories: List<CategoryData>): List<MediaItem> {
+        val items: MutableList<MediaItem> = mutableListOf()
         categories.forEach {
             val description = MediaDescriptionCompat.Builder().apply {
                 setMediaId(serialize(it.contentHierarchyID))
-                setTitle(context.getString(it.titleID))
-                setIconUri(
-                    Uri.parse(RESOURCE_ROOT_URI + context.resources.getResourceEntryName(it.iconID))
-                )
+                if (it.titleID >= 0) {
+                    setTitle(context.getString(it.titleID))
+                }
+                if (it.iconID >= 0) {
+                    setIconUri(
+                        Uri.parse(RESOURCE_ROOT_URI + context.resources.getResourceEntryName(it.iconID))
+                    )
+                }
                 if (it.titleID == albumCategoryTitle
                     && audioItemLibrary.albumArtStyleSetting == AlbumStyleSetting.GRID
                 ) {

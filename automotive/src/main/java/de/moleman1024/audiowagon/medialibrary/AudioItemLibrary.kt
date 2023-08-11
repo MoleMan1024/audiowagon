@@ -19,6 +19,7 @@ import de.moleman1024.audiowagon.GUI
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.SharedPrefs
 import de.moleman1024.audiowagon.Util
+import de.moleman1024.audiowagon.ViewTabSetting
 import de.moleman1024.audiowagon.exceptions.CannotRecoverUSBException
 import de.moleman1024.audiowagon.exceptions.NoAudioItemException
 import de.moleman1024.audiowagon.filestorage.*
@@ -65,6 +66,9 @@ class AudioItemLibrary(
     var libraryExceptionObservers = mutableListOf<(Exception) -> Unit>()
     private var isBuildLibraryCancelled: Boolean = false
     private val recentAudioItemToAlbumArtMap: AudioItemToAlbumArtMapCache = AudioItemToAlbumArtMapCache()
+    // The order of tabs at the top of the browse view
+    // Configurable as per https://github.com/MoleMan1024/audiowagon/issues/124
+    val viewTabs: MutableList<ViewTabSetting> = mutableListOf()
 
     private class AudioItemToAlbumArtMapCache : LinkedHashMap<String, ByteArray>() {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, ByteArray>?): Boolean {
@@ -75,6 +79,11 @@ class AudioItemLibrary(
     var albumArtStyleSetting: AlbumStyleSetting = sharedPrefs.getAlbumStyleSettingEnum(context, logger, TAG)
     var useInMemoryDatabase: Boolean = false
     private val buildLibraryJobs = mutableListOf<Job>()
+
+    init {
+        val viewTabsFromSettings = sharedPrefs.getViewTabSettings(context, logger, TAG)
+        viewTabsFromSettings.forEach { viewTabs.add(it) }
+    }
 
     suspend fun initRepository(storageID: String) {
         libraryMutex.withLock {
@@ -345,12 +354,12 @@ class AudioItemLibrary(
     private fun createContentHierarchyElementForID(contentHierarchyID: ContentHierarchyID): ContentHierarchyElement {
         return when (contentHierarchyID.type) {
             ContentHierarchyType.NONE -> ContentHierarchyNone(context, this)
-            ContentHierarchyType.ROOT -> ContentHierarchyRoot(context, this, sharedPrefs)
+            ContentHierarchyType.ROOT -> ContentHierarchyRoot(context, this)
             ContentHierarchyType.SHUFFLE_ALL_TRACKS -> ContentHierarchyShuffleAllTracks(context, this)
             ContentHierarchyType.ROOT_TRACKS -> ContentHierarchyRootTracks(context, this, audioFileStorage, sharedPrefs)
             ContentHierarchyType.ROOT_FILES -> ContentHierarchyRootFiles(context, this, audioFileStorage, sharedPrefs)
-            ContentHierarchyType.ROOT_ALBUMS -> ContentHierarchyRootAlbums(context, this)
-            ContentHierarchyType.ROOT_ARTISTS -> ContentHierarchyRootArtists(context, this)
+            ContentHierarchyType.ROOT_ALBUMS -> ContentHierarchyRootAlbums(context, this, audioFileStorage, sharedPrefs)
+            ContentHierarchyType.ROOT_ARTISTS -> ContentHierarchyRootArtists(context, this, audioFileStorage, sharedPrefs)
             ContentHierarchyType.TRACK -> ContentHierarchyTrack(contentHierarchyID, context, this)
             ContentHierarchyType.ALBUM -> ContentHierarchyAlbum(contentHierarchyID, context, this)
             ContentHierarchyType.COMPILATION -> ContentHierarchyCompilation(contentHierarchyID, context, this)
@@ -465,7 +474,7 @@ class AudioItemLibrary(
                     setIconUri(
                         Uri.parse(
                             RESOURCE_ROOT_URI
-                                    + context.resources.getResourceEntryName(R.drawable.baseline_person_24)
+                                    + context.resources.getResourceEntryName(R.drawable.person)
                         )
                     )
                 }
@@ -492,7 +501,7 @@ class AudioItemLibrary(
                         setIconUri(
                             Uri.parse(
                                 RESOURCE_ROOT_URI
-                                        + context.resources.getResourceEntryName(R.drawable.baseline_album_24)
+                                        + context.resources.getResourceEntryName(R.drawable.album)
                             )
                         )
                     }
@@ -510,7 +519,7 @@ class AudioItemLibrary(
                         setIconUri(
                             Uri.parse(
                                 RESOURCE_ROOT_URI
-                                        + context.resources.getResourceEntryName(R.drawable.baseline_music_note_24)
+                                        + context.resources.getResourceEntryName(R.drawable.music_note)
                             )
                         )
                     }
@@ -520,7 +529,7 @@ class AudioItemLibrary(
                     setIconUri(
                         Uri.parse(
                             RESOURCE_ROOT_URI
-                                    + context.resources.getResourceEntryName(R.drawable.baseline_insert_drive_file_24)
+                                    + context.resources.getResourceEntryName(R.drawable.draft)
                         )
                     )
                 }
@@ -529,7 +538,7 @@ class AudioItemLibrary(
                     setIconUri(
                         Uri.parse(
                             RESOURCE_ROOT_URI
-                                    + context.resources.getResourceEntryName(R.drawable.baseline_folder_24)
+                                    + context.resources.getResourceEntryName(R.drawable.folder)
                         )
                     )
                 }
@@ -908,6 +917,12 @@ class AudioItemLibrary(
 
     fun clearAlbumArtCache() {
         recentAudioItemToAlbumArtMap.clear()
+    }
+
+    fun setViewTabs(viewTabSettings: List<ViewTabSetting>) {
+        logger.debug(TAG, "setViewTabs(${viewTabSettings})")
+        viewTabs.clear()
+        viewTabSettings.forEach { viewTabs.add(it) }
     }
 
     companion object {

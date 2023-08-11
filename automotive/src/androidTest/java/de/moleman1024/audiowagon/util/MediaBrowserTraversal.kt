@@ -16,11 +16,11 @@ private const val TAG = "MediaBrowserTraversal"
 
 class MediaBrowserTraversal(private val browser: MediaBrowserCompat) {
     val hierarchy = mutableMapOf<String, MutableList<MediaBrowserCompat.MediaItem>>()
-    val nodes = Stack<String>()
-    val future = CompletableFuture<Unit>()
+    var nodes = Stack<String>()
+    val traversalCompleteFuture = CompletableFuture<Unit>()
     private val callback = object : MediaBrowserCompat.SubscriptionCallback() {
         override fun onChildrenLoaded(parentId: String, children: MutableList<MediaBrowserCompat.MediaItem>) {
-            Logger.debug(TAG, "Received onChildrenLoaded() for num items: ${children.size}")
+            Logger.debug(TAG, "Received onChildrenLoaded() for $parentId num items: ${children.size}")
             children.forEach {
                 if (parentId in hierarchy) {
                     hierarchy[parentId]?.add(it)
@@ -33,10 +33,20 @@ class MediaBrowserTraversal(private val browser: MediaBrowserCompat) {
             }
             Logger.debug(TAG, "nodes=$nodes")
             if (!nodes.empty()) {
-                val node = nodes.pop()
-                traverse(node)
+                var node = ""
+                do {
+                    if (nodes.empty()) {
+                        break
+                    }
+                    node = nodes.pop()
+                } while (node == "{\"type\":\"NONE\"}")
+                if (node.isNotBlank()) {
+                    traverse(node)
+                } else {
+                    traversalCompleteFuture.complete(Unit)
+                }
             } else {
-                future.complete(Unit)
+                traversalCompleteFuture.complete(Unit)
             }
         }
     }
@@ -50,7 +60,7 @@ class MediaBrowserTraversal(private val browser: MediaBrowserCompat) {
         Logger.debug(TAG, "Starting media traversal from: $root")
         browser.subscribe(root, callback)
         try {
-            future.get(20, TimeUnit.SECONDS)
+            traversalCompleteFuture.get(20, TimeUnit.SECONDS)
         } catch (exc: TimeoutException) {
             Logger.error(TAG, "MediaBrowser traversal did not finish in time")
             throw exc
