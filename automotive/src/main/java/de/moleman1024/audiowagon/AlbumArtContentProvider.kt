@@ -12,18 +12,23 @@ import android.graphics.Canvas
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.*
-import android.os.storage.StorageManager
+import android.os.ParcelFileDescriptor.AutoCloseInputStream
+import android.os.ParcelFileDescriptor.AutoCloseOutputStream
 import androidx.core.content.res.ResourcesCompat
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.ART_URI_PART
 import de.moleman1024.audiowagon.medialibrary.ART_URI_PART_ALBUM
 import kotlinx.coroutines.*
 import java.io.ByteArrayOutputStream
+import java.io.IOException
 import java.lang.Integer.min
-import java.nio.ByteBuffer
+import kotlin.concurrent.thread
 
 private const val TAG = "AlbumArtContentProv"
 private val logger = Logger
+
+// a linux pipe can fit max 64k
+private const val PIPE_CHUNK_SIZE_BYTES = 16384
 
 /**
  * See https://developer.android.com/guide/topics/providers/content-provider-creating
@@ -43,6 +48,7 @@ class AlbumArtContentProvider : ContentProvider() {
             }
         }
     }
+
     // We use a local binder connection to access the album art via AudioBrowserService. Because it is local in the
     // same process the binder RPC size restrictions do not apply
     private val connection = object : ServiceConnection {
@@ -110,14 +116,14 @@ class AlbumArtContentProvider : ContentProvider() {
         if (context == null) {
             return null
         }
+        logger.verbose(TAG, "openFile(uri=$uri)")
         init()
-        val proxyFileDescriptor = createProxyFileDescriptor(uri)
-        logger.verbose(TAG, "Got proxy file descriptor for: $uri")
-        return proxyFileDescriptor
+        val parcelFileDescriptor = createParcelFileDescriptor(uri)
+        logger.verbose(TAG, "Got parcel file descriptor for: $uri")
+        return parcelFileDescriptor
     }
 
-    private fun createProxyFileDescriptor(uri: Uri): ParcelFileDescriptor? = runBlocking(Dispatchers.IO) {
-        logger.verbose(TAG, "Creating proxy file descriptor for: $uri")
+    private fun createParcelFileDescriptor(uri: Uri): ParcelFileDescriptor? = runBlocking(Dispatchers.IO) {
         val future: Deferred<ParcelFileDescriptor?> = async {
             var albumArtByteArray = defaultAlbumArtTracks
             if (uri.toString().contains("$ART_URI_PART/$ART_URI_PART_ALBUM")) {
@@ -129,50 +135,39 @@ class AlbumArtContentProvider : ContentProvider() {
                     albumArtByteArray = resolvedAlbumArt
                 }
             }
-            val albumArtBuf = ByteBuffer.wrap(albumArtByteArray)
-            val storageManager = context?.getSystemService(Context.STORAGE_SERVICE) as StorageManager
-            val handler = Handler(Looper.getMainLooper())
-            return@async storageManager.openProxyFileDescriptor(
-                ParcelFileDescriptor.MODE_READ_ONLY,
-                object : ProxyFileDescriptorCallback() {
-
-                    override fun onGetSize(): Long {
-                        return albumArtBuf.array().size.toLong()
+            val inOutPipe = ParcelFileDescriptor.createPipe()
+            val outStream = AutoCloseOutputStream(inOutPipe[1])
+            thread {
+                val chunkSize = PIPE_CHUNK_SIZE_BYTES
+                var remainingBytes = albumArtByteArray.size
+                var offset = 0
+                try {
+                    while (remainingBytes > 0) {
+                        val numBytesToWrite = min(chunkSize, remainingBytes)
+                        outStream.write(albumArtByteArray, offset, numBytesToWrite)
+                        offset += numBytesToWrite
+                        remainingBytes -= numBytesToWrite
                     }
-
-                    override fun onRead(offset: Long, size: Int, data: ByteArray?): Int {
-                        if (albumArtBuf.limit() <= 0) {
-                            return 0
-                        }
-                        if (data == null) {
-                            return 0
-                        }
-                        albumArtBuf.position(offset.toInt())
-                        val numBytesToRead = min(size, (albumArtBuf.array().size - offset).toInt())
-                        val outBuffer = ByteBuffer.wrap(data)
-                        albumArtBuf.get(outBuffer.array(), 0, numBytesToRead)
-                        return numBytesToRead
+                } catch (exc: IOException) {
+                    if ("Broken pipe" in exc.message.toString()) {
+                        // This seems to happen when the GUI client discards the image before it is fully written?
+                        // Seems to be harmless
+                    } else {
+                        logger.exception(TAG, exc.message.toString(), exc)
                     }
-
-                    override fun hashCode(): Int {
-                        if (albumArtBuf.limit() <= 0) {
-                            return 0
-                        }
-                        return albumArtBuf.hashCode()
-                    }
-
-                    override fun onRelease() {
-                        albumArtBuf.rewind()
-                    }
-                },
-                handler
-            )
+                } finally {
+                    outStream.flush()
+                    outStream.close()
+                }
+            }
+            return@async inOutPipe[0]
         }
         return@runBlocking future.await()
     }
 
     @Synchronized
     private fun init() {
+        logger.verbose(TAG, "init(binderStatus=$binderStatus)")
         if (binderStatus == BinderStatus.UNBOUND) {
             val intent =
                 Intent(AudioBrowserService::class.java.name, Uri.EMPTY, context, AudioBrowserService::class.java)

@@ -12,6 +12,20 @@ Google's review process which can take a couple of days.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project loosely follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.2] - 2023-08-16
+
+### Fixed
+
+- I discovered a forum post about some **issues in Renault cars** with Android 10 when using AudioWagon: After scrolling 
+  items with album art for some time, the album art squares would turn into gray squares and shortly later the GUI would 
+  partially break and not show anything at all anymore. I encountered a similar issue on my development build on a 
+  mobile phone, but only in the media browse view. I believe this to be the same issue. Volvo/Polestar users are 
+  *not* affected it seems, because they use Android 11 which does not have this bug. The issue seems to be only in cars
+  with Android 10 when using album art. The way that album art is transferred to the GUI has been changed now, which
+  should fix this [#127](https://github.com/MoleMan1024/audiowagon/issues/124).
+- a small problem was introduced in last update: when starting up AudioWagon with no USB drive plugged in, the screen
+  would say "Please wait" indefinitely. This message was not accurate and has been fixed.
+
 
 ## [2.5.1] - 2023-08-11
 
