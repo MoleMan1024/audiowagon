@@ -158,6 +158,8 @@ class USBDeviceConnections(
             for (usbMediaDevice in getAttachedUSBMassStorageDevices()) {
                 onAttachedUSBMassStorageDeviceFound(usbMediaDevice)
             }
+            isUpdatingDevices.set(false)
+            notifyObservers(DeviceChange(null, DeviceAction.REFRESH))
         }
     }
 

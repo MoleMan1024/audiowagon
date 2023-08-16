@@ -273,7 +273,7 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
             )
             logger.verbose(TAG, "Using bitmap inSampleSize: ${bitmapOptions.inSampleSize}")
             bitmapOptions.inJustDecodeBounds = false
-            logger.verbose(TAG, "Scaling image")
+            logger.verbose(TAG, "Scaling image to square with pixels: $widthHeightForResize")
             resizedBitmap =
                 BitmapFactory.decodeByteArray(albumArtBytes, 0, albumArtBytes.size, bitmapOptions) ?: return null
         } catch (exc: NullPointerException) {
