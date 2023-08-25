@@ -16,27 +16,25 @@ nav_order: 2
 
 ![Permission popup](/img/allow_access.jpg)
 
-Sorry, I don't know why that happens. It works fine on the mobile phone that I use for development, however the car
-maker probably put some extra security in the car that will always trigger this permission dialog popup. I would need
-help from the car maker or Google to improve this to allow the user to select *AudioWagon* to be the default app for 
-USB devices.
+Sorry, I cannot change that. It works fine on the mobile phone that I use for development, however *Volvo/Polestar*
+probably put some extra security in the car that will always trigger this permission dialog popup and they likely would
+[need to add some code from
+Google](https://android.googlesource.com/platform/packages/services/Car/+/refs/heads/android11-platform-release/car-usb-handler/)
+to improve this. This would allow the user to select *AudioWagon* to be the default app for USB storage devices (it
+should not interfere with wired CarPlay). I would provide help on how to integrate this code if *Volvo/Polestar* decides
+to use it.
+
+As far as I know, this issue does not appear when using the app on a *Renault Megane E-Tech*.
 
 ### Why is there a popup about "USB device is not supported" when the USB device works fine?
 
 ![Not supported popup](/img/not_supported.jpg)
 
-This popup is triggered by Volvo/Polestar and is invalid, it always comes and can be ignored when using AudioWagon. You 
-can temporarily get rid of it by doing the steps I mentioned in 
-[issue #73](https://github.com/MoleMan1024/audiowagon/issues/73#issuecomment-1172879863) but it will come 
-back after a headunit restart. Please file a bug report at Volvo/Polestar to get this fixed.
+This popup is triggered by *Volvo/Polestar* and is invalid, it always comes and can be ignored when using *AudioWagon*.
+You can temporarily get rid of it by doing the steps I mentioned in [issue #73](https://github.com/MoleMan1024/audiowagon/issues/73#issuecomment-1172879863) 
+but it will come back after a headunit restart. Please file a bug report at *Volvo/Polestar* to get this fixed.
 
-### What is the eject button for?
-
-The eject button will make sure that the USB drive is not in use when you unplug it. Press it while the infotainment
-system is still on and wait for the popup to appear, then you can safely unplug your USB drive.
-
-If you do not follow this procedure, and unplug the USB drive while it is still in use, the app could crash or the data
-on your USB drive might be damaged.
+As far as I know, this issue does not appear when using the app on *Renault* and *GMC* cars.
 
 ### Why is my USB drive not recognized?
 
@@ -54,15 +52,13 @@ with a white outline). The other USB ports are for *charging your phone only*.
 
 ![USB port](/img/port.jpg)
 
-### Why does it say "Loading content &hellip;" and nothing happens?
+If you still have problems, try to to [reboot the center
+display](https://www.polestar.com/ie/polestar-support/how-to-videos/polestar-2/how-to-reboot-the-polestar-2-centre-display/).
 
-This usually indicates some error has happened somewhere. Please switch to a different audio app (e.g. radio or
-Bluetooth™) and then back to AudioWagon, that should fix it.
 
-If not, go to General Android Settings &#8594; Apps and notifications &#8594; Show all
-apps &#8594; Show system &#8594; Media Center and tap "Force Stop", then try the app again.
+### Why does it take so long when starting the app?
 
-### What happens during indexing?
+When starting up the app with a USB flash drive connected, *indexing* will happen:
 
 ![Indexing](/img/indexing.jpg)
 
@@ -99,6 +95,7 @@ the settings screen using the option "Read metadata":
 
   This setting is **recommended when many audio files on your USB drive do not have any/correct metadata** or you never
   want to wait for indexing.
+
 
 ### Why do my compilation albums show up as separate albums?
 
@@ -201,6 +198,24 @@ You might be able to recover some of your data using e.g. Windows *chkdsk* tool.
 afterwards to make sure it is in a clean state.
 
 
+### Why does it say "Loading content &hellip;" and nothing happens?
+
+This usually indicates some error has happened somewhere. Please switch to a different audio app (e.g. radio or
+Bluetooth™) and then back to AudioWagon, that should fix it.
+
+If not, go to General Android Settings &#8594; Apps and notifications &#8594; Show all
+apps &#8594; Show system &#8594; Media Center and tap "Force Stop", then try the app again.
+
+
+### What is the eject button for?
+
+The eject button will make sure that the USB drive is not in use when you unplug it. Press it while the infotainment
+system is still on and wait for the popup to appear, then you can safely unplug your USB drive.
+
+If you do not follow this procedure, and unplug the USB drive while it is still in use, the app could crash or the data
+on your USB drive might be damaged.
+
+
 ## Supported features
 
 ### Is there a limitation on the number of files the app can handle?
@@ -281,4 +296,23 @@ to protect the environment (reforestation, solar power, right-to-repair, local p
 - Thank you Vasimo for donating to Vancouver Food Runners!
 - Thank you Trevor for donating to Northern India Flood Relief!
 
+
+### Why don't you just use a streaming app? USB is so old-fashioned!
+
+Many people don't find streaming apps appealing for some of these reasons:
+
+- streaming requires a *reliable internet connection*. In cars with cellular modems you will have problems in certain
+  rural areas and will have dropouts (think UK or Germany, think tunnels)
+- while some streaming providers have a large selection of music, you might want to listen to some obscure or
+  independent artists, that are *not available on any streaming platform*. Music enthusiasts who prefer
+  physical/downloaded music usually have a large library of music they have compiled over multiple decades from various
+  sources and have no need for streaming
+- streaming platforms require a *monthly subscription*. If not subscribed, you will get ads. With physical/downloaded
+  music, you only pay once and usually keep the music for your lifetime. Also in case the streaming provider ever 
+  *goes out of business*, you have nothing. With physical/downloaded music, you own the music data
+- streaming music probably has a slightly higher *CO2 footprint* than downloading music (I don't have conclusive studies
+  to link to, but some articles suggest that direction)
+
+Most car makers still included USB media players in their infotainment systems in recent years, so USB is not as
+"deprecated" as some people might pronounce it as.
 

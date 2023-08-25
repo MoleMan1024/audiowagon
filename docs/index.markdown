@@ -7,7 +7,7 @@ nav_order: 1
 # AudioWagon documentation
 
 This app will **play audio files** from an attached **USB flash drive** in cars equipped with **Android™ Automotive OS**
-(for example Polestar 2™, Volvo XC40 Recharge™, &hellip;)[^1].
+(for example Polestar 2™, Volvo XC40 Recharge™, Renault Mégane E-Tech™, GMC Sierra™, &hellip;)[^1].
 
 ![AudioWagon in car](/img/audiowagon.jpg)
 
@@ -34,25 +34,6 @@ This app will **play audio files** from an attached **USB flash drive** in cars 
 ## Release notes
 
 Please see Github for a [list of changes for each version of the app](https://github.com/MoleMan1024/audiowagon/blob/master/CHANGELOG.md).
-
-## Limitations
-
-- The app will *not* work with Polestar/Volvo OTA car software version 2.0 nor 2.1. You will need the car software
-  version 2.2 or higher that includes the CarPlay Update (or 1.9 or lower) which re-enables the USB data connection.
-- The app can *not* play back **.wma** files. Also Android does not support files encoded with "Apple Lossless Audio
-  (alac)" codec.
-- The app does *not* work with music stored on *iPod*, *iPhone* nor *Android phone*, you need to use a *USB mass storage
-  device* formatted as *FAT32* (for example a USB flash drive)
-- *SanDisk Extreme Portable SSD* is not supported, because it
-  [behaves differently than most regular USB flash drives](https://github.com/MoleMan1024/audiowagon/issues/85)
-- The app does *not* work with a *BDYING Car USB CD Player* (see issue
-  [#95](https://github.com/MoleMan1024/audiowagon/issues/95))
-- *Some* people have reported issues when using the app with a **USB to micro SD card adapter** where no files could be
-  played back and lots of error messages were shown. In such cases the adapter is probably not compatible with the
-  library I use to read the filesystem, please try with a USB flash drive instead, I have not heard about problems with
-  those.
-
-  *This problem applies only to certain adapters*, I also have reports where similar adapters were working normally.
 
 ## How to use
 
@@ -92,6 +73,24 @@ Please see Github for a [list of changes for each version of the app](https://gi
 
 - Enjoy 🤩
 
+## Limitations
+
+- The app will *not* work with Polestar/Volvo OTA car software version 2.0 nor 2.1. You will need the car software
+  version 2.2 or higher that includes the CarPlay Update (or 1.9 or lower) which re-enables the USB data connection.
+- The app can *not* play back **.wma** files. Also Android does not support files encoded with "Apple Lossless Audio
+  (alac)" codec.
+- The app does *not* work with music stored on *iPod*, *iPhone* nor *Android phone*, you need to use a *USB mass storage
+  device* formatted as *FAT32* (for example a USB flash drive)
+- *SanDisk Extreme Portable SSD* is not supported, because it
+  [behaves differently than most regular USB flash drives](https://github.com/MoleMan1024/audiowagon/issues/85)
+- The app does *not* work with a *BDYING Car USB CD Player* (see issue
+  [#95](https://github.com/MoleMan1024/audiowagon/issues/95))
+- *Some* people have reported issues when using the app with a **USB to micro SD card adapter** where no files could be
+  played back and lots of error messages were shown. In such cases the adapter is probably not compatible with the
+  library I use to read the filesystem, please try with a USB flash drive instead, I have not heard about problems with
+  those.
+
+  *This problem applies only to certain adapters*, I also have reports where similar adapters were working normally.
 
 ## Frequently asked questions
 
@@ -99,7 +98,8 @@ See [the FAQ section]({{ site.baseurl }}{% link faq.markdown %}).
 
 ## How do I report an issue?
 
-If you encounter any issues, please let me know so I can fix them. If possible provide all of the following info to me
+If you encounter any issues, first read this page and the [FAQ]({{ site.baseurl }}{% link faq.markdown %}). If that 
+does not help, please let me know, I will try to fix the issue. If possible provide all of the following info to me
 at my email (see below, or you can use [GitHub](https://github.com/MoleMan1024/audiowagon/issues)):
 
 - What happened? Describe ALL steps that you did EXACTLY. Please mention even minor details (e.g. did you leave/enter
@@ -122,8 +122,8 @@ at my email (see below, or you can use [GitHub](https://github.com/MoleMan1024/a
 ### Native speakers
 
 I am still looking for **volunteer native speakers to translate** the GUI texts in the app to all languages (already
-translated: German, English, Dutch, Swedish, Norwegian, Danish, French, Russian, Polish, Italian, Japanese). You can
-get the [English strings to translate here](https://github.com/MoleMan1024/audiowagon/blob/master/automotive/src/main/res/values/strings.xml).
+translated: German, English, Dutch, Swedish, Norwegian, Danish, French, Russian, Polish, Italian, Japanese, Hungarian). 
+You can get the [English strings to translate here](https://github.com/MoleMan1024/audiowagon/blob/master/automotive/src/main/res/values/strings.xml).
 
 
 ## Contact
