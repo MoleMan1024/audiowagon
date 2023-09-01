@@ -24,8 +24,6 @@ to improve this. This would allow the user to select *AudioWagon* to be the defa
 should not interfere with wired CarPlay). I would provide help on how to integrate this code if *Volvo/Polestar* decides
 to use it.
 
-As far as I know, this issue does not appear when using the app on a *Renault Megane E-Tech*.
-
 ### Why is there a popup about "USB device is not supported" when the USB device works fine?
 
 ![Not supported popup](/img/not_supported.jpg)
