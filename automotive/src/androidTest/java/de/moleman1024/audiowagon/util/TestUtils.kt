@@ -10,7 +10,7 @@ import android.content.SharedPreferences
 import android.content.res.AssetManager
 import androidx.test.platform.app.InstrumentationRegistry
 import de.moleman1024.audiowagon.AudioBrowserService
-import de.moleman1024.audiowagon.filestorage.IndexingStatus
+import de.moleman1024.audiowagon.enums.IndexingStatus
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.Assert

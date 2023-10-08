@@ -308,6 +308,9 @@ Many people don't find streaming apps appealing for some of these reasons:
 - streaming platforms require a *monthly subscription*. If not subscribed, you will get ads. With physical/downloaded
   music, you only pay once and usually keep the music for your lifetime. Also in case the streaming provider ever 
   *goes out of business*, you have nothing. With physical/downloaded music, you own the music data
+- streaming platforms might limit the *audio quality* of the music you are listening to (and some artists refused to use
+  certain streaming providers for this reason). With downloaded music files you are only limited by the quality of
+  those files themselves (and by the audio hard- and software in the car, but that is the same for streaming)
 - streaming music probably has a slightly higher *CO2 footprint* than downloading music (I don't have conclusive studies
   to link to, but some articles suggest that direction)
 

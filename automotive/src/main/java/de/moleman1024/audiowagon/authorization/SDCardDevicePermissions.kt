@@ -16,6 +16,9 @@ import kotlin.math.abs
 private const val TAG = "SDCardDevPerm"
 private val logger = Logger
 
+/**
+ * NOTE: SD card support is only enabled in debug builds used in the Android emulator
+ */
 class SDCardDevicePermissions(private val context: Context) {
     // see https://developer.android.com/training/data-storage/shared/media#direct-file-paths
     private val neededPermissions : Array<String> = arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)

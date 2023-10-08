@@ -8,7 +8,7 @@ package de.moleman1024.audiowagon.filestorage.sd
 import android.media.MediaDataSource
 import android.net.Uri
 import de.moleman1024.audiowagon.exceptions.NoSuchDeviceException
-import de.moleman1024.audiowagon.filestorage.AudioFile
+import de.moleman1024.audiowagon.filestorage.data.AudioFile
 import de.moleman1024.audiowagon.filestorage.MediaDevice
 import de.moleman1024.audiowagon.log.Logger
 import java.io.File

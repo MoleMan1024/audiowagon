@@ -9,8 +9,7 @@ import android.content.Context
 import android.media.MediaDataSource
 import android.net.Uri
 import android.os.Environment
-import android.provider.MediaStore
-import de.moleman1024.audiowagon.filestorage.AudioFile
+import de.moleman1024.audiowagon.filestorage.data.AudioFile
 import de.moleman1024.audiowagon.filestorage.MediaDevice
 import de.moleman1024.audiowagon.log.Logger
 import java.io.File

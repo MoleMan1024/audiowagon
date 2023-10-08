@@ -10,6 +10,7 @@ import android.content.Context
 import android.content.Intent
 import android.hardware.usb.UsbManager
 import android.os.Build
+import de.moleman1024.audiowagon.enums.USBPermission
 import de.moleman1024.audiowagon.filestorage.usb.USBMediaDevice
 import de.moleman1024.audiowagon.log.Logger
 

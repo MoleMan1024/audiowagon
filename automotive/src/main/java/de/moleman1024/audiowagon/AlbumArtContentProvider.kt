@@ -12,9 +12,10 @@ import android.graphics.Canvas
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.*
-import android.os.ParcelFileDescriptor.AutoCloseInputStream
 import android.os.ParcelFileDescriptor.AutoCloseOutputStream
 import androidx.core.content.res.ResourcesCompat
+import de.moleman1024.audiowagon.enums.BinderStatus
+import de.moleman1024.audiowagon.enums.LifecycleEvent
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.ART_URI_PART
 import de.moleman1024.audiowagon.medialibrary.ART_URI_PART_ALBUM
@@ -31,6 +32,9 @@ private val logger = Logger
 private const val PIPE_CHUNK_SIZE_BYTES = 16384
 
 /**
+ * A content provider so that media browser GUI can retrieve album art.
+ * It connects locally via Binder to [AudioBrowserService] to be able to retrieve album art from USB filesystem.
+ *
  * See https://developer.android.com/guide/topics/providers/content-provider-creating
  */
 @ExperimentalCoroutinesApi

@@ -9,22 +9,33 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import de.moleman1024.audiowagon.enums.SingletonCoroutineBehaviour
+import de.moleman1024.audiowagon.log.CrashReporting
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.*
+import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicBoolean
 
 private const val TAG = "AudioBrowserGUI"
 private val logger = Logger
 const val INDEXING_NOTIFICATION_ID: Int = 25468
 const val INDEXING_NOTIF_CHANNEL: String = "IndexingNotifChan"
 
-open class GUI(private val scope: CoroutineScope, private val context: Context) {
+open class GUI(
+    private val scope: CoroutineScope, private val context: Context, crashReporting:
+    CrashReporting
+) {
     private var changeIndexingNotifJob: Job? = null
     private val notificationManager: NotificationManager =
         context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-    private var isChannelCreated: Boolean = false
+    private var isChannelCreated: AtomicBoolean = AtomicBoolean()
+    private val singleThreadDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
+    private val notificationSingletonCoroutine =
+        SingletonCoroutine("GUINotif", singleThreadDispatcher, scope.coroutineContext, crashReporting)
 
     init {
-        isChannelCreated = false
+        notificationSingletonCoroutine.behaviour = SingletonCoroutineBehaviour.PREFER_FINISH
+        isChannelCreated.set(false)
         deleteNotificationChannel()
         createNotificationChannel()
     }
@@ -32,9 +43,11 @@ open class GUI(private val scope: CoroutineScope, private val context: Context) 
     // TODO: almost duplicated code with AudioSession
     private fun createNotificationChannel() {
         if (notificationManager.getNotificationChannel(INDEXING_NOTIF_CHANNEL) != null) {
-            isChannelCreated = true
+            isChannelCreated.set(true)
             logger.debug(TAG, "Indexing notification channel already exists")
-            notificationManager.cancelAll()
+            notificationSingletonCoroutine.launch {
+                notificationManager.cancelAll()
+            }
             return
         }
         logger.debug(TAG, "Creating indexing notification channel")
@@ -47,7 +60,7 @@ open class GUI(private val scope: CoroutineScope, private val context: Context) 
             setShowBadge(true)
         }
         notificationManager.createNotificationChannel(channel)
-        isChannelCreated = true
+        isChannelCreated.set(true)
     }
 
     fun showIndexingNotification() {
@@ -83,13 +96,13 @@ open class GUI(private val scope: CoroutineScope, private val context: Context) 
     }
 
     private fun sendNotification(builder: Notification.Builder) {
-        if (!isChannelCreated) {
-            logger.warning(TAG, "Cannot send notification, no channel available: ${builder.extras}")
-            return
+        notificationSingletonCoroutine.launch {
+            if (!isChannelCreated.get()) {
+                logger.warning(TAG, "Cannot send notification, no channel available: ${builder.extras}")
+                return@launch
+            }
+            notificationManager.notify(INDEXING_NOTIFICATION_ID, builder.build())
         }
-        val notificationManager: NotificationManager =
-            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.notify(INDEXING_NOTIFICATION_ID, builder.build())
     }
 
     private fun getIndexingNotificationBuilder(): Notification.Builder {
@@ -103,17 +116,19 @@ open class GUI(private val scope: CoroutineScope, private val context: Context) 
         scope.launch(Dispatchers.Main) {
             logger.debug(TAG, "Removing indexing notification")
             changeIndexingNotifJob?.cancelAndJoin()
-            notificationManager.cancel(INDEXING_NOTIFICATION_ID)
+            notificationSingletonCoroutine.launch {
+                notificationManager.cancel(INDEXING_NOTIFICATION_ID)
+            }
         }
     }
 
     private fun deleteNotificationChannel() {
         if (notificationManager.getNotificationChannel(INDEXING_NOTIF_CHANNEL) == null) {
-            isChannelCreated = false
+            isChannelCreated.set(false)
             return
         }
         logger.debug(TAG, "Deleting indexing notification channel")
-        isChannelCreated = false
+        isChannelCreated.set(false)
         notificationManager.deleteNotificationChannel(INDEXING_NOTIF_CHANNEL)
     }
 

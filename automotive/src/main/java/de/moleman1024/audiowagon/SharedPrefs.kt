@@ -7,11 +7,12 @@ package de.moleman1024.audiowagon
 
 import android.content.Context
 import android.content.SharedPreferences
+import de.moleman1024.audiowagon.enums.ViewTabSetting
 import de.moleman1024.audiowagon.log.Logger
-import de.moleman1024.audiowagon.medialibrary.AlbumStyleSetting
-import de.moleman1024.audiowagon.medialibrary.MetadataReadSetting
-import de.moleman1024.audiowagon.player.AudioFocusSetting
-import de.moleman1024.audiowagon.player.EqualizerPreset
+import de.moleman1024.audiowagon.enums.AlbumStyleSetting
+import de.moleman1024.audiowagon.enums.MetadataReadSetting
+import de.moleman1024.audiowagon.enums.AudioFocusSetting
+import de.moleman1024.audiowagon.enums.EqualizerPreset
 
 const val SHARED_PREF_LEGAL_DISCLAIMER_AGREED = "agreedLegalVersion"
 const val SHARED_PREF_LEGAL_DISCLAIMER_VERSION = "1.1"

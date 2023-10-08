@@ -8,12 +8,11 @@ package de.moleman1024.audiowagon.medialibrary
 import android.content.Context
 import de.moleman1024.audiowagon.GUI
 import de.moleman1024.audiowagon.SharedPrefs
+import de.moleman1024.audiowagon.enums.AlbumStyleSetting
 import de.moleman1024.audiowagon.filestorage.AudioFileStorage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.TestCoroutineScope
 import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.createTestCoroutineScope
 import org.mockito.Mockito
 
 @ExperimentalCoroutinesApi

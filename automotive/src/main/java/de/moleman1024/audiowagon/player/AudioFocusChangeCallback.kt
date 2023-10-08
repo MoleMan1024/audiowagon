@@ -8,6 +8,8 @@ package de.moleman1024.audiowagon.player
 import android.media.AudioManager
 import android.support.v4.media.session.PlaybackStateCompat
 import de.moleman1024.audiowagon.Util
+import de.moleman1024.audiowagon.enums.AudioFocusSetting
+import de.moleman1024.audiowagon.enums.AudioSessionChangeType
 import de.moleman1024.audiowagon.log.CrashReporting
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.*

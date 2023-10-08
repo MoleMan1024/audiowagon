@@ -13,6 +13,9 @@ import androidx.annotation.VisibleForTesting
 import de.moleman1024.audiowagon.*
 import de.moleman1024.audiowagon.authorization.SDCardDevicePermissions
 import de.moleman1024.audiowagon.authorization.USBDevicePermissions
+import de.moleman1024.audiowagon.enums.DeviceAction
+import de.moleman1024.audiowagon.enums.IndexingStatus
+import de.moleman1024.audiowagon.enums.StorageAction
 import de.moleman1024.audiowagon.exceptions.NoSuchDeviceException
 import de.moleman1024.audiowagon.filestorage.asset.AssetMediaDevice
 import de.moleman1024.audiowagon.filestorage.asset.AssetStorageLocation
@@ -28,7 +31,11 @@ import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.RESOURCE_ROOT_URI
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyElement
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyID
-import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyType
+import de.moleman1024.audiowagon.enums.ContentHierarchyType
+import de.moleman1024.audiowagon.filestorage.data.AudioFile
+import de.moleman1024.audiowagon.filestorage.data.Directory
+import de.moleman1024.audiowagon.filestorage.data.PlaylistFile
+import de.moleman1024.audiowagon.filestorage.data.StorageChange
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.consumeEach
@@ -36,7 +43,6 @@ import kotlinx.coroutines.channels.produce
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.io.InputStream
-import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.coroutineContext
 
 private const val TAG = "AudioFileStor"
@@ -146,6 +152,7 @@ open class AudioFileStorage(
         }
     }
 
+    // this will notify the AudioBrowserService
     private fun notifyObservers(storageChange: StorageChange) {
         logger.debug(TAG, "Notifying storage observers: $storageChange")
         storageObservers.forEach { it(storageChange) }
@@ -402,7 +409,7 @@ open class AudioFileStorage(
         usbDeviceConnections.disableLogToUSB()
     }
 
-    fun getNumAvailableDevices(): Int {
+    fun getNumAttachedPermittedDevices(): Int {
         return usbDeviceConnections.getNumAttachedPermittedDevices() + mediaDevicesForTest.size
     }
 
@@ -552,6 +559,14 @@ open class AudioFileStorage(
         return usbDeviceConnections.isUpdatingDevices.get()
     }
 
+    fun isAnyDeviceAttached(): Boolean {
+        return usbDeviceConnections.isAnyDeviceAttached.get()
+    }
+
+    fun isAnyDevicePermitted(): Boolean {
+        return usbDeviceConnections.isAnyDevicePermitted.get()
+    }
+
     suspend fun getByteArrayForURI(uri: Uri): ByteArray {
         val storageLocation = getStorageLocationForURI(uri)
         return storageLocation.getByteArrayForURI(uri)
@@ -565,5 +580,4 @@ open class AudioFileStorage(
     fun requestUSBPermissionIfMissing() {
         usbDeviceConnections.requestUSBPermissionIfMissing()
     }
-
 }

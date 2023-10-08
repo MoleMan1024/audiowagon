@@ -5,6 +5,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 package de.moleman1024.audiowagon.medialibrary.contenthierarchy
 
+import de.moleman1024.audiowagon.enums.ContentHierarchyType
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 

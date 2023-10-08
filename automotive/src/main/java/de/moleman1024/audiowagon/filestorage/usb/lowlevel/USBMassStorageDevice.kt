@@ -12,4 +12,5 @@ interface USBMassStorageDevice {
 
     fun init()
     fun close()
+    fun reset()
 }

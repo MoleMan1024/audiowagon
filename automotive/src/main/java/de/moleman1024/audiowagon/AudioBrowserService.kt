@@ -51,22 +51,35 @@ import androidx.media.utils.MediaConstants
 import de.moleman1024.audiowagon.authorization.PackageValidation
 import de.moleman1024.audiowagon.authorization.USBDevicePermissions
 import de.moleman1024.audiowagon.broadcast.PowerEventReceiver
+import de.moleman1024.audiowagon.enums.AudioPlayerState
+import de.moleman1024.audiowagon.enums.CustomAction
+import de.moleman1024.audiowagon.enums.IndexingStatus
+import de.moleman1024.audiowagon.enums.LifecycleEvent
+import de.moleman1024.audiowagon.enums.ServicePriority
+import de.moleman1024.audiowagon.enums.ServiceStartStopReason
+import de.moleman1024.audiowagon.enums.SettingKey
+import de.moleman1024.audiowagon.enums.SingletonCoroutineBehaviour
+import de.moleman1024.audiowagon.enums.StorageAction
+import de.moleman1024.audiowagon.enums.ViewTabSetting
 import de.moleman1024.audiowagon.exceptions.CannotRecoverUSBException
 import de.moleman1024.audiowagon.exceptions.MissingNotifChannelException
 import de.moleman1024.audiowagon.exceptions.NoChangesCancellationException
 import de.moleman1024.audiowagon.filestorage.*
 import de.moleman1024.audiowagon.log.CrashReporting
 import de.moleman1024.audiowagon.log.Logger
-import de.moleman1024.audiowagon.medialibrary.AlbumStyleSetting
+import de.moleman1024.audiowagon.enums.AlbumStyleSetting
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
 import de.moleman1024.audiowagon.medialibrary.CONTENT_STYLE_SUPPORTED
-import de.moleman1024.audiowagon.medialibrary.MetadataReadSetting
+import de.moleman1024.audiowagon.enums.MetadataReadSetting
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyElement
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyID
-import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyType
+import de.moleman1024.audiowagon.enums.ContentHierarchyType
 import de.moleman1024.audiowagon.persistence.PersistentPlaybackState
 import de.moleman1024.audiowagon.persistence.PersistentStorage
 import de.moleman1024.audiowagon.player.*
+import de.moleman1024.audiowagon.player.data.AudioPlayerEvent
+import de.moleman1024.audiowagon.player.data.AudioPlayerStatus
+import de.moleman1024.audiowagon.player.data.CustomActionEvent
 import de.moleman1024.audiowagon.repository.AudioItemRepository
 import kotlinx.coroutines.*
 import java.io.FileNotFoundException
@@ -81,6 +94,9 @@ private const val TAG = "AudioBrowserService"
 @ExperimentalCoroutinesApi
 /**
  * This is the main entry point of the app.
+ *
+ * We implement a [MediaBrowserServiceCompat] that AAOS MediaBrowser GUI client can connect to and retrieve media
+ * items from.
  *
  * See
  * https://developer.android.com/training/cars/media
@@ -202,7 +218,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     fun startup() {
         logger.debug(TAG, "startup()")
         persistentStorage = PersistentStorage(this, dispatcher)
-        gui = GUI(lifecycleScope, applicationContext)
+        gui = GUI(lifecycleScope, applicationContext, crashReporting)
         usbDevicePermissions = USBDevicePermissions(this)
         audioFileStorage =
             AudioFileStorage(this, lifecycleScope, dispatcher, usbDevicePermissions, sharedPrefs, crashReporting)
@@ -260,6 +276,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                 }
                 audioSession.stopPlayer()
                 allStorageIDs.forEach { onStorageLocationRemoved(it) }
+                onStorageLocationRefresh()
                 return@add
             }
             when (storageChange.action) {

@@ -18,7 +18,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
-const val ACTION_USB_ATTACHED = "de.moleman1024.audiowagon.authorization.USB_ATTACHED"
+const val ACTION_USB_ATTACHED = "de.moleman1024.audiowagon.USB_ATTACHED"
 private const val TAG = "AudioItemLibraryTest"
 
 @ExperimentalCoroutinesApi

@@ -19,10 +19,17 @@ import de.moleman1024.audiowagon.GUI
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.SharedPrefs
 import de.moleman1024.audiowagon.Util
-import de.moleman1024.audiowagon.ViewTabSetting
+import de.moleman1024.audiowagon.enums.AlbumStyleSetting
+import de.moleman1024.audiowagon.enums.AudioItemType
+import de.moleman1024.audiowagon.enums.ContentHierarchyType
+import de.moleman1024.audiowagon.enums.MetadataReadSetting
+import de.moleman1024.audiowagon.enums.ViewTabSetting
 import de.moleman1024.audiowagon.exceptions.CannotRecoverUSBException
 import de.moleman1024.audiowagon.exceptions.NoAudioItemException
 import de.moleman1024.audiowagon.filestorage.*
+import de.moleman1024.audiowagon.filestorage.data.AudioFile
+import de.moleman1024.audiowagon.filestorage.data.Directory
+import de.moleman1024.audiowagon.filestorage.data.GeneralFile
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.*
 import de.moleman1024.audiowagon.repository.AudioItemDatabase
@@ -49,6 +56,10 @@ private val logger = Logger
 
 private const val MAX_NUM_ALBUM_ART_TO_CACHE = 30
 
+/**
+ * This class is responsible for turning media data from [AudioFileStorage] into an indexed, searchable database and
+ * providing access to it.
+ */
 @ExperimentalCoroutinesApi
 class AudioItemLibrary(
     private val context: Context,

@@ -17,14 +17,19 @@ import de.moleman1024.audiowagon.POPUP_TIMEOUT_MS
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.SharedPrefs
 import de.moleman1024.audiowagon.Util
+import de.moleman1024.audiowagon.enums.AudioFocusRequestResult
+import de.moleman1024.audiowagon.enums.AudioPlayerState
+import de.moleman1024.audiowagon.enums.EqualizerPreset
 import de.moleman1024.audiowagon.exceptions.AlreadyStoppedException
 import de.moleman1024.audiowagon.exceptions.CannotReadFileException
 import de.moleman1024.audiowagon.exceptions.MissingEffectsException
 import de.moleman1024.audiowagon.exceptions.NoItemsInQueueException
-import de.moleman1024.audiowagon.filestorage.AudioFile
+import de.moleman1024.audiowagon.filestorage.data.AudioFile
 import de.moleman1024.audiowagon.filestorage.AudioFileStorage
 import de.moleman1024.audiowagon.log.CrashReporting
 import de.moleman1024.audiowagon.log.Logger
+import de.moleman1024.audiowagon.player.data.AudioPlayerStatus
+import de.moleman1024.audiowagon.player.data.PlaybackQueueChange
 import kotlinx.coroutines.*
 import java.io.FileNotFoundException
 import java.io.IOException
@@ -38,7 +43,7 @@ const val MEDIA_ERROR_AUDIO_FOCUS_DENIED = -1249
 const val SKIP_PREVIOUS_THRESHOLD_MSEC = 10000L
 
 /**
- * Manages two [MediaPlayer] instances + equalizer
+ * Manages two [MediaPlayer] instances and an equalizer
  *
  * API: https://developer.android.com/reference/android/media/MediaPlayer
  * Guide: https://developer.android.com/guide/topics/media/mediaplayer
@@ -221,7 +226,7 @@ class AudioPlayer(
                     MediaPlayer.MEDIA_ERROR_UNSUPPORTED ->
                         playerStatus.errorMsg = context.getString(R.string.error_not_supported)
                     else -> {
-                        val numAvailableDevices = audioFileStorage.getNumAvailableDevices()
+                        val numAvailableDevices = audioFileStorage.getNumAttachedPermittedDevices()
                         if (numAvailableDevices <= 0) {
                             playerStatus.errorMsg = context.getString(R.string.error_no_USB_device)
                         } else {

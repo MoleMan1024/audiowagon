@@ -7,7 +7,7 @@ package de.moleman1024.audiowagon
 
 import android.support.v4.media.MediaBrowserCompat
 import androidx.test.platform.app.InstrumentationRegistry
-import de.moleman1024.audiowagon.filestorage.IndexingStatus
+import de.moleman1024.audiowagon.enums.IndexingStatus
 import de.moleman1024.audiowagon.filestorage.sd.SDCardMediaDevice
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.util.ServiceFixture

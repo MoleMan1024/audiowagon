@@ -6,9 +6,8 @@ SPDX-License-Identifier: GPL-3.0-or-later
 package de.moleman1024.audiowagon.repository
 
 import de.moleman1024.audiowagon.Util
-import de.moleman1024.audiowagon.filestorage.AudioFile
-import de.moleman1024.audiowagon.filestorage.Directory
-import de.moleman1024.audiowagon.log.Logger
+import de.moleman1024.audiowagon.filestorage.data.AudioFile
+import de.moleman1024.audiowagon.filestorage.data.Directory
 import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
 import kotlinx.coroutines.ExperimentalCoroutinesApi

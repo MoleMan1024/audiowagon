@@ -25,7 +25,6 @@ import de.moleman1024.audiowagon.filestorage.usb.lowlevel.driver.scsi.commands.*
 import de.moleman1024.audiowagon.filestorage.usb.lowlevel.driver.scsi.commands.sense.*
 import de.moleman1024.audiowagon.log.Logger
 import java.io.IOException
-import java.lang.IllegalStateException
 import java.nio.ByteBuffer
 import java.util.*
 
@@ -62,13 +61,11 @@ class ScsiBlockDevice(private val usbCommunication: USBCommunication, private va
     override val blocks: Long = lastBlockAddress.toLong()
 
     /**
-     * Issues a SCSI Inquiry to determine the connected device. After that it is
-     * checked if the unit is ready. Logs a warning if the unit is not ready.
-     * Finally the capacity of the mass storage device is read.
+     * Issues a SCSI Inquiry to determine the connected device. After that it is checked if the unit is ready. Logs a
+     * warning if the unit is not ready. Finally the capacity of the mass storage device is read.
      *
      * @throws IOException
-     * If initialing fails due to an unsupported device or if
-     * reading fails.
+     * If initialing fails due to an unsupported device or if reading fails.
      *
      * @see ScsiInquiry
      * @see ScsiInquiryResponse
@@ -77,7 +74,7 @@ class ScsiBlockDevice(private val usbCommunication: USBCommunication, private va
      * @see ScsiReadCapacityResponse
      */
     override fun init() {
-        for (i in 0..MAX_RECOVERY_ATTEMPTS) {
+        for (i in 0..MAX_INIT_ATTEMPTS) {
             try {
                 initAttempt()
                 return
@@ -92,18 +89,18 @@ class ScsiBlockDevice(private val usbCommunication: USBCommunication, private va
                 throw IOException("USBCommunication was closed")
             }
         }
-        throw IOException("MAX_RECOVERY_ATTEMPTS exceeded during communication init with USB device, re-attach device")
+        throw IOException("MAX_INIT_ATTEMPTS exceeded during communication init with USB device, re-attach device")
     }
 
     private fun initAttempt() {
-        logger.verbose(TAG, "initAttempt()")
+        logger.debug(TAG, "initAttempt()")
         val allocationSize = 36
         val inBuffer = Util.allocateByteBuffer(allocationSize)
         val inquiry = ScsiInquiry(allocationSize.toByte(), lun = lun)
         transferCommand(inquiry, inBuffer)
         inBuffer.clear()
         val inquiryResponse = ScsiInquiryResponse.read(inBuffer)
-        logger.verbose(TAG, "inquiry response: $inquiryResponse")
+        logger.debug(TAG, "Inquiry response: $inquiryResponse")
         if (inquiryResponse.peripheralQualifier.toInt() != 0 || inquiryResponse.peripheralDeviceType.toInt() != 0) {
             throw IOException(
                 "Unsupported PeripheralQualifier=${inquiryResponse.peripheralQualifier.toInt()} " +
@@ -119,8 +116,8 @@ class ScsiBlockDevice(private val usbCommunication: USBCommunication, private va
         val readCapacityResponse = ScsiReadCapacityResponse.read(inBuffer)
         blockSize = readCapacityResponse.blockLength
         lastBlockAddress = readCapacityResponse.logicalBlockAddress
-        logger.verbose(TAG, "Block size: $blockSize")
-        logger.verbose(TAG, "Last block address: $lastBlockAddress")
+        logger.debug(TAG, "Block size: $blockSize")
+        logger.debug(TAG, "Last block address: $lastBlockAddress")
     }
 
     /**
@@ -140,9 +137,17 @@ class ScsiBlockDevice(private val usbCommunication: USBCommunication, private va
      * If something fails.
      */
     private fun transferCommand(command: CommandBlockWrapper, inBuffer: ByteBuffer) {
+        val startTimeMS: Long = System.currentTimeMillis()
+        var logAttempts = false
         for (i in 0..MAX_RECOVERY_ATTEMPTS) {
             try {
+                if (logAttempts) {
+                    logger.debug(TAG, "transferOneCommand(command=$command)")
+                }
                 val result = transferOneCommand(command, inBuffer)
+                if (logAttempts) {
+                    logger.debug(TAG, "transferOneCommand result=$result")
+                }
                 val senseWasNotIssued = handleCommandResult(result)
                 if (senseWasNotIssued || command.direction == CommandBlockWrapper.Direction.NONE) {
                     // successful w/o need of sending sense command
@@ -167,6 +172,11 @@ class ScsiBlockDevice(private val usbCommunication: USBCommunication, private va
                 bulkOnlyMassStorageReset()
             } catch (e: IOException) {
                 logger.warning(TAG, (e.message ?: "IOException") + ", attempt: $i")
+                logAttempts = true
+                val nowMS: Long = System.currentTimeMillis()
+                if (nowMS - startTimeMS > 10000) {
+                    throw IOException("MAX_RECOVERY_ATTEMPTS exceeded, device timeout")
+                }
             }
             if (!usbCommunication.isClosed()) {
                 Thread.sleep(100)
@@ -284,7 +294,6 @@ class ScsiBlockDevice(private val usbCommunication: USBCommunication, private va
                 do {
                     numBytesWritten += usbCommunication.bulkOutTransfer(inBuffer)
                 } while (numBytesWritten < transferLength)
-
                 if (numBytesWritten != transferLength) {
                     throw IOException("Could not write all bytes: $command")
                 }
@@ -332,6 +341,7 @@ class ScsiBlockDevice(private val usbCommunication: USBCommunication, private va
 
     companion object {
         private const val MAX_RECOVERY_ATTEMPTS = 20
+        private const val MAX_INIT_ATTEMPTS = 2
         private val TAG = ScsiBlockDevice::class.java.simpleName
     }
 }

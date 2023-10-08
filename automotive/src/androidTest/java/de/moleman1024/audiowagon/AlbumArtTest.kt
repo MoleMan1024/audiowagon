@@ -22,6 +22,8 @@ import org.junit.After
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
+import java.io.FileInputStream
+
 
 private const val TAG = "AlbumArtTest"
 private const val TEMPLATE_MP3_NAME = "test.mp3"
@@ -105,9 +107,17 @@ class AlbumArtTest {
         val albumArtURI = traversal.hierarchy[albumsRoot]?.get(1)?.description?.iconUri
             ?: throw AssertionError("No album art URI")
         val resolver = context.contentResolver
-        val proxyFileDescriptor: ParcelFileDescriptor? = resolver.openFile(albumArtURI, "r", null)
+        val parcelFileDescriptor: ParcelFileDescriptor? = resolver.openFile(albumArtURI, "r", null)
+        val fileInputStream = FileInputStream(parcelFileDescriptor?.fileDescriptor)
+        val buffer = ByteArray(1024)
+        var numBytesRead: Int
+        var numBytesReadTotal = 0
+        while (fileInputStream.read(buffer).also { numBytesRead = it } != -1) {
+            numBytesReadTotal += numBytesRead
+        }
         val resizedAlbumArtSize = 3530
-        Assert.assertEquals(resizedAlbumArtSize, proxyFileDescriptor?.statSize?.toInt())
-        proxyFileDescriptor?.close()
+        Assert.assertEquals(resizedAlbumArtSize, numBytesReadTotal)
+        fileInputStream.close()
+        parcelFileDescriptor?.close()
     }
 }

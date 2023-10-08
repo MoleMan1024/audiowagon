@@ -9,7 +9,7 @@ import android.content.SharedPreferences
 import android.support.v4.media.MediaBrowserCompat
 import androidx.test.platform.app.InstrumentationRegistry
 import de.moleman1024.audiowagon.log.Logger
-import de.moleman1024.audiowagon.player.EqualizerPreset
+import de.moleman1024.audiowagon.enums.EqualizerPreset
 import de.moleman1024.audiowagon.util.ServiceFixture
 import de.moleman1024.audiowagon.util.TestUtils
 import kotlinx.coroutines.ExperimentalCoroutinesApi

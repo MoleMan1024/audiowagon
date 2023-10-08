@@ -26,13 +26,11 @@ class AndroidUSBMassStorageDevice(
     private val inEndpoint: USBEndpoint,
     private val outEndpoint: USBEndpoint
 ) : USBMassStorageDevice {
-    private var isInitialized = false
     private lateinit var usbCommunication: USBCommunication
     override var partitions: List<Partition> = mutableListOf()
 
     override fun init() {
         setupDevice()
-        isInitialized = true
     }
 
     /**
@@ -45,7 +43,7 @@ class AndroidUSBMassStorageDevice(
     private fun setupDevice() {
         // TODO: make implementation selectable
         usbCommunication = JavaAndroidUSBCommunication(usbManager, usbDevice, usbInterface, inEndpoint, outEndpoint)
-        logger.verbose(TAG, "setupDevice()")
+        logger.debug(TAG, "setupDevice()")
         usbCommunication.initConnection()
         val maxLun = ByteArray(1)
         usbCommunication.controlTransfer(161, 254, 0, usbInterface.id, maxLun, 1)
@@ -83,9 +81,14 @@ class AndroidUSBMassStorageDevice(
      * to the partitions returned by [.getPartitions].
      */
     override fun close() {
-        if (isInitialized) {
-            usbCommunication.close()
-            isInitialized = false
-        }
+        Logger.debug(TAG, "close()")
+        usbCommunication.close()
     }
+
+    override fun reset() {
+        usbCommunication.clearHalt(inEndpoint)
+        usbCommunication.clearHalt(outEndpoint)
+        usbCommunication.reset()
+    }
+
 }

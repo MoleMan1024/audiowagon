@@ -12,7 +12,10 @@ import android.support.v4.media.MediaDescriptionCompat
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.SharedPrefs
 import de.moleman1024.audiowagon.Util
+import de.moleman1024.audiowagon.enums.ContentHierarchyType
+import de.moleman1024.audiowagon.enums.MetadataReadSetting
 import de.moleman1024.audiowagon.filestorage.*
+import de.moleman1024.audiowagon.filestorage.data.Directory
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -80,7 +83,7 @@ class ContentHierarchyRootFiles(
     }
 
     private fun createPseudoNoEntriesItem(): MediaItem {
-        val numAvailableDevices = audioFileStorage.getNumAvailableDevices()
+        val numAvailableDevices = audioFileStorage.getNumAttachedPermittedDevices()
         var title = context.getString(R.string.browse_tree_no_entries_title)
         var subtitle: String
         subtitle = context.getString(R.string.browse_tree_no_usb_drive)

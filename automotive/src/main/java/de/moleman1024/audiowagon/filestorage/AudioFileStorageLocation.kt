@@ -8,6 +8,10 @@ package de.moleman1024.audiowagon.filestorage
 import android.media.MediaDataSource
 import android.net.Uri
 import de.moleman1024.audiowagon.Util
+import de.moleman1024.audiowagon.enums.IndexingStatus
+import de.moleman1024.audiowagon.filestorage.data.AudioFile
+import de.moleman1024.audiowagon.filestorage.data.Directory
+import de.moleman1024.audiowagon.filestorage.data.PlaylistFile
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ReceiveChannel
@@ -17,6 +21,11 @@ import java.io.IOException
 import java.io.InputStream
 import java.util.*
 
+/**
+ * An interface for a  location to be managed by [AudioFileStorage] class.
+ * This works with File-like objects and URIs only, so the different implementations can be used (USB, SD card, local
+ * filesystem, Android asset files, ...)
+ */
 interface AudioFileStorageLocation {
     @Suppress("PropertyName")
     val TAG: String

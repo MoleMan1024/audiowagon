@@ -10,14 +10,14 @@ import android.media.browse.MediaBrowser
 import android.net.Uri
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.Util
-import de.moleman1024.audiowagon.filestorage.AudioFile
-import de.moleman1024.audiowagon.filestorage.Directory
+import de.moleman1024.audiowagon.filestorage.data.AudioFile
+import de.moleman1024.audiowagon.filestorage.data.Directory
 import de.moleman1024.audiowagon.filestorage.FileLike
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.*
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyElement
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyID
-import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyType
+import de.moleman1024.audiowagon.enums.ContentHierarchyType
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.DATABASE_ID_UNKNOWN
 import de.moleman1024.audiowagon.repository.entities.*
 import kotlinx.coroutines.*

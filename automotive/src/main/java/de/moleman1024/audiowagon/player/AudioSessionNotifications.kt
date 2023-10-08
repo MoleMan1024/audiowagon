@@ -20,13 +20,22 @@ import androidx.core.graphics.drawable.IconCompat
 import androidx.media.session.MediaButtonReceiver
 import de.moleman1024.audiowagon.NOTIFICATION_ID
 import de.moleman1024.audiowagon.R
-import de.moleman1024.audiowagon.broadcast.*
+import de.moleman1024.audiowagon.SingletonCoroutine
+import de.moleman1024.audiowagon.broadcast.ACTION_NEXT
+import de.moleman1024.audiowagon.broadcast.ACTION_PAUSE
+import de.moleman1024.audiowagon.broadcast.ACTION_PLAY
+import de.moleman1024.audiowagon.broadcast.ACTION_PREV
+import de.moleman1024.audiowagon.broadcast.BroadcastMessageReceiver
+import de.moleman1024.audiowagon.enums.SingletonCoroutineBehaviour
 import de.moleman1024.audiowagon.exceptions.MissingNotifChannelException
 import de.moleman1024.audiowagon.log.CrashReporting
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.asCoroutineDispatcher
+import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicBoolean
 
 private const val TAG = "AudioSessionNotif"
 private val logger = Logger
@@ -49,14 +58,19 @@ class AudioSessionNotifications(
         context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     private lateinit var isPlayingNotificationBuilder: NotificationCompat.Builder
     private lateinit var isPausedNotificationBuilder: NotificationCompat.Builder
-    private var isShowingNotification: Boolean = false
+    private var isShowingNotification: AtomicBoolean = AtomicBoolean()
     private val broadcastMsgRecv: BroadcastMessageReceiver = BroadcastMessageReceiver(
         audioPlayer, scope, dispatcher, crashReporting
     )
-    private var isChannelCreated: Boolean = false
+    private var isChannelCreated: AtomicBoolean = AtomicBoolean()
+    private val singleThreadDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
+    private val notificationSingletonCoroutine =
+        SingletonCoroutine("AudioSessNotif", singleThreadDispatcher, scope.coroutineContext, crashReporting)
+
 
     fun init(session: MediaSessionCompat) {
-        isChannelCreated = false
+        notificationSingletonCoroutine.behaviour = SingletonCoroutineBehaviour.PREFER_FINISH
+        isChannelCreated.set(false)
         mediaSession = session
         deleteNotificationChannel()
         createNotificationChannel()
@@ -65,9 +79,11 @@ class AudioSessionNotifications(
 
     private fun createNotificationChannel() {
         if (notificationManager.getNotificationChannel(AUDIO_SESS_NOTIF_CHANNEL) != null) {
-            isChannelCreated = true
+            isChannelCreated.set(true)
             logger.debug(TAG, "Notification channel already exists")
-            notificationManager.cancelAll()
+            notificationSingletonCoroutine.launch {
+                notificationManager.cancelAll()
+            }
             return
         }
         logger.debug(TAG, "Creating notification channel")
@@ -79,18 +95,18 @@ class AudioSessionNotifications(
             setShowBadge(false)
         }
         notificationManager.createNotificationChannel(channel)
-        isChannelCreated = true
+        isChannelCreated.set(true)
     }
 
     private fun deleteNotificationChannel() {
         if (notificationManager.getNotificationChannel(AUDIO_SESS_NOTIF_CHANNEL) == null) {
             logger.debug(TAG, "No notification channel")
-            isChannelCreated = false
+            isChannelCreated.set(false)
             return
         }
         logger.debug(TAG, "Deleting notification channel")
         try {
-            isChannelCreated = false
+            isChannelCreated.set(false)
             notificationManager.deleteNotificationChannel(AUDIO_SESS_NOTIF_CHANNEL)
         } catch (exc: RuntimeException) {
             // SecurityException could happen when service is still in foreground
@@ -138,15 +154,17 @@ class AudioSessionNotifications(
      */
     private fun sendNotification(notifBuilder: NotificationCompat.Builder) {
         val notification = prepareNotification(notifBuilder)
-        if (!isChannelCreated) {
-            logger.warning(TAG, "Cannot send notification, no channel available")
-            return
-        }
-        notificationManager.notify(NOTIFICATION_ID, notification)
-        if (!isShowingNotification) {
+        if (!isShowingNotification.get()) {
             registerNotifRecv()
         }
-        isShowingNotification = true
+        notificationSingletonCoroutine.launch {
+            if (!isChannelCreated.get()) {
+                logger.warning(TAG, "Cannot send notification, no channel available")
+                return@launch
+            }
+            notificationManager.notify(NOTIFICATION_ID, notification)
+            isShowingNotification.set(true)
+        }
     }
 
     fun sendIsPlayingNotification() {
@@ -183,7 +201,7 @@ class AudioSessionNotifications(
     }
 
     fun getNotification(): Notification {
-        if (!isChannelCreated) {
+        if (!isChannelCreated.get()) {
             val channel = notificationManager.getNotificationChannel(AUDIO_SESS_NOTIF_CHANNEL)
             throw MissingNotifChannelException("channel=$channel")
         }
@@ -207,15 +225,17 @@ class AudioSessionNotifications(
 
     fun removeNotification() {
         logger.debug(TAG, "removeNotification()")
-        if (!isShowingNotification) {
+        if (!isShowingNotification.get()) {
             logger.debug("TAG", "No notification is currently shown")
         } else {
-            notificationManager.cancel(NOTIFICATION_ID)
+            notificationSingletonCoroutine.launch {
+                notificationManager.cancel(NOTIFICATION_ID)
+            }
         }
         // TODO: to actually remove the notification, the mediaSession needs to be released. However when that is
         //  done it should not be used again unless the media browser client is restarted
         unregisterNotifRecv()
-        isShowingNotification = false
+        isShowingNotification.set(false)
     }
 
     fun shutdown() {

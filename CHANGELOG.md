@@ -12,6 +12,28 @@ Google's review process which can take a couple of days.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project loosely follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [2.5.6] - 2023-10-07
+
+### Fixed
+
+- ignore permission change events for USB device objects which are no longer connected
+- updates to notification channels were posted from main thread which could make the app unresponsive (ANR) in rare
+  cases. Now this is done from threads
+
+### Changed
+
+- try to recover from failed USB initializations whenever possible. But most of the times a recovery is impossible
+  [#91](https://github.com/MoleMan1024/audiowagon/issues/91)
+- wait 4 seconds before showing the USB permission popup. This should be sufficient time for the USB subsystem to
+  power-cycle the USB device in case of issues that would otherwise cancel the permission popup
+- react to USB timeout errors more quickly
+- when USB device was attached, but permission to access it was denied, this was not easily visible. This situation is
+  now shown in the main browse view also (lock icon)
+- more logging
+- internal refactoring
+
+
 ## [2.5.2] - 2023-08-16
 
 ### Fixed

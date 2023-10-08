@@ -9,7 +9,7 @@ import android.content.Context
 import android.support.v4.media.MediaBrowserCompat.MediaItem
 import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.filestorage.AudioFileStorage
-import de.moleman1024.audiowagon.filestorage.PlaylistFile
+import de.moleman1024.audiowagon.filestorage.data.PlaylistFile
 import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
 import de.moleman1024.audiowagon.medialibrary.PlaylistFileResolver

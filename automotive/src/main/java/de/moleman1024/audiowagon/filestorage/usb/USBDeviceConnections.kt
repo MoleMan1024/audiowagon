@@ -17,10 +17,10 @@ import de.moleman1024.audiowagon.SharedPrefs
 import de.moleman1024.audiowagon.SingletonCoroutine
 import de.moleman1024.audiowagon.authorization.ACTION_USB_PERMISSION_CHANGE
 import de.moleman1024.audiowagon.authorization.USBDevicePermissions
-import de.moleman1024.audiowagon.authorization.USBPermission
+import de.moleman1024.audiowagon.enums.USBPermission
 import de.moleman1024.audiowagon.exceptions.*
-import de.moleman1024.audiowagon.filestorage.DeviceAction
-import de.moleman1024.audiowagon.filestorage.DeviceChange
+import de.moleman1024.audiowagon.enums.DeviceAction
+import de.moleman1024.audiowagon.filestorage.data.DeviceChange
 import de.moleman1024.audiowagon.log.CrashReporting
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.*
@@ -29,8 +29,8 @@ import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 
 private const val TAG = "USBDevConn"
-const val ACTION_USB_ATTACHED = "de.moleman1024.audiowagon.authorization.USB_ATTACHED"
-const val ACTION_USB_UPDATE = "de.moleman1024.audiowagon.authorization.USB_UPDATE"
+const val ACTION_USB_ATTACHED = "de.moleman1024.audiowagon.USB_ATTACHED"
+const val ACTION_USB_UPDATE = "de.moleman1024.audiowagon.USB_UPDATE"
 private val USB_ACTIONS = listOf(
     ACTION_USB_ATTACHED,
     ACTION_USB_UPDATE,
@@ -58,6 +58,8 @@ class USBDeviceConnections(
     private val attachedAndPermittedDevices = mutableListOf<USBMediaDevice>()
     var isSuspended = false
     val isUpdatingDevices = AtomicBoolean()
+    val isAnyDeviceAttached = AtomicBoolean()
+    val isAnyDevicePermitted = AtomicBoolean()
     private var isBroadcastRecvRegistered = false
     // use a single thread here to avoid race conditions updating the USB attached/detached status from multiple threads
     private val singleThreadDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
@@ -109,14 +111,19 @@ class USBDeviceConnections(
                         }
                     }
                     UsbManager.ACTION_USB_DEVICE_ATTACHED -> {
+                        isAnyDeviceAttached.set(true)
                         usbAttachedDelayedSingletonCoroutine.launch {
-                            // wait a bit to give USBDummyActivity a chance to catch this instead and send
-                            // ACTION_USB_ATTACHED (see above)
-                            delay(400)
+                            isUpdatingDevices.set(true)
+                            notifyObservers(DeviceChange(null, DeviceAction.REFRESH))
+                            // wait a bit to for the USB driver to settle down in case of issues and to give
+                            // USBDummyActivity a chance to catch this instead and send ACTION_USB_ATTACHED (see above)
+                            delay(4000)
                             onAttachedUSBMassStorageDeviceFound(usbMediaDevice)
                         }
                     }
                     UsbManager.ACTION_USB_DEVICE_DETACHED -> {
+                        isUpdatingDevices.set(false)
+                        isAnyDeviceAttached.set(false)
                         usbDetachedSingletonCoroutine.launch {
                             usbAttachedDelayedSingletonCoroutine.cancel()
                             usbAttachedSingletonCoroutine.cancel()
@@ -387,11 +394,18 @@ class USBDeviceConnections(
         val permission: USBPermission = usbDevicePermissions.getCurrentPermissionForDevice(device)
         if (permission == USBPermission.DENIED) {
             logger.info(TAG, "User has denied access to: ${device.getName()}")
+            isUpdatingDevices.set(false)
+            isAnyDevicePermitted.set(false)
+            notifyObservers(DeviceChange(null, DeviceAction.REFRESH))
             return
         } else if (permission == USBPermission.UNKNOWN) {
             logger.error(TAG, "Permission has not been updated for: ${device.getName()}")
+            isUpdatingDevices.set(false)
+            isAnyDevicePermitted.set(false)
+            notifyObservers(DeviceChange(null, DeviceAction.REFRESH))
             return
         }
+        isAnyDevicePermitted.set(true)
         onUSBDeviceWithPermissionAttached(device)
     }
 
@@ -439,6 +453,7 @@ class USBDeviceConnections(
         attachedAndPermittedDevices.add(device)
     }
 
+    // this will notify the AudioFileStorage
     private suspend fun notifyObservers(deviceChange: DeviceChange) {
         deviceObservers.forEach { it(deviceChange) }
     }
@@ -504,6 +519,11 @@ class USBDeviceConnections(
         usbAttachedDelayedSingletonCoroutine.cancel()
         usbDetachedSingletonCoroutine.cancel()
         usbPermissionSingletonCoroutine.cancel()
+    }
+
+    fun isAnyAttachedUSBUpdateCoroutineInProgress(): Boolean {
+        return updateAttachedDevicesSingletonCoroutine.isInProgress() || usbAttachedSingletonCoroutine.isInProgress()
+                || usbAttachedDelayedSingletonCoroutine.isInProgress()
     }
 
 }

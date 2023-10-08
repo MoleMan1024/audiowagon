@@ -14,12 +14,16 @@ import androidx.media.utils.MediaConstants
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.SharedPrefs
 import de.moleman1024.audiowagon.Util
+import de.moleman1024.audiowagon.enums.ContentHierarchyType
 import de.moleman1024.audiowagon.filestorage.*
 import de.moleman1024.audiowagon.log.Logger
-import de.moleman1024.audiowagon.medialibrary.AlbumStyleSetting
+import de.moleman1024.audiowagon.enums.AlbumStyleSetting
 import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
-import de.moleman1024.audiowagon.medialibrary.MetadataReadSetting
+import de.moleman1024.audiowagon.enums.MetadataReadSetting
+import de.moleman1024.audiowagon.filestorage.data.AudioFile
+import de.moleman1024.audiowagon.filestorage.data.Directory
+import de.moleman1024.audiowagon.filestorage.data.PlaylistFile
 import de.moleman1024.audiowagon.medialibrary.RESOURCE_ROOT_URI
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.serialization.decodeFromString
@@ -293,8 +297,8 @@ abstract class ContentHierarchyElement(
         subtitle = context.getString(R.string.browse_tree_no_usb_drive)
         var iconID: Int = R.drawable.usb_off
         if (!audioFileStorage.isUpdatingDevices()) {
-            val numConnectedDevices = audioFileStorage.getNumAvailableDevices()
-            if (numConnectedDevices > 0) {
+            val numAttachedPermittedDevices = audioFileStorage.getNumAttachedPermittedDevices()
+            if (numAttachedPermittedDevices > 0) {
                 if (sharedPrefs.isLegalDisclaimerAgreed(context)) {
                     if (audioFileStorage.areAnyStoragesAvail()) {
                         val metadataReadSetting = sharedPrefs.getMetadataReadSettingEnum(context, logger, TAG)
@@ -316,6 +320,11 @@ abstract class ContentHierarchyElement(
                     title = context.getString(R.string.browse_tree_need_to_agree_legal_title)
                     subtitle = context.getString(R.string.browse_tree_need_to_agree_legal_desc)
                     iconID = R.drawable.policy
+                }
+            } else {
+                if (audioFileStorage.isAnyDeviceAttached() && !audioFileStorage.isAnyDevicePermitted()) {
+                    subtitle = context.getString(R.string.setting_USB_status_connected_no_permission)
+                    iconID = R.drawable.lock
                 }
             }
         } else {

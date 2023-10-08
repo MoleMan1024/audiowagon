@@ -11,6 +11,8 @@ import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.os.Handler
 import android.os.Looper
+import de.moleman1024.audiowagon.enums.AudioFocusRequestResult
+import de.moleman1024.audiowagon.enums.AudioFocusSetting
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 

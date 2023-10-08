@@ -9,6 +9,7 @@ import android.annotation.SuppressLint
 import android.util.Log
 import android.util.Log.getStackTraceString
 import androidx.annotation.VisibleForTesting
+import de.moleman1024.audiowagon.enums.LogLevel
 import de.moleman1024.audiowagon.filestorage.usb.lowlevel.USBFile
 import de.moleman1024.audiowagon.filestorage.usb.lowlevel.USBFileOutputStream
 import kotlinx.coroutines.*
@@ -131,13 +132,13 @@ object Logger : LoggerInterface {
     override fun debug(tag: String?, msg: String) {
         Log.d(tag, msg)
         storeLogLine(msg)
-        logToBuffer(LogData(LoggerInterface.LogLevel.DEBUG, tag, msg))
+        logToBuffer(LogData(LogLevel.DEBUG, tag, msg))
     }
 
     override fun error(tag: String?, msg: String) {
         Log.e(tag, msg)
         storeLogLine(msg)
-        logToBuffer(LogData(LoggerInterface.LogLevel.ERROR, tag, msg))
+        logToBuffer(LogData(LogLevel.ERROR, tag, msg))
         isFlushOnNextWrite = true
     }
 
@@ -146,7 +147,7 @@ object Logger : LoggerInterface {
         val logLine = if (msg != "null") "$msg\n$stackTrace" else stackTrace
         Log.e(tag, logLine)
         storeLogLine(logLine)
-        logToBuffer(LogData(LoggerInterface.LogLevel.ERROR, tag, msg, stackTrace))
+        logToBuffer(LogData(LogLevel.ERROR, tag, msg, stackTrace))
         isFlushOnNextWrite = true
     }
 
@@ -163,13 +164,13 @@ object Logger : LoggerInterface {
     override fun info(tag: String?, msg: String) {
         Log.i(tag, msg)
         storeLogLine(msg)
-        logToBuffer(LogData(LoggerInterface.LogLevel.INFO, tag, msg))
+        logToBuffer(LogData(LogLevel.INFO, tag, msg))
     }
 
     override fun warning(tag: String?, msg: String) {
         Log.w(tag, msg)
         storeLogLine(msg)
-        logToBuffer(LogData(LoggerInterface.LogLevel.WARNING, tag, msg))
+        logToBuffer(LogData(LogLevel.WARNING, tag, msg))
     }
 
     private fun logToBuffer(logData: LogData) {

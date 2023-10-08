@@ -12,6 +12,8 @@ import de.moleman1024.audiowagon.filestorage.usb.lowlevel.USBFile
 import de.moleman1024.audiowagon.filestorage.usb.lowlevel.USBFileInputStream
 import de.moleman1024.audiowagon.filestorage.usb.lowlevel.USBFileOutputStream
 import de.moleman1024.audiowagon.log.Logger
+import java.io.FileInputStream
+import java.io.FileOutputStream
 import java.io.InputStream
 import java.nio.ByteBuffer
 import java.nio.channels.SeekableByteChannel
@@ -211,11 +213,38 @@ class InMemoryFileSystem : FileSystem {
             }
 
             override fun getOutputStream(): USBFileOutputStream {
-                TODO("Not yet implemented")
+                TODO("not yet implemented")
             }
 
             override fun getInputStream(): USBFileInputStream {
-                TODO("Not yet implemented")
+                return object : USBFileInputStream() {
+                    private val inputStream = Files.newInputStream(path)
+
+                    override fun read(): Int {
+                        return inputStream.read()
+                    }
+
+                    override fun read(buffer: ByteArray?): Int {
+                        return inputStream.read(buffer)
+                    }
+
+                    override fun read(buffer: ByteArray?, offset: Int, length: Int): Int {
+                        return inputStream.read(buffer, offset, length)
+                    }
+
+                    override fun skip(numBytes: Long): Long {
+                        return inputStream.skip(numBytes)
+                    }
+
+                    override fun available(): Int {
+                        return inputStream.available()
+                    }
+
+                    override fun close() {
+                        inputStream.close()
+                    }
+
+                }
             }
         }
     }

@@ -6,15 +6,6 @@ SPDX-License-Identifier: GPL-3.0-or-later
 package de.moleman1024.audiowagon.log
 
 interface LoggerInterface {
-    enum class LogLevel {
-        @Suppress("unused")
-        VERBOSE,
-        DEBUG,
-        INFO,
-        WARNING,
-        ERROR
-    }
-
     fun verbose(tag: String?, msg: String)
     fun debug(tag: String?, msg: String)
     fun error(tag: String?, msg: String)

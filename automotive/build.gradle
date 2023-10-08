@@ -20,9 +20,9 @@ android {
         applicationId "de.moleman1024.audiowagon"
         minSdkVersion rootProject.minSdkVersion
         targetSdkVersion rootProject.targetSdkVersion
-        versionName "2.5.2"
+        versionName "2.5.6"
         // major * 10000 + minor * 100 + patch
-        versionCode 20502
+        versionCode 20506
         resValue "string", "VERSION_NAME", versionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         signingConfig signingConfigs.debug
@@ -98,7 +98,7 @@ dependencies {
     def roomVersion = "2.5.2"
 
     implementation "com.google.android.material:material:1.9.0"
-    implementation "androidx.preference:preference-ktx:1.2.0"
+    implementation "androidx.preference:preference-ktx:1.2.1"
     implementation "androidx.media:media:1.6.0"
     implementation "androidx.appcompat:appcompat:1.6.1"
     implementation "androidx.room:room-runtime:$roomVersion"
@@ -107,11 +107,11 @@ dependencies {
     implementation "androidx.room:room-ktx:$roomVersion"
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4'
     implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
-    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.1'
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.2'
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-core:$kotlinxSerializationVersion"
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion"
     // Firebase requires a file google-services.json that contains Firebase secrets, not uploaded to version control
-    implementation 'com.google.firebase:firebase-crashlytics-ktx:18.3.7'
+    implementation 'com.google.firebase:firebase-crashlytics-ktx:18.4.3'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.6.4'
 
     // junit4 for local unit tests
@@ -126,7 +126,7 @@ dependencies {
     androidTestImplementation "androidx.test:rules:$androidxTestVersion"
     androidTestImplementation "androidx.test.ext:junit:1.1.5"
     androidTestImplementation "androidx.test.espresso:espresso-core:3.5.1"
-    debugImplementation "androidx.fragment:fragment-testing:1.6.0"
+    debugImplementation "androidx.fragment:fragment-testing:1.6.1"
     androidTestImplementation "org.mockito:mockito-core:$mockitoVersion"
     androidTestImplementation "org.mockito:mockito-android:$mockitoVersion"
     androidTestImplementation "org.springframework:spring-context:5.3.8"

@@ -9,7 +9,12 @@ import android.media.MediaDataSource
 import android.net.Uri
 import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.Util.Companion.determinePlayableFileType
+import de.moleman1024.audiowagon.enums.IndexingStatus
 import de.moleman1024.audiowagon.filestorage.*
+import de.moleman1024.audiowagon.filestorage.data.AudioFile
+import de.moleman1024.audiowagon.filestorage.data.Directory
+import de.moleman1024.audiowagon.filestorage.data.GeneralFile
+import de.moleman1024.audiowagon.filestorage.data.PlaylistFile
 import de.moleman1024.audiowagon.filestorage.usb.lowlevel.USBFile
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.CoroutineScope

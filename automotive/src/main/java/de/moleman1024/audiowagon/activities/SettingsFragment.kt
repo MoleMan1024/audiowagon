@@ -14,7 +14,7 @@ import androidx.preference.*
 import de.moleman1024.audiowagon.*
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.log.Logger
-import de.moleman1024.audiowagon.medialibrary.MetadataReadSetting
+import de.moleman1024.audiowagon.enums.MetadataReadSetting
 import de.moleman1024.audiowagon.repository.AUDIOITEM_REPO_DB_PREFIX
 import kotlinx.coroutines.*
 import java.io.File

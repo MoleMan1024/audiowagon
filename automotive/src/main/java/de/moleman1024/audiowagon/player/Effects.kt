@@ -6,6 +6,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 package de.moleman1024.audiowagon.player
 
 import android.media.audiofx.DynamicsProcessing
+import de.moleman1024.audiowagon.enums.EqualizerPreset
 import de.moleman1024.audiowagon.log.Logger
 
 private const val TAG = "Effects"

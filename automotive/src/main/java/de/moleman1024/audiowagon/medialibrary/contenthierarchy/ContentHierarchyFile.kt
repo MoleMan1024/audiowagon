@@ -8,9 +8,9 @@ package de.moleman1024.audiowagon.medialibrary.contenthierarchy
 import android.content.Context
 import android.support.v4.media.MediaBrowserCompat.MediaItem
 import de.moleman1024.audiowagon.Util
-import de.moleman1024.audiowagon.filestorage.AudioFile
+import de.moleman1024.audiowagon.filestorage.data.AudioFile
 import de.moleman1024.audiowagon.filestorage.AudioFileStorage
-import de.moleman1024.audiowagon.filestorage.Directory
+import de.moleman1024.audiowagon.filestorage.data.Directory
 import de.moleman1024.audiowagon.filestorage.FileLike
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.AudioItem

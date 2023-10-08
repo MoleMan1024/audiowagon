@@ -6,14 +6,13 @@ SPDX-License-Identifier: GPL-3.0-or-later
 package de.moleman1024.audiowagon
 
 import android.support.v4.media.MediaBrowserCompat
-import de.moleman1024.audiowagon.filestorage.IndexingStatus
+import de.moleman1024.audiowagon.enums.IndexingStatus
 import de.moleman1024.audiowagon.filestorage.sd.SDCardMediaDevice
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.util.MediaBrowserSearch
 import de.moleman1024.audiowagon.util.ServiceFixture
 import de.moleman1024.audiowagon.util.TestUtils
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.runBlocking
 import org.junit.*
 
 private const val TAG = "MediaSearchTest"

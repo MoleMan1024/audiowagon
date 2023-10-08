@@ -5,6 +5,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 package de.moleman1024.audiowagon
 
+import de.moleman1024.audiowagon.enums.SingletonCoroutineBehaviour
 import de.moleman1024.audiowagon.exceptions.NoAudioItemException
 import de.moleman1024.audiowagon.log.CrashReporting
 import de.moleman1024.audiowagon.log.Logger
@@ -48,6 +49,7 @@ class SingletonCoroutine(
         }
         var coRtContext = exceptionHandler + dispatcher
         coroutineContext?.let { coRtContext = it + coRtContext }
+        logger.debug(tag, "Launching $currentID")
         val job =
             CoroutineScope(coRtContext).launch(start = CoroutineStart.LAZY) {
             try {
@@ -114,5 +116,9 @@ class SingletonCoroutine(
                 job.join()
             }
         }
+    }
+
+    fun isInProgress(): Boolean {
+        return instancesMap.isNotEmpty()
     }
 }

@@ -12,11 +12,14 @@ import android.support.v4.media.MediaDescriptionCompat
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.SharedPrefs
 import de.moleman1024.audiowagon.Util
+import de.moleman1024.audiowagon.enums.ContentHierarchyType
 import de.moleman1024.audiowagon.filestorage.*
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
-import de.moleman1024.audiowagon.medialibrary.MetadataReadSetting
+import de.moleman1024.audiowagon.enums.MetadataReadSetting
+import de.moleman1024.audiowagon.filestorage.data.AudioFile
+import de.moleman1024.audiowagon.filestorage.data.Directory
 import de.moleman1024.audiowagon.medialibrary.RESOURCE_ROOT_URI
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 

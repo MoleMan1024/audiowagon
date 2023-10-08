@@ -13,14 +13,19 @@ import android.support.v4.media.session.MediaSessionCompat
 import de.moleman1024.audiowagon.*
 import de.moleman1024.audiowagon.log.CrashReporting
 import de.moleman1024.audiowagon.log.Logger
-import de.moleman1024.audiowagon.medialibrary.AlbumStyleSetting
-import de.moleman1024.audiowagon.medialibrary.AudioItemType
-import de.moleman1024.audiowagon.medialibrary.MetadataReadSetting
+import de.moleman1024.audiowagon.enums.AlbumStyleSetting
+import de.moleman1024.audiowagon.enums.AudioItemType
+import de.moleman1024.audiowagon.enums.MetadataReadSetting
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import android.support.v4.media.session.MediaControllerCompat
 import de.moleman1024.audiowagon.activities.SettingsActivity
+import de.moleman1024.audiowagon.enums.AudioFocusSetting
+import de.moleman1024.audiowagon.enums.AudioSessionChangeType
+import de.moleman1024.audiowagon.enums.EqualizerPreset
+import de.moleman1024.audiowagon.enums.ViewTabSetting
+import de.moleman1024.audiowagon.player.data.AudioSessionChange
 
 private const val TAG = "AudioSessCB"
 private val logger = Logger

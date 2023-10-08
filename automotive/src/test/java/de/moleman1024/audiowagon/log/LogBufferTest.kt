@@ -5,6 +5,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 package de.moleman1024.audiowagon.log
 
+import de.moleman1024.audiowagon.enums.LogLevel
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.yield
 import org.junit.Assert.assertTrue
@@ -21,7 +22,7 @@ class LogBufferTest {
             logBuffer.init(this)
             val numLogLines = NUM_MAX_LOG_ENTRIES / 2
             for (i in 0 until numLogLines) {
-                val logData = LogData(LoggerInterface.LogLevel.DEBUG, "TAG", "MSG$i")
+                val logData = LogData(LogLevel.DEBUG, "TAG", "MSG$i")
                 logBuffer.sendLogDataToChannel(logData)
             }
             val entries = logBuffer.getNewestEntriesForLogFile()
@@ -42,7 +43,7 @@ class LogBufferTest {
         runBlocking {
             logBuffer.init(this)
             for (i in 0 until NUM_MAX_LOG_ENTRIES + 1) {
-                val logData = LogData(LoggerInterface.LogLevel.DEBUG, "TAG", "MSG$i")
+                val logData = LogData(LogLevel.DEBUG, "TAG", "MSG$i")
                 logBuffer.sendLogDataToChannel(logData)
             }
             val entries = logBuffer.getNewestEntriesForLogFile()
@@ -62,7 +63,7 @@ class LogBufferTest {
         val logBuffer = LogBuffer(NUM_MAX_LOG_ENTRIES)
         runBlocking {
             logBuffer.init(this)
-            logBuffer.sendLogDataToChannel(LogData(LoggerInterface.LogLevel.DEBUG, "TAG", "FOO"))
+            logBuffer.sendLogDataToChannel(LogData(LogLevel.DEBUG, "TAG", "FOO"))
             while (logBuffer.numEntriesNotRead <= 0) {
                 yield()
             }
@@ -70,7 +71,7 @@ class LogBufferTest {
             println("entries: $entries")
             assertTrue(entries.size == 1)
             assertTrue(entries[0].endsWith("FOO\n"))
-            logBuffer.sendLogDataToChannel(LogData(LoggerInterface.LogLevel.DEBUG, "TAG", "BAR"))
+            logBuffer.sendLogDataToChannel(LogData(LogLevel.DEBUG, "TAG", "BAR"))
             while (logBuffer.numEntriesNotRead <= 0) {
                 yield()
             }
@@ -91,7 +92,7 @@ class LogBufferTest {
             for (i in 0..5) {
                 logBuffer.sendLogDataToChannel(
                     LogData(
-                        LoggerInterface.LogLevel.DEBUG,
+                        LogLevel.DEBUG,
                         "TAG",
                         "FOO${i}",
                         timestamp = timestamp

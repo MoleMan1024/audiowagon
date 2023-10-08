@@ -10,7 +10,9 @@ import android.net.Uri
 import android.support.v4.media.MediaBrowserCompat.MediaItem
 import android.support.v4.media.MediaDescriptionCompat
 import de.moleman1024.audiowagon.R
-import de.moleman1024.audiowagon.ViewTabSetting
+import de.moleman1024.audiowagon.enums.AlbumStyleSetting
+import de.moleman1024.audiowagon.enums.ContentHierarchyType
+import de.moleman1024.audiowagon.enums.ViewTabSetting
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi

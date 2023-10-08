@@ -15,7 +15,7 @@ import android.net.Uri
 import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.exceptions.DriveAlmostFullException
 import de.moleman1024.audiowagon.exceptions.NoFileSystemException
-import de.moleman1024.audiowagon.filestorage.AudioFile
+import de.moleman1024.audiowagon.filestorage.data.AudioFile
 import de.moleman1024.audiowagon.filestorage.FileSystem
 import de.moleman1024.audiowagon.filestorage.MediaDevice
 import de.moleman1024.audiowagon.filestorage.usb.lowlevel.USBFile
@@ -64,7 +64,7 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
         return usbDevice.hasPermission()
     }
 
-    fun hasFileSystem(): Boolean {
+    private fun hasFileSystem(): Boolean {
         return fileSystem != null
     }
 
@@ -122,7 +122,7 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
     }
 
     suspend fun enableLogging() {
-        logger.verbose(TAG, "enableLogging()")
+        logger.debug(TAG, "enableLogging()")
         if (logFile != null) {
             logger.debug(TAG, "Logging to file is already enabled")
             return
@@ -434,32 +434,15 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
     }
 
     override fun equals(other: Any?): Boolean {
-        if (other !is USBMediaDevice) {
-            return false
-        }
-        if (this.hasPermission() && other.hasPermission() && this.hasFileSystem() && other.hasFileSystem()) {
-            if (getID() == other.getID()) {
-                return true
-            }
-        } else {
-            // permission is missing or filesystem not initialized on one object, fallback to just comparing the
-            // vendor/product ID
-            if (usbDevice.vendorId == other.usbDevice.vendorId && usbDevice.productId == other.usbDevice.productId) {
-                return true
-            }
-        }
-        return false
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        other as USBMediaDevice
+        if (usbDevice != other.usbDevice) return false
+        return true
     }
 
     override fun hashCode(): Int {
-        var result = usbDevice.hashCode()
-        result = 31 * result + (if (this.hasPermission()) 1 else 0)
-        result = 31 * result + (if (this.hasFileSystem()) 1 else 0)
-        if (this.hasPermission() && this.hasFileSystem()) {
-            result = 31 * result + serialNum.hashCode()
-            result = 31 * result + volumeLabel.hashCode()
-        }
-        return result
+        return usbDevice.hashCode()
     }
 
 }

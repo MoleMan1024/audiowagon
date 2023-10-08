@@ -159,13 +159,13 @@ class AndroidUSBDeviceProxy(
 
     // locked externally by usbLibDispatcher
     override fun initFilesystem(context: Context): FileSystem? {
-        logger.debug(TAG, "Initializing filesystem")
+        logger.debug(TAG, "Initializing filesystem for: $this")
         if (massStorageDevice == null) {
             try {
                 val massStorageDevices = getMassStorageDevices()
                 logger.debug(TAG, "Found mass storage devices: $massStorageDevices")
                 massStorageDevice = massStorageDevices.first()
-                logger.verbose(TAG, "Created mass storage device for: $this")
+                logger.debug(TAG, "Created mass storage device for: $this")
             } catch (exc: NoSuchElementException) {
                 throw RuntimeException("No mass storage device: $androidUSBDevice")
             }
@@ -173,8 +173,11 @@ class AndroidUSBDeviceProxy(
                 massStorageDevice?.init()
             } catch (exc: IOException) {
                 logger.exception(TAG, "initFilesystem()", exc)
-                if (exc.message?.contains(Regex("MAX_RECOVERY_ATTEMPTS|Could not claim interface")) == true) {
-                    throw IOException()
+                if (exc.message?.contains(Regex("MAX_.*_ATTEMPTS|Could not claim|deviceConnection")) == true) {
+                    massStorageDevice?.reset()
+                    massStorageDevice?.close()
+                    massStorageDevice = null
+                    throw IOException("Could not initialize filesystem")
                 }
             }
         } else {
@@ -188,7 +191,7 @@ class AndroidUSBDeviceProxy(
                 massStorageDevice?.init()
             } catch (exc: IOException) {
                 logger.exception(TAG, "initFilesystem()", exc)
-                if (exc.message?.contains(Regex("MAX_RECOVERY_ATTEMPTS|Could not claim interface")) == true) {
+                if (exc.message?.contains(Regex("MAX_.*_ATTEMPTS|Could not claim interface")) == true) {
                     throw IOException()
                 }
             }

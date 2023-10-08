@@ -9,8 +9,9 @@ import android.content.Context
 import android.os.Bundle
 import android.support.v4.media.MediaBrowserCompat.MediaItem
 import de.moleman1024.audiowagon.SharedPrefs
+import de.moleman1024.audiowagon.enums.ContentHierarchyType
 import de.moleman1024.audiowagon.filestorage.AudioFileStorage
-import de.moleman1024.audiowagon.medialibrary.AlbumStyleSetting
+import de.moleman1024.audiowagon.enums.AlbumStyleSetting
 import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
 import kotlinx.coroutines.ExperimentalCoroutinesApi

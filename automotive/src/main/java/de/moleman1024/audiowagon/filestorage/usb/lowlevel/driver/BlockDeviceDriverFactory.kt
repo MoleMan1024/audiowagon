@@ -27,12 +27,9 @@ import de.moleman1024.audiowagon.filestorage.usb.lowlevel.driver.scsi.ScsiBlockD
  */
 object BlockDeviceDriverFactory {
     /**
-     * This method creates a
-     * [BlockDeviceDriver] which is
-     * suitable for the underlying mass storage device.
+     * This method creates a [BlockDeviceDriver] which is suitable for the underlying mass storage device.
      *
-     * @param usbCommunication
-     * The underlying USB communication.
+     * @param usbCommunication The underlying USB communication.
      * @return A driver which can handle the USB mass storage device.
      */
     fun createBlockDevice(usbCommunication: USBCommunication, lun: Byte): BlockDeviceDriver {

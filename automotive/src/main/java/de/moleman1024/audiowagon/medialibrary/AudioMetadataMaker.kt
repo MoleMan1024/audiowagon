@@ -14,12 +14,12 @@ import android.support.v4.media.MediaMetadataCompat
 import de.moleman1024.audiowagon.AlbumArtContentProvider
 import de.moleman1024.audiowagon.DEFAULT_JPEG_QUALITY_PERCENTAGE
 import de.moleman1024.audiowagon.Util
-import de.moleman1024.audiowagon.filestorage.AudioFile
+import de.moleman1024.audiowagon.filestorage.data.AudioFile
 import de.moleman1024.audiowagon.filestorage.AudioFileStorage
 import de.moleman1024.audiowagon.filestorage.usb.USBAudioDataSource
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyElement
-import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyType
+import de.moleman1024.audiowagon.enums.ContentHierarchyType
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import java.io.ByteArrayOutputStream
 import java.io.IOException

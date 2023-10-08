@@ -12,6 +12,10 @@ import de.moleman1024.audiowagon.log.Logger
 import java.io.File
 import java.util.*
 
+/**
+ * An interface to allow access to files and media data as [MediaDataSource].
+ * Each [AudioFileStorageLocation] contains one [MediaDevice].
+ */
 interface MediaDevice {
    @Suppress("PropertyName")
    val TAG: String

@@ -56,11 +56,19 @@ class JavaAndroidUSBCommunication(
             }
             logger.debug(TAG, "initConnection()")
             deviceConnection = usbManager.openDevice(usbDevice) ?: throw IOException("deviceConnection is null")
+            if (usbDevice.configurationCount == 1) {
+                logger.debug(TAG, "setConfiguration()")
+                val config = usbDevice.getConfiguration(0)
+                deviceConnection!!.setConfiguration(config)
+            } else {
+                logger.warning(TAG, "Unexpected configuration count: ${usbDevice.configurationCount}")
+            }
             // we must use force=true
             val claim = deviceConnection!!.claimInterface(androidInterface, true)
             if (!claim) {
-                throw IOException("Could not claim interface")
+                throw IOException("Could not claim interface: $androidInterface")
             }
+            logger.debug(TAG, "Interface was claimed: $androidInterface")
         } finally {
             lock.unlock()
         }
@@ -77,47 +85,33 @@ class JavaAndroidUSBCommunication(
     }
 
     override fun bulkOutTransfer(src: ByteBuffer): Int {
-        try {
-            val result = deviceConnection!!.bulkTransfer(
-                androidOutEndpoint,
-                src.array(),
-                src.position(),
-                src.remaining(),
-                TRANSFER_TIMEOUT_MS
-            )
-            if (result == -1) {
-                throw IOException("Could not write to device")
-            }
-            src.position(src.position() + result)
-            return result
-        } catch (exc: IOException) {
-            if (exc.message?.contains("MAX_RECOVERY_ATTEMPTS") == true) {
-                reset()
-            }
-            throw exc
+        val result = deviceConnection!!.bulkTransfer(
+            androidOutEndpoint,
+            src.array(),
+            src.position(),
+            src.remaining(),
+            TRANSFER_TIMEOUT_MS
+        )
+        if (result == -1) {
+            throw IOException("Could not send data to OUT endpoint")
         }
+        src.position(src.position() + result)
+        return result
     }
 
     override fun bulkInTransfer(dest: ByteBuffer): Int {
-        try {
-            val result = deviceConnection!!.bulkTransfer(
-                androidInEndpoint,
-                dest.array(),
-                dest.position(),
-                dest.remaining(),
-                TRANSFER_TIMEOUT_MS
-            )
-            if (result == -1) {
-                throw IOException("Could not read from device")
-            }
-            dest.position(dest.position() + result)
-            return result
-        } catch (exc: IOException) {
-            if (exc.message?.contains("MAX_RECOVERY_ATTEMPTS") == true) {
-                reset()
-            }
-            throw exc
+        val result = deviceConnection!!.bulkTransfer(
+            androidInEndpoint,
+            dest.array(),
+            dest.position(),
+            dest.remaining(),
+            TRANSFER_TIMEOUT_MS
+        )
+        if (result == -1) {
+            throw IOException("Could not get data from IN endpoint")
         }
+        dest.position(dest.position() + result)
+        return result
     }
 
     override fun controlTransfer(
@@ -141,18 +135,8 @@ class JavaAndroidUSBCommunication(
 
     override fun reset() {
         logger.debug(TAG, "reset()")
-        val usbInterface = usbDevice.getInterface(usbInterface.interfaceIndex)
-        if (deviceConnection == null) {
-            return
-        }
-        if (!deviceConnection!!.releaseInterface(usbInterface)) {
-            logger.warning(TAG, "Failed to release interface")
-        }
         if (!resetUSBNative(deviceConnection!!.fileDescriptor)) {
             logger.warning(TAG, "Failed ioctl USBDEVFS_RESET")
-        }
-        if (!deviceConnection!!.claimInterface(usbInterface, true)) {
-            throw IOException("Could not re-claim interface")
         }
     }
 
@@ -167,8 +151,6 @@ class JavaAndroidUSBCommunication(
         }
     }
 
-    private external fun resetUSBNative(fd: Int): Boolean
-    private external fun clearHaltNative(fd: Int, endpoint: Int): Boolean
 
     override fun isClosed(): Boolean {
         lock.lock()
@@ -183,22 +165,28 @@ class JavaAndroidUSBCommunication(
         lock.lock()
         try {
             logger.debug(TAG, "close()")
-            closeUsbConnection()
+            closeUSBConnection()
             isClosed = true
         } finally {
             lock.unlock()
         }
     }
 
-    private fun closeUsbConnection() {
+    private fun closeUSBConnection() {
         if (deviceConnection == null) {
             return
         }
+        logger.debug(TAG, "Releasing interface: $androidInterface")
         val release = deviceConnection!!.releaseInterface(androidInterface)
         if (!release) {
-            logger.error(TAG, "Could not release interface")
+            logger.error(TAG, "Could not release interface: $androidInterface")
+        } else {
+            logger.debug(TAG, "Released interface: $androidInterface")
         }
         deviceConnection!!.close()
     }
+
+    private external fun resetUSBNative(fd: Int): Boolean
+    private external fun clearHaltNative(fd: Int, endpoint: Int): Boolean
 
 }

@@ -7,13 +7,14 @@ package de.moleman1024.audiowagon.repository
 
 import android.content.Context
 import androidx.room.RoomDatabase
-import de.moleman1024.audiowagon.filestorage.AudioFile
+import de.moleman1024.audiowagon.filestorage.data.AudioFile
 import de.moleman1024.audiowagon.filestorage.FileLike
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.ART_URI_PART
 import de.moleman1024.audiowagon.medialibrary.ART_URI_PART_ALBUM
 import de.moleman1024.audiowagon.medialibrary.ART_URI_PART_TRACK
 import de.moleman1024.audiowagon.medialibrary.AudioItem
+import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyID
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.DATABASE_ID_UNKNOWN
 import de.moleman1024.audiowagon.repository.entities.Album
@@ -32,6 +33,9 @@ private const val TAG = "AudioItemRepo"
 private val logger = Logger
 
 /**
+ * This class is responsible for creating and managing the Room SQLite database to store media metadata.
+ * It is accessed by [AudioItemLibrary].
+ *
  * See https://developer.android.com/training/data-storage/room
  */
 @ExperimentalCoroutinesApi

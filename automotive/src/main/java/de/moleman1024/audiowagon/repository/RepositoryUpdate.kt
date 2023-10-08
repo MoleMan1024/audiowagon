@@ -10,13 +10,13 @@ import android.content.res.Configuration
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.Util.Companion.getSortNameOrBlank
-import de.moleman1024.audiowagon.filestorage.AudioFile
-import de.moleman1024.audiowagon.filestorage.Directory
+import de.moleman1024.audiowagon.filestorage.data.AudioFile
+import de.moleman1024.audiowagon.filestorage.data.Directory
 import de.moleman1024.audiowagon.filestorage.FileLike
-import de.moleman1024.audiowagon.filestorage.GeneralFile
+import de.moleman1024.audiowagon.filestorage.data.GeneralFile
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.AudioItem
-import de.moleman1024.audiowagon.medialibrary.AudioItemType
+import de.moleman1024.audiowagon.enums.AudioItemType
 import de.moleman1024.audiowagon.medialibrary.AudioMetadataMaker
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.CONTENT_HIERARCHY_MAX_NUM_ITEMS
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.DATABASE_ID_UNKNOWN

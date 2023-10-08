@@ -8,9 +8,11 @@ package de.moleman1024.audiowagon.filestorage.asset
 import android.media.MediaDataSource
 import android.net.Uri
 import de.moleman1024.audiowagon.Util
+import de.moleman1024.audiowagon.enums.IndexingStatus
 import de.moleman1024.audiowagon.filestorage.*
+import de.moleman1024.audiowagon.filestorage.data.AudioFile
+import de.moleman1024.audiowagon.filestorage.data.Directory
 import de.moleman1024.audiowagon.log.Logger
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import java.io.InputStream
 import java.util.*

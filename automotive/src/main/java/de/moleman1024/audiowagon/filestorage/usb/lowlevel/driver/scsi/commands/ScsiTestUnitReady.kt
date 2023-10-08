@@ -25,7 +25,6 @@ import java.nio.ByteBuffer
  * all commands successfully. Thus this command issues only a warning in the
  * [com.github.mjdev.libaums.driver.scsi.ScsiBlockDevice].
  *
- *
  * This command has no data phase, the result is determined by
  * [#getbCswStatus()][com.github.mjdev.libaums.driver.scsi.commands.CommandStatusWrapper].
  *
@@ -39,7 +38,6 @@ class ScsiTestUnitReady(lun: Byte) : CommandBlockWrapper(0, Direction.NONE, lun,
     }
 
     companion object {
-
         private const val LENGTH: Byte = 0x6
         private const val OPCODE: Byte = 0x0
     }

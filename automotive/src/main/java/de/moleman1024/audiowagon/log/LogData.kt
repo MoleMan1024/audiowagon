@@ -1,7 +1,9 @@
 package de.moleman1024.audiowagon.log
 
+import de.moleman1024.audiowagon.enums.LogLevel
+
 data class LogData(
-    val level: LoggerInterface.LogLevel,
+    val level: LogLevel,
     val tag: String? = null,
     var msg: String,
     val stackTrace: String? = null,
