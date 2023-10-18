@@ -13,6 +13,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project loosely follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.5.7] - 2023-10-17
+
+### Fixed
+
+- fix a small issue with notification channels that is not visible to end users but spams Crashlytics issue log
+
 ## [2.5.6] - 2023-10-07
 
 ### Fixed

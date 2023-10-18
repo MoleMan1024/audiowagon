@@ -441,7 +441,7 @@ class USBDeviceConnections(
             context.unregisterReceiver(usbBroadcastReceiver)
             isBroadcastRecvRegistered = false
         } catch (exc: IllegalArgumentException) {
-            logger.exceptionLogcatOnly(TAG, exc.message.toString(), exc)
+            logger.warning(TAG, exc.message.toString())
         }
     }
 

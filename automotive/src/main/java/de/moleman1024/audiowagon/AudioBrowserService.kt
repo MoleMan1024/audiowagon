@@ -864,7 +864,11 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     override fun onDestroy() {
         logger.debug(TAG, "onDestroy()")
         shutdownAndDestroy()
-        unregisterReceiver(powerEventReceiver)
+        try {
+            unregisterReceiver(powerEventReceiver)
+        } catch (exc: IllegalArgumentException) {
+            logger.warning(TAG, exc.message.toString())
+        }
         super.onDestroy()
     }
 

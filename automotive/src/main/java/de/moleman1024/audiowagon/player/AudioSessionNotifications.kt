@@ -220,7 +220,12 @@ class AudioSessionNotifications(
 
     private fun unregisterNotifRecv() {
         logger.debug(TAG, "unregisterNotifRecv()")
-        context.unregisterReceiver(broadcastMsgRecv)
+        try {
+            context.unregisterReceiver(broadcastMsgRecv)
+        } catch (exc: IllegalArgumentException) {
+            // thrown when receiver is not registered
+            logger.warning(TAG, exc.message.toString())
+        }
     }
 
     fun removeNotification() {
