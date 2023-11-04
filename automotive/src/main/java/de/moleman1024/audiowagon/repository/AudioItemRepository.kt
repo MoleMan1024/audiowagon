@@ -394,8 +394,8 @@ class AudioItemRepository(
         return repoSearch.searchTrackByAlbum(track, album)
     }
 
-    suspend fun searchAlbumByArtist(album: String, artist: String): List<AudioItem> {
-        return repoSearch.searchAlbumByArtist(album, artist)
+    suspend fun searchTracksForAlbumAndArtist(album: String, artist: String): List<AudioItem> {
+        return repoSearch.searchTracksForAlbumAndArtist(album, artist)
     }
 
     suspend fun getDatabase(): AudioItemDatabase? {

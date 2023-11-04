@@ -199,6 +199,18 @@ interface TrackDAO {
     )
     fun searchWithAlbum(track: String, album: String): List<Track>
 
+    @Query(
+        "SELECT DISTINCT track.* FROM track " +
+                "JOIN artist ON (track.parentArtistId = artist.artistId OR track.parentAlbumArtistId = artist.artistId) " +
+                "JOIN artistfts ON artist.name = artistfts.name " +
+                "JOIN album ON track.parentAlbumId = album.albumId " +
+                "JOIN albumfts ON album.name = albumfts.name " +
+                "WHERE artistfts MATCH :artist AND albumfts MATCH :album " +
+                "ORDER BY discNum ASC, trackNum ASC, COALESCE(NULLIF(track.sortName,''), track.name) COLLATE NOCASE ASC " +
+                "LIMIT $MAX_DATABASE_SEARCH_ROWS"
+    )
+    fun searchTracksByAlbumAndArtist(album: String, artist: String): List<Track>
+
     @Delete
     fun delete(track: Track)
 

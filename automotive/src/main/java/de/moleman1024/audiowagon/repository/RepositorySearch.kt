@@ -82,13 +82,13 @@ class RepositorySearch(private val repo: AudioItemRepository) {
         return audioItems
     }
 
-    suspend fun searchAlbumByArtist(album: String, artist: String): List<AudioItem> {
+    suspend fun searchTracksForAlbumAndArtist(album: String, artist: String): List<AudioItem> {
         val audioItems = mutableListOf<AudioItem>()
-        val albumsByArtist = repo.getDatabase()?.albumDAO()?.searchWithArtist(
+        val tracksByAlbumAndArtist = repo.getDatabase()?.trackDAO()?.searchTracksByAlbumAndArtist(
             sanitizeSearchQuery(album), sanitizeSearchQuery(artist)
         )
-        albumsByArtist?.forEach {
-            audioItems += repo.createAudioItemForAlbum(it, it.parentArtistId)
+        tracksByAlbumAndArtist?.forEach {
+            audioItems += repo.createAudioItemForTrack(it, it.parentArtistId)
         }
         return audioItems
     }

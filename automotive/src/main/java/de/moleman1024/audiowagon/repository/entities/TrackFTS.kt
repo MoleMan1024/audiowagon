@@ -7,9 +7,13 @@ package de.moleman1024.audiowagon.repository.entities
 
 import androidx.room.Entity
 import androidx.room.Fts4
+import androidx.room.FtsOptions
 
 @Entity
-@Fts4(contentEntity = Track::class)
+@Fts4(
+    contentEntity = Track::class,
+    tokenizer = FtsOptions.TOKENIZER_UNICODE61
+)
 data class TrackFTS(
     val name: String
 )

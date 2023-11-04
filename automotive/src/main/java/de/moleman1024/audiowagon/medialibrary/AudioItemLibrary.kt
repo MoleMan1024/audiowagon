@@ -699,13 +699,13 @@ class AudioItemLibrary(
         return searchResults
     }
 
-    suspend fun searchAlbumByArtist(album: String, artist: String): MutableList<AudioItem> {
+    suspend fun searchTracksForAlbumAndArtist(album: String, artist: String): MutableList<AudioItem> {
         val searchResults: MutableList<AudioItem> = mutableListOf()
         if (album.isBlank() || artist.isBlank()) {
             return searchResults
         }
         val repo = getPrimaryRepository() ?: return searchResults
-        searchResults += repo.searchAlbumByArtist(album, artist)
+        searchResults += repo.searchTracksForAlbumAndArtist(album, artist)
         return searchResults
     }
 
@@ -748,9 +748,10 @@ class AudioItemLibrary(
         if (audioItems.isNotEmpty()) {
             return audioItems
         } else {
-            logger.debug(TAG, "No results for primary query, try fallback query: $fallbackQuery")
+            logger.debug(TAG, "No results for primary query: $query")
             fallbackQuery?.let {
                 if (it.isNotBlank() && it != query) {
+                    logger.debug(TAG, "Trying fallback query: $fallbackQuery")
                     audioItems = searchUnspecific(it)
                 }
             }

@@ -14,11 +14,12 @@ import de.moleman1024.audiowagon.repository.entities.*
         TrackFTS::class, PathFTS::class, AlbumGroup::class, ArtistGroup::class, TrackGroup::class,
         Status::class],
     exportSchema = true,
-    version = 2,
+    version = 3,
+    autoMigrations = [AutoMigration(from = 2, to = 3)]
 )
 abstract class AudioItemDatabase : RoomDatabase() {
-    abstract fun albumDAO() : AlbumDAO
-    abstract fun artistDAO() : ArtistDAO
+    abstract fun albumDAO(): AlbumDAO
+    abstract fun artistDAO(): ArtistDAO
     abstract fun trackDAO(): TrackDAO
     abstract fun pathDAO(): PathDAO
     abstract fun statusDAO(): StatusDAO

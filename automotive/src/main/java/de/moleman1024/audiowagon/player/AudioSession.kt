@@ -323,7 +323,7 @@ class AudioSession(
             logger.debug(TAG, "Content hierarchy ID to change to: $contentHierarchyIDStr")
             logger.setFlushToUSBFlag()
             observePlaybackQueueSingletonCoroutine.launch {
-                if (contentHierarchyIDStr != null && contentHierarchyIDStr.isNotBlank()) {
+                if (!contentHierarchyIDStr.isNullOrBlank()) {
                     val contentHierarchyID = ContentHierarchyElement.deserialize(contentHierarchyIDStr)
                     var audioItem: AudioItem? = null
                     var audioFile: AudioFile? = null
@@ -625,24 +625,41 @@ class AudioSession(
         // "track on album by artist" is not supported
         when (change.queryFocus) {
             AudioItemType.TRACK -> {
-                if (change.trackToPlay.isNotBlank() && change.artistToPlay.isNotBlank()) {
-                    searchQueryForGUI = "${change.trackToPlay} + ${change.artistToPlay}"
-                    audioItems = audioItemLibrary.searchTrackByArtist(change.trackToPlay, change.artistToPlay)
-                } else if (change.trackToPlay.isNotBlank() && change.albumToPlay.isNotBlank()) {
-                    searchQueryForGUI = "${change.trackToPlay} + ${change.albumToPlay}"
-                    audioItems = audioItemLibrary.searchTrackByAlbum(change.trackToPlay, change.albumToPlay)
-                } else if (change.trackToPlay.isNotBlank()) {
-                    searchQueryForGUI = change.trackToPlay
-                    audioItems = audioItemLibrary.searchTracks(change.trackToPlay)
+                var searchTrackOnly = false
+                if (change.trackToPlay.isNotBlank()) {
+                    if (change.artistToPlay.isNotBlank()) {
+                        searchQueryForGUI = "${change.trackToPlay} + ${change.artistToPlay}"
+                        audioItems = audioItemLibrary.searchTrackByArtist(change.trackToPlay, change.artistToPlay)
+                    } else if (change.albumToPlay.isNotBlank()) {
+                        searchQueryForGUI = "${change.trackToPlay} + ${change.albumToPlay}"
+                        audioItems = audioItemLibrary.searchTrackByAlbum(change.trackToPlay, change.albumToPlay)
+                    } else {
+                        searchTrackOnly = true
+                    }
+                    // If we find no audio items for two fields combined above, one of them might have been wrong
+                    // based on Google Assistant data, try again with just the track
+                    if (searchTrackOnly || audioItems.isEmpty()) {
+                        searchQueryForGUI = change.trackToPlay
+                        audioItems = audioItemLibrary.searchTracks(change.trackToPlay)
+                    }
                 }
             }
             AudioItemType.ALBUM -> {
-                if (change.albumToPlay.isNotBlank() && change.artistToPlay.isNotBlank()) {
-                    searchQueryForGUI = "${change.albumToPlay} + ${change.artistToPlay}"
-                    audioItems = audioItemLibrary.searchAlbumByArtist(change.albumToPlay, change.artistToPlay)
-                } else if (change.albumToPlay.isNotBlank()) {
-                    searchQueryForGUI = change.albumToPlay
-                    audioItems = audioItemLibrary.searchTracksForAlbum(change.albumToPlay)
+                if (change.albumToPlay.isNotBlank()) {
+                    var searchAlbumOnly = false
+                    if (change.artistToPlay.isNotBlank()) {
+                        searchQueryForGUI = "${change.albumToPlay} + ${change.artistToPlay}"
+                        audioItems =
+                            audioItemLibrary.searchTracksForAlbumAndArtist(change.albumToPlay, change.artistToPlay)
+                    } else {
+                        searchAlbumOnly = true
+                    }
+                    // If we find no audio items for two fields combined above, one of them might have been wrong
+                    // based on Google Assistant data, try again with just the album
+                    if (searchAlbumOnly || audioItems.isEmpty()) {
+                        searchQueryForGUI = change.albumToPlay
+                        audioItems = audioItemLibrary.searchTracksForAlbum(change.albumToPlay)
+                    }
                 }
             }
             AudioItemType.ARTIST -> {
@@ -676,7 +693,9 @@ class AudioSession(
             } else {
                 logger.debug(TAG, "No results for voice search: $change")
                 // There is no good PlaybackStateCompat error code that can indicate to Google Assistant that there are
-                // no results for the given query
+                // no results for the given query. Google says to use
+                // https://developer.android.com/media/implement/assistant#errors
+                // NOT_AVAILABLE_IN_REGION however the TTS prompt is not fitting for this situation
                 val nothingFoundText = context.getString(R.string.error_no_results, searchQueryForGUI)
                 val noResultsPlaybackState = PlaybackStateCompat.Builder(playbackState).apply {
                     setErrorMessage(PlaybackStateCompat.ERROR_CODE_UNKNOWN_ERROR, nothingFoundText)

@@ -29,7 +29,7 @@ to use it.
 ![Not supported popup](/img/not_supported.jpg)
 
 This popup is triggered by *Volvo/Polestar* and is invalid, it always comes and can be ignored when using *AudioWagon*.
-You can temporarily get rid of it by doing the steps I mentioned in [issue #73](https://github.com/MoleMan1024/audiowagon/issues/73#issuecomment-1172879863) 
+You can temporarily get rid of it by doing the steps I mentioned in [issue #73](https://github.com/MoleMan1024/audiowagon/issues/73#issuecomment-1172879863)
 but it will come back after a headunit restart. Please file a bug report at *Volvo/Polestar* to get this fixed.
 
 As far as I know, this issue does not appear when using the app on *Renault* and *GMC* cars.
@@ -293,6 +293,7 @@ to protect the environment (reforestation, solar power, right-to-repair, local p
 - Thank you Bill for donating to a local animal shelter!
 - Thank you Vasimo for donating to Vancouver Food Runners!
 - Thank you Trevor for donating to Northern India Flood Relief!
+- Thank you WPK for donating to CAIS, an organization that helps the homeless in Portugal!
 
 
 ### Why don't you just use a streaming app? USB is so old-fashioned!
@@ -306,7 +307,7 @@ Many people don't find streaming apps appealing for some of these reasons:
   physical/downloaded music usually have a large library of music they have compiled over multiple decades from various
   sources and have no need for streaming
 - streaming platforms require a *monthly subscription*. If not subscribed, you will get ads. With physical/downloaded
-  music, you only pay once and usually keep the music for your lifetime. Also in case the streaming provider ever 
+  music, you only pay once and usually keep the music for your lifetime. Also in case the streaming provider ever
   *goes out of business*, you have nothing. With physical/downloaded music, you own the music data
 - streaming platforms might limit the *audio quality* of the music you are listening to (and some artists refused to use
   certain streaming providers for this reason). With downloaded music files you are only limited by the quality of

@@ -178,4 +178,60 @@ class PlaybackTest {
         Assert.assertEquals(numTracks, serviceFixture.playbackQueue?.size)
     }
 
+    /**
+     * https://github.com/MoleMan1024/audiowagon/issues/131
+     */
+    @Test
+    fun onPlayFromSearch_voiceSearchForAlbumWithExtras_playsAlbum() {
+        val albumName = "Afraid of Heights"
+        val artistName = "Billy Talent"
+        val numTracks = 10
+        for (index in 0 until numTracks) {
+            createMP3().apply {
+                id3v2Tag.artist = artistName
+                id3v2Tag.albumArtist = id3v2Tag.artist
+                id3v2Tag.album = albumName
+                id3v2Tag.title = "Track${index}"
+            }.also { storeMP3(it, "$MUSIC_ROOT/${albumName}/track${index}.mp3")}
+        }
+        attachUSBDevice(mockUSBDevice)
+        TestUtils.waitForIndexingCompleted(audioBrowserService)
+        Thread.sleep(1000)
+        serviceFixture.transportControls?.stop()
+        val queryExtras = Bundle().apply {
+            putString("android.intent.extra.focus", "vnd.android.cursor.item/album")
+            putString("android.intent.extra.artist", artistName)
+            putString("android.intent.extra.album", albumName)
+        }
+        serviceFixture.transportControls?.playFromSearch(albumName.lowercase(), queryExtras)
+        TestUtils.waitForAudioPlayerState(PlaybackStateCompat.STATE_PLAYING, audioBrowserService)
+        Assert.assertEquals(numTracks, serviceFixture.playbackQueue?.size)
+    }
+
+    @Test
+    fun onPlayFromSearch_voiceSearchForTrackWithExtrasMisrecognition_playsTrack() {
+        val numTracks = 1
+        createMP3().apply {
+            id3v2Tag.artist = "Billy Joel"
+            id3v2Tag.albumArtist = id3v2Tag.artist
+            id3v2Tag.album = "Storm Front"
+            id3v2Tag.title = "We Didn't Start The Fire"
+        }.also { storeMP3(it, "$MUSIC_ROOT/track.mp3")}
+        attachUSBDevice(mockUSBDevice)
+        TestUtils.waitForIndexingCompleted(audioBrowserService)
+        Thread.sleep(1000)
+        serviceFixture.transportControls?.stop()
+        val queryExtras = Bundle().apply {
+            putString("android.intent.extra.focus", "vnd.android.cursor.item/audio")
+            putString("android.intent.extra.artist", "Billy Joel")
+            putString("android.intent.extra.album", "Greatest Hits, Volume III: 1986-1997")
+            // note the typographical apostrophe not matching the IDv3 tag above
+            putString("android.intent.extra.title", "We Didn’t Start the Fire")
+        }
+        // misrecognition of short word "the" in query
+        serviceFixture.transportControls?.playFromSearch("We Didn't Start a Fire", queryExtras)
+        TestUtils.waitForAudioPlayerState(PlaybackStateCompat.STATE_PLAYING, audioBrowserService)
+        Assert.assertEquals(numTracks, serviceFixture.playbackQueue?.size)
+    }
+
 }

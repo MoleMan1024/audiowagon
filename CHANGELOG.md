@@ -12,6 +12,19 @@ Google's review process which can take a couple of days.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project loosely follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.9] - 2023-11-04
+
+### Fixed
+
+- depending on the data received from Google Assistant a voice search for an album could not work and the TTS would say
+  "Sorry, something went wrong". This has been fixed [#131](https://github.com/MoleMan1024/audiowagon/issues/131)
+
+### Changed
+
+- the database tokenizer was updated to make it easier to search by typing or by voice. Previously entries such as "We
+  Didn’t Start the Fire" would not be found if searching for "We Didn't Start the Fire" (note the different
+  apostrophe!). This was especially problematic in voice searches, where such characters are not speakable. You might
+  need to re-index metadata to see the changed behaviour.
 
 ## [2.5.7] - 2023-10-17
 
