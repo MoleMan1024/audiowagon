@@ -28,9 +28,8 @@ to use it.
 
 ![Not supported popup](/img/not_supported.jpg)
 
-This popup is triggered by *Volvo/Polestar* and is invalid, it always comes and can be ignored when using *AudioWagon*.
-You can temporarily get rid of it by doing the steps I mentioned in [issue #73](https://github.com/MoleMan1024/audiowagon/issues/73#issuecomment-1172879863)
-but it will come back after a headunit restart. Please file a bug report at *Volvo/Polestar* to get this fixed.
+**UPDATE 2023-12-11:** It looks like *Volvo/Polestar* have fixed this invalid popup, it no longer appears with car
+version *P2.13.1*.
 
 As far as I know, this issue does not appear when using the app on *Renault* and *GMC* cars.
 
