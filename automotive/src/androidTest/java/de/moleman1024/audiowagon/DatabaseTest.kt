@@ -181,4 +181,31 @@ class DatabaseTest {
         Assert.assertEquals(numAlbumArtists - 400 + 1, secondArtistGroup?.size)
         Assert.assertEquals(lastAlbumArtist, secondArtistGroup?.get(secondArtistGroup.size-1)?.description?.title)
     }
+
+    /**
+     * https://github.com/MoleMan1024/audiowagon/issues/137
+     */
+    @Test
+    fun rootAlbums_tracksHaveArtistAndTitleMissingAlbum_unknownAlbumContainsTracks() {
+        for (i in 0 until 2) {
+            createMP3().apply {
+                id3v2Tag.artist = "ARTIST_$i"
+                id3v2Tag.title = "TITLE_$i"
+                id3v2Tag.album = ""
+            }.also {
+                storeMP3(it, "$MUSIC_ROOT/ARTIST_$i/unknown/TITLE_$i.mp3")
+            }
+        }
+        attachUSBDevice(mockUSBDevice)
+        TestUtils.waitForIndexingCompleted(audioBrowserService)
+        val traversal = MediaBrowserTraversal(browser)
+        val albumsRoot = "{\"type\":\"ROOT_ALBUMS\"}"
+        traversal.start(albumsRoot)
+        Assert.assertEquals(1, traversal.hierarchy[albumsRoot]?.size)
+        Assert.assertEquals("Unknown album", traversal.hierarchy[albumsRoot]?.get(0)?.description?.title)
+        Assert.assertEquals(null, traversal.hierarchy[albumsRoot]?.get(0)?.description?.subtitle)
+        val unknownAlbumContents = traversal.hierarchy["{\"type\":\"UNKNOWN_ALBUM\",$STORAGE_ID,\"alb\":-1}"]
+        // "play all" + 2 tracks
+        Assert.assertEquals(3, unknownAlbumContents?.size)
+    }
 }

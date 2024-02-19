@@ -25,7 +25,7 @@ import de.moleman1024.audiowagon.broadcast.ACTION_NEXT
 import de.moleman1024.audiowagon.broadcast.ACTION_PAUSE
 import de.moleman1024.audiowagon.broadcast.ACTION_PLAY
 import de.moleman1024.audiowagon.broadcast.ACTION_PREV
-import de.moleman1024.audiowagon.broadcast.BroadcastMessageReceiver
+import de.moleman1024.audiowagon.broadcast.MediaBroadcastReceiver
 import de.moleman1024.audiowagon.enums.SingletonCoroutineBehaviour
 import de.moleman1024.audiowagon.exceptions.MissingNotifChannelException
 import de.moleman1024.audiowagon.log.CrashReporting
@@ -59,14 +59,13 @@ class AudioSessionNotifications(
     private lateinit var isPlayingNotificationBuilder: NotificationCompat.Builder
     private lateinit var isPausedNotificationBuilder: NotificationCompat.Builder
     private var isShowingNotification: AtomicBoolean = AtomicBoolean()
-    private val broadcastMsgRecv: BroadcastMessageReceiver = BroadcastMessageReceiver(
+    private val broadcastMsgRecv: MediaBroadcastReceiver = MediaBroadcastReceiver(
         audioPlayer, scope, dispatcher, crashReporting
     )
     private var isChannelCreated: AtomicBoolean = AtomicBoolean()
     private val singleThreadDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
     private val notificationSingletonCoroutine =
         SingletonCoroutine("AudioSessNotif", singleThreadDispatcher, scope.coroutineContext, crashReporting)
-
 
     fun init(session: MediaSessionCompat) {
         notificationSingletonCoroutine.behaviour = SingletonCoroutineBehaviour.PREFER_FINISH
@@ -215,7 +214,11 @@ class AudioSessionNotifications(
         filter.addAction(ACTION_PLAY)
         filter.addAction(ACTION_PAUSE)
         filter.addAction(ACTION_NEXT)
-        context.registerReceiver(broadcastMsgRecv, filter)
+        try {
+            context.registerReceiver(broadcastMsgRecv, filter)
+        } catch (exc: IllegalArgumentException) {
+            logger.exception(TAG, "Receiver already registered", exc)
+        }
     }
 
     private fun unregisterNotifRecv() {

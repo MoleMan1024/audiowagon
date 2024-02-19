@@ -49,7 +49,7 @@ with a white outline). The other USB ports are for *charging your phone only*.
 
 ![USB port](/img/port.jpg)
 
-If you still have problems, try to to [reboot the center
+If you still have problems, try to [reboot the center
 display](https://www.polestar.com/ie/polestar-support/how-to-videos/polestar-2/how-to-reboot-the-polestar-2-centre-display/).
 
 
@@ -69,8 +69,8 @@ the settings screen using the option "Read metadata":
 
   When connecting the same USB drive again, the app will again go through all directories and all files but will check
   the file modification date. If the file has been modified since it was last indexed, it will re-read the metadata of
-  that file. If not, it will take the information from the database. Thus this process should be much quicker than the
-  first time. However it can still take multiple seconds with large music libraries.
+  that file. If not, it will take the information from the database. Therefore this process should be much quicker than
+  the first time. However it can still take multiple seconds with large music libraries.
 
   This setting is **recommended when you don't have a lot of audio files on your USB drive**.
 
@@ -155,16 +155,16 @@ If the *title* tag is empty, the file name will be used instead.
 
 ### After adding more files to my USB drive the browse view looks strange
 
-When you add more than 400 tracks/albums/artists they will be shown using *groups*, it looks like this:
+When you add more than 400 tracks/albums/artists they will be shown using *groups*, for albums it looks like this:
 
 ![album groups](/img/album_groups.jpg)
 
 This is necessary because Android cannot deal with lists which are extremely long. Also it will be annoying to
 scroll through such long lists.
 
-Each group contains 400 entries and is based on the names of the
-tracks/albums/artists inside. Tapping on one entry will show those 400 tracks/albums/artists in a new list (in this
-example all albums "One" til "Sounds of Summer", sorted alphabetically):
+Each group contains 400 entries and is based on the names of the tracks/albums/artists/files inside. Tapping on one
+entry will show those 400 tracks/albums/artists in a new list (in this example all albums "One" til "Sounds of Summer",
+sorted alphabetically):
 
 ![album groups open](/img/album_group_open.jpg)
 

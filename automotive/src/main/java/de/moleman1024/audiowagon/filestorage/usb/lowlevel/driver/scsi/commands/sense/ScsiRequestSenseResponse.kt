@@ -137,7 +137,9 @@ class ScsiRequestSenseResponse private constructor() {
      */
     fun checkResponseForError() {
         when (senseKey.toInt()) {
-            NO_SENSE, COMPLETED, RECOVERED_ERROR -> {} // success, nothing to do
+            NO_SENSE, COMPLETED, RECOVERED_ERROR -> {
+                // success, nothing to do
+            }
             NOT_READY -> handleNotReady()
             MEDIUM_ERROR -> handleMediumError()
             HARDWARE_ERROR -> throw HardwareError(this)

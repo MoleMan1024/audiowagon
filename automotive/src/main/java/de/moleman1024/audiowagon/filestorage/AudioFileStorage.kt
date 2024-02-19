@@ -165,7 +165,7 @@ open class AudioFileStorage(
             logger.debug(TAG, "Created storage location: $storageLocation")
             runBlocking(dispatcher) {
                 audioFileStorageLocationMutex.withLock {
-                    if (audioFileStorageLocations.size > 0) {
+                    if (audioFileStorageLocations.isNotEmpty()) {
                         logger.warning(TAG, "Already a device in storage, clearing: ${audioFileStorageLocations}}")
                         audioFileStorageLocations.clear()
                     }

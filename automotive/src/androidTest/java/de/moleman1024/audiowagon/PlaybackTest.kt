@@ -116,14 +116,15 @@ class PlaybackTest {
     @Test
     fun shuffleNewPlaybackQueue_default_firstTrackIsShuffled() {
         serviceFixture.transportControls?.sendCustomAction("de.moleman1024.audiowagon.ACTION_SHUFFLE_OFF", null)
-        for (index in 0..20) {
+        for (index in 0 until 20) {
             createMP3().apply {
                 id3v2Tag.title = "Track${index}"
+                id3v2Tag.album = "Album"
             }.also { storeMP3(it, "$MUSIC_ROOT/folder/track${index}.mp3") }
         }
         attachUSBDevice(mockUSBDevice)
         TestUtils.waitForIndexingCompleted(audioBrowserService)
-        // TODO: improve, wait for persistance
+        // TODO: improve and get rid of unreliable sleeps, wait for persistance
         Thread.sleep(1000)
         serviceFixture.transportControls?.stop()
         Thread.sleep(500)
@@ -134,7 +135,7 @@ class PlaybackTest {
         // with shuffle on when playing back the same album multiple times we should get a random order also for
         // first item in playback queue
         var differentItemFound = false
-        for (tries in 0..10) {
+        for (tries in 0 until 10) {
             serviceFixture.transportControls?.playFromMediaId(playAlbumID, null)
             TestUtils.waitForAudioPlayerState(PlaybackStateCompat.STATE_PLAYING, audioBrowserService)
             serviceFixture.transportControls?.pause()

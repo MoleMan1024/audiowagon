@@ -28,7 +28,11 @@ const val SHARED_PREF_CRASH_REPORTING = "crashReporting"
 const val SHARED_PREF_VIEW_TAB_PREFIX = "viewTab"
 val SHARED_PREF_EQUALIZER_PRESET_DEFAULT = EqualizerPreset.LESS_BASS.name
 
+private const val TAG = "SharedPrefs"
+
 open class SharedPrefs {
+    val logger = Logger
+
     companion object {
         private val sharedPrefsStorage = SharedPrefsStorage()
 
@@ -38,7 +42,13 @@ open class SharedPrefs {
     }
 
     fun isLegalDisclaimerAgreed(context: Context): Boolean {
-        return isLegalDisclaimerAgreed(getDefaultSharedPreferences(context))
+        return try {
+            isLegalDisclaimerAgreed(getDefaultSharedPreferences(context))
+        } catch (exc: IllegalStateException) {
+            // this might happen when user has not yet unlocked the device
+            logger.exception(TAG, exc.message.toString(), exc)
+            false
+        }
     }
 
     fun isLegalDisclaimerAgreed(sharedPreferences: SharedPreferences?): Boolean {
@@ -57,7 +67,13 @@ open class SharedPrefs {
     }
 
     fun getEQPreset(context: Context): String {
-        return getEQPreset(getDefaultSharedPreferences(context))
+        return try {
+            getEQPreset(getDefaultSharedPreferences(context))
+        } catch (exc: IllegalStateException) {
+            // this might happen when user has not yet unlocked the device
+            logger.exception(TAG, exc.message.toString(), exc)
+            SHARED_PREF_EQUALIZER_PRESET_DEFAULT
+        }
     }
 
     fun getEQPreset(sharedPreferences: SharedPreferences?): String {
@@ -66,7 +82,13 @@ open class SharedPrefs {
     }
 
     fun isEQEnabled(context: Context): Boolean {
-        return isEQEnabled(getDefaultSharedPreferences(context))
+        return try {
+            return isEQEnabled(getDefaultSharedPreferences(context))
+        } catch (exc: IllegalStateException) {
+            // this might happen when user has not yet unlocked the device
+            logger.exception(TAG, exc.message.toString(), exc)
+            false
+        }
     }
 
     fun isEQEnabled(sharedPreferences: SharedPreferences?): Boolean {
@@ -77,12 +99,18 @@ open class SharedPrefs {
         setEQEnabled(getDefaultSharedPreferences(context), isEnabled)
     }
 
-    fun setEQEnabled(sharedPreferences: SharedPreferences?, isEnabled: Boolean) {
+    private fun setEQEnabled(sharedPreferences: SharedPreferences?, isEnabled: Boolean) {
         sharedPreferences?.edit()?.putBoolean(SHARED_PREF_ENABLE_EQUALIZER, isEnabled)?.apply()
     }
 
     fun isReplayGainEnabled(context: Context): Boolean {
-        return isReplayGainEnabled(getDefaultSharedPreferences(context))
+        return try {
+            isReplayGainEnabled(getDefaultSharedPreferences(context))
+        } catch (exc: IllegalStateException) {
+            // this might happen when user has not yet unlocked the device
+            logger.exception(TAG, exc.message.toString(), exc)
+            false
+        }
     }
 
     fun isReplayGainEnabled(sharedPreferences: SharedPreferences?): Boolean {
@@ -93,12 +121,18 @@ open class SharedPrefs {
         setReplayGainEnabled(getDefaultSharedPreferences(context), isEnabled)
     }
 
-    fun setReplayGainEnabled(sharedPreferences: SharedPreferences?, isEnabled: Boolean) {
+    private fun setReplayGainEnabled(sharedPreferences: SharedPreferences?, isEnabled: Boolean) {
         sharedPreferences?.edit()?.putBoolean(SHARED_PREF_ENABLE_REPLAYGAIN, isEnabled)?.apply()
     }
 
-    fun getMetadataReadSetting(context: Context): String {
-        return getMetadataReadSetting(getDefaultSharedPreferences(context))
+    private fun getMetadataReadSetting(context: Context): String {
+        return try {
+            getMetadataReadSetting(getDefaultSharedPreferences(context))
+        } catch (exc: IllegalStateException) {
+            // this might happen when user has not yet unlocked the device
+            logger.exception(TAG, exc.message.toString(), exc)
+            MetadataReadSetting.WHEN_USB_CONNECTED.name
+        }
     }
 
     fun getMetadataReadSetting(sharedPreferences: SharedPreferences?): String {
@@ -119,21 +153,33 @@ open class SharedPrefs {
     }
 
     fun getAudioFocusSetting(context: Context): String {
-        return getAudioFocusSetting(getDefaultSharedPreferences(context))
+        return try {
+            getAudioFocusSetting(getDefaultSharedPreferences(context))
+        } catch (exc: IllegalStateException) {
+            // this might happen when user has not yet unlocked the device
+            logger.exception(TAG, exc.message.toString(), exc)
+            AudioFocusSetting.PAUSE.name
+        }
     }
 
     fun getAudioFocusSetting(sharedPreferences: SharedPreferences?): String {
-        return sharedPreferences?.getString(SHARED_PREF_AUDIOFOCUS, AudioFocusSetting.PAUSE.name) ?:
-        AudioFocusSetting.PAUSE.name
+        return sharedPreferences?.getString(SHARED_PREF_AUDIOFOCUS, AudioFocusSetting.PAUSE.name)
+            ?: AudioFocusSetting.PAUSE.name
     }
 
     open fun getAlbumStyleSetting(context: Context): String {
-        return getAlbumStyleSetting(getDefaultSharedPreferences(context))
+        return try {
+            getAlbumStyleSetting(getDefaultSharedPreferences(context))
+        } catch (exc: IllegalStateException) {
+            // this might happen when user has not yet unlocked the device
+            logger.exception(TAG, exc.message.toString(), exc)
+            return AlbumStyleSetting.GRID.name
+        }
     }
 
     fun getAlbumStyleSetting(sharedPreferences: SharedPreferences?): String {
-        return sharedPreferences?.getString(SHARED_PREF_ALBUM_STYLE, AlbumStyleSetting.GRID.name) ?:
-        AlbumStyleSetting.GRID.name
+        return sharedPreferences?.getString(SHARED_PREF_ALBUM_STYLE, AlbumStyleSetting.GRID.name)
+            ?: AlbumStyleSetting.GRID.name
     }
 
     fun getAlbumStyleSettingEnum(context: Context, logger: Logger, tag: String): AlbumStyleSetting {
@@ -148,30 +194,45 @@ open class SharedPrefs {
     }
 
     private fun getViewTabSetting(tabNum: Int, context: Context): String {
-        return getViewTabSetting(tabNum, getDefaultSharedPreferences(context))
+        return try {
+            getViewTabSetting(tabNum, getDefaultSharedPreferences(context))
+        } catch (exc: IllegalStateException) {
+            // this might happen when user has not yet unlocked the device
+            logger.exception(TAG, exc.message.toString(), exc)
+            getViewTabSettingDefault(tabNum)
+        }
     }
 
     // https://github.com/MoleMan1024/audiowagon/issues/124
     fun getViewTabSetting(tabNum: Int, sharedPreferences: SharedPreferences?): String {
+        val defaultValue = getViewTabSettingDefault(tabNum)
+        return sharedPreferences?.getString("${SHARED_PREF_VIEW_TAB_PREFIX}${tabNum}", defaultValue) ?: defaultValue
+    }
+
+    private fun getViewTabSettingDefault(tabNum: Int): String {
         val defaultValue: String
         when (tabNum) {
             0 -> {
                 defaultValue = ViewTabSetting.TRACKS.name
             }
+
             1 -> {
                 defaultValue = ViewTabSetting.ALBUMS.name
             }
+
             2 -> {
                 defaultValue = ViewTabSetting.ARTISTS.name
             }
+
             3 -> {
                 defaultValue = ViewTabSetting.FILES.name
             }
+
             else -> {
                 throw AssertionError("Invalid view tab number: $tabNum")
             }
         }
-        return sharedPreferences?.getString("${SHARED_PREF_VIEW_TAB_PREFIX}${tabNum}", defaultValue) ?: defaultValue
+        return defaultValue
     }
 
     fun getViewTabSettings(context: Context, logger: Logger, tag: String): List<ViewTabSetting> {
@@ -190,7 +251,13 @@ open class SharedPrefs {
     }
 
     fun isLogToUSBEnabled(context: Context): Boolean {
-        return isLogToUSBEnabled(getDefaultSharedPreferences(context))
+        return try {
+            isLogToUSBEnabled(getDefaultSharedPreferences(context))
+        } catch (exc: IllegalStateException) {
+            // this might happen when user has not yet unlocked the device
+            logger.exception(TAG, exc.message.toString(), exc)
+            false
+        }
     }
 
     fun isLogToUSBEnabled(sharedPreferences: SharedPreferences?): Boolean {
@@ -198,7 +265,13 @@ open class SharedPrefs {
     }
 
     fun isCrashReportingEnabled(context: Context): Boolean {
-        return isCrashReportingEnabled(getDefaultSharedPreferences(context))
+        return try {
+            isCrashReportingEnabled(getDefaultSharedPreferences(context))
+        } catch (exc: IllegalStateException) {
+            // this might happen when user has not yet unlocked the device
+            logger.exception(TAG, exc.message.toString(), exc)
+            false
+        }
     }
 
     fun isCrashReportingEnabled(sharedPreferences: SharedPreferences?): Boolean {
@@ -206,11 +279,18 @@ open class SharedPrefs {
     }
 
     fun getUSBStatusResID(context: Context): Int {
-        return getUSBStatusResID(getDefaultSharedPreferences(context))
+        return try {
+            getUSBStatusResID(getDefaultSharedPreferences(context))
+        } catch (exc: IllegalStateException) {
+            // this might happen when user has not yet unlocked the device
+            logger.exception(TAG, exc.message.toString(), exc)
+            R.string.setting_USB_status_unknown
+        }
     }
 
     fun getUSBStatusResID(sharedPreferences: SharedPreferences?): Int {
-        return sharedPreferences?.getInt(SHARED_PREF_USB_STATUS, R.string.setting_USB_status_unknown) ?: -1
+        return sharedPreferences?.getInt(SHARED_PREF_USB_STATUS, R.string.setting_USB_status_unknown)
+            ?: R.string.setting_USB_status_unknown
     }
 
     fun setUSBStatusResID(context: Context, resID: Int) {

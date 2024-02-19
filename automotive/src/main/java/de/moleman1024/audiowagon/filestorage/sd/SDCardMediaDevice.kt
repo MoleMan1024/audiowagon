@@ -35,8 +35,8 @@ class SDCardMediaDevice(val id: String, private val rootDir: String = "/") : Med
 
     fun getDirectoryContents(directoryURI: Uri): List<File> {
         val directory = getFileFromURI(directoryURI)
-        if (!directory.isDirectory) {
-            throw IllegalArgumentException("Is not a directory: $directory")
+        require(directory.isDirectory) {
+            "Is not a directory: $directory"
         }
         return directory.listFiles()!!.toList()
     }

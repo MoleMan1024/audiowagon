@@ -282,8 +282,8 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
     fun getDirectoryContents(directoryURI: Uri): List<USBFile> {
         logger.verbose(TAG, "getDirectoryContents(directoryURI=$directoryURI)")
         val directory = getUSBFileFromURI(directoryURI)
-        if (!directory.isDirectory) {
-            throw IllegalArgumentException("Is not a directory: $directory")
+        require(directory.isDirectory) {
+            "Is not a directory: $directory"
         }
         return directory.listFiles().sortedBy { it.name }.toList()
     }

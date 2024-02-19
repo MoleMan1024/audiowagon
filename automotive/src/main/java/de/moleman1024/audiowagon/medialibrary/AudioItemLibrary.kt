@@ -55,6 +55,7 @@ private const val TAG = "AudioItemLibr"
 private val logger = Logger
 
 private const val MAX_NUM_ALBUM_ART_TO_CACHE = 30
+private const val NO_REPOSITORY = "No repository"
 
 /**
  * This class is responsible for turning media data from [AudioFileStorage] into an indexed, searchable database and
@@ -77,6 +78,7 @@ class AudioItemLibrary(
     var libraryExceptionObservers = mutableListOf<(Exception) -> Unit>()
     private var isBuildLibraryCancelled: Boolean = false
     private val recentAudioItemToAlbumArtMap: AudioItemToAlbumArtMapCache = AudioItemToAlbumArtMapCache()
+
     // The order of tabs at the top of the browse view
     // Configurable as per https://github.com/MoleMan1024/audiowagon/issues/124
     val viewTabs: MutableList<ViewTabSetting> = mutableListOf()
@@ -107,7 +109,8 @@ class AudioItemLibrary(
                 .fallbackToDestructiveMigration()
             if (useInMemoryDatabase) {
                 dbBuilder =
-                    Room.inMemoryDatabaseBuilder(context, AudioItemDatabase::class.java).fallbackToDestructiveMigration()
+                    Room.inMemoryDatabaseBuilder(context, AudioItemDatabase::class.java)
+                        .fallbackToDestructiveMigration()
             }
             val repo = AudioItemRepository(storageID, context, dispatcher, dbBuilder)
             storageToRepoMap[storageID] = repo
@@ -150,7 +153,7 @@ class AudioItemLibrary(
         numFileDirsSeenWhenBuildingLibrary = 0
         // indicate indexing has started via callback function
         callback()
-        val repo = getPrimaryRepository() ?: throw RuntimeException("No repository")
+        val repo = getPrimaryRepository() ?: throw RuntimeException(NO_REPOSITORY)
         repo.hasUpdatedDatabase = false
         repeat(4) {
             val buildLibraryCoroutineJob = CoroutineScope(coroutineContext).launch {
@@ -249,10 +252,12 @@ class AudioItemLibrary(
                         repo.hasUpdatedDatabase = true
                     }
                 }
+
                 is Directory -> {
                     // in FAT32 directory timestamps are not updated when the contents change, keep as-is
                     repo.pathIDsToKeep.add(pathIDInDatabase)
                 }
+
                 else -> {
                     throw RuntimeException("Not supported file type: $fileOrDir")
                 }
@@ -265,13 +270,13 @@ class AudioItemLibrary(
         if (statusInDB == status) {
             return
         }
-        val repo = getPrimaryRepository() ?: throw RuntimeException("No repository")
+        val repo = getPrimaryRepository() ?: throw RuntimeException(NO_REPOSITORY)
         repo.getDatabase()?.statusDAO()?.deleteStatus(repo.storageID)
         repo.getDatabase()?.statusDAO()?.insert(status)
     }
 
     private suspend fun getDatabaseStatus(): Status? {
-        val repo = getPrimaryRepository() ?: throw RuntimeException("No repository")
+        val repo = getPrimaryRepository() ?: throw RuntimeException(NO_REPOSITORY)
         return repo.getDatabase()?.statusDAO()?.queryStatus(repo.storageID)
     }
 
@@ -370,7 +375,13 @@ class AudioItemLibrary(
             ContentHierarchyType.ROOT_TRACKS -> ContentHierarchyRootTracks(context, this, audioFileStorage, sharedPrefs)
             ContentHierarchyType.ROOT_FILES -> ContentHierarchyRootFiles(context, this, audioFileStorage, sharedPrefs)
             ContentHierarchyType.ROOT_ALBUMS -> ContentHierarchyRootAlbums(context, this, audioFileStorage, sharedPrefs)
-            ContentHierarchyType.ROOT_ARTISTS -> ContentHierarchyRootArtists(context, this, audioFileStorage, sharedPrefs)
+            ContentHierarchyType.ROOT_ARTISTS -> ContentHierarchyRootArtists(
+                context,
+                this,
+                audioFileStorage,
+                sharedPrefs
+            )
+
             ContentHierarchyType.TRACK -> ContentHierarchyTrack(contentHierarchyID, context, this)
             ContentHierarchyType.ALBUM -> ContentHierarchyAlbum(contentHierarchyID, context, this)
             ContentHierarchyType.COMPILATION -> ContentHierarchyCompilation(contentHierarchyID, context, this)
@@ -380,30 +391,37 @@ class AudioItemLibrary(
             ContentHierarchyType.DIRECTORY -> ContentHierarchyDirectory(
                 contentHierarchyID, context, this, audioFileStorage, sharedPrefs
             )
+
             ContentHierarchyType.PLAYLIST -> ContentHierarchyPlaylist(
                 contentHierarchyID,
                 context,
                 this,
                 audioFileStorage
             )
+
             ContentHierarchyType.TRACK_GROUP -> ContentHierarchyGroupTracks(contentHierarchyID, context, this)
             ContentHierarchyType.ALBUM_GROUP -> ContentHierarchyGroupAlbums(contentHierarchyID, context, this)
             ContentHierarchyType.ARTIST_GROUP -> ContentHierarchyGroupArtists(contentHierarchyID, context, this)
             ContentHierarchyType.FILELIKE_GROUP -> ContentHierarchyGroupFileLike(
                 contentHierarchyID, context, this, audioFileStorage, sharedPrefs
             )
+
             ContentHierarchyType.ALL_TRACKS_FOR_ARTIST -> ContentHierarchyAllTracksForArtist(
                 contentHierarchyID, context, this
             )
+
             ContentHierarchyType.ALL_TRACKS_FOR_ALBUM -> ContentHierarchyAllTracksForAlbum(
                 contentHierarchyID, context, this
             )
+
             ContentHierarchyType.ALL_TRACKS_FOR_COMPILATION -> ContentHierarchyAllTracksForCompilation(
                 contentHierarchyID, context, this
             )
+
             ContentHierarchyType.ALL_TRACKS_FOR_UNKN_ALBUM -> ContentHierarchyAllTracksForUnknAlbum(
                 contentHierarchyID, context, this
             )
+
             ContentHierarchyType.ALL_FILES_FOR_DIRECTORY -> ContentHierarchyAllFilesForDirectory(
                 contentHierarchyID, context, this, audioFileStorage
             )
@@ -411,8 +429,8 @@ class AudioItemLibrary(
     }
 
     suspend fun getAudioItemForTrack(contentHierarchyID: ContentHierarchyID): AudioItem {
-        if (contentHierarchyID.type != ContentHierarchyType.TRACK) {
-            throw IllegalArgumentException("Given content hierarchy ID is not for a track: $contentHierarchyID")
+        require(contentHierarchyID.type == ContentHierarchyType.TRACK) {
+            "Given content hierarchy ID is not for a track: $contentHierarchyID"
         }
         val trackContentHierarchy = ContentHierarchySingleTrack(contentHierarchyID, context, this)
         val audioItems: List<AudioItem> = trackContentHierarchy.getAudioItems()
@@ -430,8 +448,8 @@ class AudioItemLibrary(
     }
 
     suspend fun getAudioItemForFile(contentHierarchyID: ContentHierarchyID): AudioItem {
-        if (contentHierarchyID.type != ContentHierarchyType.FILE) {
-            throw IllegalArgumentException("Given content hierarchy ID is not for a file: $contentHierarchyID")
+        require(contentHierarchyID.type == ContentHierarchyType.FILE) {
+            "Given content hierarchy ID is not for a file: $contentHierarchyID"
         }
         val fileContentHierarchy = ContentHierarchySingleFile(contentHierarchyID, context, this, audioFileStorage)
         val audioItems: List<AudioItem> = fileContentHierarchy.getAudioItems()
@@ -489,6 +507,7 @@ class AudioItemLibrary(
                         )
                     )
                 }
+
                 ContentHierarchyType.ALBUM,
                 ContentHierarchyType.UNKNOWN_ALBUM,
                 ContentHierarchyType.COMPILATION -> {
@@ -503,7 +522,11 @@ class AudioItemLibrary(
                         if (audioItem.artist.isNotBlank()) {
                             setSubtitle(localizeArtistName(audioItem.artist))
                         } else {
-                            setSubtitle(context.getString(R.string.browse_tree_unknown_artist))
+                            if (contentHierarchyID.artistID == DATABASE_ID_UNKNOWN
+                                || contentHierarchyID.albumArtistID == DATABASE_ID_UNKNOWN
+                            ) {
+                                setSubtitle(context.getString(R.string.browse_tree_unknown_artist))
+                            }
                         }
                     }
                     if (audioItem.albumArtURI != Uri.EMPTY) {
@@ -517,6 +540,7 @@ class AudioItemLibrary(
                         )
                     }
                 }
+
                 ContentHierarchyType.TRACK -> {
                     setTitle(audioItem.title)
                     if (audioItem.artist.isNotBlank()) {
@@ -535,6 +559,7 @@ class AudioItemLibrary(
                         )
                     }
                 }
+
                 ContentHierarchyType.FILE -> {
                     setTitle(audioItem.title)
                     setIconUri(
@@ -544,6 +569,7 @@ class AudioItemLibrary(
                         )
                     )
                 }
+
                 ContentHierarchyType.DIRECTORY -> {
                     setTitle(audioItem.title)
                     setIconUri(
@@ -553,6 +579,7 @@ class AudioItemLibrary(
                         )
                     )
                 }
+
                 else -> {
                     throw AssertionError("Cannot create audio item description for type: ${contentHierarchyID.type}")
                 }
@@ -784,6 +811,7 @@ class AudioItemLibrary(
                     return albumArtResized
                 }
             }
+
             is GeneralFile -> {
                 albumArtBytes = audioFileStorage.getByteArrayForURI(file.uri)
                 val albumArtResized = metadataMaker.resizeAlbumArt(albumArtBytes)

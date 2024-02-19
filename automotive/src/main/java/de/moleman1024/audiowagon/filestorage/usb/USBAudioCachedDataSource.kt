@@ -11,6 +11,7 @@ import de.moleman1024.audiowagon.filestorage.usb.lowlevel.USBFile
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.util.*
+import kotlin.NoSuchElementException
 import kotlin.math.min
 
 private const val TAG = "USBAudCachedDataSrc"
@@ -79,6 +80,8 @@ open class USBAudioCachedDataSource(
                 cacheStartPos = createCachesAround(position, numBytesToRead)
             } catch (exc: IOException) {
                 return -1
+            } catch (exc: NoSuchElementException) {
+                return -1
             }
         }
         if (cacheStartPos < 0) {
@@ -124,7 +127,7 @@ open class USBAudioCachedDataSource(
                 cacheBefore.buffer.flip()
                 cacheMap[cacheBeforeStartPos] = cacheBefore
             } else {
-                cacheBefore = cacheMap[cacheBeforeStartPos]!!
+                cacheBefore = cacheMap.getValue(cacheBeforeStartPos)
             }
             if (position >= cacheBeforeStartPos && numBytesToRead <= cacheBefore.buffer.limit()) {
                 cacheKey = cacheBeforeStartPos
@@ -139,7 +142,7 @@ open class USBAudioCachedDataSource(
                 cacheAfter.buffer.flip()
                 cacheMap[cacheAfterStartPos] = cacheAfter
             } else {
-                cacheAfter = cacheMap[cacheAfterStartPos]!!
+                cacheAfter = cacheMap.getValue(cacheAfterStartPos)
             }
             if (position >= cacheAfterStartPos && numBytesToRead <= cacheAfter.buffer.limit()) {
                 cacheKey = cacheAfterStartPos

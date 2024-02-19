@@ -7,7 +7,6 @@ package de.moleman1024.audiowagon.filestorage.usb
 
 import de.moleman1024.audiowagon.filestorage.usb.lowlevel.USBFile
 import de.moleman1024.audiowagon.log.Logger
-import kotlinx.coroutines.CoroutineDispatcher
 
 private const val TAG = "USBMetaDataSrc"
 private val logger = Logger

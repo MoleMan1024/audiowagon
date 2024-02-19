@@ -55,15 +55,15 @@ class LocalFileMediaDevice(private val context: Context) : MediaDevice {
         }
         val externalFilesPath = context.getExternalFilesDir(null)
         rootPath = Regex("^(.*)/Android.*").find(externalFilesPath.toString())?.groupValues?.get(1) ?: ""
-        rootPath +=  "/${Environment.DIRECTORY_DOWNLOADS}"
+        rootPath += "/${Environment.DIRECTORY_DOWNLOADS}"
         logger.debug(TAG, "Using rootPath: $rootPath")
         return rootPath
     }
 
     fun getDirectoryContents(directoryURI: Uri): List<File> {
         val directory = getFileFromURI(directoryURI)
-        if (!directory.isDirectory) {
-            throw IllegalArgumentException("Is not a directory: $directory")
+        require(directory.isDirectory) {
+            "Is not a directory: $directory"
         }
         return directory.listFiles()!!.toList()
     }

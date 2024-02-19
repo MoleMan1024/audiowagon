@@ -164,7 +164,9 @@ class ScsiBlockDevice(private val usbCommunication: USBCommunication, private va
                 logger.warning(TAG, (e.message ?: "SenseException"))
                 when (e) {
                     is InitRequired -> init()
-                    is NotReadyTryAgain -> {} // try again
+                    is NotReadyTryAgain -> {
+                        // try again
+                    }
                     else -> throw e
                 }
             } catch (e: PipeException) {
@@ -209,7 +211,7 @@ class ScsiBlockDevice(private val usbCommunication: USBCommunication, private va
                 bulkOnlyMassStorageReset()
                 throw IOException("phase error, please reattach device and try again")
             }
-            else -> throw IllegalStateException("CommandStatus wrapper illegal status $status")
+            else -> error("CommandStatus wrapper illegal status $status")
         }
     }
 
@@ -228,7 +230,7 @@ class ScsiBlockDevice(private val usbCommunication: USBCommunication, private va
                 bulkOnlyMassStorageReset()
                 throw IOException("phase error, please reattach device and try again")
             }
-            else -> throw IllegalStateException("CommandStatus wrapper illegal status $status")
+            else -> error("CommandStatus wrapper illegal status $status")
         }
     }
 

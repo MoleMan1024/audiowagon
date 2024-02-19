@@ -12,6 +12,33 @@ Google's review process which can take a couple of days.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project loosely follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.14] - 2024-02-19
+
+It makes me happy to say that the app is now being used in at least ten-thousand cars around the world 😄
+
+### Fixed
+
+- In the albums browse view an "unknown album" could appear with zero tracks inside. This should contain any tracks
+  without any album info in their metadata. However when artist and title were filled in the metadata, it would not
+  show up here. This error only appeared in album view, in artist view this issue did not occur. When there are tracks
+  that have artist and title in metadata, but no album, they should now be correctly collected in here
+  [#137](https://github.com/MoleMan1024/audiowagon/issues/137)
+- an issue was fixed that prevented a small speed improvement in the albums and artists browse view when groups of
+  items were to be shown
+- in Crashlytics I noticed that once during startup of AudioWagon the shared preferences could not be accessed because
+  the user profile was locked with a PIN code. This should now be avoided when possible or the exception will be
+  handled properly [#136](https://github.com/MoleMan1024/audiowagon/issues/136)
+- in Crashlytics I noticed that someone tried to use a USB hub with a USB mass storage device and a mobile phone
+  connected at the same time. The app erroneously tried to process the phone device as well. This should no longer
+  cause an error [#137](https://github.com/MoleMan1024/audiowagon/issues/137). In general the app does NOT support
+  multiple USB mass storage devices in parallel using a hub.
+
+### Changed
+
+- internal cleanup of some items found by SonarLint
+- bumped version of some dependencies
+
+
 ## [2.5.9] - 2023-11-04
 
 ### Fixed
@@ -25,6 +52,7 @@ and this project loosely follows [Semantic Versioning](https://semver.org/spec/v
   Didn’t Start the Fire" would not be found if searching for "We Didn't Start the Fire" (note the different
   apostrophe!). This was especially problematic in voice searches, where such characters are not speakable. You might
   need to re-index metadata to see the changed behaviour.
+
 
 ## [2.5.7] - 2023-10-17
 
@@ -57,10 +85,10 @@ and this project loosely follows [Semantic Versioning](https://semver.org/spec/v
 
 ### Fixed
 
-- I discovered a forum post about some **issues in Renault cars** with Android 10 when using AudioWagon: After scrolling 
-  items with album art for some time, the album art squares would turn into gray squares and shortly later the GUI would 
-  partially break and not show anything at all anymore. I encountered a similar issue on my development build on a 
-  mobile phone, but only in the media browse view. I believe this to be the same issue. Volvo/Polestar users are 
+- I discovered a forum post about some **issues in Renault cars** with Android 10 when using AudioWagon: After scrolling
+  items with album art for some time, the album art squares would turn into gray squares and shortly later the GUI would
+  partially break and not show anything at all anymore. I encountered a similar issue on my development build on a
+  mobile phone, but only in the media browse view. I believe this to be the same issue. Volvo/Polestar users are
   *not* affected it seems, because they use Android 11 which does not have this bug. The issue seems to be only in cars
   with Android 10 when using album art. The way that album art is transferred to the GUI has been changed now, which
   should fix this [#127](https://github.com/MoleMan1024/audiowagon/issues/127).
@@ -80,8 +108,8 @@ and this project loosely follows [Semantic Versioning](https://semver.org/spec/v
 
 ### Added
 
-- the 4 view tabs at the top of the browse view ("Tracks", "Albums", "Artists", "Files") are now configurable in the 
-  AudioWagon settings. You can now show only those categories that you use and order them however you want (feature 
+- the 4 view tabs at the top of the browse view ("Tracks", "Albums", "Artists", "Files") are now configurable in the
+  AudioWagon settings. You can now show only those categories that you use and order them however you want (feature
   request [#124](https://github.com/MoleMan1024/audiowagon/issues/124)).
 - translation for Hungarian
 - some icons were added

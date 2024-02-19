@@ -172,14 +172,15 @@ class USBDeviceConnections(
 
     private fun getAttachedUSBMassStorageDevices(): List<USBMediaDevice> {
         val filteredUSBDevices = getAttachedFilteredDevicesFromUSBManager()
+        val filteredAndCompatibleUSBDevices = mutableListOf<USBMediaDevice>()
         for (usbMediaDevice in filteredUSBDevices) {
             try {
                 checkIsCompatibleUSBMassStorage(usbMediaDevice)
+                filteredAndCompatibleUSBDevices.add(usbMediaDevice)
             } catch (exc: Exception) {
                 when (exc) {
                     is DeviceNotApplicableException, is DeviceNotCompatible -> {
                         logger.debug(TAG, exc.toString())
-                        continue
                     }
                     is RuntimeException -> {
                         logger.exception(TAG, "Exception when checking for compatible USB mass storage device", exc)
@@ -188,7 +189,7 @@ class USBDeviceConnections(
                 }
             }
         }
-        return filteredUSBDevices
+        return filteredAndCompatibleUSBDevices
     }
 
     private fun checkIsCompatibleUSBMassStorage(usbDeviceWrapper: USBMediaDevice) {
@@ -427,7 +428,11 @@ class USBDeviceConnections(
             addAction(Intent.ACTION_MEDIA_BAD_REMOVAL)
             addAction(Intent.ACTION_MEDIA_NOFS)
         }
-        context.registerReceiver(usbBroadcastReceiver, filter)
+        try {
+            context.registerReceiver(usbBroadcastReceiver, filter)
+        } catch (exc: IllegalArgumentException) {
+            logger.exception(TAG, "Receiver already registered", exc)
+        }
         isBroadcastRecvRegistered = true
     }
 

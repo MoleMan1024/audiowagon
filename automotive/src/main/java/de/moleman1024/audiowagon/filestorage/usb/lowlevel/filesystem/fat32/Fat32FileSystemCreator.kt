@@ -4,7 +4,6 @@ import de.moleman1024.audiowagon.filestorage.usb.lowlevel.driver.BlockDeviceDriv
 import de.moleman1024.audiowagon.filestorage.usb.lowlevel.filesystem.FileSystem
 import de.moleman1024.audiowagon.filestorage.usb.lowlevel.filesystem.FileSystemCreator
 import de.moleman1024.audiowagon.filestorage.usb.lowlevel.partition.PartitionTableEntry
-import java.io.IOException
 
 /**
  * Created by magnusja on 28/02/17.

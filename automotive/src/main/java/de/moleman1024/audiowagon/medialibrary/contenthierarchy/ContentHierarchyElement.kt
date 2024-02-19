@@ -159,8 +159,8 @@ abstract class ContentHierarchyElement(
                         val firstLastItemInGroup = repo.getTrackGroup(groupIndex)
                         firstItemInGroup = listOf(firstLastItemInGroup.first)
                         lastItemInGroup = listOf(firstLastItemInGroup.second)
-                        if (firstLastItemInGroup.first.uri == Uri.EMPTY
-                            || firstLastItemInGroup.second.uri == Uri.EMPTY) {
+                        if (firstLastItemInGroup.first.id.isBlank()
+                            || firstLastItemInGroup.second.id.isBlank()) {
                             logger.warning(TAG, "No tracks in group, fallback to slow method")
                             firstItemInGroup = repo.getTracksLimitOffset(1, offset)
                             lastItemInGroup = repo.getTracksLimitOffset(1, offsetRows)
@@ -172,8 +172,8 @@ abstract class ContentHierarchyElement(
                         val firstLastItemInGroup = repo.getAlbumGroup(groupIndex)
                         firstItemInGroup = listOf(firstLastItemInGroup.first)
                         lastItemInGroup = listOf(firstLastItemInGroup.second)
-                        if (firstLastItemInGroup.first.uri == Uri.EMPTY
-                            || firstLastItemInGroup.second.uri== Uri.EMPTY) {
+                        if (firstLastItemInGroup.first.id.isBlank()
+                            || firstLastItemInGroup.second.id.isBlank()) {
                             logger.warning(TAG, "No albums in group, fallback to slow method")
                             firstItemInGroup = repo.getAlbumsLimitOffset(1, offset)
                             lastItemInGroup = repo.getAlbumsLimitOffset(1, offsetRows)
@@ -189,8 +189,8 @@ abstract class ContentHierarchyElement(
                     val firstLastItemInGroup = repo.getArtistGroup(groupIndex)
                     firstItemInGroup = listOf(firstLastItemInGroup.first)
                     lastItemInGroup = listOf(firstLastItemInGroup.second)
-                    if (firstLastItemInGroup.first.uri == Uri.EMPTY
-                        || firstLastItemInGroup.second.uri== Uri.EMPTY) {
+                    if (firstLastItemInGroup.first.id.isBlank()
+                        || firstLastItemInGroup.second.id.isBlank()) {
                         logger.warning(TAG, "No artists in group, fallback to slow method")
                         firstItemInGroup = repo.getAlbumAndCompilationArtistsLimitOffset(1, offset)
                         lastItemInGroup = repo.getAlbumAndCompilationArtistsLimitOffset(1, offsetRows)
@@ -356,7 +356,7 @@ abstract class ContentHierarchyElement(
                 id.albumArtistID
             }
             else -> {
-                DATABASE_ID_UNKNOWN
+                -99
             }
         }
     }

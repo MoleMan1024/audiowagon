@@ -160,6 +160,7 @@ class RepositoryUpdate(private val repo: AudioItemRepository, private val contex
         )
         logger.debug(TAG, "Inserting track: $track")
         val trackID: Long = repo.getDatabaseNoLock()?.trackDAO()?.insert(track) ?: DATABASE_ID_UNKNOWN
+        logger.verbose(TAG, "Inserted track with id $trackID: $track")
         trackIDsToKeep.add(trackID)
     }
 
@@ -239,6 +240,7 @@ class RepositoryUpdate(private val repo: AudioItemRepository, private val contex
                         startTrackId = firstItemInGroup[0].trackId,
                         endTrackId = lastItemInGroup[0].trackId
                     )
+                    logger.debug(TAG, "Inserting track group: $trackGroup")
                     repo.getDatabaseNoLock()?.trackDAO()?.insertGroup(trackGroup)
                 }
                 AudioItemType.ALBUM -> {
@@ -252,6 +254,7 @@ class RepositoryUpdate(private val repo: AudioItemRepository, private val contex
                         startAlbumId = firstItemInGroup[0].albumId,
                         endAlbumId = lastItemInGroup[0].albumId
                     )
+                    logger.debug(TAG, "Inserting album group: $albumGroup")
                     repo.getDatabaseNoLock()?.albumDAO()?.insertGroup(albumGroup)
                 }
                 AudioItemType.ARTIST -> {
@@ -267,6 +270,7 @@ class RepositoryUpdate(private val repo: AudioItemRepository, private val contex
                         startArtistId = firstItemInGroup[0].artistId,
                         endArtistId = lastItemInGroup[0].artistId
                     )
+                    logger.debug(TAG, "Inserting artist group: $artistGroup")
                     repo.getDatabaseNoLock()?.artistDAO()?.insertGroup(artistGroup)
                 }
                 else -> throw AssertionError("createGroups() not supported for type: $audioItemType")

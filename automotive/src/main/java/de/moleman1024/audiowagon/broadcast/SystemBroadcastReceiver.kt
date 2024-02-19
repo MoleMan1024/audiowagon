@@ -16,7 +16,7 @@ private const val TAG = "PowerEvtReceiver"
 private val logger = Logger
 
 @ExperimentalCoroutinesApi
-class PowerEventReceiver : BroadcastReceiver() {
+class SystemBroadcastReceiver : BroadcastReceiver() {
     var audioBrowserService: AudioBrowserService? = null
 
     override fun onReceive(context: Context?, intent: Intent?) {
@@ -25,14 +25,15 @@ class PowerEventReceiver : BroadcastReceiver() {
         }
         // ACTION_SHUTDOWN does not seem to appear on Polestar 2, works fine on Pixel 3 XL AAOS.
         // Cannot use CarPowerManager with android.car.permission.CAR_POWER, it is reserved for system signed apps.
-        // I have the impression the app is suspended to RAM and is not actually shut down when the car is "shut
-        // down"...
+        //
+        // The system is suspended to RAM for some time after screen has turned off for some minutes. Only after a
+        // longer time in suspend-to-RAM state, the Android headunit will turn off (boot logo upon next power-on)
         logger.debug(TAG, "Received notification: $intent")
         when (intent.action) {
             Intent.ACTION_SHUTDOWN,
             Intent.ACTION_SCREEN_OFF -> audioBrowserService?.suspend()
             Intent.ACTION_SCREEN_ON -> audioBrowserService?.wakeup()
-            // Intent.ACTION_BATTERY_CHANGED was not helpful
+            Intent.ACTION_USER_PRESENT -> audioBrowserService?.updateDevicesAfterUnlock()
             else -> {
                 // ignore
             }

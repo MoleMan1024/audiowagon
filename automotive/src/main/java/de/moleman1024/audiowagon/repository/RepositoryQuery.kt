@@ -26,6 +26,7 @@ import kotlin.collections.ArrayDeque
 
 private const val TAG = "RepositoryQuery"
 private val logger = Logger
+private const val REPOSITORY_WAS_CLOSED = "Repository was closed"
 
 @ExperimentalCoroutinesApi
 class RepositoryQuery(
@@ -51,7 +52,7 @@ class RepositoryQuery(
         for (album in albums) {
             yield()
             if (repo.isClosed) {
-                logger.warning(TAG, "Repository was closed")
+                logger.warning(TAG, REPOSITORY_WAS_CLOSED)
                 return listOf()
             }
             val audioItemAlbum: AudioItem = createAudioItemForAlbum(album, artistID)
@@ -70,7 +71,7 @@ class RepositoryQuery(
         for (album in compilationAlbums) {
             yield()
             if (repo.isClosed) {
-                logger.warning(TAG, "Repository was closed")
+                logger.warning(TAG, REPOSITORY_WAS_CLOSED)
                 return listOf()
             }
             if (album.albumId in albumIDs) {
@@ -96,7 +97,7 @@ class RepositoryQuery(
         for (track in tracks) {
             yield()
             if (repo.isClosed) {
-                logger.warning(TAG, "Repository was closed")
+                logger.warning(TAG, REPOSITORY_WAS_CLOSED)
                 return listOf()
             }
             val audioItemTrack: AudioItem = createAudioItemForTrack(track, albumID = albumID)
@@ -112,7 +113,7 @@ class RepositoryQuery(
         for (track in tracks) {
             yield()
             if (repo.isClosed) {
-                logger.warning(TAG, "Repository was closed")
+                logger.warning(TAG, REPOSITORY_WAS_CLOSED)
                 return listOf()
             }
             val audioItemTrack: AudioItem = createAudioItemForTrack(track, artistID = artistID)
@@ -128,7 +129,7 @@ class RepositoryQuery(
         for (track in tracks) {
             yield()
             if (repo.isClosed) {
-                logger.warning(TAG, "Repository was closed")
+                logger.warning(TAG, REPOSITORY_WAS_CLOSED)
                 return listOf()
             }
             val audioItemTrack: AudioItem = createAudioItemForTrack(track, artistID, albumID)
@@ -188,7 +189,7 @@ class RepositoryQuery(
         for (track in tracks) {
             yield()
             if (repo.isClosed) {
-                logger.warning(TAG, "Repository was closed")
+                logger.warning(TAG, REPOSITORY_WAS_CLOSED)
                 return listOf()
             }
             val audioItemTrack: AudioItem = createAudioItemForTrack(track, artistID, DATABASE_ID_UNKNOWN)
@@ -204,7 +205,7 @@ class RepositoryQuery(
         for (track in tracks) {
             yield()
             if (repo.isClosed) {
-                logger.warning(TAG, "Repository was closed")
+                logger.warning(TAG, REPOSITORY_WAS_CLOSED)
                 return listOf()
             }
             val audioItemTrack: AudioItem = createAudioItemForTrack(
@@ -248,7 +249,7 @@ class RepositoryQuery(
         for (album in allCompilationAlbums) {
             yield()
             if (repo.isClosed) {
-                logger.warning(TAG, "Repository was closed")
+                logger.warning(TAG, REPOSITORY_WAS_CLOSED)
                 return listOf()
             }
             val numTracks = repo.getDatabase()?.trackDAO()?.queryNumTracksByArtistForAlbum(artistID, album.albumId) ?: 0
@@ -267,7 +268,7 @@ class RepositoryQuery(
         for (track in allTracks) {
             yield()
             if (repo.isClosed) {
-                logger.warning(TAG, "Repository was closed")
+                logger.warning(TAG, REPOSITORY_WAS_CLOSED)
                 return listOf()
             }
             val audioItemTrack: AudioItem = createAudioItemForTrack(track)
@@ -302,7 +303,7 @@ class RepositoryQuery(
         for (track in tracksAtOffset) {
             yield()
             if (repo.isClosed) {
-                logger.warning(TAG, "Repository was closed")
+                logger.warning(TAG, REPOSITORY_WAS_CLOSED)
                 return listOf()
             }
             val audioItemTrack: AudioItem = createAudioItemForTrack(track)
@@ -323,7 +324,7 @@ class RepositoryQuery(
         for (track in tracksAtOffset) {
             yield()
             if (repo.isClosed) {
-                logger.warning(TAG, "Repository was closed")
+                logger.warning(TAG, REPOSITORY_WAS_CLOSED)
                 return listOf()
             }
             val audioItemTrack: AudioItem = createAudioItemForTrack(track, artistID, albumID)
@@ -342,7 +343,7 @@ class RepositoryQuery(
         for (track in tracksAtOffset) {
             yield()
             if (repo.isClosed) {
-                logger.warning(TAG, "Repository was closed")
+                logger.warning(TAG, REPOSITORY_WAS_CLOSED)
                 return listOf()
             }
             val audioItemTrack: AudioItem = createAudioItemForTrack(track, albumID = albumID)
@@ -361,7 +362,7 @@ class RepositoryQuery(
         for (track in tracksAtOffset) {
             yield()
             if (repo.isClosed) {
-                logger.warning(TAG, "Repository was closed")
+                logger.warning(TAG, REPOSITORY_WAS_CLOSED)
                 return listOf()
             }
             val audioItemTrack: AudioItem = createAudioItemForTrack(track, artistID = artistID)
@@ -373,15 +374,15 @@ class RepositoryQuery(
     }
 
     suspend fun getRandomTracks(maxNumItems: Int): List<AudioItem> {
-        if (maxNumItems <= 0) {
-            throw IllegalArgumentException("Invalid number of random tracks: $maxNumItems")
+        require(maxNumItems > 0) {
+            "Invalid number of random tracks: $maxNumItems"
         }
         val items: MutableList<AudioItem> = mutableListOf()
         val tracks: List<Track> = repo.getDatabase()?.trackDAO()?.queryRandom(maxNumItems) ?: listOf()
         for (track in tracks) {
             yield()
             if (repo.isClosed) {
-                logger.warning(TAG, "Repository was closed")
+                logger.warning(TAG, REPOSITORY_WAS_CLOSED)
                 return listOf()
             }
             val audioItemTrack: AudioItem = createAudioItemForTrack(track)
@@ -445,7 +446,7 @@ class RepositoryQuery(
         for (album in allAlbums) {
             yield()
             if (repo.isClosed) {
-                logger.warning(TAG, "Repository was closed")
+                logger.warning(TAG, REPOSITORY_WAS_CLOSED)
                 return listOf()
             }
             val audioItemAlbum = createAudioItemForAlbum(album)
@@ -461,6 +462,7 @@ class RepositoryQuery(
 
     suspend fun getAudioItemForUnknownAlbum(): AudioItem? = withContext(dispatcher) {
         val numTracksUnknownAlbum = repo.getDatabase()?.trackDAO()?.queryNumTracksAlbumUnknown() ?: 0
+        logger.debug(TAG, "numTracksUnknownAlbum=$numTracksUnknownAlbum")
         if (numTracksUnknownAlbum > 0) {
             return@withContext createUnknownAlbumAudioItem()
         }
@@ -483,7 +485,7 @@ class RepositoryQuery(
         for (album in albumsAtOffset) {
             yield()
             if (repo.isClosed) {
-                logger.warning(TAG, "Repository was closed")
+                logger.warning(TAG, REPOSITORY_WAS_CLOSED)
                 return listOf()
             }
             val audioItemTrack: AudioItem = createAudioItemForAlbum(album)
@@ -501,7 +503,7 @@ class RepositoryQuery(
         for (album in albumsAtOffset) {
             yield()
             if (repo.isClosed) {
-                logger.warning(TAG, "Repository was closed")
+                logger.warning(TAG, REPOSITORY_WAS_CLOSED)
                 return listOf()
             }
             val audioItemTrack: AudioItem = createAudioItemForAlbum(album, artistID)
@@ -592,7 +594,7 @@ class RepositoryQuery(
         for (artist in allArtists) {
             yield()
             if (repo.isClosed) {
-                logger.warning(TAG, "Repository was closed")
+                logger.warning(TAG, REPOSITORY_WAS_CLOSED)
                 return listOf()
             }
             val audioItemArtist = createAudioItemForArtist(artist)
@@ -623,7 +625,7 @@ class RepositoryQuery(
         for (artist in artistsAtOffset) {
             yield()
             if (repo.isClosed) {
-                logger.warning(TAG, "Repository was closed")
+                logger.warning(TAG, REPOSITORY_WAS_CLOSED)
                 return listOf()
             }
             val audioItemArtist = createAudioItemForArtist(artist)
@@ -720,6 +722,9 @@ class RepositoryQuery(
         val lastGroupTrack =
             repo.getDatabase()?.trackDAO()?.queryByID(trackGroup.endTrackId) ?: return firstLastAudioItem
         firstLastAudioItem = Pair(createAudioItemForTrack(firstGroupTrack), createAudioItemForTrack(lastGroupTrack))
+        logger.debug(TAG, "getTrackGroup(groupIndex=${groupIndex}) returned: $trackGroup ")
+        logger.debug(TAG, "firstGroupTrack(groupIndex=${groupIndex})=$firstGroupTrack")
+        logger.debug(TAG, "lastGroupTrack(groupIndex=${groupIndex})=$lastGroupTrack")
         return firstLastAudioItem
     }
 
@@ -732,6 +737,9 @@ class RepositoryQuery(
         val lastGroupAlbum =
             repo.getDatabase()?.albumDAO()?.queryByID(albumGroup.endAlbumId) ?: return firstLastAudioItem
         firstLastAudioItem = Pair(createAudioItemForAlbum(firstGroupAlbum), createAudioItemForAlbum(lastGroupAlbum))
+        logger.debug(TAG, "getAlbumGroup(groupIndex=${groupIndex}) returned: $albumGroup")
+        logger.debug(TAG, "firstGroupAlbum(groupIndex=${groupIndex})=$firstGroupAlbum")
+        logger.debug(TAG, "lastGroupAlbum(groupIndex=${groupIndex})=$lastGroupAlbum")
         return firstLastAudioItem
     }
 
@@ -744,6 +752,9 @@ class RepositoryQuery(
         val lastGroupArtist =
             repo.getDatabase()?.artistDAO()?.queryByID(artistGroup.endArtistId) ?: return firstLastAudioItem
         firstLastAudioItem = Pair(createAudioItemForArtist(firstGroupArtist), createAudioItemForArtist(lastGroupArtist))
+        logger.debug(TAG, "getArtistGroup(groupIndex=${groupIndex}) returned: $artistGroup")
+        logger.debug(TAG, "firstGroupArtist(groupIndex=${groupIndex})=$firstGroupArtist")
+        logger.debug(TAG, "lastGroupArtist(groupIndex=${groupIndex})=$lastGroupArtist")
         return firstLastAudioItem
     }
 

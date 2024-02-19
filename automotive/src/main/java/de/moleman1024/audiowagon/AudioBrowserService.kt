@@ -28,6 +28,7 @@ or sponsored by any trademark holders mentioned in the source code.
 
 package de.moleman1024.audiowagon
 
+import android.app.KeyguardManager
 import android.app.Notification
 import android.app.Service
 import android.content.ComponentName
@@ -48,9 +49,10 @@ import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.lifecycleScope
 import androidx.media.MediaBrowserServiceCompat
 import androidx.media.utils.MediaConstants
+import de.moleman1024.audiowagon.activities.LegalDisclaimerActivity
 import de.moleman1024.audiowagon.authorization.PackageValidation
 import de.moleman1024.audiowagon.authorization.USBDevicePermissions
-import de.moleman1024.audiowagon.broadcast.PowerEventReceiver
+import de.moleman1024.audiowagon.broadcast.SystemBroadcastReceiver
 import de.moleman1024.audiowagon.enums.AudioPlayerState
 import de.moleman1024.audiowagon.enums.CustomAction
 import de.moleman1024.audiowagon.enums.IndexingStatus
@@ -118,7 +120,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     private lateinit var audioSession: AudioSession
     private lateinit var gui: GUI
     private lateinit var persistentStorage: PersistentStorage
-    private lateinit var powerEventReceiver: PowerEventReceiver
+    private lateinit var systemBroadcastReceiver: SystemBroadcastReceiver
     private lateinit var crashReporting: CrashReporting
     private lateinit var sharedPrefs: SharedPrefs
     private var dispatcher: CoroutineDispatcher = Dispatchers.IO
@@ -130,7 +132,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     private lateinit var audioSessionCloseSingletonCoroutine: SingletonCoroutine
     private lateinit var suspendSingletonCoroutine: SingletonCoroutine
     private lateinit var wakeSingletonCoroutine: SingletonCoroutine
-    private lateinit var startupSingletonCoroutine: SingletonCoroutine
+    private lateinit var unlockSingletonCoroutine: SingletonCoroutine
     private lateinit var notifyIdleSingletonCoroutine: SingletonCoroutine
     private lateinit var powerManager: PowerManager
     @Volatile
@@ -194,18 +196,23 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         wakeSingletonCoroutine =
             SingletonCoroutine("Wakeup", dispatcher, lifecycleScope.coroutineContext, crashReporting)
         wakeSingletonCoroutine.behaviour = SingletonCoroutineBehaviour.PREFER_FINISH
-        startupSingletonCoroutine =
-            SingletonCoroutine("Startup", dispatcher, lifecycleScope.coroutineContext, crashReporting)
+        unlockSingletonCoroutine =
+            SingletonCoroutine("Unlock", dispatcher, lifecycleScope.coroutineContext, crashReporting)
         notifyIdleSingletonCoroutine =
             SingletonCoroutine("NotifyIdle", dispatcher, lifecycleScope.coroutineContext, crashReporting)
-        powerEventReceiver = PowerEventReceiver()
-        powerEventReceiver.audioBrowserService = this
-        val shutdownFilter = IntentFilter().apply {
+        systemBroadcastReceiver = SystemBroadcastReceiver()
+        systemBroadcastReceiver.audioBrowserService = this
+        val systemIntentFilter = IntentFilter().apply {
             addAction(Intent.ACTION_SCREEN_OFF)
             addAction(Intent.ACTION_SCREEN_ON)
             addAction(Intent.ACTION_SHUTDOWN)
+            addAction(Intent.ACTION_USER_PRESENT)
         }
-        registerReceiver(powerEventReceiver, shutdownFilter)
+        try {
+            registerReceiver(systemBroadcastReceiver, systemIntentFilter)
+        } catch (exc: IllegalArgumentException) {
+            logger.exception(TAG, "Receiver already registered", exc)
+        }
         powerManager = this.getSystemService(Context.POWER_SERVICE) as PowerManager
         startup()
         if (!powerManager.isInteractive) {
@@ -255,10 +262,25 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         logger.verbose(TAG, "Lifecycle set to CREATED")
         observeAudioFileStorage()
         observeAudioSessionStateChanges()
-        if (powerManager.isInteractive) {
-            startupSingletonCoroutine.launch {
-                updateAttachedDevices()
-            }
+        if (powerManager.isInteractive && !isScreenLocked()) {
+            updateDevicesAfterUnlock()
+        }
+    }
+
+    private fun isScreenLocked(): Boolean {
+        return try {
+            val keyguardManager = this.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+            keyguardManager.isKeyguardLocked
+        } catch (exc: RuntimeException) {
+            logger.exception(TAG, exc.message.toString(), exc)
+            false
+        }
+    }
+
+    fun updateDevicesAfterUnlock() {
+        logger.debug(TAG, "updateDevicesAfterUnlock()")
+        unlockSingletonCoroutine.launch {
+            updateAttachedDevices()
         }
     }
 
@@ -502,6 +524,15 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         if (!sharedPrefs.isLegalDisclaimerAgreed(this)) {
             logger.warning(TAG, "User did not agree to legal disclaimer yet")
             notifyBrowserChildrenChangedAllLevels()
+            try {
+                val showLegalDisclaimerIntent = Intent(this, LegalDisclaimerActivity::class.java)
+                showLegalDisclaimerIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                startActivity(showLegalDisclaimerIntent)
+            } catch (exc: RuntimeException) {
+                // Depending on situation, starting an activity might not be allowed
+                // https://developer.android.com/guide/components/activities/background-starts
+                logger.exception(TAG, exc.message.toString(), exc)
+            }
             return
         }
         val metadataReadSetting = sharedPrefs.getMetadataReadSettingEnum(this, logger, TAG)
@@ -865,7 +896,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         logger.debug(TAG, "onDestroy()")
         shutdownAndDestroy()
         try {
-            unregisterReceiver(powerEventReceiver)
+            unregisterReceiver(systemBroadcastReceiver)
         } catch (exc: IllegalArgumentException) {
             logger.warning(TAG, exc.message.toString())
         }
@@ -886,7 +917,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         cancelMostJobs()
         suspendSingletonCoroutine.cancel()
         wakeSingletonCoroutine.cancel()
-        startupSingletonCoroutine.cancel()
+        unlockSingletonCoroutine.cancel()
         // before removing audio session notification the service must be in background
         stopForeground(STOP_FOREGROUND_REMOVE)
         audioSessionCloseSingletonCoroutine.launch {
@@ -938,7 +969,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         isSuspended = true
         cancelMostJobs()
         wakeSingletonCoroutine.cancel()
-        startupSingletonCoroutine.cancel()
+        unlockSingletonCoroutine.cancel()
         suspendSingletonCoroutine.launch {
             audioSessionCloseSingletonCoroutine.launch {
                 audioSession.storePlaybackState()
@@ -964,7 +995,11 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         wakeSingletonCoroutine.launch {
             suspendSingletonCoroutine.join()
             audioFileStorage.wakeup()
-            updateAttachedDevices()
+            if (!isScreenLocked()) {
+                updateAttachedDevices()
+            } else {
+                logger.info(TAG, "Screen is still locked, cannot update attached devices")
+            }
         }
     }
 

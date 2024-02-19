@@ -45,4 +45,6 @@ docs/Gemfile.lock
 google-services.json
 .idea/deploymentTargetDropDown.xml
 **/.cxx
+.idea/sonarlint
+.idea/androidTestResultsUserPreferences.xml
 

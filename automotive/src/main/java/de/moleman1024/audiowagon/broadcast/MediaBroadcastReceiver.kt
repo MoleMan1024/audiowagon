@@ -22,7 +22,7 @@ const val ACTION_NEXT = "de.moleman1024.audiowagon.ACTION_NEXT"
 const val ACTION_PREV = "de.moleman1024.audiowagon.ACTION_PREV"
 
 @ExperimentalCoroutinesApi
-class BroadcastMessageReceiver(
+class MediaBroadcastReceiver(
     private val audioPlayer: AudioPlayer,
     private val scope: CoroutineScope,
     private val dispatcher: CoroutineDispatcher,

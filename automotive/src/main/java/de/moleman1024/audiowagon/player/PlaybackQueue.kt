@@ -43,7 +43,7 @@ class PlaybackQueue(private val dispatcher: CoroutineDispatcher) {
             if (!isRepeating && isLastTrack()) {
                 return@withContext -1
             }
-            if (playbackQueue.size <= 0 || playbackQueue.size <= 0) {
+            if (playbackQueue.size <= 0) {
                 return@withContext -1
             }
             return@withContext (currentIndex + 1) % playbackQueue.size

@@ -35,7 +35,6 @@ import java.io.IOException
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
 import java.util.*
-import kotlin.NoSuchElementException
 import kotlin.collections.LinkedHashMap
 
 private const val TAG = "PkgValidation"
@@ -88,8 +87,8 @@ class PackageValidation constructor(context: Context, @XmlRes xmlResId: Int) {
         val callerPackageInfo = buildCallerInfo(callingPackage)
             ?: throw IllegalStateException("Caller wasn't found in the system?")
         // Verify that things aren't ... broken. (This test should always pass.)
-        if (callerPackageInfo.uid != callingUid) {
-            throw IllegalStateException("Caller's package UID doesn't match caller's actual UID?")
+        check(callerPackageInfo.uid == callingUid) {
+            "Caller's package UID doesn't match caller's actual UID?"
         }
         val callerSignature = callerPackageInfo.signature
         val isPackageInAllowList: Boolean

@@ -41,6 +41,7 @@ const val MEDIA_ERROR_INVALID_STATE = -38
 // arbitrary number
 const val MEDIA_ERROR_AUDIO_FOCUS_DENIED = -1249
 const val SKIP_PREVIOUS_THRESHOLD_MSEC = 10000L
+private const val ALREADY_STOPPED = "Already stopped"
 
 /**
  * Manages two [MediaPlayer] instances and an equalizer
@@ -534,7 +535,7 @@ class AudioPlayer(
             try {
                 stopCurrentPlayer()
             } catch (exc: AlreadyStoppedException) {
-                logger.debug(TAG, "Already stopped")
+                logger.debug(TAG, ALREADY_STOPPED)
                 return@withContext
             } catch (exc: IllegalStateException) {
                 logger.warning(TAG, exc.message.toString())
@@ -595,7 +596,7 @@ class AudioPlayer(
             try {
                 stopCurrentPlayer()
             } catch (exc: AlreadyStoppedException) {
-                logger.debug(TAG, "Already stopped")
+                logger.debug(TAG, ALREADY_STOPPED)
             } catch (exc: IllegalStateException) {
                 logger.warning(TAG, exc.message.toString())
             }
@@ -662,7 +663,7 @@ class AudioPlayer(
             try {
                 stopCurrentPlayer()
             } catch (exc: AlreadyStoppedException) {
-                logger.debug(TAG, "Already stopped")
+                logger.debug(TAG, ALREADY_STOPPED)
             } catch (exc: IllegalStateException) {
                 logger.warning(TAG, exc.message.toString())
             }

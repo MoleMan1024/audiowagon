@@ -14,7 +14,6 @@ import android.os.PersistableBundle
 import androidx.appcompat.app.AppCompatActivity
 import de.moleman1024.audiowagon.ACTION_RESTART_SERVICE
 import de.moleman1024.audiowagon.AudioBrowserService
-import de.moleman1024.audiowagon.SharedPrefs
 import de.moleman1024.audiowagon.filestorage.usb.ACTION_USB_ATTACHED
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -39,7 +38,6 @@ private val logger = Logger
  */
 @ExperimentalCoroutinesApi
 class USBDummyActivity : AppCompatActivity() {
-    private val sharedPrefs = SharedPrefs()
 
     override fun onCreate(savedInstanceState: Bundle?, persistentState: PersistableBundle?) {
         logger.debug(TAG, "onCreate()")
@@ -54,10 +52,9 @@ class USBDummyActivity : AppCompatActivity() {
     override fun onStart() {
         logger.debug(TAG, "onStart()")
         super.onStart()
+        // We must not call to shared preferences in here, as this may happen during direct boot where accessing
+        // preferences might not be allowed yet (protected storage)
         startForegroundService(Intent(ACTION_RESTART_SERVICE, Uri.EMPTY, this, AudioBrowserService::class.java))
-        if (!sharedPrefs.isLegalDisclaimerAgreed(this)) {
-            showLegalDisclaimer()
-        }
         rebroadcastUSBDeviceAttached()
         // close this activity again immediately so it does not block the GUI
         finish()
@@ -86,12 +83,6 @@ class USBDummyActivity : AppCompatActivity() {
             rebroadcastIntent.putExtra(UsbManager.EXTRA_DEVICE, it)
             sendBroadcast(rebroadcastIntent)
         }
-    }
-
-    private fun showLegalDisclaimer() {
-        logger.debug(TAG, "Showing legal disclaimer to user")
-        val showLegalDisclaimerIntent = Intent(this, LegalDisclaimerActivity::class.java)
-        startActivity(showLegalDisclaimerIntent)
     }
 
     override fun onStop() {

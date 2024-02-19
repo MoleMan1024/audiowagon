@@ -6,6 +6,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 package de.moleman1024.audiowagon.log
 
 import de.moleman1024.audiowagon.enums.LogLevel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.yield
 import org.junit.Assert.assertTrue
@@ -100,8 +101,12 @@ class LogBufferTest {
                 )
             }
             while (logBuffer.numEntriesNotRead <= 0) {
+                delay(10)
                 yield()
             }
+            delay(10)
+            yield()
+            println("numEntriesNotRead: ${logBuffer.numEntriesNotRead}")
             val entries = logBuffer.getNewestEntriesForLogFile()
             println("entries: $entries")
             assertTrue(entries.size == 6)

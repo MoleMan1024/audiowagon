@@ -18,7 +18,6 @@
 package de.moleman1024.audiowagon.filestorage.usb.lowlevel.filesystem
 
 import de.moleman1024.audiowagon.filestorage.usb.lowlevel.Util
-import java.io.IOException
 import java.io.InputStream
 import java.nio.ByteBuffer
 
