@@ -203,6 +203,9 @@ Bluetooth™) and then back to AudioWagon, that should fix it.
 If not, go to General Android Settings &#8594; Apps and notifications &#8594; Show all
 apps &#8594; Show system &#8594; Media Center and tap "Force Stop", then try the app again.
 
+If you still have problems, try to [reboot the center
+display](https://www.volvocars.com/lb/support/latest-information/article/b34f02c4d48addecc0a801512c8f5561).
+
 
 ### What is the eject button for?
 
