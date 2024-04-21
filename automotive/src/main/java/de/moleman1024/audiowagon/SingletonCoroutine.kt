@@ -53,7 +53,7 @@ class SingletonCoroutine(
         val job =
             CoroutineScope(coRtContext).launch(start = CoroutineStart.LAZY) {
             try {
-                logger.debug(tag, "Launched $currentID in thread ${Thread.currentThread().id}")
+                logger.debug(tag, "Launched $currentID")
                 if (behaviour == SingletonCoroutineBehaviour.CANCEL_OTHER_ON_LAUNCH) {
                     // wait for all previous instances to finish cancellation
                     instancesMap.keys.filter { it != currentID }.forEach {

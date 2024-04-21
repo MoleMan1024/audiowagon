@@ -35,6 +35,7 @@ import de.moleman1024.audiowagon.medialibrary.*
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyElement
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyID
 import de.moleman1024.audiowagon.enums.ContentHierarchyType
+import de.moleman1024.audiowagon.enums.RepeatMode
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.DATABASE_ID_UNKNOWN
 import de.moleman1024.audiowagon.persistence.PersistentPlaybackState
 import de.moleman1024.audiowagon.persistence.PersistentStorage
@@ -58,7 +59,8 @@ const val PLAYBACK_SPEED: Float = 1.0f
 const val REQUEST_CODE: Int = 25573
 const val ACTION_SHUFFLE_ON = "de.moleman1024.audiowagon.ACTION_SHUFFLE_ON"
 const val ACTION_SHUFFLE_OFF = "de.moleman1024.audiowagon.ACTION_SHUFFLE_OFF"
-const val ACTION_REPEAT_ON = "de.moleman1024.audiowagon.ACTION_REPEAT_ON"
+const val ACTION_REPEAT_ALL_ON = "de.moleman1024.audiowagon.ACTION_REPEAT_ALL_ON"
+const val ACTION_REPEAT_ONE_ON = "de.moleman1024.audiowagon.ACTION_REPEAT_ONE_ON"
 const val ACTION_REPEAT_OFF = "de.moleman1024.audiowagon.ACTION_REPEAT_OFF"
 const val ACTION_EJECT = "de.moleman1024.audiowagon.ACTION_EJECT"
 const val ACTION_REWIND_10 = "de.moleman1024.audiowagon.ACTION_REWIND_10"
@@ -173,7 +175,7 @@ class AudioSession(
         logger.debug(TAG, "initPlaybackState()")
         val actions = playbackStateActions.createPlaybackActions()
         val customActionShuffleOn = playbackStateActions.createCustomActionShuffleIsOff()
-        val customActionRepeatOn = playbackStateActions.createCustomActionRepeatIsOff()
+        val customActionRepeatOneOn = playbackStateActions.createCustomActionRepeatIsOff()
         val customActionEject = playbackStateActions.createCustomActionEject()
         val customActionRewind10 = playbackStateActions.createCustomActionRewind10()
         playbackState = PlaybackStateCompat.Builder().setState(
@@ -184,7 +186,7 @@ class AudioSession(
             .addCustomAction(customActionRewind10)
             .addCustomAction(customActionShuffleOn)
             .addCustomAction(customActionEject)
-            .addCustomAction(customActionRepeatOn)
+            .addCustomAction(customActionRepeatOneOn)
             .build()
         runBlocking(dispatcher) {
             setMediaSessionPlaybackState(playbackState)
@@ -202,10 +204,16 @@ class AudioSession(
             } else {
                 playbackStateActions.createCustomActionShuffleIsOff()
             }
-            val customActionRepeat = if (audioPlayerStatus.isRepeating) {
-                playbackStateActions.createCustomActionRepeatIsOn()
-            } else {
-                playbackStateActions.createCustomActionRepeatIsOff()
+            val customActionRepeat = when (audioPlayerStatus.repeatMode) {
+                RepeatMode.REPEAT_ALL -> {
+                    playbackStateActions.createCustomActionRepeatAllIsOn()
+                }
+                RepeatMode.REPEAT_ONE -> {
+                    playbackStateActions.createCustomActionRepeatOneIsOn()
+                }
+                else -> {
+                    playbackStateActions.createCustomActionRepeatIsOff()
+                }
             }
             // TODO: builders should be kept as members for performance reasons, expensive to build
             //  (see https://developer.android.com/guide/topics/media-apps/working-with-a-media-session )
@@ -782,12 +790,17 @@ class AudioSession(
     }
 
     private suspend fun createQueueAndPlay(audioItems: List<AudioItem>, startIndex: Int = 0) {
+        logger.debug(TAG, "createQueueAndPlay(audioItems.size=${audioItems.size}, startIndex=$startIndex)")
         // see https://developer.android.com/reference/android/media/session/MediaSession#setQueue(java.util.List%3Candroid.media.session.MediaSession.QueueItem%3E)
         // TODO: check how many is "too many" tracks and use sliding window instead
         val queue: MutableList<MediaSessionCompat.QueueItem> = mutableListOf()
         for ((queueIndex, audioItem) in audioItems.withIndex()) {
             val description = audioItemLibrary.createAudioItemDescription(audioItem)
             val queueItem = MediaSessionCompat.QueueItem(description, queueIndex.toLong())
+            logger.verbose(
+                TAG, "adding queueItem at index $queueIndex: ${queueItem.description} " +
+                        "(${queueItem.description.mediaId})"
+            )
             queue.add(queueItem)
         }
         audioPlayer.setPlayQueueAndNotify(queue, startIndex)
@@ -854,7 +867,7 @@ class AudioSession(
             }
         }
         audioPlayer.setShuffle(state.isShuffling)
-        audioPlayer.setRepeat(state.isRepeating)
+        audioPlayer.setRepeatMode(state.repeatMode)
         audioPlayer.setPlayQueue(queue)
         setMediaSessionQueue(queue)
         try {
@@ -881,7 +894,12 @@ class AudioSession(
 
     private suspend fun setMediaSessionQueue(queue: List<MediaSessionCompat.QueueItem>) {
         withContext(mediaSessionDispatcher) {
-            mediaSession.setQueue(queue)
+            if (queue.isNotEmpty()) {
+                mediaSession.setQueue(queue)
+            } else {
+                logger.warning(TAG, "No elements in given media session queue, setting null instead")
+                mediaSession.setQueue(null)
+            }
         }
     }
 
@@ -934,7 +952,7 @@ class AudioSession(
         playbackStateToPersist.queueIDs = queueIDs
         playbackStateToPersist.queueIndex = queueIndex
         playbackStateToPersist.isShuffling = isShuffling()
-        playbackStateToPersist.isRepeating = isRepeating()
+        playbackStateToPersist.repeatMode = getRepeatMode()
         playbackStateToPersist.lastContentHierarchyID = lastContentHierarchyIDPlayed
         if (lastContentHierarchyIDPlayed.isNotBlank()) {
             val lastContentHierarchyID = ContentHierarchyElement.deserialize(lastContentHierarchyIDPlayed)
@@ -986,8 +1004,8 @@ class AudioSession(
         return audioPlayer.isShuffling()
     }
 
-    private fun isRepeating(): Boolean {
-        return audioPlayer.isRepeating()
+    private fun getRepeatMode(): RepeatMode {
+        return audioPlayer.getRepeatMode()
     }
 
     private suspend fun getQueueIDs(): List<String> {

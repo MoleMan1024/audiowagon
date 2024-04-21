@@ -23,6 +23,7 @@ import kotlinx.coroutines.*
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.lang.Integer.min
+import java.time.Instant
 import kotlin.concurrent.thread
 
 private const val TAG = "AlbumArtContentProv"
@@ -30,6 +31,10 @@ private val logger = Logger
 
 // a linux pipe can fit max 64k
 private const val PIPE_CHUNK_SIZE_BYTES = 16384
+
+// When AudioBrowserService binder connection is unbound, this is usually because we are shutting down or going to
+// sleep. To avoid that the media GUI re-binds immediately to fetch more album art, we block re-binding for some seconds
+private const val SECONDS_TO_BLOCK_AFTER_UNBIND: Long = 4
 
 /**
  * A content provider so that media browser GUI can retrieve album art.
@@ -44,9 +49,11 @@ class AlbumArtContentProvider : ContentProvider() {
     private var audioBrowserService: AudioBrowserService? = null
     private var binderStatus: BinderStatus = BinderStatus.UNKNOWN
     private val uuid = Util.generateUUID()
+    private var lastUnbindTimestamp: Instant? = null
     private val audioBrowserLifecycleObserver: ((event: LifecycleEvent) -> Unit) = {
         when (it) {
             LifecycleEvent.DESTROY, LifecycleEvent.SUSPEND, LifecycleEvent.IDLE -> {
+                logger.debug(TAG, "AudioBrowserService lifecycle changed to: $it")
                 audioBrowserService?.removeLifecycleObserver(uuid)
                 unbindAudioBrowserService()
             }
@@ -113,6 +120,7 @@ class AlbumArtContentProvider : ContentProvider() {
             context?.unbindService(connection)
             audioBrowserService = null
             binderStatus = BinderStatus.UNBOUND
+            lastUnbindTimestamp = Util.getLocalDateTimeNow()
         }
     }
 
@@ -134,9 +142,14 @@ class AlbumArtContentProvider : ContentProvider() {
                 albumArtByteArray = defaultAlbumArtAlbums
             }
             if (audioBrowserService != null) {
-                val resolvedAlbumArt = audioBrowserService?.getAlbumArtForURI(uri)
-                if (resolvedAlbumArt != null) {
-                    albumArtByteArray = resolvedAlbumArt
+                try {
+                    val resolvedAlbumArt = audioBrowserService?.getAlbumArtForURI(uri)
+                    if (resolvedAlbumArt != null) {
+                        albumArtByteArray = resolvedAlbumArt
+                    }
+                } catch (exc: RuntimeException) {
+                    // can happen when data source is cleared during metadata retrieval
+                    logger.exception(TAG, exc.message.toString(), exc)
                 }
             }
             val inOutPipe = ParcelFileDescriptor.createPipe()
@@ -173,11 +186,20 @@ class AlbumArtContentProvider : ContentProvider() {
     private fun init() {
         logger.verbose(TAG, "init(binderStatus=$binderStatus)")
         if (binderStatus == BinderStatus.UNBOUND) {
-            val intent =
-                Intent(AudioBrowserService::class.java.name, Uri.EMPTY, context, AudioBrowserService::class.java)
-            logger.debug(TAG, "bindService(intent=$intent, connection=$connection)")
-            context?.bindService(intent, connection, Context.BIND_AUTO_CREATE)
-            binderStatus = BinderStatus.BIND_REQUESTED
+            val lastUnbindTime = lastUnbindTimestamp
+            if (lastUnbindTime == null) {
+                bindAudioBrowserService()
+            } else {
+                val now = Util.getLocalDateTimeNow()
+                if (Util.getDifferenceInSecondsForInstants(lastUnbindTime, now) > SECONDS_TO_BLOCK_AFTER_UNBIND) {
+                    bindAudioBrowserService()
+                } else {
+                    logger.verbose(
+                        TAG, "Binder connection to AudioBrowserService was recently unbound, will not re-bind for " +
+                                "some seconds"
+                    )
+                }
+            }
         }
         if (defaultAlbumArtAlbums.size <= 1) {
             val drawable =
@@ -193,6 +215,14 @@ class AlbumArtContentProvider : ContentProvider() {
                 defaultAlbumArtTracks = createDefaultAlbumArt(drawable)
             }
         }
+    }
+
+    private fun bindAudioBrowserService() {
+        val intent =
+            Intent(AudioBrowserService::class.java.name, Uri.EMPTY, context, AudioBrowserService::class.java)
+        logger.debug(TAG, "bindService(intent=$intent, connection=$connection)")
+        context?.bindService(intent, connection, Context.BIND_AUTO_CREATE)
+        binderStatus = BinderStatus.BIND_REQUESTED
     }
 
     /**

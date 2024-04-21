@@ -12,6 +12,40 @@ Google's review process which can take a couple of days.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project loosely follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [2.6.6] - 2024-04-21
+
+### Added
+
+- A new repeat mode was added for a total of 3 modes: "repeat off", "repeat one", "repeat all". Depending on the mode,
+  the current track/file will be repeated when it finishes playing, or the whole playback queue will be repeated (or
+  nothing will be repeated). You can cycle through the modes in the playback view in the extras drawer (three dots on
+  the right) [#139](https://github.com/MoleMan1024/audiowagon/issues/139)
+
+### Fixed
+
+- when fixing [#118](https://github.com/MoleMan1024/audiowagon/issues/118) a problem was introduced where tracks
+  could be missing their parent album. This has been fixed.
+- the icon shown in the *Files* view was inconsistent with other views (*Tracks*, *Album* and *Artist*) when no USB
+  drive was connected. This has been fixed.
+- fixed a `IndexOutOfBoundsException` seen once in Crashlytics for `getCurrentItem()` at end of playback queue
+- try to avoid a `ConcurrentModificationException` seen once in Crashlytics in variable `buildLibraryJobs`.
+
+### Changed
+
+- improve compatibility with Android 12 for upcoming major Volvo/Polestar software update. More changes might be done
+  in near future after I get the Android 12 update for my own car
+- the code to check if the screen is currently on or off was modified to be more accurate
+- handle situation where broadcasts `USER_PRESENT` and `SCREEN_ON` come multiple times or in different orders
+- ignore some more USB devices that are not mass storage devices (Apple iPhone, iPod, Samsung phone, etc.)
+- block the re-binding of `AlbumArtContentProvider` to `AudioBrowserService` for some seconds after unbinding because
+  that probably only happens after the screen goes to sleep and we should not try to retrieve album art in that
+  situation
+- do no try to load album art when there are no storage locations
+- changed the broadcast forwarding procedure in `USBDummyActivity`
+- some internal changes for logging, exception handling and mutual exclusion
+
+
 ## [2.5.14] - 2024-02-19
 
 It makes me happy to say that the app is now being used in at least ten-thousand cars around the world 😄

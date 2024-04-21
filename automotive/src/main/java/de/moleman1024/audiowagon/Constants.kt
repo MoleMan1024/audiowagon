@@ -6,7 +6,7 @@ const val IDLE_TIMEOUT_MS = 30000L
 // "play <artist | album | track>"
 const val ACTION_PLAY_USB = "android.car.intent.action.PLAY_USB"
 const val ACTION_MEDIA_BUTTON = "android.intent.action.MEDIA_BUTTON"
-const val ACTION_RESTART_SERVICE = "de.moleman1024.audiowagon.ACTION_RESTART_SERVICE"
+const val ACTION_START_SERVICE_WITH_USB_DEVICE = "de.moleman1024.audiowagon.ACTION_START_SERVICE_WITH_USB_DEVICE"
 const val CMD_DISABLE_CRASH_REPORTING = "de.moleman1024.audiowagon.CMD_DISABLE_CRASH_REPORTING"
 const val CMD_DISABLE_EQUALIZER = "de.moleman1024.audiowagon.CMD_DISABLE_EQUALIZER"
 const val CMD_DISABLE_LOG_TO_USB = "de.moleman1024.audiowagon.CMD_DISABLE_LOG_TO_USB"
@@ -33,3 +33,4 @@ const val NOTIFICATION_ID: Int = 25575
 const val DEFAULT_JPEG_QUALITY_PERCENTAGE = 60
 const val POPUP_TIMEOUT_MS: Long = 4000L
 const val NUM_VIEW_TABS: Int = 4
+const val UPDATE_ATTACHED_DEVICES_AFTER_UNLOCK_DELAY_MS = 2000L

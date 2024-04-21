@@ -211,6 +211,9 @@ interface TrackDAO {
     )
     fun searchTracksByAlbumAndArtist(album: String, artist: String): List<Track>
 
+    @Query("UPDATE track SET parentAlbumId = :newAlbumId WHERE parentAlbumId = :oldAlbumId")
+    fun replaceAlbumID(oldAlbumId: Long, newAlbumId: Long)
+
     @Delete
     fun delete(track: Track)
 

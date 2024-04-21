@@ -48,7 +48,7 @@ interface MediaDevice {
             if (fileOrDirectory.name.contains(Util.DIRECTORIES_TO_IGNORE_REGEX)) {
                logger.debug(TAG, "Ignoring directory: ${fileOrDirectory.name}")
             } else {
-               logger.debug(TAG, "Walking directory: ${fileOrDirectory.absolutePath}")
+               logger.verbose(TAG, "Walking directory: ${fileOrDirectory.absolutePath}")
                yield(fileOrDirectory)
                for (subFileOrDir in fileOrDirectory.listFiles()?.sortedBy { it.name.lowercase() }!!) {
                   if (!allFilesDirs.containsKey(subFileOrDir.absolutePath)) {

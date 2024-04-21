@@ -134,6 +134,9 @@ class JavaAndroidUSBCommunication(
     }
 
     override fun reset() {
+        if (deviceConnection == null) {
+            return
+        }
         logger.debug(TAG, "reset()")
         if (!resetUSBNative(deviceConnection!!.fileDescriptor)) {
             logger.warning(TAG, "Failed ioctl USBDEVFS_RESET")

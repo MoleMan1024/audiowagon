@@ -11,8 +11,10 @@ import android.hardware.usb.UsbManager
 import android.net.Uri
 import android.os.Bundle
 import android.os.PersistableBundle
+import android.view.View
+import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
-import de.moleman1024.audiowagon.ACTION_RESTART_SERVICE
+import de.moleman1024.audiowagon.ACTION_START_SERVICE_WITH_USB_DEVICE
 import de.moleman1024.audiowagon.AudioBrowserService
 import de.moleman1024.audiowagon.filestorage.usb.ACTION_USB_ATTACHED
 import de.moleman1024.audiowagon.log.Logger
@@ -42,19 +44,27 @@ class USBDummyActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?, persistentState: PersistableBundle?) {
         logger.debug(TAG, "onCreate()")
         super.onCreate(savedInstanceState, persistentState)
+        makeTransparent()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         logger.debug(TAG, "onCreate()")
         super.onCreate(savedInstanceState)
+        makeTransparent()
+    }
+
+    // we don't want this view to be visible to the user nor catch any touch events
+    private fun makeTransparent() {
+        window.decorView.rootView.visibility = View.GONE
+        window.addFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE)
     }
 
     override fun onStart() {
-        logger.debug(TAG, "onStart()")
         super.onStart()
+        logger.debug(TAG, "onStart()")
+        makeTransparent()
         // We must not call to shared preferences in here, as this may happen during direct boot where accessing
-        // preferences might not be allowed yet (protected storage)
-        startForegroundService(Intent(ACTION_RESTART_SERVICE, Uri.EMPTY, this, AudioBrowserService::class.java))
+        // preferences might not be allowed yet (protected storage).
         rebroadcastUSBDeviceAttached()
         // close this activity again immediately so it does not block the GUI
         finish()
@@ -63,11 +73,13 @@ class USBDummyActivity : AppCompatActivity() {
     override fun onResume() {
         logger.debug(TAG, "onResume()")
         super.onResume()
+        makeTransparent()
     }
 
     override fun onNewIntent(intent: Intent?) {
         logger.debug(TAG, "onNewIntent(intent=$intent)")
         super.onNewIntent(intent)
+        makeTransparent()
     }
 
     private fun rebroadcastUSBDeviceAttached() {
@@ -79,9 +91,10 @@ class USBDummyActivity : AppCompatActivity() {
         val usbDevice: UsbDevice? = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE)
         usbDevice?.let {
             logger.debug(TAG, "Re-broadcasting USB_DEVICE_ATTACHED intent")
-            val rebroadcastIntent = Intent(ACTION_USB_ATTACHED)
-            rebroadcastIntent.putExtra(UsbManager.EXTRA_DEVICE, it)
-            sendBroadcast(rebroadcastIntent)
+            val startServiceIntent = Intent(ACTION_START_SERVICE_WITH_USB_DEVICE, Uri.EMPTY, this,
+                AudioBrowserService::class.java)
+            startServiceIntent.putExtra(UsbManager.EXTRA_DEVICE, it)
+            startService(startServiceIntent)
         }
     }
 

@@ -6,6 +6,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 package de.moleman1024.audiowagon.player
 
 import android.support.v4.media.session.MediaSessionCompat
+import de.moleman1024.audiowagon.enums.RepeatMode
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.player.data.PlaybackQueueChange
 import kotlinx.coroutines.CoroutineDispatcher
@@ -18,8 +19,8 @@ class PlaybackQueue(private val dispatcher: CoroutineDispatcher) {
     private var playbackQueue = mutableListOf<MediaSessionCompat.QueueItem>()
     private var originalQueueOrder: Map<Long, Int> = mapOf()
     private var currentIndex: Int = -1
+    private var repeatMode: RepeatMode = RepeatMode.OFF
     val observers = mutableListOf<(PlaybackQueueChange) -> Unit>()
-    var isRepeating: Boolean = false
 
     suspend fun setItems(items: List<MediaSessionCompat.QueueItem>) {
         withContext(dispatcher) {
@@ -31,6 +32,9 @@ class PlaybackQueue(private val dispatcher: CoroutineDispatcher) {
         }
     }
 
+    /**
+     * Called when a track has completed playback and next track in playback queue shall play
+     */
     suspend fun incrementIndex() {
         withContext(dispatcher) {
             currentIndex = getNextIndex()
@@ -38,9 +42,27 @@ class PlaybackQueue(private val dispatcher: CoroutineDispatcher) {
         }
     }
 
-    suspend fun getNextIndex(): Int {
+    /**
+     * Returns the next index in the playback queue, if there is any. Takes both repeat modes into account
+     */
+    private suspend fun getNextIndex(): Int {
         return withContext(dispatcher) {
-            if (!isRepeating && isLastTrack()) {
+            return@withContext if (repeatMode == RepeatMode.REPEAT_ONE) {
+                logger.debug(TAG, "Repeat one is on, returning current index in playback queue again")
+                currentIndex
+            } else {
+                getNextIndexIgnoreRepeatOne()
+            }
+        }
+    }
+
+    /**
+     * Returns the next index in the playback queue, if there is any. Takes REPEAT_ALL into account, but ignores
+     * REPEAT_ONE. This is used for example when skipping to next/previous track manually.
+     */
+    suspend fun getNextIndexIgnoreRepeatOne(): Int {
+        return withContext(dispatcher) {
+            if (repeatMode == RepeatMode.OFF && isLastTrack()) {
                 return@withContext -1
             }
             if (playbackQueue.size <= 0) {
@@ -64,7 +86,8 @@ class PlaybackQueue(private val dispatcher: CoroutineDispatcher) {
         return withContext(dispatcher) {
             var prevIndex = currentIndex - 1
             if (prevIndex < 0) {
-                prevIndex = if (isRepeating) {
+                // if we go beyoned start of playback queue
+                prevIndex = if (repeatMode != RepeatMode.OFF) {
                     playbackQueue.size - 1
                 } else {
                     -1
@@ -74,6 +97,9 @@ class PlaybackQueue(private val dispatcher: CoroutineDispatcher) {
         }
     }
 
+    /**
+     * Returns true when the current track is the last track in playback queue (irregardless of repeat mode)
+     */
     suspend fun isLastTrack(): Boolean {
         return withContext(dispatcher) {
             if (currentIndex == playbackQueue.size - 1) {
@@ -110,7 +136,7 @@ class PlaybackQueue(private val dispatcher: CoroutineDispatcher) {
             if (currentIndex <= -1 || playbackQueue.size <= 0) {
                 return@withContext null
             }
-            if (currentIndex > playbackQueue.size) {
+            if (currentIndex >= playbackQueue.size) {
                 return@withContext null
             }
             return@withContext playbackQueue[currentIndex]
@@ -123,7 +149,7 @@ class PlaybackQueue(private val dispatcher: CoroutineDispatcher) {
             if (nextIndex <= -1 || playbackQueue.size <= 0) {
                 return@withContext null
             }
-            if (nextIndex > playbackQueue.size) {
+            if (nextIndex >= playbackQueue.size) {
                 return@withContext null
             }
             return@withContext playbackQueue[nextIndex]
@@ -132,7 +158,7 @@ class PlaybackQueue(private val dispatcher: CoroutineDispatcher) {
 
     suspend fun hasEnded(): Boolean {
         return withContext(dispatcher) {
-            if (!isRepeating && isLastTrack()) {
+            if (repeatMode == RepeatMode.OFF && isLastTrack()) {
                 return@withContext true
             }
             return@withContext false
@@ -160,6 +186,7 @@ class PlaybackQueue(private val dispatcher: CoroutineDispatcher) {
      * playback queue shall be at the beginning of the shuffled queue
      */
     suspend fun shuffle(startIndex: Int) {
+        logger.debug(TAG, "shuffle(startIndex=$startIndex)")
         withContext(dispatcher) {
             val startItem = playbackQueue[startIndex]
             playbackQueue.removeAt(startIndex)
@@ -171,6 +198,7 @@ class PlaybackQueue(private val dispatcher: CoroutineDispatcher) {
     }
 
     suspend fun unshuffle() {
+        logger.debug(TAG, "unshuffle()")
         withContext(dispatcher) {
             val currentItem = getCurrentItem() ?: return@withContext
             playbackQueue = playbackQueue.sortedBy { originalQueueOrder[it.queueId] }.toMutableList()
@@ -180,15 +208,9 @@ class PlaybackQueue(private val dispatcher: CoroutineDispatcher) {
         }
     }
 
-    suspend fun setRepeatOn() {
+    suspend fun setRepeatMode(mode: RepeatMode) {
         withContext(dispatcher) {
-            isRepeating = true
-        }
-    }
-
-    suspend fun setRepeatOff() {
-        withContext(dispatcher) {
-            isRepeating = false
+            repeatMode = mode
         }
     }
 

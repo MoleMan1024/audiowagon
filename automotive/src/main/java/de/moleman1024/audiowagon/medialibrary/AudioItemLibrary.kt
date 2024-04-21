@@ -41,6 +41,7 @@ import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.io.IOException
+import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.coroutineContext
 
@@ -91,7 +92,7 @@ class AudioItemLibrary(
 
     var albumArtStyleSetting: AlbumStyleSetting = sharedPrefs.getAlbumStyleSettingEnum(context, logger, TAG)
     var useInMemoryDatabase: Boolean = false
-    private val buildLibraryJobs = mutableListOf<Job>()
+    private val buildLibraryJobs = ConcurrentLinkedQueue<Job>()
 
     init {
         val viewTabsFromSettings = sharedPrefs.getViewTabSettings(context, logger, TAG)
@@ -158,7 +159,7 @@ class AudioItemLibrary(
         repeat(4) {
             val buildLibraryCoroutineJob = CoroutineScope(coroutineContext).launch {
                 channel.consumeEach { fileOrDirectory ->
-                    logger.debug(TAG, "buildLibrary() received: $fileOrDirectory")
+                    logger.verbose(TAG, "buildLibrary() received: $fileOrDirectory")
                     if (!isBuildLibraryCancelled) {
                         if (fileOrDirectory is AudioFile) {
                             if (isReadAudioFileMetadata) {
@@ -206,6 +207,7 @@ class AudioItemLibrary(
         }
         isBuildingLibrary = false
         isBuildLibraryCancelled = false
+        buildLibraryJobs.clear()
         val endTime = System.nanoTime()
         val timeTakenMS = (endTime - startTime) / 1000000L
         logger.debug(TAG, "Building library took ${timeTakenMS}ms")
@@ -221,7 +223,7 @@ class AudioItemLibrary(
                 val audioFileHasChanged =
                     repo.hasAudioFileChangedForTrack(file, trackIDInDatabase)
                 if (!audioFileHasChanged) {
-                    logger.debug(TAG, "Track $trackIDInDatabase already in database for file: $file")
+                    logger.verbose(TAG, "Track $trackIDInDatabase already in database for file: $file")
                     repo.trackIDsToKeep.add(trackIDInDatabase)
                 } else {
                     repo.removeTrack(trackIDInDatabase)
@@ -796,6 +798,10 @@ class AudioItemLibrary(
         if (byteArrayFromCache != null) {
             logger.debug(TAG, "Returning album art from cache for: $file")
             return byteArrayFromCache
+        }
+        if (!areAnyReposAvail()) {
+            logger.warning(TAG, "No repositories available, can not retrieve album art for file: $file")
+            return null
         }
         val albumArtBytes: ByteArray?
         when (file) {

@@ -31,7 +31,14 @@ import java.io.File
 import java.net.URLConnection
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+import java.time.Duration
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 import java.util.*
+import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.floor
 
@@ -66,6 +73,12 @@ class Util {
             Pair(1060, 18752),
             // Microchip MCP2200 USB to UART converter 0x04D8
             Pair(1240, 223),
+            // Samsung Galaxy (MTP mode)
+            Pair(1256, 26720),
+            // Apple iPod
+            Pair(1452, 4766),
+            // Apple iPhone 5/5C/5S/6/SE/7/8/X/XR
+            Pair(1452, 4776),
             // Mitsubishi USB to Modem Bridge 0x06D3
             Pair(1747, 10272),
             // Cambridge Silicon Radio Bluetooth dongle 0x0A12
@@ -406,6 +419,19 @@ class Util {
         fun logMemory(context: Context, logger: Logger, tag: String) {
             logger.debug(tag, "System memory: ${getAvailableMemory(context)}")
             logger.debug(tag, "JVM memory: ${getAppMemory()}")
+        }
+
+        fun getLocalDateTimeNow(): Instant {
+            return LocalDateTime.now().toInstant(ZoneOffset.UTC)
+        }
+
+        fun getDifferenceInSecondsForInstants(oldInstant: Instant, newInstant: Instant): Long {
+            return abs(Duration.between(oldInstant, newInstant).seconds)
+        }
+
+        fun getLocalDateTimeStringNow(): String {
+            val date = ZonedDateTime.now()
+            return DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ").format(date)
         }
 
     }

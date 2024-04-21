@@ -103,6 +103,7 @@
             <intent-filter>
                 <action android:name="android.media.browse.MediaBrowserService" />
                 <action android:name="android.intent.action.MEDIA_BUTTON" />
+                <!-- https://source.android.com/docs/automotive/broadcast-radio -->
                 <action android:name="android.car.intent.action.PLAY_USB" />
             </intent-filter>
         </service>

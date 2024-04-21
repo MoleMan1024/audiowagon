@@ -154,6 +154,99 @@ class PlaybackTest {
         }
     }
 
+    @Test
+    fun skipToNext_repeatAllAndEndOfPlaybackQueue_repeatsPlaybackQueueFromFirstEntry() {
+        serviceFixture.transportControls?.sendCustomAction("de.moleman1024.audiowagon.ACTION_REPEAT_OFF", null)
+        for (index in 0 until 2) {
+            createMP3().apply {
+                id3v2Tag.title = "Track${index}"
+                id3v2Tag.album = "Album"
+            }.also { storeMP3(it, "$MUSIC_ROOT/folder/track${index}.mp3") }
+        }
+        attachUSBDevice(mockUSBDevice)
+        TestUtils.waitForIndexingCompleted(audioBrowserService)
+        Thread.sleep(1000)
+        serviceFixture.transportControls?.stop()
+        Thread.sleep(500)
+        serviceFixture.transportControls?.sendCustomAction("de.moleman1024.audiowagon.ACTION_REPEAT_ALL_ON", null)
+        Thread.sleep(500)
+        val playAlbumID = "{\"type\":\"ALL_TRACKS_FOR_ALBUM\",\"alb\":1,$STORAGE_ID}"
+        serviceFixture.transportControls?.playFromMediaId(playAlbumID, null)
+        TestUtils.waitForAudioPlayerState(PlaybackStateCompat.STATE_PLAYING, audioBrowserService)
+        val firstTrackMediaID = serviceFixture.metadata?.description?.mediaId.toString()
+        Logger.debug(TAG, "Skipping to second item in playback queue")
+        serviceFixture.transportControls?.skipToNext()
+        TestUtils.waitForAudioPlayerState(PlaybackStateCompat.STATE_SKIPPING_TO_QUEUE_ITEM, audioBrowserService)
+        TestUtils.waitForAudioPlayerState(PlaybackStateCompat.STATE_PLAYING, audioBrowserService)
+        Logger.debug(TAG, "Skipping over end of playback queue")
+        serviceFixture.transportControls?.skipToNext()
+        TestUtils.waitForAudioPlayerState(PlaybackStateCompat.STATE_SKIPPING_TO_QUEUE_ITEM, audioBrowserService)
+        TestUtils.waitForAudioPlayerState(PlaybackStateCompat.STATE_PLAYING, audioBrowserService)
+        serviceFixture.transportControls?.pause()
+        TestUtils.waitForAudioPlayerState(PlaybackStateCompat.STATE_PAUSED, audioBrowserService)
+        Assert.assertEquals(firstTrackMediaID, serviceFixture.metadata?.description?.mediaId.toString())
+    }
+
+    /**
+     * https://github.com/MoleMan1024/audiowagon/issues/139
+     */
+    @Test
+    fun trackEnds_repeatOne_repeatsSameTrackAgain() {
+        serviceFixture.transportControls?.sendCustomAction("de.moleman1024.audiowagon.ACTION_REPEAT_OFF", null)
+        for (index in 0 until 2) {
+            createMP3().apply {
+                id3v2Tag.title = "Track${index}"
+                id3v2Tag.album = "Album"
+            }.also { storeMP3(it, "$MUSIC_ROOT/folder/track${index}.mp3") }
+        }
+        attachUSBDevice(mockUSBDevice)
+        TestUtils.waitForIndexingCompleted(audioBrowserService)
+        Thread.sleep(1000)
+        serviceFixture.transportControls?.stop()
+        Thread.sleep(500)
+        serviceFixture.transportControls?.sendCustomAction("de.moleman1024.audiowagon.ACTION_REPEAT_ONE_ON", null)
+        Thread.sleep(500)
+        val playAlbumID = "{\"type\":\"ALL_TRACKS_FOR_ALBUM\",\"alb\":1,$STORAGE_ID}"
+        serviceFixture.transportControls?.playFromMediaId(playAlbumID, null)
+        TestUtils.waitForAudioPlayerState(PlaybackStateCompat.STATE_PLAYING, audioBrowserService)
+        val firstTrackMediaID = serviceFixture.metadata?.description?.mediaId.toString()
+        Logger.debug(TAG, "Seeking to end of track")
+        // duration of track test.mp3 is 2168ms
+        serviceFixture.transportControls?.seekTo(2100)
+        Thread.sleep(500)
+        TestUtils.waitForAudioPlayerState(PlaybackStateCompat.STATE_PLAYING, audioBrowserService)
+        Assert.assertEquals(firstTrackMediaID, serviceFixture.metadata?.description?.mediaId.toString())
+    }
+
+    @Test
+    fun skipToNext_repeatOffAndEndOfPlaybackQueue_playbackEnds() {
+        serviceFixture.transportControls?.sendCustomAction("de.moleman1024.audiowagon.ACTION_REPEAT_OFF", null)
+        for (index in 0 until 2) {
+            createMP3().apply {
+                id3v2Tag.title = "Track${index}"
+                id3v2Tag.album = "Album"
+            }.also { storeMP3(it, "$MUSIC_ROOT/folder/track${index}.mp3") }
+        }
+        attachUSBDevice(mockUSBDevice)
+        TestUtils.waitForIndexingCompleted(audioBrowserService)
+        Thread.sleep(1000)
+        serviceFixture.transportControls?.stop()
+        Thread.sleep(500)
+        val playAlbumID = "{\"type\":\"ALL_TRACKS_FOR_ALBUM\",\"alb\":1,$STORAGE_ID}"
+        serviceFixture.transportControls?.playFromMediaId(playAlbumID, null)
+        TestUtils.waitForAudioPlayerState(PlaybackStateCompat.STATE_PLAYING, audioBrowserService)
+        Logger.debug(TAG, "Skipping to second item in playback queue")
+        serviceFixture.transportControls?.skipToNext()
+        TestUtils.waitForAudioPlayerState(PlaybackStateCompat.STATE_SKIPPING_TO_QUEUE_ITEM, audioBrowserService)
+        TestUtils.waitForAudioPlayerState(PlaybackStateCompat.STATE_PLAYING, audioBrowserService)
+        val lastTrackMediaID = serviceFixture.metadata?.description?.mediaId.toString()
+        Logger.debug(TAG, "Skipping over end of playback queue")
+        serviceFixture.transportControls?.skipToNext()
+        TestUtils.waitForAudioPlayerState(PlaybackStateCompat.STATE_PAUSED, audioBrowserService)
+        // current track should stay on last track in playback queue
+        Assert.assertEquals(serviceFixture.metadata?.description?.mediaId.toString(), lastTrackMediaID)
+    }
+
     /**
      * https://github.com/MoleMan1024/audiowagon/issues/119
      */

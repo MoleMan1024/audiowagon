@@ -291,7 +291,10 @@ abstract class ContentHierarchyElement(
         return MediaItem(description, MediaItem.FLAG_BROWSABLE)
     }
 
-    protected fun createPseudoNoEntriesItem(audioFileStorage: AudioFileStorage, sharedPrefs: SharedPrefs): MediaItem {
+    protected suspend fun createPseudoNoEntriesItem(
+        audioFileStorage: AudioFileStorage,
+        sharedPrefs: SharedPrefs
+    ): MediaItem {
         var title = context.getString(R.string.browse_tree_no_entries_title)
         var subtitle: String
         subtitle = context.getString(R.string.browse_tree_no_usb_drive)
@@ -301,14 +304,20 @@ abstract class ContentHierarchyElement(
             if (numAttachedPermittedDevices > 0) {
                 if (sharedPrefs.isLegalDisclaimerAgreed(context)) {
                     if (audioFileStorage.areAnyStoragesAvail()) {
-                        val metadataReadSetting = sharedPrefs.getMetadataReadSettingEnum(context, logger, TAG)
-                        if (metadataReadSetting == MetadataReadSetting.MANUALLY
-                            || metadataReadSetting == MetadataReadSetting.FILEPATHS_ONLY
-                        ) {
-                            title = context.getString(R.string.browse_tree_metadata_not_yet_indexed_title)
-                            subtitle = context.getString(R.string.browse_tree_metadata_not_yet_indexed_desc)
-                            iconID = R.drawable.usb
+                        if (this !is ContentHierarchyRootFiles) {
+                            val metadataReadSetting = sharedPrefs.getMetadataReadSettingEnum(context, logger, TAG)
+                            if (metadataReadSetting == MetadataReadSetting.MANUALLY
+                                || metadataReadSetting == MetadataReadSetting.FILEPATHS_ONLY
+                            ) {
+                                title = context.getString(R.string.browse_tree_metadata_not_yet_indexed_title)
+                                subtitle = context.getString(R.string.browse_tree_metadata_not_yet_indexed_desc)
+                                iconID = R.drawable.usb
+                            } else {
+                                subtitle = context.getString(R.string.browse_tree_usb_drive_ejected)
+                                iconID = R.drawable.report
+                            }
                         } else {
+                            // metadata does not matter in "Files" view
                             subtitle = context.getString(R.string.browse_tree_usb_drive_ejected)
                             iconID = R.drawable.report
                         }

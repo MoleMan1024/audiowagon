@@ -20,6 +20,7 @@ import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.enums.AudioFocusRequestResult
 import de.moleman1024.audiowagon.enums.AudioPlayerState
 import de.moleman1024.audiowagon.enums.EqualizerPreset
+import de.moleman1024.audiowagon.enums.RepeatMode
 import de.moleman1024.audiowagon.exceptions.AlreadyStoppedException
 import de.moleman1024.audiowagon.exceptions.CannotReadFileException
 import de.moleman1024.audiowagon.exceptions.MissingEffectsException
@@ -288,7 +289,6 @@ class AudioPlayer(
         playerStatus.hasPlaybackQueueEnded = false
         playerStatus.playbackState = PlaybackStateCompat.STATE_BUFFERING
         notifyPlayerStatusChange()
-        @Suppress("BlockingMethodInNonBlockingContext")
         currentMediaPlayer?.prepare()
     }
 
@@ -357,7 +357,7 @@ class AudioPlayer(
         cancelSetupNextPlayerJob()
         withContext(dispatcher) {
             logger.debug(TAG, "skipNextTrack()")
-            val nextQueueIndex = playbackQueue.getNextIndex()
+            val nextQueueIndex = playbackQueue.getNextIndexIgnoreRepeatOne()
             if (nextQueueIndex <= -1) {
                 logger.warning(TAG, "No next track for skipping")
                 // need to set pause here, because Android Automotive media browser client will change transport
@@ -457,43 +457,43 @@ class AudioPlayer(
         }
     }
 
-    suspend fun setRepeatOn() {
+    suspend fun setRepeatOneOn() {
         withContext(dispatcher) {
-            setRepeat(true)
-            if (playbackQueue.isLastTrack()) {
-                setupNextPlayer()
-            }
+            setRepeatMode(RepeatMode.REPEAT_ONE)
+            setupNextPlayer()
+            notifyPlayerStatusChange()
+        }
+    }
+
+    suspend fun setRepeatAllOn() {
+        withContext(dispatcher) {
+            setRepeatMode(RepeatMode.REPEAT_ALL)
+            setupNextPlayer()
             notifyPlayerStatusChange()
         }
     }
 
     suspend fun setRepeatOff() {
         withContext(dispatcher) {
-            setRepeat(false)
+            setRepeatMode(RepeatMode.OFF)
             if (playbackQueue.isLastTrack()) {
                 removeNextPlayer()
+            } else {
+                setupNextPlayer()
             }
             notifyPlayerStatusChange()
         }
     }
 
-    suspend fun setRepeat(isOn: Boolean) {
+    suspend fun setRepeatMode(mode: RepeatMode) {
         withContext(dispatcher) {
-            logger.debug(TAG, "setRepeat(isOn=$isOn)")
-            if (isOn) {
-                if (playerStatus.isRepeating) {
-                    logger.debug(TAG, "Repeat is already turned on")
-                    return@withContext
-                }
-                playbackQueue.setRepeatOn()
-            } else {
-                if (!playerStatus.isRepeating) {
-                    logger.debug(TAG, "Repeat is already turned off")
-                    return@withContext
-                }
-                playbackQueue.setRepeatOff()
+            logger.debug(TAG, "setRepeatMode(mode=$mode)")
+            if (playerStatus.repeatMode == mode) {
+                logger.debug(TAG, "Repeat mode is already: $mode")
+                return@withContext
             }
-            playerStatus.isRepeating = isOn
+            playbackQueue.setRepeatMode(mode)
+            playerStatus.repeatMode = mode
         }
     }
 
@@ -577,7 +577,6 @@ class AudioPlayer(
         }
     }
 
-    @Suppress("RedundantSuspendModifier")
     private suspend fun notifyPlayerStatus(status: AudioPlayerStatus) {
         // this needs to run in a different dispatcher than the single thread used for this AudioPlayer to avoid
         // deadlocks
@@ -727,7 +726,6 @@ class AudioPlayer(
             }
             nextMediaPlayer.setDataSource(nextMediaDataSource)
             logger.debug(TAG, "prepare() next player")
-            @Suppress("BlockingMethodInNonBlockingContext")
             nextMediaPlayer.prepare()
             onPreparedNextPlayer(nextMediaPlayer)
         }
@@ -769,7 +767,6 @@ class AudioPlayer(
         Util.logMemory(context, logger, TAG)
     }
 
-    @Suppress("RedundantSuspendModifier")
     private suspend fun removeNextPlayer() {
         if (!isAtLeastPrepared(currentMediaPlayer)) {
             return
@@ -840,7 +837,6 @@ class AudioPlayer(
         }
     }
 
-    @Suppress("RedundantSuspendModifier")
     private suspend fun getDataSourceForURI(uri: Uri): MediaDataSource {
         logger.debug(TAG, "getDataSourceForURI($uri)")
         try {
@@ -1000,8 +996,8 @@ class AudioPlayer(
         return playerStatus.isShuffling
     }
 
-    fun isRepeating(): Boolean {
-        return playerStatus.isRepeating
+    fun getRepeatMode(): RepeatMode {
+        return playerStatus.repeatMode
     }
 
     suspend fun enableEqualizer() {

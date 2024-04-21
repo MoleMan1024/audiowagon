@@ -15,6 +15,7 @@
 .idea/dictionaries
 .idea/gradle.xml
 .idea/libraries
+.idea/emulatorDisplays.xml
 **/.idea/modules.xml
 .idea/navEditor.xml
 **/.idea/vcs.xml
@@ -46,5 +47,4 @@ google-services.json
 .idea/deploymentTargetDropDown.xml
 **/.cxx
 .idea/sonarlint
-.idea/androidTestResultsUserPreferences.xml
 

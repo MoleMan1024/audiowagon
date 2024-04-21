@@ -52,6 +52,7 @@
     <string name="action_shuffle_turn_on">シャッフル on</string>
     <string name="action_shuffle_turn_off">シャッフル off</string>
     <string name="action_repeat_turn_on">リピート on</string>
+    <string name="action_repeat_one_turn_on">1回リピート on</string>
     <string name="action_repeat_turn_off">リピート off</string>
     <string name="action_eject">取り出し</string>
     <string name="action_rewind">巻き戻し</string>

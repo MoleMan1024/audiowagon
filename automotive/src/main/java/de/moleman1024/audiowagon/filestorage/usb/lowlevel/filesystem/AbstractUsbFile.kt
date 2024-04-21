@@ -27,7 +27,6 @@ abstract class AbstractUsbFile : UsbFile {
         if (!isDirectory) {
             throw UnsupportedOperationException("This is a file!")
         }
-        logger.debug(TAG, "search file: $pathVal")
         if (isRoot && pathVal == UsbFile.separator) {
             return this
         }
@@ -39,15 +38,12 @@ abstract class AbstractUsbFile : UsbFile {
         }
         val index = pathVal.indexOf(UsbFile.separator)
         if (index < 0) {
-            logger.debug(TAG, "search entry: $pathVal")
             return searchThis(pathVal)
         } else {
             val subPath = pathVal.substring(index + 1)
             val dirName = pathVal.substring(0, index)
-            logger.debug(TAG, "search recursively $subPath in $dirName")
             val file = searchThis(dirName)
             if (file != null && file.isDirectory) {
-                logger.debug(TAG, "found directory $dirName")
                 return file.search(subPath)
             }
         }

@@ -57,6 +57,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
     <string name="action_shuffle_turn_on">Lecture aléatoire activée</string>
     <string name="action_shuffle_turn_off">Lecture aléatoire désactivée</string>
     <string name="action_repeat_turn_on">Mode répétition activé</string>
+    <string name="action_repeat_one_turn_on">Mode répétition d\'un activé</string>
     <string name="action_repeat_turn_off">Mode répétition désactivé</string>
     <string name="action_eject">Éjecter</string>
     <string name="action_rewind">Rembobiner</string>

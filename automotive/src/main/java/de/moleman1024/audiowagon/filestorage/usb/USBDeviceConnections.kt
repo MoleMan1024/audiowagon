@@ -61,6 +61,7 @@ class USBDeviceConnections(
     val isAnyDeviceAttached = AtomicBoolean()
     val isAnyDevicePermitted = AtomicBoolean()
     private var isBroadcastRecvRegistered = false
+
     // use a single thread here to avoid race conditions updating the USB attached/detached status from multiple threads
     private val singleThreadDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
     private val updateAttachedDevicesSingletonCoroutine =
@@ -73,6 +74,7 @@ class USBDeviceConnections(
         SingletonCoroutine("USBDetached", singleThreadDispatcher, scope.coroutineContext, crashReporting)
     private val usbPermissionSingletonCoroutine =
         SingletonCoroutine("USBPermission", singleThreadDispatcher, scope.coroutineContext, crashReporting)
+
     /**
      * Received when a USB device is (un)plugged. This can take a few seconds after plugging in the USB flash drive.
      * Runs in main thread, do not perform long running tasks here:
@@ -110,6 +112,7 @@ class USBDeviceConnections(
                             onAttachedUSBMassStorageDeviceFound(usbMediaDevice)
                         }
                     }
+
                     UsbManager.ACTION_USB_DEVICE_ATTACHED -> {
                         isAnyDeviceAttached.set(true)
                         usbAttachedDelayedSingletonCoroutine.launch {
@@ -121,6 +124,7 @@ class USBDeviceConnections(
                             onAttachedUSBMassStorageDeviceFound(usbMediaDevice)
                         }
                     }
+
                     UsbManager.ACTION_USB_DEVICE_DETACHED -> {
                         isUpdatingDevices.set(false)
                         isAnyDeviceAttached.set(false)
@@ -131,6 +135,7 @@ class USBDeviceConnections(
                             onUSBDeviceDetached(usbMediaDevice)
                         }
                     }
+
                     ACTION_USB_PERMISSION_CHANGE -> {
                         usbPermissionSingletonCoroutine.launch {
                             if (!isDeviceAttached(usbMediaDevice)) {
@@ -182,9 +187,11 @@ class USBDeviceConnections(
                     is DeviceNotApplicableException, is DeviceNotCompatible -> {
                         logger.debug(TAG, exc.toString())
                     }
+
                     is RuntimeException -> {
                         logger.exception(TAG, "Exception when checking for compatible USB mass storage device", exc)
                     }
+
                     else -> throw exc
                 }
             }
@@ -213,7 +220,7 @@ class USBDeviceConnections(
             }
             val usbDeviceProxy = AndroidUSBDeviceProxy(androidUSBDevice, getUSBManager())
             USBMediaDevice(context, usbDeviceProxy)
-        } catch (exc: ClassCastException) {
+        } catch (exc: Exception) {
             val mockUSBDevice: USBDevice = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 intent.getParcelableExtra(UsbManager.EXTRA_DEVICE, USBDevice::class.java)
                     ?: throw NoSuchDeviceException("Cannot extract mock USB device for test")
@@ -482,8 +489,7 @@ class USBDeviceConnections(
             attachedAndPermittedDevices[0].enableLogging()
         } catch (exc: DriveAlmostFullException) {
             throw exc
-        }
-        catch (exc: RuntimeException) {
+        } catch (exc: RuntimeException) {
             logger.exception(TAG, exc.message.toString(), exc)
         }
     }

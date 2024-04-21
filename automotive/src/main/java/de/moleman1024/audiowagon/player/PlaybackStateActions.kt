@@ -42,13 +42,19 @@ class PlaybackStateActions(private val context: Context) {
 
     fun createCustomActionRepeatIsOff(): PlaybackStateCompat.CustomAction {
         return PlaybackStateCompat.CustomAction.Builder(
-            ACTION_REPEAT_ON, context.getString(R.string.action_repeat_turn_on), R.drawable.repeat
+            ACTION_REPEAT_ONE_ON, context.getString(R.string.action_repeat_one_turn_on), R.drawable.repeat_off
         ).build()
     }
 
-    fun createCustomActionRepeatIsOn(): PlaybackStateCompat.CustomAction {
+    fun createCustomActionRepeatOneIsOn(): PlaybackStateCompat.CustomAction {
         return PlaybackStateCompat.CustomAction.Builder(
-            ACTION_REPEAT_OFF, context.getString(R.string.action_repeat_turn_off), R.drawable.repeat_on
+            ACTION_REPEAT_ALL_ON, context.getString(R.string.action_repeat_turn_on), R.drawable.repeat_one_on
+        ).build()
+    }
+
+    fun createCustomActionRepeatAllIsOn(): PlaybackStateCompat.CustomAction {
+        return PlaybackStateCompat.CustomAction.Builder(
+            ACTION_REPEAT_OFF, context.getString(R.string.action_repeat_turn_off), R.drawable.repeat_all_on
         ).build()
     }
 

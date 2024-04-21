@@ -57,6 +57,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
     <string name="action_shuffle_turn_on">Willekeurig aan</string>
     <string name="action_shuffle_turn_off">Willekeurig uit</string>
     <string name="action_repeat_turn_on">Herhalen aan</string>
+    <string name="action_repeat_one_turn_on">Herhalen één aan</string>
     <string name="action_repeat_turn_off">Herhalen uit</string>
     <string name="action_eject">Ontkoppelen</string>
     <string name="action_rewind">Terugspoelen</string>

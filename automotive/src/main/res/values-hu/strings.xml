@@ -57,6 +57,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
     <string name="action_shuffle_turn_on">Véletlenszerű lejátszás be</string>
     <string name="action_shuffle_turn_off">Véletlenszerű lejátszás ki</string>
     <string name="action_repeat_turn_on">Ismétlés be</string>
+    <string name="action_repeat_one_turn_on">Ismétlés egy be</string>
     <string name="action_repeat_turn_off">Ismétlés ki</string>
     <string name="action_eject">Leválasztás</string>
     <string name="action_rewind">Visszapörgetés</string>

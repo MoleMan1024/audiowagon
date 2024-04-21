@@ -154,9 +154,14 @@ class AudioSessionCallback(
                     audioPlayer.setShuffleOff()
                 }
             }
-            ACTION_REPEAT_ON -> {
+            ACTION_REPEAT_ONE_ON -> {
                 repeatSingletonCoroutine.launch {
-                    audioPlayer.setRepeatOn()
+                    audioPlayer.setRepeatOneOn()
+                }
+            }
+            ACTION_REPEAT_ALL_ON -> {
+                repeatSingletonCoroutine.launch {
+                    audioPlayer.setRepeatAllOn()
                 }
             }
             ACTION_REPEAT_OFF -> {

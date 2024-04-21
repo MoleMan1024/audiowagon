@@ -40,7 +40,7 @@ class ContentHierarchyRootFiles(
         val items = mutableListOf<MediaItem>()
         if (!sharedPrefs.isLegalDisclaimerAgreed(context) || !audioFileStorage.areAnyStoragesAvail()) {
             logger.debug(TAG, "Showing pseudo MediaItem 'no entries available'")
-            items += createPseudoNoEntriesItem()
+            items += createPseudoNoEntriesItem(audioFileStorage, sharedPrefs)
             return items
         }
         val directoryContents = getDirectoryContents()
@@ -80,34 +80,6 @@ class ContentHierarchyRootFiles(
             )
         }.build()
         return MediaItem(description, MediaItem.FLAG_PLAYABLE)
-    }
-
-    private fun createPseudoNoEntriesItem(): MediaItem {
-        val numAvailableDevices = audioFileStorage.getNumAttachedPermittedDevices()
-        var title = context.getString(R.string.browse_tree_no_entries_title)
-        var subtitle: String
-        subtitle = context.getString(R.string.browse_tree_no_usb_drive)
-        if (numAvailableDevices > 0) {
-            if (sharedPrefs.isLegalDisclaimerAgreed(context)) {
-                subtitle = context.getString(R.string.browse_tree_usb_drive_ejected)
-            } else {
-                logger.debug(TAG, "Legal disclaimer was not yet agreed")
-                title = context.getString(R.string.browse_tree_need_to_agree_legal_title)
-                subtitle = context.getString(R.string.browse_tree_need_to_agree_legal_desc)
-            }
-        }
-        val description = MediaDescriptionCompat.Builder().apply {
-            setMediaId(serialize(ContentHierarchyID(ContentHierarchyType.NONE)))
-            setTitle(title)
-            setSubtitle(subtitle)
-            setIconUri(
-                Uri.parse(RESOURCE_ROOT_URI
-                        + context.resources.getResourceEntryName(R.drawable.report))
-            )
-        }.build()
-        // Tapping this should do nothing. We use BROWSABLE flag here, when clicked an empty subfolder will open.
-        // This is the better alternative than flag PLAYABLE which will open the playback view in front of the browser
-        return MediaItem(description, MediaItem.FLAG_BROWSABLE)
     }
 
     override suspend fun getAudioItems(): List<AudioItem> {

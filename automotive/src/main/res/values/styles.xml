@@ -16,7 +16,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
     </style>
 
     <!-- used for dummy USB activity that shall not appear on screen -->
-    <style name="TransparentTheme" parent="Theme.AppCompat">
+    <style name="TransparentTheme" parent="Theme.AppCompat.NoActionBar">
         <item name="android:backgroundDimEnabled">false</item>
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowContentOverlay">@null</item>

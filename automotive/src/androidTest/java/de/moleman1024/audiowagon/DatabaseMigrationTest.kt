@@ -13,6 +13,7 @@ import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.util.ServiceFixture
 import de.moleman1024.audiowagon.util.TestUtils
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.runBlocking
 import org.junit.*
 import java.io.File
 
@@ -53,7 +54,9 @@ class DatabaseMigrationTest {
         audioBrowserService = serviceFixture.waitForAudioBrowserService()
         val sdCardMediaDevice = SDCardMediaDevice(SD_CARD_ID, ROOT_DIR)
         audioBrowserService.setMediaDeviceForTest(sdCardMediaDevice)
-        audioBrowserService.updateAttachedDevices()
+        runBlocking {
+            audioBrowserService.updateAttachedDevices()
+        }
         val waitForCompletedTimeoutMS = 1000 * 10
         TestUtils.waitForTrueOrFail(
             { audioBrowserService.getIndexingStatus().any { it == IndexingStatus.COMPLETED } },

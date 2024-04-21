@@ -9,6 +9,7 @@ import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Build
 import de.moleman1024.audiowagon.log.Logger
 import java.util.*
 import kotlin.math.abs
@@ -25,12 +26,19 @@ class SDCardDevicePermissions(private val context: Context) {
     private val permissionRequestUUID : Int = abs(UUID.randomUUID().hashCode())
 
     fun requestPermissions(activity: Activity) {
-        logger.debug(TAG, "Requesting permission to access SD card")
-        activity.requestPermissions(neededPermissions, permissionRequestUUID)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            logger.debug(TAG, "Requesting permission to access SD card")
+            activity.requestPermissions(neededPermissions, permissionRequestUUID)
+        }
     }
 
     fun isPermitted() : Boolean {
-        return neededPermissions.all { context.checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED }
+        return if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            neededPermissions.all { context.checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED }
+        } else {
+            // https://developer.android.com/training/data-storage/shared/media#storage-permission
+            true
+        }
     }
 
     fun onRequestPermissionsResult(requestCode: Int, grantResults: IntArray) {

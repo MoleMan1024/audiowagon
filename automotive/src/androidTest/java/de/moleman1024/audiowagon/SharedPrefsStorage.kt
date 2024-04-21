@@ -36,7 +36,7 @@ open class SharedPrefsStorage {
         mockPreferencesMap[PERSISTENT_STORAGE_QUEUE_INDEX] = 0
         mockPreferencesMap[PERSISTENT_STORAGE_QUEUE_IDS] = ""
         mockPreferencesMap[PERSISTENT_STORAGE_IS_SHUFFLING] = false
-        mockPreferencesMap[PERSISTENT_STORAGE_IS_REPEATING] = false
+        mockPreferencesMap[PERSISTENT_STORAGE_REPEAT_MODE] = "OFF"
         mockPreferencesMap[PERSISTENT_STORAGE_LAST_CONTENT_HIERARCHY_ID] = ""
     }
 

@@ -15,7 +15,7 @@ My development environment is Windows, if you use Linux or Mac, some steps may d
 These steps assume basic knowledge about build and install process on Android in general:
 
 - Get latest [Android Studio](https://developer.android.com/studio)
-- In Android Studio download the Android 10 SDK
+- In Android Studio download the Android 11 SDK
 - Clone the project from Github
 - Load the project into Android Studio
 - Use *gradle* to compile the project via Android Studio and create an `.apk` or `.aab` bundle

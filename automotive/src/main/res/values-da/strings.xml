@@ -57,6 +57,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
     <string name="action_shuffle_turn_on">Tilfældig afspilningsrækkefølge til</string>
     <string name="action_shuffle_turn_off">Tilfældig afspilningsrækkefølge fra</string>
     <string name="action_repeat_turn_on">Gentagelse til</string>
+    <string name="action_repeat_one_turn_on">Gentagelse en til</string>
     <string name="action_repeat_turn_off">Gentagelse fra</string>
     <string name="action_eject">Tag USB-drevet ud</string>
     <string name="action_rewind">Spole tilbage</string>

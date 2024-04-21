@@ -44,7 +44,7 @@ class PlaylistFileResolver(
         }
     }
 
-    fun parseForAudioItems(): List<AudioItem> {
+    suspend fun parseForAudioItems(): List<AudioItem> {
         val audioItems: List<AudioItem>
         val playlistType = determineType(playlistFileUri) ?: return listOf()
         try {
@@ -66,7 +66,7 @@ class PlaylistFileResolver(
         return audioItems
     }
 
-    private fun parseM3U(): MutableList<AudioItem> {
+    private suspend fun parseM3U(): MutableList<AudioItem> {
         logger.debug(TAG, "Parsing .m3u playlist file")
         val audioItems = mutableListOf<AudioItem>()
         for (line in getLines()) {
@@ -87,7 +87,7 @@ class PlaylistFileResolver(
         return audioItems
     }
 
-    private fun parsePLS(): MutableList<AudioItem> {
+    private suspend fun parsePLS(): MutableList<AudioItem> {
         logger.debug(TAG, "Parsing .pls playlist file")
         val audioItems = mutableListOf<AudioItem>()
         for (line in getLines()) {
@@ -104,7 +104,7 @@ class PlaylistFileResolver(
         return audioItems
     }
 
-    private fun parseXSPF(): MutableList<AudioItem> {
+    private suspend fun parseXSPF(): MutableList<AudioItem> {
         logger.debug(TAG, "Parsing .xspf playlist file")
         val audioItems = mutableListOf<AudioItem>()
         try {
@@ -138,7 +138,7 @@ class PlaylistFileResolver(
         return audioItems
     }
 
-    private fun convertPathToAudioItem(path: String): AudioItem {
+    private suspend fun convertPathToAudioItem(path: String): AudioItem {
         logger.debug(TAG, "Converted path: $path")
         val uri = Util.createURIForPath(audioFileStorage.getPrimaryStorageLocation().storageID, path)
         val audioFile = AudioFile(uri)

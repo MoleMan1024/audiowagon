@@ -40,6 +40,7 @@ class SettingsFragmentTest {
         Logger.debug(TAG, "tearDown()")
         browser.unsubscribe(browser.root)
         browser.disconnect()
+        serviceFixture.stopService()
         serviceFixture.shutdown()
     }
 

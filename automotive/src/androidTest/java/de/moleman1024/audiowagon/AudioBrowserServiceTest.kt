@@ -31,6 +31,7 @@ class AudioBrowserServiceTest {
     @After
     fun tearDown() {
         Logger.debug(TAG, "tearDown()")
+        serviceFixture.stopService()
         serviceFixture.shutdown()
     }
 

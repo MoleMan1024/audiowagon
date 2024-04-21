@@ -57,6 +57,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
     <string name="action_shuffle_turn_on">Воспроизведение в случайном порядке вкл</string>
     <string name="action_shuffle_turn_off">Воспроизведение в случайном порядке выкл</string>
     <string name="action_repeat_turn_on">Повторное воспроизведение вкл</string>
+    <string name="action_repeat_one_turn_on">Повторное воспроизведение один вкл</string>
     <string name="action_repeat_turn_off">Повторное воспроизведение выкл</string>
     <string name="action_eject">Извлечь</string>
     <string name="action_rewind">Перематывать</string>

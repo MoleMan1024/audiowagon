@@ -12,8 +12,10 @@ import android.hardware.usb.UsbConstants.USB_CLASS_MASS_STORAGE
 import android.hardware.usb.UsbDevice
 import android.media.MediaDataSource
 import android.net.Uri
+import android.os.Build
 import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.exceptions.DriveAlmostFullException
+import de.moleman1024.audiowagon.exceptions.NoAudioItemException
 import de.moleman1024.audiowagon.exceptions.NoFileSystemException
 import de.moleman1024.audiowagon.filestorage.data.AudioFile
 import de.moleman1024.audiowagon.filestorage.FileSystem
@@ -164,14 +166,20 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
             logVersionToUSBLogfile()
             logger.info(TAG, "Disabling log to file on USB device")
             logger.setFlushToUSBFlag()
-            runBlocking(Dispatchers.IO) {
-                try {
-                    withTimeout(4000) {
-                        logger.writeBufferedLogToUSBFile()
-                        logger.closeUSBFile()
+            val exceptionHandler = CoroutineExceptionHandler { _, exc ->
+                when (exc) {
+                    is TimeoutCancellationException -> {
+                        logger.exception(TAG, "Could not write/close log file on USB in time", exc)
                     }
-                } catch (exc: TimeoutCancellationException) {
-                    logger.exception(TAG, "Could not write/close log file on USB in time", exc)
+                    else -> {
+                        logger.exception(TAG, exc.message.toString(), exc)
+                    }
+                }
+            }
+            runBlocking(exceptionHandler + Dispatchers.IO) {
+                withTimeout(4000) {
+                    logger.writeBufferedLogToUSBFile()
+                    logger.closeUSBFile()
                 }
             }
         } catch (exc: IOException) {
@@ -189,8 +197,7 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
 
     private fun logVersionToUSBLogfile() {
         try {
-            val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-            logger.info(TAG, "Version: ${packageInfo.versionName} (code: ${packageInfo.longVersionCode})")
+            logger.logVersion(context)
             logger.setFlushToUSBFlag()
         } catch (exc: PackageManager.NameNotFoundException) {
             logger.exception(TAG, "Package name not found", exc)
@@ -317,7 +324,9 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
     }
 
     override fun toString(): String {
-        return "${USBMediaDevice::class.simpleName}{${usbDevice};${hashCode()}}"
+        return runBlocking(usbLibDispatcher) {
+            return@runBlocking "${USBMediaDevice::class.simpleName}{${usbDevice};${hashCode()}}"
+        }
     }
 
     override suspend fun getDataSourceForURI(uri: Uri): MediaDataSource {

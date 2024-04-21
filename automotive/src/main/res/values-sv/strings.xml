@@ -57,6 +57,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
     <string name="action_shuffle_turn_on">Shuffle på</string>
     <string name="action_shuffle_turn_off">Shuffle av</string>
     <string name="action_repeat_turn_on">Repetition på</string>
+    <string name="action_repeat_one_turn_on">Repetition en på</string>
     <string name="action_repeat_turn_off">Repetition av</string>
     <string name="action_eject">Mata ut</string>
     <string name="action_rewind">Spola tillbaka</string>

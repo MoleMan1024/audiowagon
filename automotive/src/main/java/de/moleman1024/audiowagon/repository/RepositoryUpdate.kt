@@ -49,7 +49,8 @@ class RepositoryUpdate(private val repo: AudioItemRepository, private val contex
         var artistInDB: Artist? = null
         var newAlbumArtist: Artist? = null
         if (metadata.artist.isNotBlank()) {
-            // multiple artists with same name are unlikely, ignore this case
+            // Multiple artists with same name are unlikely (but does happen e.g. "John Williams"), ignore this case,
+            // no easy way to differentiate the artists
             artistInDB = repo.getDatabaseNoLock()?.artistDAO()?.queryByName(metadata.artist)
             if (artistInDB?.artistId != null) {
                 artistID = artistInDB.artistId
@@ -123,6 +124,7 @@ class RepositoryUpdate(private val repo: AudioItemRepository, private val contex
             val albumArtURINeedsUpdate = doesAlbumArtURINeedUpdate(albumInDB, albumArtSource)
             if (albumArtURINeedsUpdate) {
                 // delete the album with the outdated album art info and create new one below
+                logger.warning(TAG, "Deleting album with outdated album art: $albumInDB")
                 albumInDB?.albumId?.let { repo.getDatabaseNoLock()?.albumDAO()?.deleteByID(it) }
             }
             albumID = if (albumInDB?.albumId != null && !albumArtURINeedsUpdate) {
@@ -137,7 +139,16 @@ class RepositoryUpdate(private val repo: AudioItemRepository, private val contex
                     hasFolderImage = albumArtSource is GeneralFile
                 )
                 logger.debug(TAG, "Inserting album: $album")
-                repo.getDatabaseNoLock()?.albumDAO()?.insert(album) ?: DATABASE_ID_UNKNOWN
+                val id = repo.getDatabaseNoLock()?.albumDAO()?.insert(album) ?: DATABASE_ID_UNKNOWN
+                logger.verbose(TAG, "Inserted album with id $id: $album")
+                id
+            }
+            if (albumArtURINeedsUpdate) {
+                // if we deleted an album due to updated album art we must update IDs in corresponding tracks
+                albumInDB?.albumId?.let {
+                    logger.verbose(TAG, "Replacing album ids in tracks: $it -> $albumID")
+                    repo.getDatabaseNoLock()?.trackDAO()?.replaceAlbumID(it, albumID)
+                }
             }
         }
         val albumArtContentURIForTrack = AudioMetadataMaker.createURIForAlbumArtForTrack(albumArtID)

@@ -3,7 +3,10 @@ SPDX-FileCopyrightText: 2021-2024 MoleMan1024 <moleman1024dev@gmail.com>
 SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#if (${PACKAGE_NAME} && ${PACKAGE_NAME} != "")package ${PACKAGE_NAME}
+package de.moleman1024.audiowagon.enums
 
-#end
-#parse("File Header.java")
+enum class RepeatMode {
+    OFF,
+    REPEAT_ONE,
+    REPEAT_ALL
+}

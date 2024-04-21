@@ -13,6 +13,7 @@ import de.moleman1024.audiowagon.util.MediaBrowserSearch
 import de.moleman1024.audiowagon.util.ServiceFixture
 import de.moleman1024.audiowagon.util.TestUtils
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.runBlocking
 import org.junit.*
 
 private const val TAG = "MediaSearchTest"
@@ -38,7 +39,10 @@ class MediaSearchTest {
             audioBrowserService.setUseInMemoryDatabase()
             val sdCardMediaDevice = SDCardMediaDevice(SD_CARD_ID, ROOT_DIR)
             audioBrowserService.setMediaDeviceForTest(sdCardMediaDevice)
-            audioBrowserService.updateAttachedDevices()
+            audioBrowserService.cancelUpdateDevicesCoroutine()
+            runBlocking {
+                audioBrowserService.updateAttachedDevices()
+            }
             TestUtils.waitForTrueOrFail(
                 { audioBrowserService.getIndexingStatus().any { it == IndexingStatus.COMPLETED } },
                 TIMEOUT_MS_LIBRARY_CREATION, "indexing completed"

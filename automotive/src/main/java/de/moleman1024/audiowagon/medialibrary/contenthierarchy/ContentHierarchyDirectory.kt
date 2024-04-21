@@ -78,7 +78,7 @@ class ContentHierarchyDirectory(
         return MediaItem(description, MediaItem.FLAG_PLAYABLE)
     }
 
-    fun createGroups(directoryContents: List<FileLike>): MutableList<MediaItem> {
+    suspend fun createGroups(directoryContents: List<FileLike>): MutableList<MediaItem> {
         logger.debug(TAG, "Too many files/dirs (${directoryContents.size}), creating groups")
         if (numTitleCharsPerGroup < 0) {
             setNumTitleCharsPerGroupBasedOnScreenWidth()

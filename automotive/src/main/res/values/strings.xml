@@ -90,6 +90,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
     <string name="action_shuffle_turn_on">Shuffle on</string>
     <string name="action_shuffle_turn_off">Shuffle off</string>
     <string name="action_repeat_turn_on">Repeat on</string>
+    <string name="action_repeat_one_turn_on">Repeat one on</string>
     <string name="action_repeat_turn_off">Repeat off</string>
     <string name="action_eject">Eject</string>
     <string name="action_rewind">Rewind</string>

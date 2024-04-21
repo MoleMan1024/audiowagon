@@ -57,6 +57,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
     <string name="action_shuffle_turn_on">Tilfeldig rekkefølge</string>
     <string name="action_shuffle_turn_off">Standard rekkefølge</string>
     <string name="action_repeat_turn_on">Gjenta på</string>
+    <string name="action_repeat_one_turn_on">Gjenta en på</string>
     <string name="action_repeat_turn_off">Gjenta av</string>
     <string name="action_eject">Løs ut</string>
     <string name="action_rewind">Spole</string>

@@ -6,6 +6,9 @@ SPDX-License-Identifier: GPL-3.0-or-later
 package de.moleman1024.audiowagon.log
 
 import android.annotation.SuppressLint
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import android.util.Log
 import android.util.Log.getStackTraceString
 import androidx.annotation.VisibleForTesting
@@ -94,6 +97,21 @@ object Logger : LoggerInterface {
 
     fun setFlushToUSBFlag() {
         isFlushOnNextWrite = true
+    }
+
+    fun logVersion(context: Context) {
+        val packageInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            context.packageManager.getPackageInfo(context.packageName, PackageManager.PackageInfoFlags.of(0L))
+        } else {
+            @Suppress("DEPRECATION")
+            context.packageManager.getPackageInfo(context.packageName, 0)
+        }
+        info(TAG, "Version: ${packageInfo.versionName} (code: ${packageInfo.longVersionCode})")
+        info(
+            TAG, "Running on Android: ${Build.VERSION.CODENAME} " +
+                    "(release: ${Build.VERSION.RELEASE}, securityPatch: ${Build.VERSION.SECURITY_PATCH}, " +
+                    "incremental: ${Build.VERSION.INCREMENTAL}, base: ${Build.VERSION.BASE_OS})"
+        )
     }
 
     private suspend fun flushToUSB() {
@@ -211,7 +229,6 @@ object Logger : LoggerInterface {
                 exceptionLogcatOnly(TAG, "Could not write to USB buffered output stream for logging", exc)
                 usbFileHasError = true
             }
-            verbose(TAG, "Finished log write to USB")
             if (isFlushOnNextWrite) {
                 flushToUSB()
             }

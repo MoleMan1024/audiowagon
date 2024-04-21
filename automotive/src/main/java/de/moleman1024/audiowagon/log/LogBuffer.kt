@@ -25,7 +25,6 @@ class LogBuffer(private val numMaxEntries: Int = NUM_MAX_LOG_ENTRIES) {
     private val channel = Channel<LogData>()
     private var recvChannelJob: Job? = null
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     fun init(scope: CoroutineScope) {
         this.scope = scope
         recvChannelJob = scope.launch(Dispatchers.IO) {

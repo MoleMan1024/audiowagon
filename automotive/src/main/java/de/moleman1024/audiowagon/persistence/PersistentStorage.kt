@@ -7,6 +7,7 @@ package de.moleman1024.audiowagon.persistence
 
 import android.content.Context
 import de.moleman1024.audiowagon.SharedPrefs
+import de.moleman1024.audiowagon.enums.RepeatMode
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
@@ -16,7 +17,7 @@ const val PERSISTENT_STORAGE_CURRENT_TRACK_POS = "current_track_pos"
 const val PERSISTENT_STORAGE_QUEUE_INDEX = "queue_index"
 const val PERSISTENT_STORAGE_QUEUE_IDS = "queue_ids"
 const val PERSISTENT_STORAGE_IS_SHUFFLING = "is_shuffling"
-const val PERSISTENT_STORAGE_IS_REPEATING = "is_repeating"
+const val PERSISTENT_STORAGE_REPEAT_MODE = "repeat_mode"
 const val PERSISTENT_STORAGE_LAST_CONTENT_HIERARCHY_ID = "last_content_hierarch_id"
 
 private const val TAG = "PersistentStorage"
@@ -36,7 +37,7 @@ class PersistentStorage(context: Context, private val dispatcher: CoroutineDispa
                 .putInt(PERSISTENT_STORAGE_QUEUE_INDEX, state.queueIndex)
                 .putString(PERSISTENT_STORAGE_QUEUE_IDS, queueIDSConcat)
                 .putBoolean(PERSISTENT_STORAGE_IS_SHUFFLING, state.isShuffling)
-                .putBoolean(PERSISTENT_STORAGE_IS_REPEATING, state.isRepeating)
+                .putString(PERSISTENT_STORAGE_REPEAT_MODE, state.repeatMode.name)
                 .putString(PERSISTENT_STORAGE_LAST_CONTENT_HIERARCHY_ID, state.lastContentHierarchyID)
                 .apply()
         }
@@ -49,7 +50,8 @@ class PersistentStorage(context: Context, private val dispatcher: CoroutineDispa
         val queueIDsConcat: String = sharedPreferences.getString(PERSISTENT_STORAGE_QUEUE_IDS, "") ?: ""
         val queueIDs: List<String> = queueIDsConcat.split(QUEUE_ID_SEPARATOR)
         val isShuffling: Boolean = sharedPreferences.getBoolean(PERSISTENT_STORAGE_IS_SHUFFLING, false)
-        val isRepeating: Boolean = sharedPreferences.getBoolean(PERSISTENT_STORAGE_IS_REPEATING, false)
+        val repeatModeStr: String =
+            sharedPreferences.getString(PERSISTENT_STORAGE_REPEAT_MODE, RepeatMode.OFF.name) ?: RepeatMode.OFF.name
         val lastContentHierarchyID: String =
             sharedPreferences.getString(PERSISTENT_STORAGE_LAST_CONTENT_HIERARCHY_ID, "") ?: ""
         val state = PersistentPlaybackState(trackID)
@@ -57,7 +59,7 @@ class PersistentStorage(context: Context, private val dispatcher: CoroutineDispa
         state.queueIndex = queueIndex
         state.queueIDs = queueIDs
         state.isShuffling = isShuffling
-        state.isRepeating = isRepeating
+        state.repeatMode = RepeatMode.valueOf(repeatModeStr)
         state.lastContentHierarchyID = lastContentHierarchyID
         logger.debug(TAG, "Retrieved persisted state: $state")
         return@withContext state

@@ -78,6 +78,7 @@ open class AudioFileStorage(
     val storageObservers = mutableListOf<(StorageChange) -> Unit>()
     val mediaDevicesForTest = mutableListOf<MediaDevice>()
     private val recentDirToAlbumArtMap = DirectoryToAlbumArtMapCache()
+
     private class DirectoryToAlbumArtMapCache : LinkedHashMap<String, FileLike?>() {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, FileLike?>?): Boolean {
             return size > MAX_NUM_ALBUM_ART_DIRS_TO_CACHE
@@ -109,14 +110,17 @@ open class AudioFileStorage(
                 DeviceAction.CONNECT -> deviceChange.device?.let {
                     addDevice(it)
                 }
+
                 DeviceAction.DISCONNECT -> deviceChange.device?.let {
                     setAllDataSourcesClosed()
                     detachStorageForDevice(it)
                     removeDevice(it)
                 }
+
                 DeviceAction.REFRESH -> {
                     notifyObservers(StorageChange("", StorageAction.REFRESH))
                 }
+
                 else -> {
                     // ignore
                 }
@@ -184,12 +188,15 @@ open class AudioFileStorage(
             is USBMediaDevice -> {
                 USBDeviceStorageLocation(device)
             }
+
             is SDCardMediaDevice -> {
                 SDCardStorageLocation(device)
             }
+
             is AssetMediaDevice -> {
                 AssetStorageLocation(device)
             }
+
             else -> {
                 throw RuntimeException("Unhandled device type when creating storage location: $device")
             }
@@ -319,11 +326,13 @@ open class AudioFileStorage(
         }
     }
 
-    fun getPrimaryStorageLocation(): AudioFileStorageLocation {
-        if (audioFileStorageLocations.isEmpty()) {
-            throw NoSuchElementException("No storage locations")
+    suspend fun getPrimaryStorageLocation(): AudioFileStorageLocation {
+        audioFileStorageLocationMutex.withLock {
+            if (audioFileStorageLocations.isEmpty()) {
+                throw NoSuchElementException("No storage locations")
+            }
+            return audioFileStorageLocations.first()
         }
-        return audioFileStorageLocations.first()
     }
 
     suspend fun getDataSourceForAudioFile(audioFile: AudioFile): MediaDataSource {
@@ -385,14 +394,20 @@ open class AudioFileStorage(
         return getStorageLocationForID(audioFile.storageID)
     }
 
-    fun prepareForEject() {
-        audioFileStorageLocations.forEach {
+    suspend fun prepareForEject() {
+        var storageLocations: MutableList<AudioFileStorageLocation>
+        audioFileStorageLocationMutex.withLock {
+            storageLocations = audioFileStorageLocations
+        }
+        storageLocations.forEach {
             val storageChange = StorageChange(it.storageID, StorageAction.REMOVE)
             notifyObservers(storageChange)
             it.cancelIndexAudioFiles()
             it.close()
         }
-        audioFileStorageLocations.clear()
+        audioFileStorageLocationMutex.withLock {
+            audioFileStorageLocations.clear()
+        }
         usbDeviceConnections.updateUSBStatusInSettings(R.string.setting_USB_status_ejected)
         notifyObservers(StorageChange("", StorageAction.REFRESH))
     }
@@ -418,30 +433,34 @@ open class AudioFileStorage(
         storageLoc.indexingStatus = indexingStatus
     }
 
-    fun shutdown() {
+    suspend fun shutdown() {
         logger.debug(TAG, "shutdown()")
         usbDeviceConnections.unregisterForUSBIntents()
         usbDeviceConnections.cancelCoroutines()
         closeDataSources()
         disableLogToUSB()
-        audioFileStorageLocations.forEach {
-            it.cancelIndexAudioFiles()
-            it.close()
+        audioFileStorageLocationMutex.withLock {
+            audioFileStorageLocations.forEach {
+                it.cancelIndexAudioFiles()
+                it.close()
+            }
+            audioFileStorageLocations.clear()
         }
-        audioFileStorageLocations.clear()
         cleanAlbumArtCache()
     }
 
-    fun suspend() {
+    suspend fun suspend() {
         logger.debug(TAG, "suspend()")
         usbDeviceConnections.cancelCoroutines()
         closeDataSources()
         disableLogToUSB()
-        audioFileStorageLocations.forEach {
-            it.cancelIndexAudioFiles()
-            it.close()
+        audioFileStorageLocationMutex.withLock {
+            audioFileStorageLocations.forEach {
+                it.cancelIndexAudioFiles()
+                it.close()
+            }
+            audioFileStorageLocations.clear()
         }
-        audioFileStorageLocations.clear()
         cleanAlbumArtCache()
         usbDeviceConnections.isSuspended = true
         isSuspended = true
@@ -487,9 +506,11 @@ open class AudioFileStorage(
         contentHierarchyID.path = file.uri.path.toString()
         val builder = MediaDescriptionCompat.Builder().apply {
             setTitle(file.name)
-            setIconUri(Uri.parse(
-                RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.draft)
-            ))
+            setIconUri(
+                Uri.parse(
+                    RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.draft)
+                )
+            )
             setMediaId(ContentHierarchyElement.serialize(contentHierarchyID))
             setMediaUri(file.uri)
         }
@@ -504,9 +525,11 @@ open class AudioFileStorage(
         contentHierarchyID.path = directory.uri.path.toString()
         val builder = MediaDescriptionCompat.Builder().apply {
             setTitle(directory.name)
-            setIconUri(Uri.parse(
-                RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.folder)
-            ))
+            setIconUri(
+                Uri.parse(
+                    RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.folder)
+                )
+            )
             setMediaId(ContentHierarchyElement.serialize(contentHierarchyID))
             setMediaUri(directory.uri)
         }
@@ -518,17 +541,21 @@ open class AudioFileStorage(
         contentHierarchyID.path = file.uri.path.toString()
         val builder = MediaDescriptionCompat.Builder().apply {
             setTitle(file.name)
-            setIconUri(Uri.parse(
-                RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.description)
-            ))
+            setIconUri(
+                Uri.parse(
+                    RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.description)
+                )
+            )
             setMediaId(ContentHierarchyElement.serialize(contentHierarchyID))
             setMediaUri(file.uri)
         }
         return builder.build()
     }
 
-    fun areAnyStoragesAvail(): Boolean {
-        return audioFileStorageLocations.isNotEmpty()
+    suspend fun areAnyStoragesAvail(): Boolean {
+        audioFileStorageLocationMutex.withLock {
+            return audioFileStorageLocations.isNotEmpty()
+        }
     }
 
     suspend fun getAlbumArtFileInDirectoryForURI(uri: Uri): FileLike? {
@@ -557,6 +584,10 @@ open class AudioFileStorage(
 
     fun isUpdatingDevices(): Boolean {
         return usbDeviceConnections.isUpdatingDevices.get()
+    }
+
+    fun setIsUpdatingDevices(value: Boolean) {
+        usbDeviceConnections.isUpdatingDevices.set(value)
     }
 
     fun isAnyDeviceAttached(): Boolean {

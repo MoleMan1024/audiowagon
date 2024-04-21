@@ -47,6 +47,7 @@ class ServiceFixture {
     var mediaController: MediaControllerCompat? = null
     val transportControls get() = mediaController?.transportControls
     val playbackQueue: MutableList<MediaSessionCompat.QueueItem>? get() = mediaController?.queue
+    val metadata get() = mediaController?.metadata
 
     fun bind() {
         Logger.debug(TAG, "Binding service")
@@ -110,6 +111,11 @@ class ServiceFixture {
         }
     }
 
+    /**
+     * Watch out to not call this when there service still needs to swtich to foreground, it will lead to exceptions
+     * 5 seconds later: "Context.startForegroundService() did not then call Service.startForeground()"
+    )
+     */
     fun stopService() {
         targetContext.stopService(intent)
     }
@@ -123,14 +129,12 @@ class ServiceFixture {
             mediaBrowser.disconnect()
         }
         if (mediaController != null) {
+            Logger.debug(TAG, "transportControls.stop()")
+            transportControls?.stop()
             mediaController = null
         }
+        Logger.debug(TAG, "unbind from service")
         unbindService()
-        stopService()
-        val packageName = targetContext.packageName
-        Logger.debug(TAG, "Killing background processes: $packageName")
-        val activityManager = targetContext.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-        activityManager.killBackgroundProcesses(packageName)
         // TODO: need to ensure in each test that service is destroyed
         // FIXME: this fails sometimes, unclear why
         if (this::audioBrowserService.isInitialized) {

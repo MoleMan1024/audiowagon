@@ -7,6 +7,7 @@ package de.moleman1024.audiowagon.player.data
 
 import android.support.v4.media.session.MediaSessionCompat.QueueItem
 import android.support.v4.media.session.PlaybackStateCompat
+import de.moleman1024.audiowagon.enums.RepeatMode
 
 data class AudioPlayerStatus(var playbackState: Int = PlaybackStateCompat.STATE_NONE) {
     var positionInMilliSec: Long = PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN
@@ -14,7 +15,8 @@ data class AudioPlayerStatus(var playbackState: Int = PlaybackStateCompat.STATE_
     var errorMsg: String = ""
     var queueItem: QueueItem? = null
     var isShuffling: Boolean = false
-    var isRepeating: Boolean = false
+    var repeatMode: RepeatMode = RepeatMode.OFF
+    // This will be set true only when playback queue naturally ends, not when e.g. skipped beyond end of queue
     var hasPlaybackQueueEnded: Boolean = false
 
     override fun toString(): String {

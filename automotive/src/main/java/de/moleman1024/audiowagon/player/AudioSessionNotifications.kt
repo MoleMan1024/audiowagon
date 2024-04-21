@@ -234,7 +234,7 @@ class AudioSessionNotifications(
     fun removeNotification() {
         logger.debug(TAG, "removeNotification()")
         if (!isShowingNotification.get()) {
-            logger.debug("TAG", "No notification is currently shown")
+            logger.debug(TAG, "No notification is currently shown")
         } else {
             notificationSingletonCoroutine.launch {
                 notificationManager.cancel(NOTIFICATION_ID)
@@ -248,6 +248,7 @@ class AudioSessionNotifications(
 
     fun shutdown() {
         logger.debug(TAG, "shutdown()")
+        removeNotification()
         deleteNotificationChannel()
     }
 

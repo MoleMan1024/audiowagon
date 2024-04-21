@@ -53,7 +53,9 @@ class IndexingTest {
         TestUtils.deleteDatabaseDirectory()
         val sdCardMediaDevice = SDCardMediaDevice(SD_CARD_ID, ROOT_DIR)
         audioBrowserService.setMediaDeviceForTest(sdCardMediaDevice)
-        audioBrowserService.updateAttachedDevices()
+        runBlocking {
+            audioBrowserService.updateAttachedDevices()
+        }
         val waitForIndexingTimeoutMS = 1000 * 5
         TestUtils.waitForTrueOrFail(
             { audioBrowserService.getIndexingStatus().any { it == IndexingStatus.INDEXING } },
@@ -63,7 +65,9 @@ class IndexingTest {
         Thread.sleep(100)
         Logger.debug(TAG, "Will re-index now")
         audioBrowserService.setMediaDeviceForTest(sdCardMediaDevice)
-        audioBrowserService.updateAttachedDevices()
+        runBlocking {
+            audioBrowserService.updateAttachedDevices()
+        }
         val waitForStoppedTimeoutMS = 1000 * 5
         TestUtils.waitForTrueOrFail(
             { audioBrowserService.getIndexingStatus().any { it != IndexingStatus.INDEXING } },
