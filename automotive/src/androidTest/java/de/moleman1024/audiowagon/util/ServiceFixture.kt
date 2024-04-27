@@ -112,9 +112,8 @@ class ServiceFixture {
     }
 
     /**
-     * Watch out to not call this when there service still needs to swtich to foreground, it will lead to exceptions
+     * Watch out to not call this when there service still needs to switch to foreground, it will lead to exceptions
      * 5 seconds later: "Context.startForegroundService() did not then call Service.startForeground()"
-    )
      */
     fun stopService() {
         targetContext.stopService(intent)

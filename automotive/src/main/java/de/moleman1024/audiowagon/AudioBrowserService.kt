@@ -341,7 +341,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             if (storageChange.error.isNotBlank()) {
                 logger.warning(TAG, "Audio file storage notified an error")
                 if (!isSuspended.get()) {
-                    runBlocking(dispatcher) {
+                    runBlocking(lifecycleScope.coroutineContext + dispatcher) {
                         audioSession.showError(getString(R.string.error_USB, storageChange.error))
                     }
                 }
@@ -367,13 +367,13 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             audioFileStorage.updateAttachedDevices()
         } catch (exc: IOException) {
             logger.exception(TAG, "I/O Error during update of connected USB devices", exc)
-            runBlocking(dispatcher) {
+            runBlocking(lifecycleScope.coroutineContext + dispatcher) {
                 audioSession.showError(this@AudioBrowserService.getString(R.string.error_USB_init))
             }
             crashReporting.logLastMessagesAndRecordException(exc)
         } catch (exc: RuntimeException) {
             logger.exception(TAG, "Runtime error during update of connected USB devices", exc)
-            runBlocking(dispatcher) {
+            runBlocking(lifecycleScope.coroutineContext + dispatcher) {
                 audioSession.showError(this@AudioBrowserService.getString(R.string.error_USB_init))
             }
             crashReporting.logLastMessagesAndRecordException(exc)
@@ -576,6 +576,12 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             // this intent will trigger callback onStartCommand()
             startForegroundService(Intent(this, AudioBrowserService::class.java))
             logger.debug(TAG, "startForegroundService() called (${this})")
+            // to be able to analyze RemoteServiceExceptions related to foreground services, collect the log here
+            // shortly before we possibly receive the exception
+            launchInScopeSafely {
+                delay(4000)
+                crashReporting.logLastMessages()
+            }
         } catch (exc: MissingNotifChannelException) {
             logger.exception(TAG, exc.message.toString(), exc)
             servicePriority = ServicePriority.FOREGROUND
@@ -784,7 +790,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         if (storageID.isNotBlank()) {
             try {
                 val storageLocation = audioFileStorage.getStorageLocationForID(storageID)
-                runBlocking(dispatcher) {
+                runBlocking(lifecycleScope.coroutineContext + dispatcher) {
                     audioItemLibrary.removeRepository(storageLocation.storageID)
                 }
             } catch (exc: IllegalArgumentException) {
@@ -1013,20 +1019,17 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             audioSession.storePlaybackState()
             audioSession.shutdown()
         }
-        val timeoutExceptionHandler = CoroutineExceptionHandler { _, exc ->
-            when (exc) {
-                is TimeoutCancellationException -> logger.exception(TAG, "Could not close audio session in time", exc)
-                else -> {
-                    logger.exception(TAG, exc.message.toString(), exc)
+        try {
+            // runBlocking() can not attach a CoroutineExceptionHandler, use regular try-catch instead
+            runBlocking(lifecycleScope.coroutineContext + dispatcher) {
+                withTimeout(3000) {
+                    audioSessionCloseSingletonCoroutine.join()
                 }
             }
+        } catch (exc: TimeoutCancellationException) {
+            logger.exception(TAG, "Could not close audio session in time", exc)
         }
-        runBlocking(timeoutExceptionHandler + dispatcher) {
-            withTimeout(4000) {
-                audioSessionCloseSingletonCoroutine.join()
-            }
-        }
-        runBlocking(dispatcher) {
+        runBlocking(lifecycleScope.coroutineContext + dispatcher) {
             try {
                 audioItemLibrary.removeRepository(audioFileStorage.getPrimaryStorageLocation().storageID)
             } catch (exc: (NoSuchElementException)) {
@@ -1282,7 +1285,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     private fun notifyLibraryCreationFailure() {
         gui.removeIndexingNotification()
         if (!isSuspended.get()) {
-            runBlocking(dispatcher) {
+            runBlocking(lifecycleScope.coroutineContext + dispatcher) {
                 audioSession.showError(getString(R.string.error_library_creation_fail))
             }
         }

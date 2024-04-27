@@ -22,12 +22,14 @@ class LogBufferTest {
         runBlocking {
             logBuffer.init(this)
             val numLogLines = NUM_MAX_LOG_ENTRIES / 2
+            println("Filling num log lines: $numLogLines")
             for (i in 0 until numLogLines) {
                 val logData = LogData(LogLevel.DEBUG, "TAG", "MSG$i")
                 logBuffer.sendLogDataToChannel(logData)
             }
+            delay(1)
             val entries = logBuffer.getNewestEntriesForLogFile()
-            for (i in 0 until numLogLines) {
+            for (i in entries.indices) {
                 print(entries[i])
                 assertTrue(entries[i].endsWith("MSG$i\n"))
             }
@@ -47,6 +49,7 @@ class LogBufferTest {
                 val logData = LogData(LogLevel.DEBUG, "TAG", "MSG$i")
                 logBuffer.sendLogDataToChannel(logData)
             }
+            delay(1)
             val entries = logBuffer.getNewestEntriesForLogFile()
             for (i in 0 until NUM_MAX_LOG_ENTRIES) {
                 print(entries[i])

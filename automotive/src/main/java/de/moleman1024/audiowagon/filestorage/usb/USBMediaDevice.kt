@@ -166,17 +166,7 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
             logVersionToUSBLogfile()
             logger.info(TAG, "Disabling log to file on USB device")
             logger.setFlushToUSBFlag()
-            val exceptionHandler = CoroutineExceptionHandler { _, exc ->
-                when (exc) {
-                    is TimeoutCancellationException -> {
-                        logger.exception(TAG, "Could not write/close log file on USB in time", exc)
-                    }
-                    else -> {
-                        logger.exception(TAG, exc.message.toString(), exc)
-                    }
-                }
-            }
-            runBlocking(exceptionHandler + Dispatchers.IO) {
+            runBlocking(Dispatchers.IO) {
                 withTimeout(4000) {
                     logger.writeBufferedLogToUSBFile()
                     logger.closeUSBFile()
@@ -185,6 +175,8 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
         } catch (exc: IOException) {
             logFile = null
             throw exc
+        } catch (exc: TimeoutCancellationException) {
+            logger.exception(TAG, "Could not write/close log file on USB in time", exc)
         } finally {
             logFile = null
         }

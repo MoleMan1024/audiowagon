@@ -13,6 +13,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project loosely follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.6.7] - 2024-04-26
+
+### Fixed
+
+- reverted a change for exception handling during shutdown that could cause the app to crash in rare cases
+- avoid a `ConcurrentModificationException` of the playback queue by creating a deep copy of it before passing it to
+  Android framework
+
+### Changed
+
+- modified logging to try to catch a rare situation where the app is stopped by Android 12 due to not reacting as
+  expected
+- updates of development libraries, Kotlin and Gradle version
+- tack Java to version 11
+- some internal changes regarding exception handling
+
+
 ## [2.6.6] - 2024-04-21
 
 ### Added

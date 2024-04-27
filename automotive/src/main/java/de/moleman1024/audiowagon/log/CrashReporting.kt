@@ -96,6 +96,21 @@ class CrashReporting(
         }
     }
 
+    fun logLastMessages() {
+        if (!isEnabled) {
+            return
+        }
+        launchInScopeSafely {
+            val messages = logger.getLogsForCrashReporting()
+            messages.forEach {
+                crashlytics.log(it)
+            }
+            if (isDebugBuild) {
+                logger.verbose(TAG, "Collected logs for debugging")
+            }
+        }
+    }
+
     fun logMessage(msg: String) {
         if (!isEnabled) {
             return

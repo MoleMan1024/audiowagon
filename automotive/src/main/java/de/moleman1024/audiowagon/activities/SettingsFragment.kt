@@ -78,7 +78,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                     getParentSettingsActivity().setAlbumStyleSetting(albumStyleStr)
                 }
                 else -> {
-                    if (key.startsWith(SHARED_PREF_VIEW_TAB_PREFIX)) {
+                    if (key?.startsWith(SHARED_PREF_VIEW_TAB_PREFIX) == true) {
                         updateViewTabs(sharedPreferences)
                         val viewTabs = mutableListOf<String>()
                         for (viewTabNum in 0 until NUM_VIEW_TABS) {

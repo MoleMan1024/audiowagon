@@ -225,7 +225,14 @@ class PlaybackQueue(private val dispatcher: CoroutineDispatcher) {
 
     suspend fun notifyQueueChanged() {
         val currentQueueItem: MediaSessionCompat.QueueItem? = getCurrentItem()
-        val queueChange = PlaybackQueueChange(currentQueueItem, playbackQueue)
+        // create a deep copy of the playback queue here to avoid any ConcurrentModificationException while the Android
+        // MediaSession iterates over it
+        val playbackQueueClone = mutableListOf<MediaSessionCompat.QueueItem>()
+        playbackQueue.forEach {
+            val clonedQueueItem = MediaSessionCompat.QueueItem(it.description, it.queueId)
+            playbackQueueClone.add(clonedQueueItem)
+        }
+        val queueChange = PlaybackQueueChange(currentQueueItem, playbackQueueClone)
         observers.forEach { it(queueChange) }
     }
 

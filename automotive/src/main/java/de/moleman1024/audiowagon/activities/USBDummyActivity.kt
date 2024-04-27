@@ -5,10 +5,12 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 package de.moleman1024.audiowagon.activities
 
+import android.app.ForegroundServiceStartNotAllowedException
 import android.content.Intent
 import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.PersistableBundle
 import android.view.View
@@ -94,7 +96,14 @@ class USBDummyActivity : AppCompatActivity() {
             val startServiceIntent = Intent(ACTION_START_SERVICE_WITH_USB_DEVICE, Uri.EMPTY, this,
                 AudioBrowserService::class.java)
             startServiceIntent.putExtra(UsbManager.EXTRA_DEVICE, it)
-            startService(startServiceIntent)
+            // See https://developer.android.com/develop/background-work/services/foreground-services#background-start-restrictions
+            try {
+                startService(startServiceIntent)
+            } catch (exc: IllegalStateException) {
+                logger.exception(TAG, exc.message.toString(), exc)
+                logger.error(TAG, "Could not start service, will try to start foreground service instead")
+                startForegroundService(startServiceIntent)
+            }
         }
     }
 

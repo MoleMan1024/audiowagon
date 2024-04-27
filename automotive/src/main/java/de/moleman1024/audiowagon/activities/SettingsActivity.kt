@@ -171,6 +171,7 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
         }
     }
 
+    @Deprecated("")
     override fun onBackPressed() {
         super.onBackPressed()
         goBack()

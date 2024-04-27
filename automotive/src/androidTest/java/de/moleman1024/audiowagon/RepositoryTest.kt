@@ -6,6 +6,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 package de.moleman1024.audiowagon
 
 import android.support.v4.media.MediaBrowserCompat
+import androidx.test.platform.app.InstrumentationRegistry
 import de.moleman1024.audiowagon.enums.IndexingStatus
 import de.moleman1024.audiowagon.filestorage.sd.SDCardMediaDevice
 import de.moleman1024.audiowagon.log.Logger
@@ -17,6 +18,7 @@ import org.junit.After
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
+
 
 private const val TAG = "RepositoryTest"
 private const val TIMEOUT_MS_LIBRARY_CREATION = 10 * 1000
@@ -31,6 +33,8 @@ class RepositoryTest {
 
     @Before
     fun setUp() {
+        val uiAutomation = InstrumentationRegistry.getInstrumentation().uiAutomation
+        uiAutomation.grantRuntimePermission(BuildConfig.APPLICATION_ID, "android.permission.READ_EXTERNAL_STORAGE")
         // TODO: duplicated code
         Logger.debug(TAG, "setUp()")
         serviceFixture = ServiceFixture()
@@ -40,7 +44,6 @@ class RepositoryTest {
         audioBrowserService.setUseInMemoryDatabase()
         val sdCardMediaDevice = SDCardMediaDevice(SD_CARD_ID, "/metadata")
         audioBrowserService.setMediaDeviceForTest(sdCardMediaDevice)
-        // FIXME: these tests will fail if permission for SD card not yet given
         runBlocking {
             audioBrowserService.updateAttachedDevices()
         }
