@@ -5,39 +5,37 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 package de.moleman1024.audiowagon.filestorage.usb
 
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
 import android.os.Build
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.SharedPrefs
 import de.moleman1024.audiowagon.SingletonCoroutine
-import de.moleman1024.audiowagon.authorization.ACTION_USB_PERMISSION_CHANGE
+import de.moleman1024.audiowagon.UPDATE_ATTACHED_DEVICES_AFTER_UNLOCK_DELAY_MS
+import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.authorization.USBDevicePermissions
-import de.moleman1024.audiowagon.enums.USBPermission
-import de.moleman1024.audiowagon.exceptions.*
 import de.moleman1024.audiowagon.enums.DeviceAction
+import de.moleman1024.audiowagon.enums.USBPermission
+import de.moleman1024.audiowagon.exceptions.DeviceIgnoredException
+import de.moleman1024.audiowagon.exceptions.DeviceNotApplicableException
+import de.moleman1024.audiowagon.exceptions.DeviceNotCompatible
+import de.moleman1024.audiowagon.exceptions.DriveAlmostFullException
+import de.moleman1024.audiowagon.exceptions.FilesystemInitSuccess
+import de.moleman1024.audiowagon.exceptions.NoPartitionsException
+import de.moleman1024.audiowagon.exceptions.NoSuchDeviceException
 import de.moleman1024.audiowagon.filestorage.data.DeviceChange
 import de.moleman1024.audiowagon.log.CrashReporting
 import de.moleman1024.audiowagon.log.Logger
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.delay
 import java.io.IOException
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 
 private const val TAG = "USBDevConn"
-const val ACTION_USB_ATTACHED = "de.moleman1024.audiowagon.USB_ATTACHED"
-const val ACTION_USB_UPDATE = "de.moleman1024.audiowagon.USB_UPDATE"
-private val USB_ACTIONS = listOf(
-    ACTION_USB_ATTACHED,
-    ACTION_USB_UPDATE,
-    UsbManager.ACTION_USB_DEVICE_ATTACHED,
-    UsbManager.ACTION_USB_DEVICE_DETACHED,
-    ACTION_USB_PERMISSION_CHANGE
-)
 private val logger = Logger
 
 /**
@@ -60,7 +58,6 @@ class USBDeviceConnections(
     val isUpdatingDevices = AtomicBoolean()
     val isAnyDeviceAttached = AtomicBoolean()
     val isAnyDevicePermitted = AtomicBoolean()
-    private var isBroadcastRecvRegistered = false
 
     // use a single thread here to avoid race conditions updating the USB attached/detached status from multiple threads
     private val singleThreadDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
@@ -75,85 +72,6 @@ class USBDeviceConnections(
     private val usbPermissionSingletonCoroutine =
         SingletonCoroutine("USBPermission", singleThreadDispatcher, scope.coroutineContext, crashReporting)
 
-    /**
-     * Received when a USB device is (un)plugged. This can take a few seconds after plugging in the USB flash drive.
-     * Runs in main thread, do not perform long running tasks here:
-     * https://developer.android.com/guide/components/broadcasts#security-and-best-practices
-     */
-    private val usbBroadcastReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
-            logger.debug(TAG, "onReceive($context; $intent)")
-            if (intent == null) {
-                throw RuntimeException("No intent to retrieve USB device from")
-            }
-            if (intent.action !in USB_ACTIONS) {
-                return
-            }
-            if (intent.action == ACTION_USB_UPDATE) {
-                updateAttachedDevices()
-                return
-            }
-            val usbMediaDevice: USBMediaDevice
-            try {
-                usbMediaDevice = getUSBMassStorageDeviceFromIntent(intent)
-                logger.debug(TAG, "Broadcast with action ${intent.action} received for USB device: $usbMediaDevice")
-            } catch (exc: DeviceIgnoredException) {
-                // one of the built-in USB devices (e.g. bluetooth dongle) has attached/detached, ignore these
-                return
-            } catch (exc: RuntimeException) {
-                logger.exception(TAG, exc.message.toString(), exc)
-                return
-            }
-            try {
-                when (intent.action) {
-                    ACTION_USB_ATTACHED -> {
-                        usbAttachedSingletonCoroutine.launch {
-                            usbAttachedDelayedSingletonCoroutine.cancel()
-                            onAttachedUSBMassStorageDeviceFound(usbMediaDevice)
-                        }
-                    }
-
-                    UsbManager.ACTION_USB_DEVICE_ATTACHED -> {
-                        isAnyDeviceAttached.set(true)
-                        usbAttachedDelayedSingletonCoroutine.launch {
-                            isUpdatingDevices.set(true)
-                            notifyObservers(DeviceChange(null, DeviceAction.REFRESH))
-                            // wait a bit to for the USB driver to settle down in case of issues and to give
-                            // USBDummyActivity a chance to catch this instead and send ACTION_USB_ATTACHED (see above)
-                            delay(4000)
-                            onAttachedUSBMassStorageDeviceFound(usbMediaDevice)
-                        }
-                    }
-
-                    UsbManager.ACTION_USB_DEVICE_DETACHED -> {
-                        isUpdatingDevices.set(false)
-                        isAnyDeviceAttached.set(false)
-                        usbDetachedSingletonCoroutine.launch {
-                            usbAttachedDelayedSingletonCoroutine.cancel()
-                            usbAttachedSingletonCoroutine.cancel()
-                            updateAttachedDevicesSingletonCoroutine.cancel()
-                            onUSBDeviceDetached(usbMediaDevice)
-                        }
-                    }
-
-                    ACTION_USB_PERMISSION_CHANGE -> {
-                        usbPermissionSingletonCoroutine.launch {
-                            if (!isDeviceAttached(usbMediaDevice)) {
-                                logger.warning(TAG, "Received permission change for USB device that is not attached")
-                                return@launch
-                            }
-                            usbDevicePermissions.onUSBPermissionChanged(intent, usbMediaDevice)
-                            onUSBPermissionChanged(usbMediaDevice)
-                        }
-                    }
-                }
-            } catch (exc: RuntimeException) {
-                logger.exception(TAG, exc.message.toString(), exc)
-                return
-            }
-        }
-    }
-
     init {
         logger.debug(TAG, "Init USBDeviceConnections()")
         isUpdatingDevices.set(false)
@@ -162,6 +80,54 @@ class USBDeviceConnections(
             isLogToUSBPreferenceSet = true
         }
         updateUSBStatusInSettings(R.string.setting_USB_status_not_connected)
+    }
+
+    fun onBroadcastUSBDeviceAttached(usbMediaDevice: USBMediaDevice) {
+        isAnyDeviceAttached.set(true)
+        usbAttachedDelayedSingletonCoroutine.launch {
+            isUpdatingDevices.set(true)
+            notifyObservers(DeviceChange(null, DeviceAction.REFRESH))
+            // wait a bit to for the USB driver to settle down in case of issues and to give
+            // USBDummyActivity a chance to catch this instead and send ACTION_USB_ATTACHED
+            val delayTimeMS = 4000L
+            logger.debug(
+                TAG,
+                "Delaying to process USB device attached intent until ${
+                    Util.getLocalDateTimeNow().plusMillis(delayTimeMS)
+                }"
+            )
+            delay(delayTimeMS)
+            onAttachedUSBMassStorageDeviceFound(usbMediaDevice)
+        }
+    }
+
+    fun onBroadcastUSBDeviceDetached(usbMediaDevice: USBMediaDevice) {
+        isUpdatingDevices.set(false)
+        isAnyDeviceAttached.set(false)
+        usbDetachedSingletonCoroutine.launch {
+            usbAttachedDelayedSingletonCoroutine.cancel()
+            usbAttachedSingletonCoroutine.cancel()
+            updateAttachedDevicesSingletonCoroutine.cancel()
+            onUSBDeviceDetached(usbMediaDevice)
+        }
+    }
+
+    fun onBroadcastUSBAttached(usbMediaDevice: USBMediaDevice) {
+        usbAttachedSingletonCoroutine.launch {
+            usbAttachedDelayedSingletonCoroutine.cancel()
+            onAttachedUSBMassStorageDeviceFound(usbMediaDevice)
+        }
+    }
+
+    fun onBroadcastUSBPermissionChange(intent: Intent, usbMediaDevice: USBMediaDevice) {
+        usbPermissionSingletonCoroutine.launch {
+            if (!isDeviceAttached(usbMediaDevice)) {
+                logger.warning(TAG, "Received permission change for USB device that is not attached")
+                return@launch
+            }
+            usbDevicePermissions.onUSBPermissionChanged(intent, usbMediaDevice)
+            onUSBPermissionChanged(usbMediaDevice)
+        }
     }
 
     fun updateAttachedDevices() {
@@ -208,7 +174,7 @@ class USBDeviceConnections(
         }
     }
 
-    private fun getUSBMassStorageDeviceFromIntent(intent: Intent): USBMediaDevice {
+    fun getUSBMassStorageDeviceFromIntent(intent: Intent): USBMediaDevice {
         val usbMediaDevice: USBMediaDevice? = try {
             val androidUSBDevice: UsbDevice = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 intent.getParcelableExtra(UsbManager.EXTRA_DEVICE, UsbDevice::class.java)
@@ -325,6 +291,11 @@ class USBDeviceConnections(
         }
         updateUSBStatusInSettings(R.string.setting_USB_status_ok)
         isUpdatingDevices.set(false)
+        logger.info(
+            TAG,
+            "Successfully initialized filesystem at: ${Util.getLocalDateTimeStringNow()} (${Util.getUptimeString()})"
+        )
+        crashReporting.logLastMessagesAndRecordException(FilesystemInitSuccess())
         val deviceChange = DeviceChange(attachedPermittedDevice, DeviceAction.CONNECT)
         notifyObservers(deviceChange)
     }
@@ -417,46 +388,6 @@ class USBDeviceConnections(
         onUSBDeviceWithPermissionAttached(device)
     }
 
-    fun registerForUSBIntents() {
-        logger.debug(TAG, "Registering at context to receive broadcast intents")
-        val filter = IntentFilter().apply {
-            addAction(ACTION_USB_ATTACHED)
-            addAction(ACTION_USB_UPDATE)
-            // USB_DEVICE_ATTACHED is not desired here, it should be handled by manifest. However that does not work
-            // on Polestar 2 car. Works fine on Pixel 3 XL with AAOS though...
-            addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED)
-            addAction(UsbManager.ACTION_USB_DEVICE_DETACHED)
-            addAction(ACTION_USB_PERMISSION_CHANGE)
-            addAction(Intent.ACTION_MEDIA_UNMOUNTED)
-            addAction(Intent.ACTION_MEDIA_UNMOUNTABLE)
-            addAction(Intent.ACTION_MEDIA_MOUNTED)
-            addAction(Intent.ACTION_MEDIA_EJECT)
-            addAction(Intent.ACTION_MEDIA_REMOVED)
-            addAction(Intent.ACTION_MEDIA_BAD_REMOVAL)
-            addAction(Intent.ACTION_MEDIA_NOFS)
-        }
-        try {
-            context.registerReceiver(usbBroadcastReceiver, filter)
-        } catch (exc: IllegalArgumentException) {
-            logger.exception(TAG, "Receiver already registered", exc)
-        }
-        isBroadcastRecvRegistered = true
-    }
-
-    fun unregisterForUSBIntents() {
-        if (!isBroadcastRecvRegistered) {
-            logger.debug(TAG, "USB broadcast receiver not registered")
-            return
-        }
-        logger.debug(TAG, "Unregistering for broadcast intents")
-        try {
-            context.unregisterReceiver(usbBroadcastReceiver)
-            isBroadcastRecvRegistered = false
-        } catch (exc: IllegalArgumentException) {
-            logger.warning(TAG, exc.message.toString())
-        }
-    }
-
     private fun appendAttachedPermittedDevice(device: USBMediaDevice) {
         if (isDeviceInAttachedPermittedList(device)) {
             logger.warning(TAG, "USB device already in list of attached+permitted devices: ${device.getName()}")
@@ -530,11 +461,6 @@ class USBDeviceConnections(
         usbAttachedDelayedSingletonCoroutine.cancel()
         usbDetachedSingletonCoroutine.cancel()
         usbPermissionSingletonCoroutine.cancel()
-    }
-
-    fun isAnyAttachedUSBUpdateCoroutineInProgress(): Boolean {
-        return updateAttachedDevicesSingletonCoroutine.isInProgress() || usbAttachedSingletonCoroutine.isInProgress()
-                || usbAttachedDelayedSingletonCoroutine.isInProgress()
     }
 
 }

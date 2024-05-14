@@ -13,6 +13,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project loosely follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.6.10] - 2024-05-13
+
+More internal optimizations only, nothing that should be visible/interesting to end users.
+
+### Changed
+
+- rework all broadcast receivers to run in their own threads to avoid main thread ANRs sometimes seen in Crashlytics
+- handle the media button presses slightly differently
+- extract error codes from native code and log them to see why USB bulk transfers fail sometimes
+- some more changes on how to handle foreground services and modified exception handling
+- added a missing permission for foreground service media playback in manifest
+- log a fake exception when filesystem successfully initialized to understand better what is going on in Renault cars
+
+
 ## [2.6.7] - 2024-04-26
 
 ### Fixed

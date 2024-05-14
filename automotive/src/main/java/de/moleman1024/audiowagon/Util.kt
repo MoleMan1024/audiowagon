@@ -12,6 +12,7 @@ import android.graphics.Insets
 import android.graphics.Paint
 import android.net.Uri
 import android.os.Build
+import android.os.SystemClock
 import android.util.DisplayMetrics
 import android.view.WindowInsets
 import android.view.WindowManager
@@ -432,6 +433,10 @@ class Util {
         fun getLocalDateTimeStringNow(): String {
             val date = ZonedDateTime.now()
             return DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ").format(date)
+        }
+
+        fun getUptimeString(): String {
+            return "uptimeMillis=${SystemClock.uptimeMillis()} elapsedRealtime=${SystemClock.elapsedRealtime()}"
         }
 
     }

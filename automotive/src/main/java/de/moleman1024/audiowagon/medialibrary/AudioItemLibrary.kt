@@ -41,6 +41,7 @@ import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.io.IOException
+import java.util.Locale
 import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.coroutineContext
@@ -210,7 +211,17 @@ class AudioItemLibrary(
         buildLibraryJobs.clear()
         val endTime = System.nanoTime()
         val timeTakenMS = (endTime - startTime) / 1000000L
-        logger.debug(TAG, "Building library took ${timeTakenMS}ms")
+        logger.info(TAG, "Building library took ${timeTakenMS}ms for $numFileDirsSeenWhenBuildingLibrary files/dirs")
+        if (timeTakenMS > 0) {
+            val timeTakenSeconds: Double = timeTakenMS.toDouble() / 1000.0
+            if (timeTakenSeconds != 0.0) {
+                val filesDirsPerSecond: Double = numFileDirsSeenWhenBuildingLibrary.toDouble() / timeTakenSeconds
+                logger.info(
+                    TAG, "Built library (mode: $metadataReadSetting): " +
+                            "%.1f".format(Locale.ENGLISH, filesDirsPerSecond) + " files/dirs per second"
+                )
+            }
+        }
     }
 
     private suspend fun updateLibraryTracksFromAudioFile(file: AudioFile, repo: AudioItemRepository) {

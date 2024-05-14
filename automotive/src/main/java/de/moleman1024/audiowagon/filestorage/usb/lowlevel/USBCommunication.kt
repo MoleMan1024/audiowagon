@@ -10,7 +10,7 @@ import java.nio.ByteBuffer
 
 interface USBCommunication : Closeable {
     companion object {
-        const val TRANSFER_TIMEOUT_MS = 5000
+        const val TRANSFER_TIMEOUT_MS = 4000
     }
     val inEndpoint: USBEndpoint
     val outEndpoint: USBEndpoint

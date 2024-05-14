@@ -68,7 +68,7 @@ open class AudioFileStorage(
     // TODO: this was originally intended to support multiple storage locations, but we only allow a single one now
     private val audioFileStorageLocations: MutableList<AudioFileStorageLocation> = mutableListOf()
     private val audioFileStorageLocationMutex = Mutex()
-    private var usbDeviceConnections: USBDeviceConnections = USBDeviceConnections(
+    var usbDeviceConnections: USBDeviceConnections = USBDeviceConnections(
         context, scope, usbDevicePermissions, sharedPrefs, crashReporting
     )
     private var dataSources = mutableListOf<MediaDataSource>()
@@ -97,7 +97,6 @@ open class AudioFileStorage(
     }
 
     private fun initUSBObservers() {
-        usbDeviceConnections.registerForUSBIntents()
         // this callback is called from a coroutine
         usbDeviceConnections.deviceObservers.add { deviceChange ->
             coroutineContext.ensureActive()
@@ -131,6 +130,7 @@ open class AudioFileStorage(
     /**
      * This is only used to provide demo soundfiles to Google during automatic review of production builds
      */
+    @Suppress("KotlinConstantConditions")
     private fun initAssetsForEmulator() {
         logger.verbose(TAG, "initAssetsForEmulator()")
         if (!Util.isRunningInEmulator()) {
@@ -435,7 +435,6 @@ open class AudioFileStorage(
 
     suspend fun shutdown() {
         logger.debug(TAG, "shutdown()")
-        usbDeviceConnections.unregisterForUSBIntents()
         usbDeviceConnections.cancelCoroutines()
         closeDataSources()
         disableLogToUSB()
@@ -611,4 +610,5 @@ open class AudioFileStorage(
     fun requestUSBPermissionIfMissing() {
         usbDeviceConnections.requestUSBPermissionIfMissing()
     }
+
 }

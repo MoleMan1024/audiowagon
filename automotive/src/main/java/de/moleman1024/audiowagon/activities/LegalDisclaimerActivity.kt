@@ -12,7 +12,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.SharedPrefs
-import de.moleman1024.audiowagon.filestorage.usb.ACTION_USB_UPDATE
+import de.moleman1024.audiowagon.broadcast.ACTION_USB_UPDATE
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 

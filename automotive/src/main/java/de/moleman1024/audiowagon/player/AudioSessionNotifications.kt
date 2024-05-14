@@ -11,7 +11,6 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.os.Build
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
@@ -25,12 +24,10 @@ import de.moleman1024.audiowagon.broadcast.ACTION_NEXT
 import de.moleman1024.audiowagon.broadcast.ACTION_PAUSE
 import de.moleman1024.audiowagon.broadcast.ACTION_PLAY
 import de.moleman1024.audiowagon.broadcast.ACTION_PREV
-import de.moleman1024.audiowagon.broadcast.MediaBroadcastReceiver
 import de.moleman1024.audiowagon.enums.SingletonCoroutineBehaviour
 import de.moleman1024.audiowagon.exceptions.MissingNotifChannelException
 import de.moleman1024.audiowagon.log.CrashReporting
 import de.moleman1024.audiowagon.log.Logger
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -48,8 +45,6 @@ private const val AUDIO_SESS_NOTIF_CHANNEL: String = "AudioSessNotifChan"
 class AudioSessionNotifications(
     private val context: Context,
     scope: CoroutineScope,
-    dispatcher: CoroutineDispatcher,
-    audioPlayer: AudioPlayer,
     crashReporting: CrashReporting
 ) {
     var currentQueueItem: MediaSessionCompat.QueueItem? = null
@@ -59,9 +54,6 @@ class AudioSessionNotifications(
     private lateinit var isPlayingNotificationBuilder: NotificationCompat.Builder
     private lateinit var isPausedNotificationBuilder: NotificationCompat.Builder
     private var isShowingNotification: AtomicBoolean = AtomicBoolean()
-    private val broadcastMsgRecv: MediaBroadcastReceiver = MediaBroadcastReceiver(
-        audioPlayer, scope, dispatcher, crashReporting
-    )
     private var isChannelCreated: AtomicBoolean = AtomicBoolean()
     private val singleThreadDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
     private val notificationSingletonCoroutine =
@@ -153,9 +145,6 @@ class AudioSessionNotifications(
      */
     private fun sendNotification(notifBuilder: NotificationCompat.Builder) {
         val notification = prepareNotification(notifBuilder)
-        if (!isShowingNotification.get()) {
-            registerNotifRecv()
-        }
         notificationSingletonCoroutine.launch {
             if (!isChannelCreated.get()) {
                 logger.warning(TAG, "Cannot send notification, no channel available")
@@ -207,30 +196,6 @@ class AudioSessionNotifications(
         return prepareNotification(isPlayingNotificationBuilder)
     }
 
-    private fun registerNotifRecv() {
-        logger.debug(TAG, "registerNotifRecv()")
-        val filter = IntentFilter()
-        filter.addAction(ACTION_PREV)
-        filter.addAction(ACTION_PLAY)
-        filter.addAction(ACTION_PAUSE)
-        filter.addAction(ACTION_NEXT)
-        try {
-            context.registerReceiver(broadcastMsgRecv, filter)
-        } catch (exc: IllegalArgumentException) {
-            logger.exception(TAG, "Receiver already registered", exc)
-        }
-    }
-
-    private fun unregisterNotifRecv() {
-        logger.debug(TAG, "unregisterNotifRecv()")
-        try {
-            context.unregisterReceiver(broadcastMsgRecv)
-        } catch (exc: IllegalArgumentException) {
-            // thrown when receiver is not registered
-            logger.warning(TAG, exc.message.toString())
-        }
-    }
-
     fun removeNotification() {
         logger.debug(TAG, "removeNotification()")
         if (!isShowingNotification.get()) {
@@ -242,7 +207,6 @@ class AudioSessionNotifications(
         }
         // TODO: to actually remove the notification, the mediaSession needs to be released. However when that is
         //  done it should not be used again unless the media browser client is restarted
-        unregisterNotifRecv()
         isShowingNotification.set(false)
     }
 

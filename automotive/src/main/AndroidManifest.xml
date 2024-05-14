@@ -4,6 +4,7 @@
         xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <!-- needed in Android 13 only -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- The app implicitly uses android.permission.INTERNET and android.permission.ACCESS_NETWORK_STATE for
@@ -54,10 +55,12 @@
         <activity
                 android:name=".activities.LegalDisclaimerActivity"
                 android:label="@string/legal_disclaimer_title"
-                android:theme="@style/AppTheme" />
+                android:theme="@style/AppTheme">
+        </activity>
         <activity
                 android:name=".activities.LogActivity"
-                android:exported="false" />
+                android:exported="false">
+        </activity>
         <activity
                 android:name=".activities.SettingsActivity"
                 android:exported="true"
@@ -73,9 +76,7 @@
             https://developer.android.com/guide/topics/connectivity/usb/host#permission-d
             https://developer.android.com/guide/topics/connectivity/usb/host#using-intents
 
-            Does not work on AAOS in Polestar 2, works fine on Pixel 3 with AAOS. Setting
-            distractionOptimized=true does not help either (also Play store automatic review does not like it when I
-            set that)
+            Does not work on AAOS in Polestar 2, works fine on Pixel 3 with AAOS.
         -->
         <activity
                 android:name=".activities.USBDummyActivity"
@@ -91,6 +92,9 @@
             <meta-data
                     android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"
                     android:resource="@xml/device_filter" />
+            <!-- This activity is invisible to the user, thus it can not distract the car driver. However it gets
+            rejected in Google Play store for unknown reasons if I set distractionOptimized=true. Google rejects
+            this when appealing. -->
         </activity>
 
         <service

@@ -39,6 +39,7 @@ import java.util.concurrent.Executors
 private const val TAG = "AudioPlayer"
 private val logger = Logger
 const val MEDIA_ERROR_INVALID_STATE = -38
+
 // arbitrary number
 const val MEDIA_ERROR_AUDIO_FOCUS_DENIED = -1249
 const val SKIP_PREVIOUS_THRESHOLD_MSEC = 10000L
@@ -65,11 +66,14 @@ class AudioPlayer(
 ) {
     // currentMediaPlayer shall point to currently playing media player
     private var currentMediaPlayer: MediaPlayer? = null
+
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     var playerStatus: AudioPlayerStatus = AudioPlayerStatus(PlaybackStateCompat.STATE_NONE)
+
     // TODO: turn this into another class with two instances?
     private var mediaPlayerFlip: MediaPlayer? = null
     private var mediaPlayerFlipState: AudioPlayerState = AudioPlayerState.IDLE
+
     // the other media player object is used when skipping to next track for seamless playback
     private var mediaPlayerFlop: MediaPlayer? = null
     private var mediaPlayerFlopState: AudioPlayerState = AudioPlayerState.IDLE
@@ -77,6 +81,7 @@ class AudioPlayer(
     private var effectsFlop: Effects? = null
     val playerStatusObservers = mutableListOf<suspend (AudioPlayerStatus) -> Unit>()
     private var isRecoveringFromIOError: Boolean = false
+
     // A single thread executor is used to confine access to queue and other shared state variables to a single
     // thread when called from coroutines. MediaPlayer is not thread-safe, must be accessed from a thread that has
     // a Looper.
@@ -197,6 +202,7 @@ class AudioPlayer(
                         setState(mediaPlayerWithInfo, AudioPlayerState.STARTED)
                     }
                 }
+
                 else -> {
                     // ignore
                 }
@@ -217,16 +223,20 @@ class AudioPlayer(
                 setState(player, AudioPlayerState.ERROR)
                 playerStatus.errorCode = what
                 when (what) {
-                    MEDIA_ERROR_INVALID_STATE ->
-                        playerStatus.errorMsg = context.getString(R.string.error_invalid_state
+                    MEDIA_ERROR_INVALID_STATE -> playerStatus.errorMsg = context.getString(
+                        R.string.error_invalid_state
                     )
+
                     MediaPlayer.MEDIA_ERROR_IO -> playerStatus.errorMsg = context.getString(R.string.error_IO)
-                    MediaPlayer.MEDIA_ERROR_MALFORMED ->
-                        playerStatus.errorMsg = context.getString(R.string.error_malformed_data)
-                    MediaPlayer.MEDIA_ERROR_TIMED_OUT ->
-                        playerStatus.errorMsg = context.getString(R.string.error_timeout)
-                    MediaPlayer.MEDIA_ERROR_UNSUPPORTED ->
-                        playerStatus.errorMsg = context.getString(R.string.error_not_supported)
+                    MediaPlayer.MEDIA_ERROR_MALFORMED -> playerStatus.errorMsg =
+                        context.getString(R.string.error_malformed_data)
+
+                    MediaPlayer.MEDIA_ERROR_TIMED_OUT -> playerStatus.errorMsg =
+                        context.getString(R.string.error_timeout)
+
+                    MediaPlayer.MEDIA_ERROR_UNSUPPORTED -> playerStatus.errorMsg =
+                        context.getString(R.string.error_not_supported)
+
                     else -> {
                         val numAvailableDevices = audioFileStorage.getNumAttachedPermittedDevices()
                         if (numAvailableDevices <= 0) {
@@ -312,7 +322,10 @@ class AudioPlayer(
         withContext(dispatcher) {
             logger.debug(TAG, "seekTo(millisec=$millisec)")
             val invalidStatesForSeek = listOf(
-                AudioPlayerState.IDLE, AudioPlayerState.INITIALIZED, AudioPlayerState.STOPPED, AudioPlayerState.ERROR,
+                AudioPlayerState.IDLE,
+                AudioPlayerState.INITIALIZED,
+                AudioPlayerState.STOPPED,
+                AudioPlayerState.ERROR,
                 AudioPlayerState.END
             )
             val state = getState(currentMediaPlayer)
@@ -501,7 +514,10 @@ class AudioPlayer(
         withContext(dispatcher) {
             logger.debug(TAG, "start()")
             val invalidStatesForStart = listOf(
-                AudioPlayerState.STARTED, AudioPlayerState.IDLE, AudioPlayerState.STOPPED, AudioPlayerState.ERROR,
+                AudioPlayerState.STARTED,
+                AudioPlayerState.IDLE,
+                AudioPlayerState.STOPPED,
+                AudioPlayerState.ERROR,
                 AudioPlayerState.END
             )
             val state = getState(currentMediaPlayer)
@@ -553,8 +569,12 @@ class AudioPlayer(
             throw AlreadyStoppedException()
         }
         val invalidStatesForStop = listOf(
-            AudioPlayerState.STOPPED, AudioPlayerState.IDLE, AudioPlayerState.INITIALIZED,
-            AudioPlayerState.ERROR, AudioPlayerState.END, AudioPlayerState.PREPARING
+            AudioPlayerState.STOPPED,
+            AudioPlayerState.IDLE,
+            AudioPlayerState.INITIALIZED,
+            AudioPlayerState.ERROR,
+            AudioPlayerState.END,
+            AudioPlayerState.PREPARING
         )
         if (state in invalidStatesForStop) {
             throw IllegalStateException("Invalid call to stop() in state: $state")
@@ -627,7 +647,9 @@ class AudioPlayer(
                 notifyPlayerStatusChange(status)
                 numFilesNotFound += 1
                 if (numFilesNotFound < 5) {
-                    logger.debug(TAG, "File not found, trying to play next item in queue instead: ${AudioFile(uri).name}")
+                    logger.debug(
+                        TAG, "File not found, trying to play next item in queue instead: ${AudioFile(uri).name}"
+                    )
                     delay(POPUP_TIMEOUT_MS)
                     logger.debug(TAG, "Skipping next track after delay for file not found")
                     skipNextTrack()
@@ -711,9 +733,8 @@ class AudioPlayer(
                 getNextPlayer() ?: throw RuntimeException("Next media player not initialized")
             logger.debug(TAG, "Setting up next media player: $nextMediaPlayer")
             nextMediaPlayer.reset()
-            val nextURI: Uri =
-                nextQueueItem.description.mediaUri
-                    ?: throw RuntimeException("No URI for next queue item: $nextQueueItem")
+            val nextURI: Uri = nextQueueItem.description.mediaUri
+                ?: throw RuntimeException("No URI for next queue item: $nextQueueItem")
             val nextMediaDataSource: MediaDataSource
             try {
                 nextMediaDataSource = getDataSourceForURI(nextURI)
@@ -760,8 +781,11 @@ class AudioPlayer(
         try {
             currentMediaPlayer?.setNextMediaPlayer(mediaPlayer)
         } catch (exc: IllegalArgumentException) {
-            logger.exception(TAG, "Exception setting next media player $mediaPlayer for current " +
-                    "media player: $currentMediaPlayer", exc)
+            logger.exception(
+                TAG,
+                "Exception setting next media player $mediaPlayer for current " + "media player: $currentMediaPlayer",
+                exc
+            )
         }
         // check for available memory once in a while
         Util.logMemory(context, logger, TAG)
@@ -967,7 +991,10 @@ class AudioPlayer(
     private suspend fun isAtLeastPrepared(player: MediaPlayer?): Boolean {
         val state = getState(player)
         return state in listOf(
-            AudioPlayerState.PREPARED, AudioPlayerState.STARTED, AudioPlayerState.PAUSED, AudioPlayerState.STOPPED,
+            AudioPlayerState.PREPARED,
+            AudioPlayerState.STARTED,
+            AudioPlayerState.PAUSED,
+            AudioPlayerState.STOPPED,
             AudioPlayerState.PLAYBACK_COMPLETED
         )
     }
@@ -1046,6 +1073,22 @@ class AudioPlayer(
             effectsFlip?.setEQPreset(preset)
             effectsFlop?.setEQPreset(preset)
         }
+    }
+
+    fun onBroadcastPlay() {
+        launchInScopeSafely { start() }
+    }
+
+    fun onBroadcastPause() {
+        launchInScopeSafely { pause() }
+    }
+
+    fun onBroadcastNext() {
+        launchInScopeSafely { skipNextTrack() }
+    }
+
+    fun onBroadcastPrev() {
+        launchInScopeSafely { skipPreviousTrack() }
     }
 
     private fun assertEffectsObjectsExist() {

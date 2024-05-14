@@ -235,6 +235,11 @@ class ScsiBlockDevice(private val usbCommunication: USBCommunication, private va
     }
 
     // https://www.usb.org/sites/default/files/usbmassbulk_10.pdf
+    // Section 5.3.4
+    // "For Reset Recovery the host shall issue in the following order:
+    //  (a) a Bulk-Only Mass Storage Reset
+    //  (b) a Clear Feature HALT to the Bulk-In endpoint
+    //  (c) a Clear Feature HALT to the Bulk-Out endpoint"
     private fun bulkOnlyMassStorageReset() {
         logger.warning(TAG, "Sending bulk only mass storage request")
         val bArr = ByteArray(2)

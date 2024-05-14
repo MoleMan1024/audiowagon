@@ -247,9 +247,9 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
                 }
             } else {
                 if (name.contains(Util.DIRECTORIES_TO_IGNORE_REGEX)) {
-                    logger.debug(TAG, "Ignoring directory: $name")
+                    logger.verbose(TAG, "Ignoring directory: $name")
                 } else {
-                    logger.debug(TAG, "Walking directory: $absPath")
+                    logger.verbose(TAG, "Walking directory: $absPath")
                     recentFilepathToFileMap[absPath] = fileOrDirectory
                     yield(fileOrDirectory)
                     val subFilesDirs: List<USBFile> = fileOrDirectory.listFiles().sortedBy { it.name.lowercase() }

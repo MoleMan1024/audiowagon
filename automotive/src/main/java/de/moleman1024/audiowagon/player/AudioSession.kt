@@ -94,11 +94,11 @@ class AudioSession(
     private val mediaSessionDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
     private var lastContentHierarchyIDPlayed: String = ""
     private val audioFocus: AudioFocus = AudioFocus(context)
-    private val audioPlayer: AudioPlayer = AudioPlayer(
+    val audioPlayer: AudioPlayer = AudioPlayer(
         audioFileStorage, audioFocus, scope, context, crashReporting, sharedPrefs
     )
     private val audioSessionNotifications =
-        AudioSessionNotifications(context, scope, dispatcher, audioPlayer, crashReporting)
+        AudioSessionNotifications(context, scope, crashReporting)
     private val audioFocusChangeListener: AudioFocusChangeCallback =
         AudioFocusChangeCallback(audioPlayer, scope, dispatcher, crashReporting)
     private val resetSingletonCoroutine = SingletonCoroutine(

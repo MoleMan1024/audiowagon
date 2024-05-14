@@ -5,16 +5,14 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 package de.moleman1024.audiowagon.broadcast
 
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import de.moleman1024.audiowagon.Util
-import de.moleman1024.audiowagon.log.CrashReporting
+import android.content.IntentFilter
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.player.AudioPlayer
-import kotlinx.coroutines.*
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 
-private const val TAG = "BroadcastMsgRecv"
+private const val TAG = "MediaBCRecv"
 private val logger = Logger
 const val ACTION_PLAY = "de.moleman1024.audiowagon.ACTION_PLAY"
 const val ACTION_PAUSE = "de.moleman1024.audiowagon.ACTION_PAUSE"
@@ -22,32 +20,44 @@ const val ACTION_NEXT = "de.moleman1024.audiowagon.ACTION_NEXT"
 const val ACTION_PREV = "de.moleman1024.audiowagon.ACTION_PREV"
 
 @ExperimentalCoroutinesApi
-class MediaBroadcastReceiver(
-    private val audioPlayer: AudioPlayer,
-    private val scope: CoroutineScope,
-    private val dispatcher: CoroutineDispatcher,
-    private val crashReporting: CrashReporting
-) :
-    BroadcastReceiver() {
+class MediaBroadcastReceiver : ManagedBroadcastReceiver() {
+    var audioPlayer: AudioPlayer? = null
+
+    override fun getIntentFilter(): IntentFilter {
+        return IntentFilter().apply {
+            addAction(ACTION_PLAY)
+            addAction(ACTION_PAUSE)
+            addAction(ACTION_NEXT)
+            addAction(ACTION_PREV)
+        }
+    }
+
+    override fun getFlags(): Int {
+        return getNotExportedFlags()
+    }
 
     override fun onReceive(context: Context?, intent: Intent?) {
         if (intent == null) {
             return
         }
-        logger.debug(TAG, "Received broadcast message: $intent")
+        logger.debug(TAG, "onReceive($intent)")
         when (intent.action) {
-            ACTION_PLAY -> launchInScopeSafely { audioPlayer.start() }
-            ACTION_PAUSE -> launchInScopeSafely { audioPlayer.pause() }
-            ACTION_NEXT -> launchInScopeSafely { audioPlayer.skipNextTrack() }
-            ACTION_PREV -> launchInScopeSafely { audioPlayer.skipPreviousTrack() }
+            ACTION_PLAY -> {
+                audioPlayer?.onBroadcastPlay()
+            }
+            ACTION_PAUSE -> {
+                audioPlayer?.onBroadcastPause()
+            }
+            ACTION_NEXT -> {
+                audioPlayer?.onBroadcastNext()
+            }
+            ACTION_PREV -> {
+                audioPlayer?.onBroadcastPrev()
+            }
             else -> {
                 logger.warning(TAG, "Ignoring unhandled action: ${intent.action}")
             }
         }
-    }
-
-    private fun launchInScopeSafely(func: suspend (CoroutineScope) -> Unit) {
-        Util.launchInScopeSafely(scope, dispatcher, logger, TAG, crashReporting, func)
     }
 
 }

@@ -103,14 +103,13 @@ object Logger : LoggerInterface {
         val packageInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             context.packageManager.getPackageInfo(context.packageName, PackageManager.PackageInfoFlags.of(0L))
         } else {
-            @Suppress("DEPRECATION")
             context.packageManager.getPackageInfo(context.packageName, 0)
         }
         info(TAG, "Version: ${packageInfo.versionName} (code: ${packageInfo.longVersionCode})")
         info(
             TAG, "Running on Android: ${Build.VERSION.CODENAME} " +
                     "(release: ${Build.VERSION.RELEASE}, securityPatch: ${Build.VERSION.SECURITY_PATCH}, " +
-                    "incremental: ${Build.VERSION.INCREMENTAL}, base: ${Build.VERSION.BASE_OS})"
+                    "incremental: ${Build.VERSION.INCREMENTAL})"
         )
     }
 

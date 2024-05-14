@@ -77,9 +77,7 @@ class CommandStatusWrapper {
      */
     fun read(buffer: ByteBuffer) {
          buffer.order(ByteOrder.LITTLE_ENDIAN)
-
          this.apply {
-
             dCswSignature = buffer.int
             if (dCswSignature != D_CSW_SIGNATURE) {
                 logger.error(TAG, "unexpected dCSWSignature $dCswSignature")

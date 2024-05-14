@@ -32,10 +32,8 @@ import android.app.ForegroundServiceStartNotAllowedException
 import android.app.KeyguardManager
 import android.app.Notification
 import android.app.Service
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.content.pm.ServiceInfo
 import android.hardware.display.DisplayManager
 import android.hardware.usb.UsbDevice
@@ -59,7 +57,12 @@ import androidx.media.utils.MediaConstants
 import de.moleman1024.audiowagon.activities.LegalDisclaimerActivity
 import de.moleman1024.audiowagon.authorization.PackageValidation
 import de.moleman1024.audiowagon.authorization.USBDevicePermissions
+import de.moleman1024.audiowagon.broadcast.ACTION_USB_ATTACHED
+import de.moleman1024.audiowagon.broadcast.BroadcastReceiverManager
+import de.moleman1024.audiowagon.broadcast.MediaBroadcastReceiver
 import de.moleman1024.audiowagon.broadcast.SystemBroadcastReceiver
+import de.moleman1024.audiowagon.broadcast.USBExternalBroadcastReceiver
+import de.moleman1024.audiowagon.broadcast.USBInternalBroadcastReceiver
 import de.moleman1024.audiowagon.enums.AlbumStyleSetting
 import de.moleman1024.audiowagon.enums.AudioPlayerState
 import de.moleman1024.audiowagon.enums.ContentHierarchyType
@@ -76,8 +79,9 @@ import de.moleman1024.audiowagon.enums.ViewTabSetting
 import de.moleman1024.audiowagon.exceptions.CannotRecoverUSBException
 import de.moleman1024.audiowagon.exceptions.MissingNotifChannelException
 import de.moleman1024.audiowagon.exceptions.NoChangesCancellationException
-import de.moleman1024.audiowagon.filestorage.*
-import de.moleman1024.audiowagon.filestorage.usb.ACTION_USB_ATTACHED
+import de.moleman1024.audiowagon.filestorage.AudioFileStorage
+import de.moleman1024.audiowagon.filestorage.AudioFileStorageLocation
+import de.moleman1024.audiowagon.filestorage.MediaDevice
 import de.moleman1024.audiowagon.log.CrashReporting
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
@@ -86,12 +90,23 @@ import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyE
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyID
 import de.moleman1024.audiowagon.persistence.PersistentPlaybackState
 import de.moleman1024.audiowagon.persistence.PersistentStorage
-import de.moleman1024.audiowagon.player.*
+import de.moleman1024.audiowagon.player.AudioSession
 import de.moleman1024.audiowagon.player.data.AudioPlayerEvent
 import de.moleman1024.audiowagon.player.data.AudioPlayerStatus
 import de.moleman1024.audiowagon.player.data.CustomActionEvent
 import de.moleman1024.audiowagon.repository.AudioItemRepository
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
@@ -143,7 +158,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     private lateinit var audioSession: AudioSession
     private lateinit var gui: GUI
     private lateinit var persistentStorage: PersistentStorage
-    private lateinit var systemBroadcastReceiver: SystemBroadcastReceiver
+    private lateinit var broadcastReceiverManager: BroadcastReceiverManager
     private lateinit var crashReporting: CrashReporting
     private lateinit var sharedPrefs: SharedPrefs
     private var dispatcher: CoroutineDispatcher = Dispatchers.IO
@@ -225,19 +240,10 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         cleanSingletonCoroutine =
             SingletonCoroutine("Clean", dispatcher, lifecycleScope.coroutineContext, crashReporting)
         cleanSingletonCoroutine.behaviour = SingletonCoroutineBehaviour.PREFER_FINISH
-        systemBroadcastReceiver = SystemBroadcastReceiver()
+        broadcastReceiverManager = BroadcastReceiverManager(applicationContext)
+        val systemBroadcastReceiver = SystemBroadcastReceiver()
         systemBroadcastReceiver.audioBrowserService = this
-        val systemIntentFilter = IntentFilter().apply {
-            addAction(Intent.ACTION_SCREEN_OFF)
-            addAction(Intent.ACTION_SCREEN_ON)
-            addAction(Intent.ACTION_SHUTDOWN)
-            addAction(Intent.ACTION_USER_PRESENT)
-        }
-        try {
-            registerReceiver(systemBroadcastReceiver, systemIntentFilter)
-        } catch (exc: IllegalArgumentException) {
-            logger.exception(TAG, "Receiver already registered", exc)
-        }
+        broadcastReceiverManager.register(systemBroadcastReceiver)
         startup()
         if (!isScreenOn()) {
             logger.debug(TAG, "onCreate() called while screen was off, suspending again")
@@ -253,6 +259,12 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         usbDevicePermissions = USBDevicePermissions(this)
         audioFileStorage =
             AudioFileStorage(this, lifecycleScope, dispatcher, usbDevicePermissions, sharedPrefs, crashReporting)
+        val usbExternalBroadcastReceiver = USBExternalBroadcastReceiver()
+        usbExternalBroadcastReceiver.usbDeviceConnections = audioFileStorage.usbDeviceConnections
+        broadcastReceiverManager.register(usbExternalBroadcastReceiver)
+        val usbInternalBroadcastReceiver = USBInternalBroadcastReceiver()
+        usbInternalBroadcastReceiver.usbDeviceConnections = audioFileStorage.usbDeviceConnections
+        broadcastReceiverManager.register(usbInternalBroadcastReceiver)
         audioItemLibrary = AudioItemLibrary(this, audioFileStorage, lifecycleScope, dispatcher, gui, sharedPrefs)
         audioItemLibrary.libraryExceptionObservers.clear()
         audioItemLibrary.libraryExceptionObservers.add { exc ->
@@ -275,7 +287,17 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             sessionToken = audioSession.sessionToken
             logger.debug(TAG, "New media session token: $sessionToken")
             audioSessionNotification = audioSession.getNotification()
+            val mediaBroadcastReceiver = MediaBroadcastReceiver()
+            mediaBroadcastReceiver.audioPlayer = audioSession.audioPlayer
+            broadcastReceiverManager.register(mediaBroadcastReceiver)
         }
+        // We should try to move the service to foreground here during creation already, because it is not
+        // guaranteed that we can reach onStartCommand() in time to e.g. handle the startForegroundService() from
+        // MediaButtonReceiver. If startForegroundService() has not been called previously, startForeground() should
+        // do nothing(?). However we must check for exception ForegroundServiceStartNotAllowedException because this
+        // could be called during boot phase also
+        logger.debug(TAG, "Moving service to foreground during startup for safety")
+        moveServiceToForegroundSafely()
         packageValidation = PackageValidation(this, R.xml.allowed_media_browser_callers)
         lifecycleRegistry.currentState = Lifecycle.State.CREATED
         logger.verbose(TAG, "Lifecycle set to CREATED")
@@ -308,7 +330,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             val displayManager = this.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
             displayManager.displays.any {
                 val anyScreenIsOn = it.state == Display.STATE_ON
-                logger.debug(TAG, "Display ${it.name} has state: ${it.state}")
+                logger.debug(TAG, "Display ${it.displayId} has state: ${it.state}")
                 anyScreenIsOn
             }
         } catch (exc: RuntimeException) {
@@ -573,20 +595,29 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             if (lastServiceStartReason.get() <= reason) {
                 lastServiceStartReason.set(reason)
             }
-            // this intent will trigger callback onStartCommand()
-            startForegroundService(Intent(this, AudioBrowserService::class.java))
-            logger.debug(TAG, "startForegroundService() called (${this})")
-            // to be able to analyze RemoteServiceExceptions related to foreground services, collect the log here
-            // shortly before we possibly receive the exception
-            launchInScopeSafely {
-                delay(4000)
-                crashReporting.logLastMessages()
-            }
+            startForegroundServiceSafely()
         } catch (exc: MissingNotifChannelException) {
             logger.exception(TAG, exc.message.toString(), exc)
             servicePriority = ServicePriority.FOREGROUND
             crashReporting.logLastMessagesAndRecordException(exc)
         }
+    }
+
+    private fun startForegroundServiceSafely() {
+        // This intent will trigger callback onStartCommand()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            try {
+                startForegroundService(Intent(this, AudioBrowserService::class.java))
+            } catch (exc: ForegroundServiceStartNotAllowedException) {
+                logger.exception(TAG, exc.message.toString(), exc)
+            }
+        } else {
+            startForegroundService(Intent(this, AudioBrowserService::class.java))
+        }
+        logger.debug(TAG, "startForegroundService() called (${this})")
+        // Move the service into foreground here already, otherwise we need to deal with
+        // ForegroundServiceDidNotStartInTimeException. It is not necessary to wait for onStartCommand().
+        moveServiceToForegroundSafely()
     }
 
     /**
@@ -832,10 +863,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         logger.debug(TAG, "onStartCommand(intent=$intent, flags=$flags, startid=$startId)")
         lifecycleRegistry.currentState = Lifecycle.State.STARTED
         isServiceStarted.set(true)
-        if (intent?.action == ACTION_MEDIA_BUTTON) {
-            lastServiceStartReason.set(ServiceStartStopReason.MEDIA_BUTTON)
-        }
-        else if (intent?.action == ACTION_START_SERVICE_WITH_USB_DEVICE) {
+        if (intent?.action == ACTION_START_SERVICE_WITH_USB_DEVICE) {
             // If the USBDummyActivity is working, we will receive this. Forward it including the USB device extra to
             // our local USB broadcast receiver
             logger.debug(TAG, "Service was started from USBDummyActivity, forwarding broadcast")
@@ -846,22 +874,11 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                 usbAttachedIntent.putExtra(UsbManager.EXTRA_DEVICE, usbDevice)
                 sendBroadcast(usbAttachedIntent)
             }
+        } else if (intent?.action == ACTION_MEDIA_BUTTON) {
+            lastServiceStartReason.set(ServiceStartStopReason.MEDIA_BUTTON)
         }
         logger.debug(TAG, "servicePriority=$servicePriority, lastServiceStartReason=${lastServiceStartReason.get()}")
-        if (intent?.component == ComponentName(this, this.javaClass)
-            && intent.action != ACTION_MEDIA_BUTTON
-            && servicePriority == ServicePriority.FOREGROUND_REQUESTED
-        ) {
-            logger.debug(TAG, "Need to move service to foreground")
-            if (audioSessionNotification == null) {
-                val msg = "Missing audioSessionNotification for foreground service"
-                logger.error(TAG, msg)
-                crashReporting.logLastMessagesAndRecordException(RuntimeException(msg))
-            } else {
-                moveServiceToForegroundSafely()
-                deferredUntilServiceInForeground.complete(Unit)
-            }
-        }
+        maybeHandleMediaButtonIntentForForegroundService(intent)
         when (intent?.action) {
             ACTION_PLAY_USB -> {
                 launchInScopeSafely {
@@ -910,7 +927,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     }
 
     private fun stopService(reason: ServiceStartStopReason) {
-        logger.debug(TAG, "stopService()")
+        logger.debug(TAG, "stopService(), servicePriority=${servicePriority}")
         if (!isServiceStarted.get()) {
             logger.debug(TAG, "Service is not running, cannot stop")
             return
@@ -919,7 +936,6 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             logger.debug(TAG, "Will not stop service")
             return
         }
-        logger.debug(TAG, "servicePriority=${servicePriority}")
         if (servicePriority != ServicePriority.FOREGROUND_REQUESTED) {
             moveServiceToBackground()
             stopSelf()
@@ -990,11 +1006,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     override fun onDestroy() {
         logger.debug(TAG, "onDestroy()")
         shutdownAndDestroy()
-        try {
-            unregisterReceiver(systemBroadcastReceiver)
-        } catch (exc: IllegalArgumentException) {
-            logger.warning(TAG, exc.message.toString())
-        }
+        broadcastReceiverManager.unregisterAll()
         instance = null
         super.onDestroy()
     }
@@ -1349,33 +1361,19 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         }
     }
 
-    /**
-     * This whole service foreground approach in Android is weird...
-     *
-     * The following strange scenarios can happen:
-     *  1) we call startForegroundService() for some reason e.g. INDEXING or media PLAYBACK. This sends an intent to
-     *  this service to start it and will trigger callback onStartCommand(). It is inherently asynchronous, you
-     *  don't know how much time will pass until onStartCommand() is called.
-     *  2) Android destroys the service, onDestroy() is called (e.g. due to unbinding). The service is expected to shut
-     *  down and release all resources. This happens and the service object is gone
-     *  3) a new service is instantiated, onCreate() is called(!) again and also onStartCommand() because it is still
-     *  pending! The service should start up again and be started even though it was shut down just before. In here you
-     *  must call startForeground() within 5 seconds otherwise an exception "Context.startForegroundService() did not
-     *  then call Service.startForeground()" is thrown. Then onDestroy() is called again...
-     *
-     *  To address this issue I made servicePriority static
-     */
     private fun moveServiceToForegroundSafely() {
         val notification = audioSessionNotification
         if (notification != null) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 try {
                     moveServiceToForeground(notification)
+                    deferredUntilServiceInForeground.complete(Unit)
                 } catch (exc: ForegroundServiceStartNotAllowedException) {
                     logger.exception(TAG, exc.message.toString(), exc)
                 }
             } else {
                 moveServiceToForeground(notification)
+                deferredUntilServiceInForeground.complete(Unit)
             }
         } else {
             logger.warning(TAG, "Can not move service to foreground, missing audioSessionNotification")
@@ -1387,6 +1385,14 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
         logger.debug(TAG, "Moved service to foreground (${this})")
         servicePriority = ServicePriority.FOREGROUND
+    }
+
+    // The MediaButtonReceiver will start the service in foreground always, make sure to handle that
+    private fun maybeHandleMediaButtonIntentForForegroundService(intent: Intent?) {
+        if (intent?.action === ACTION_MEDIA_BUTTON) {
+            logger.debug(TAG, "Need to move service to foreground due to media button")
+            moveServiceToForegroundSafely()
+        }
     }
 
     inner class LocalBinder : Binder() {

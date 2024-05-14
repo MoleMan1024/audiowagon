@@ -10,6 +10,7 @@ import android.hardware.usb.UsbDeviceConnection
 import android.hardware.usb.UsbEndpoint
 import android.hardware.usb.UsbInterface
 import android.hardware.usb.UsbManager
+import android.system.OsConstants.EPIPE
 import de.moleman1024.audiowagon.filestorage.usb.lowlevel.USBCommunication.Companion.TRANSFER_TIMEOUT_MS
 import de.moleman1024.audiowagon.log.Logger
 import java.io.IOException
@@ -92,9 +93,7 @@ class JavaAndroidUSBCommunication(
             src.remaining(),
             TRANSFER_TIMEOUT_MS
         )
-        if (result == -1) {
-            throw IOException("Could not send data to OUT endpoint")
-        }
+        handleBulkTransferError(result, "OUT")
         src.position(src.position() + result)
         return result
     }
@@ -107,11 +106,26 @@ class JavaAndroidUSBCommunication(
             dest.remaining(),
             TRANSFER_TIMEOUT_MS
         )
-        if (result == -1) {
-            throw IOException("Could not get data from IN endpoint")
-        }
+        handleBulkTransferError(result, "IN")
         dest.position(dest.position() + result)
         return result
+    }
+
+    private fun handleBulkTransferError(result: Int, directionString: String) {
+        if (result == -1) {
+            when (result) {
+                EPIPE -> throw PipeException()
+                else -> {
+                    val errorNumber = getErrorNumberNative()
+                    val errorMessage = getErrorStringNative(errorNumber)
+                    if (errorMessage.contains("Broken pipe")) {
+                        throw PipeException()
+                    } else {
+                        throw IOException("Could not send data to $directionString endpoint: error $errorNumber ($errorMessage)")
+                    }
+                }
+            }
+        }
     }
 
     override fun controlTransfer(
@@ -138,8 +152,10 @@ class JavaAndroidUSBCommunication(
             return
         }
         logger.debug(TAG, "reset()")
-        if (!resetUSBNative(deviceConnection!!.fileDescriptor)) {
-            logger.warning(TAG, "Failed ioctl USBDEVFS_RESET")
+        val errorCode: Int = resetUSBNative(deviceConnection!!.fileDescriptor)
+        if (errorCode != 0) {
+            val errorMessage = getErrorStringNative(errorCode)
+            logger.warning(TAG, "Failed ioctl USBDEVFS_RESET with error $errorCode: $errorMessage")
         }
     }
 
@@ -148,9 +164,12 @@ class JavaAndroidUSBCommunication(
             return
         }
         logger.debug(TAG, "Clearing halt on endpoint: $endpoint")
-        val isClearHaltSuccess = clearHaltNative(deviceConnection!!.fileDescriptor, endpoint.address)
-        if (!isClearHaltSuccess) {
-            logger.warning(TAG, "Failed to clear halt on endpoint: $endpoint")
+        val errorCode = clearHaltNative(deviceConnection!!.fileDescriptor, endpoint.address)
+        if (errorCode != 0) {
+            val errorMessage = getErrorStringNative(errorCode)
+            logger.warning(
+                TAG, "Failed to clear halt on endpoint with error $errorCode: $errorMessage (endpoint=$endpoint)"
+            )
         }
     }
 
@@ -189,7 +208,9 @@ class JavaAndroidUSBCommunication(
         deviceConnection!!.close()
     }
 
-    private external fun resetUSBNative(fd: Int): Boolean
-    private external fun clearHaltNative(fd: Int, endpoint: Int): Boolean
+    private external fun resetUSBNative(fd: Int): Int
+    private external fun clearHaltNative(fd: Int, endpoint: Int): Int
+    private external fun getErrorNumberNative(): Int
+    private external fun getErrorStringNative(errorNumber: Int): String
 
 }

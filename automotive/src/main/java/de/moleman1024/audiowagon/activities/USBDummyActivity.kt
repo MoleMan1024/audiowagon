@@ -18,7 +18,6 @@ import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
 import de.moleman1024.audiowagon.ACTION_START_SERVICE_WITH_USB_DEVICE
 import de.moleman1024.audiowagon.AudioBrowserService
-import de.moleman1024.audiowagon.filestorage.usb.ACTION_USB_ATTACHED
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 
@@ -102,7 +101,15 @@ class USBDummyActivity : AppCompatActivity() {
             } catch (exc: IllegalStateException) {
                 logger.exception(TAG, exc.message.toString(), exc)
                 logger.error(TAG, "Could not start service, will try to start foreground service instead")
-                startForegroundService(startServiceIntent)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    try {
+                        startForegroundService(startServiceIntent)
+                    } catch (exc: ForegroundServiceStartNotAllowedException) {
+                        logger.exception(TAG, exc.message.toString(), exc)
+                    }
+                } else {
+                    startForegroundService(startServiceIntent)
+                }
             }
         }
     }
