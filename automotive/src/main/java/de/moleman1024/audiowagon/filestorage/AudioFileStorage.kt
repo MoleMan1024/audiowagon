@@ -569,7 +569,8 @@ open class AudioFileStorage(
         val directoryURI = Util.createURIForPath(storageLocation.storageID, directory)
         val directoryContents: List<FileLike> = storageLocation.getDirectoryContents(Directory(directoryURI))
         val imageFiles =
-            directoryContents.filter { it.name.matches(Regex(".*\\.(jpg|png)$", RegexOption.IGNORE_CASE)) }.reversed()
+            directoryContents.filter { it.name.matches(Regex(".*\\.(jpe?g|png)$", RegexOption.IGNORE_CASE)) }
+                .reversed()
         val albumArtFile = imageFiles.firstOrNull {
             it.name.matches(Regex("^(cover|folder|front|index|albumart.*|art\\.).*", RegexOption.IGNORE_CASE))
         }
@@ -609,6 +610,12 @@ open class AudioFileStorage(
 
     fun requestUSBPermissionIfMissing() {
         usbDeviceConnections.requestUSBPermissionIfMissing()
+    }
+
+    fun isAnyStorageAvailable(): Boolean {
+        return runBlocking(dispatcher) {
+            return@runBlocking areAnyStoragesAvail()
+        }
     }
 
 }

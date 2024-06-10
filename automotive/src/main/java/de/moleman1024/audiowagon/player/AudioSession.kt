@@ -114,6 +114,7 @@ class AudioSession(
         SingletonCoroutine("AudioSessSusp", dispatcher, scope.coroutineContext, crashReporting)
     private val showPopupSingletonCoroutine =
         SingletonCoroutine("ShowMedSessPopup", mediaSessionDispatcher, scope.coroutineContext, crashReporting)
+    private val playSingletonCoroutine = SingletonCoroutine("Play", dispatcher, scope.coroutineContext, crashReporting)
     private var isFirstOnPlayEventAfterReset: Boolean = true
     private var onPlayCalledBeforeUSBReady: Boolean = false
     private var isShuttingDown: Boolean = false
@@ -128,6 +129,7 @@ class AudioSession(
         isSuspending = false
         shutdownSingletonCoroutine.behaviour = SingletonCoroutineBehaviour.PREFER_FINISH
         suspendSingletonCoroutine.behaviour = SingletonCoroutineBehaviour.PREFER_FINISH
+        playSingletonCoroutine.behaviour = SingletonCoroutineBehaviour.PREFER_FINISH
         initAudioFocus()
         // to send play/pause button event: "adb shell input keyevent 85"
         val mediaButtonIntent = Intent(Intent.ACTION_MEDIA_BUTTON)
@@ -430,7 +432,9 @@ class AudioSession(
             when (audioSessionChange.type) {
                 AudioSessionChangeType.ON_PLAY -> {
                     audioFocusChangeListener.lastUserRequestedStateChange = audioSessionChange.type
-                    handleOnPlay()
+                    launchInScopeSafely(audioSessionChange.type.name) {
+                        notifyObservers(CustomActionEvent(CustomAction.PLAY_CB_CALLED))
+                    }
                 }
                 AudioSessionChangeType.ON_PLAY_FROM_MEDIA_ID -> {
                     audioFocusChangeListener.lastUserRequestedStateChange = AudioSessionChangeType.ON_PLAY
@@ -581,8 +585,8 @@ class AudioSession(
         }
     }
 
-    private fun handleOnPlay() {
-        launchInScopeSafely("handleOnPlay()") {
+    fun handleOnPlay() {
+        playSingletonCoroutine.launch {
             if (isFirstOnPlayEventAfterReset) {
                 isFirstOnPlayEventAfterReset = false
                 if (audioPlayer.isIdle() || audioPlayer.isPlaybackQueueEmpty()) {
@@ -594,7 +598,7 @@ class AudioSession(
                     // empty and the media player should be prepared already as well.
                     onPlayCalledBeforeUSBReady = true
                     logger.debug(TAG, "Storing onPlay() call for later")
-                    return@launchInScopeSafely
+                    return@launch
                 }
             }
             try {
@@ -997,7 +1001,7 @@ class AudioSession(
     }
 
     private suspend fun getCurrentTrackPosMS(): Long {
-        return audioPlayer.getCurrentPositionMilliSec()
+        return audioPlayer.getCurrentPositionMilliSecIgnorePlayerError()
     }
 
     private fun isShuffling(): Boolean {

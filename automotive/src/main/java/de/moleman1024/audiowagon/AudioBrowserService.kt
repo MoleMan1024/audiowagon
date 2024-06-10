@@ -558,6 +558,14 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                     notifyLifecycleObservers(LifecycleEvent.IDLE)
                 }
             }
+
+            CustomAction.PLAY_CB_CALLED -> {
+                logger.debug(TAG, "Play callback was called")
+                launchInScopeSafely {
+                    restoreFromPersistentSingletonCoroutine.join()
+                    audioSession.handleOnPlay()
+                }
+            }
         }
     }
 
@@ -1146,6 +1154,14 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             logger.warning(TAG, "Client ${clientPackageName}(${clientUid}) could not be validated for browsing")
             return null
         }
+        if (clientPackageName == "com.android.car.media"
+            && lastAudioPlayerState == AudioPlayerState.STOPPED
+            && !libraryCreationSingletonCoroutine.isInProgress()
+            && !restoreFromPersistentSingletonCoroutine.isInProgress()
+            && audioFileStorage.isAnyStorageAvailable()) {
+            logger.debug(TAG, "Looks like a switch from other media app, will restore persistent data")
+            launchRestoreFromPersistentJob()
+        }
         notifyIdleSingletonCoroutine.cancel()
         val maximumRootChildLimit = rootHints?.getInt(MediaConstants.BROWSER_ROOT_HINTS_KEY_ROOT_CHILDREN_LIMIT, 4)
         logger.debug(TAG, "maximumRootChildLimit=$maximumRootChildLimit")
@@ -1341,7 +1357,8 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     }
 
     private fun isAudioPlayerDormant(): Boolean {
-        return lastAudioPlayerState in listOf(AudioPlayerState.IDLE, AudioPlayerState.PAUSED, AudioPlayerState.STOPPED)
+        return lastAudioPlayerState in listOf(AudioPlayerState.IDLE, AudioPlayerState.PAUSED, AudioPlayerState
+            .STOPPED, AudioPlayerState.ERROR)
     }
 
     fun addLifecycleObserver(id: String, callback: (event: LifecycleEvent) -> Unit) {

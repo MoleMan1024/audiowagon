@@ -13,7 +13,6 @@ import android.os.Build
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.SharedPrefs
 import de.moleman1024.audiowagon.SingletonCoroutine
-import de.moleman1024.audiowagon.UPDATE_ATTACHED_DEVICES_AFTER_UNLOCK_DELAY_MS
 import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.authorization.USBDevicePermissions
 import de.moleman1024.audiowagon.enums.DeviceAction
@@ -22,7 +21,6 @@ import de.moleman1024.audiowagon.exceptions.DeviceIgnoredException
 import de.moleman1024.audiowagon.exceptions.DeviceNotApplicableException
 import de.moleman1024.audiowagon.exceptions.DeviceNotCompatible
 import de.moleman1024.audiowagon.exceptions.DriveAlmostFullException
-import de.moleman1024.audiowagon.exceptions.FilesystemInitSuccess
 import de.moleman1024.audiowagon.exceptions.NoPartitionsException
 import de.moleman1024.audiowagon.exceptions.NoSuchDeviceException
 import de.moleman1024.audiowagon.filestorage.data.DeviceChange
@@ -295,7 +293,6 @@ class USBDeviceConnections(
             TAG,
             "Successfully initialized filesystem at: ${Util.getLocalDateTimeStringNow()} (${Util.getUptimeString()})"
         )
-        crashReporting.logLastMessagesAndRecordException(FilesystemInitSuccess())
         val deviceChange = DeviceChange(attachedPermittedDevice, DeviceAction.CONNECT)
         notifyObservers(deviceChange)
     }

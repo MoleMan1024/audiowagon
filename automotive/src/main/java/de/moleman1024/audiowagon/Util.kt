@@ -86,6 +86,8 @@ class Util {
             Pair(2578, 1),
             // Cambridge Silicon Radio Bluetooth dongle 0x0A12
             Pair(2578, 3),
+            // Android Open Accessory device 0x18D1 / 0x2D00
+            Pair(6353, 11520),
             // Linux xHCI Host Controller
             Pair(7531, 2),
             // Linux xHCI Host Controller

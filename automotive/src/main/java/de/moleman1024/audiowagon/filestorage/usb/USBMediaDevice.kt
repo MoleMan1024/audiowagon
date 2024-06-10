@@ -92,8 +92,9 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
     fun isToBeIgnored(): Boolean {
         val vendorProductID = Pair(usbDevice.vendorId, usbDevice.productId)
         val vendorProductIDHex = Pair("0x%x".format(usbDevice.vendorId), "0x%x".format(usbDevice.productId))
-        logger.debug(TAG, "isToBeIgnored($vendorProductID / $vendorProductIDHex)")
-        return vendorProductID in Util.USB_DEVICES_TO_IGNORE
+        val isToBeIgnored = vendorProductID in Util.USB_DEVICES_TO_IGNORE
+        logger.debug(TAG, "isToBeIgnored($vendorProductID / $vendorProductIDHex)=$isToBeIgnored")
+        return isToBeIgnored
     }
 
     private fun isBitfieldMassStorage(bitfield: Int): Boolean {

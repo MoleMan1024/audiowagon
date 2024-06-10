@@ -13,6 +13,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project loosely follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.6.11] - 2024-06-09
+
+### Fixed
+
+- in case the media player encountered an error, the playback position of the current track was lost. When the playback
+  state was persisted afterwards, the missing playback position was persisted also. This meant the playback position
+  could not be retrieved on next startup. This has been fixed: when there is a media player error, but a playback
+  position was known previously, this last known, good playback position will now be used for persistance instead
+  [#145](https://github.com/MoleMan1024/audiowagon/issues/145)
+- when switching to a different media app (e.g. radio app) and back to AudioWagon, the playback position of the current
+  track could be lost, this has been improved
+
+### Changed
+
+- album art JPEG files ending with extension ".jpeg" are now accepted (previously only file extension ".jpg" was
+  allowed)
+- the fake exception added in the previous version for debugging purposes was removed again
+
+
 ## [2.6.10] - 2024-05-13
 
 More internal optimizations only, nothing that should be visible/interesting to end users.

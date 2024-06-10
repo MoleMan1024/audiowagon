@@ -30,9 +30,9 @@ android {
         compileSdk rootProject.compileSdkVersion
         minSdkVersion rootProject.minSdkVersion
         targetSdkVersion rootProject.targetSdkVersion
-        versionName "2.6.10"
+        versionName "2.6.11"
         // major * 10000 + minor * 100 + patch
-        versionCode 20610
+        versionCode 20611
         resValue "string", "VERSION_NAME", versionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         signingConfig signingConfigs.debug

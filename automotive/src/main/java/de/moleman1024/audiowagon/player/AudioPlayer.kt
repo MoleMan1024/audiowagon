@@ -250,19 +250,30 @@ class AudioPlayer(
                     playerStatus.errorMsg += " ($extra)"
                 }
                 playerStatus.playbackState = PlaybackStateCompat.STATE_ERROR
-                notifyPlayerStatusChange()
+                // Issue #145: do not update the current queue item and track position when player goes into an error
+                // state. We prefer to persistently store the last known good state instead
+                notifyPlayerStatusChange(playerStatus)
             }
             return@setOnErrorListener true
         }
     }
 
-    suspend fun getCurrentPositionMilliSec(): Long = withContext(dispatcher) {
+    private suspend fun getCurrentPositionMilliSec(): Long = withContext(dispatcher) {
         logger.debug(TAG, "getCurrentPositionMilliSec()")
         if (!isAtLeastPrepared(currentMediaPlayer)) {
             return@withContext PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN
         }
         return@withContext currentMediaPlayer?.currentPosition?.toLong()
             ?: PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN
+    }
+
+    suspend fun getCurrentPositionMilliSecIgnorePlayerError(): Long = withContext(dispatcher) {
+        logger.debug(TAG, "getCurrentPositionMilliSecIgnorePlayerError()")
+        return@withContext if (getState(currentMediaPlayer) != AudioPlayerState.ERROR) {
+            getCurrentPositionMilliSec()
+        } else {
+            playerStatus.positionInMilliSec
+        }
     }
 
     @Suppress("RedundantSuspendModifier")
