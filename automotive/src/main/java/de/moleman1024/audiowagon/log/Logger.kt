@@ -12,6 +12,7 @@ import android.os.Build
 import android.util.Log
 import android.util.Log.getStackTraceString
 import androidx.annotation.VisibleForTesting
+import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.enums.LogLevel
 import de.moleman1024.audiowagon.filestorage.usb.lowlevel.USBFile
 import de.moleman1024.audiowagon.filestorage.usb.lowlevel.USBFileOutputStream
@@ -191,7 +192,8 @@ object Logger : LoggerInterface {
     }
 
     private fun logToBuffer(logData: LogData) {
-        logData.timestamp = LocalDateTime.now().format(formatter)
+        logData.timestamp = Util.getLocalDateTimeNow().format(formatter)
+        logData.timestampMonotonic = Util.getMillisNow()
         logData.threadID = android.os.Process.myTid()
         logData.processID = android.os.Process.myPid()
         if (observers.isNotEmpty()) {

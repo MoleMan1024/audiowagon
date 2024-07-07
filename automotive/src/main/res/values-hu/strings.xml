@@ -62,7 +62,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
     <string name="action_eject">Leválasztás</string>
     <string name="action_rewind">Visszapörgetés</string>
     <string name="settings_title">Beállítások</string>
-    <string name="setting_enable_equalizer_title">Equalizer</string>
+    <string name="setting_equalizer_title">Equalizer</string>
     <string name="setting_sound_category_title">Hang</string>
     <string name="setting_equalizer_preset_title">Equalizer beállítás</string>
     <string name="equalizer_preset_less_bass">Kevesebb basszus</string>
@@ -145,4 +145,6 @@ továbbfejlesztése céljából (internetkapcsolat szükséges).</string>
     <string name="setting_view_tab_4">Tab 4</string>
     <string name="setting_view_tab_none">Egyik sem</string>
     <string name="browse_tree_please_wait">Kérjük, várjon …</string>
+    <string name="setting_equalizer_enable">Engedélyezve</string>
+    <string name="equalizer_preset_custom">Egyéni</string>
 </resources>

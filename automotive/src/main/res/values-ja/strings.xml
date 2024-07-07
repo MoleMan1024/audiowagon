@@ -57,7 +57,7 @@
     <string name="action_eject">取り出し</string>
     <string name="action_rewind">巻き戻し</string>
     <string name="settings_title">設定</string>
-    <string name="setting_enable_equalizer_title">イコライザー</string>
+    <string name="setting_equalizer_title">イコライザー</string>
     <string name="setting_sound_category_title">サウンド</string>
     <string name="setting_equalizer_preset_title">イコライザー プリセット</string>
     <string name="equalizer_preset_less_bass">Less bass</string>
@@ -137,4 +137,6 @@ FAT32ファイルシステムを使用してUSBドライブをフォーマット
     <string name="setting_view_tab_4">タブ 4</string>
     <string name="setting_view_tab_none">なし</string>
     <string name="browse_tree_please_wait">お待ちください …</string>
+    <string name="setting_equalizer_enable">有効</string>
+    <string name="equalizer_preset_custom">カスタムフィ</string>
 </resources>

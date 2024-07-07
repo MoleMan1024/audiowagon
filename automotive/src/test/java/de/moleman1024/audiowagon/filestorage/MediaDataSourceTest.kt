@@ -9,12 +9,10 @@ import android.media.MediaDataSource
 import de.moleman1024.audiowagon.filestorage.usb.USBAudioDataSource
 import de.moleman1024.audiowagon.filestorage.usb.USBMetaDataSource
 import de.moleman1024.audiowagon.log.Logger
-import kotlinx.coroutines.asCoroutineDispatcher
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
-import java.util.concurrent.Executors
 
 private const val TAG = "MediaDataSrcTest"
 

@@ -6,6 +6,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 package de.moleman1024.audiowagon
 
 import de.moleman1024.audiowagon.filestorage.MediaDataSourceTest
+import de.moleman1024.audiowagon.log.LogBufferTest
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibraryTest
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.runner.RunWith
@@ -15,5 +16,5 @@ import org.junit.runners.Suite
 
 @ExperimentalCoroutinesApi
 @RunWith(Suite::class)
-@Suite.SuiteClasses(MediaDataSourceTest::class, AudioItemLibraryTest::class, UtilTest::class)
+@Suite.SuiteClasses(MediaDataSourceTest::class, AudioItemLibraryTest::class, UtilTest::class, LogBufferTest::class)
 class UnitTestSuite

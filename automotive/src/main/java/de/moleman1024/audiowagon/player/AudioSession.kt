@@ -43,6 +43,7 @@ import de.moleman1024.audiowagon.player.data.AudioPlayerEvent
 import de.moleman1024.audiowagon.player.data.AudioPlayerStatus
 import de.moleman1024.audiowagon.player.data.AudioSessionChange
 import de.moleman1024.audiowagon.player.data.CustomActionEvent
+import de.moleman1024.audiowagon.player.data.EQUALIZER_BAND_VALUE_EMPTY
 import kotlinx.coroutines.*
 import java.io.FileNotFoundException
 import java.io.IOException
@@ -528,6 +529,21 @@ class AudioSession(
                     launchInScopeSafely(audioSessionChange.type.name) {
                         val equalizerPreset = EqualizerPreset.valueOf(audioSessionChange.equalizerPreset)
                         audioPlayer.setEqualizerPreset(equalizerPreset)
+                    }
+                }
+                AudioSessionChangeType.ON_SET_EQUALIZER_BAND -> {
+                    launchInScopeSafely(audioSessionChange.type.name) {
+                        if (audioSessionChange.equalizerBand60 != EQUALIZER_BAND_VALUE_EMPTY) {
+                            audioPlayer.setEqualizerBandValue(0, audioSessionChange.equalizerBand60)
+                        } else if (audioSessionChange.equalizerBand230 != EQUALIZER_BAND_VALUE_EMPTY) {
+                            audioPlayer.setEqualizerBandValue(1, audioSessionChange.equalizerBand230)
+                        } else if (audioSessionChange.equalizerBand910 != EQUALIZER_BAND_VALUE_EMPTY) {
+                            audioPlayer.setEqualizerBandValue(2, audioSessionChange.equalizerBand910)
+                        } else if (audioSessionChange.equalizerBand3600 != EQUALIZER_BAND_VALUE_EMPTY) {
+                            audioPlayer.setEqualizerBandValue(3, audioSessionChange.equalizerBand3600)
+                        } else if (audioSessionChange.equalizerBand14K != EQUALIZER_BAND_VALUE_EMPTY) {
+                            audioPlayer.setEqualizerBandValue(4, audioSessionChange.equalizerBand14K)
+                        }
                     }
                 }
                 AudioSessionChangeType.ON_SET_METADATAREAD_SETTING -> {

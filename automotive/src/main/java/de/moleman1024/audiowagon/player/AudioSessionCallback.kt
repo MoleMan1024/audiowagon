@@ -91,10 +91,36 @@ class AudioSessionCallback(
                     args?.getString(EQUALIZER_PRESET_KEY, EqualizerPreset.LESS_BASS.name).toString()
                 notifyObservers(audioSessionChange)
             }
+            CMD_SET_EQUALIZER_BAND -> {
+                val audioSessionChange = AudioSessionChange(AudioSessionChangeType.ON_SET_EQUALIZER_BAND)
+                when (val eqBandIndex = args?.getInt(EQUALIZER_BAND_INDEX_KEY)) {
+                    0 -> {
+                        audioSessionChange.equalizerBand60 = args.getFloat(EQUALIZER_BAND_VALUE_KEY, 0f)
+                    }
+                    1 -> {
+                        audioSessionChange.equalizerBand230 = args.getFloat(EQUALIZER_BAND_VALUE_KEY, 0f)
+                    }
+                    2 -> {
+                        audioSessionChange.equalizerBand910 = args.getFloat(EQUALIZER_BAND_VALUE_KEY, 0f)
+                    }
+                    3 -> {
+                        audioSessionChange.equalizerBand3600 = args.getFloat(EQUALIZER_BAND_VALUE_KEY, 0f)
+                    }
+                    4 -> {
+                        audioSessionChange.equalizerBand14K = args.getFloat(EQUALIZER_BAND_VALUE_KEY, 0f)
+                    }
+                    else -> {
+                        logger.error(TAG, "Invalid equalizer band index: $eqBandIndex")
+                    }
+                }
+                notifyObservers(audioSessionChange)
+            }
             CMD_SET_METADATAREAD_SETTING -> {
                 val audioSessionChange = AudioSessionChange(AudioSessionChangeType.ON_SET_METADATAREAD_SETTING)
-                audioSessionChange.metadataReadSetting = args?.getString(METADATAREAD_SETTING_KEY,
-                    MetadataReadSetting.WHEN_USB_CONNECTED.name).toString()
+                audioSessionChange.metadataReadSetting = args?.getString(
+                    METADATAREAD_SETTING_KEY,
+                    MetadataReadSetting.WHEN_USB_CONNECTED.name
+                ).toString()
                 notifyObservers(audioSessionChange)
             }
             CMD_READ_METADATA_NOW -> {
@@ -242,8 +268,12 @@ class AudioSessionCallback(
                 val extraMediaFocus = extras?.getString(MediaStore.EXTRA_MEDIA_FOCUS)
                 extraMediaFocus?.let {
                     when (it) {
-                        MediaStore.Audio.Artists.ENTRY_CONTENT_TYPE -> audioSessionChange.queryFocus = AudioItemType.ARTIST
-                        MediaStore.Audio.Albums.ENTRY_CONTENT_TYPE -> audioSessionChange.queryFocus = AudioItemType.ALBUM
+                        MediaStore.Audio.Artists.ENTRY_CONTENT_TYPE -> audioSessionChange.queryFocus =
+                            AudioItemType.ARTIST
+
+                        MediaStore.Audio.Albums.ENTRY_CONTENT_TYPE -> audioSessionChange.queryFocus =
+                            AudioItemType.ALBUM
+
                         MediaStore.Audio.Media.ENTRY_CONTENT_TYPE -> audioSessionChange.queryFocus = AudioItemType.TRACK
                         else -> audioSessionChange.queryFocus = AudioItemType.UNSPECIFIC
                     }

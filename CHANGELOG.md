@@ -13,6 +13,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project loosely follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.7.0] - 2024-07-07
+
+### Added
+
+- Some Volvo cars do not come with a graphical equalizer like the Polestar 2 does. Some users also wanted to tweak the
+  equalizer presets used by AudioWagon a bit. That is why you can now adjust the built-in 5-band equalizer to your own
+  liking. To use this new feature, go to AudioWagon settings > Sound > Equalizer, enable the equalizer, select preset
+  "customized" and adjust the equalizer bands as you like [#55](https://github.com/MoleMan1024/audiowagon/issues/55)
+
+### Changed
+
+- the log file will now include wall clock time and monotonic time. The latter clock should be unaffected by things such
+  as the headunit being in sleep mode or wall clock changes e.g. based on GPS data
+- log a warning message when reading from the USB filesystem is slow
+- bumped target SDK API level as required by Google
+- some updates of dependant libraries
+
+
 ## [2.6.11] - 2024-06-09
 
 ### Fixed

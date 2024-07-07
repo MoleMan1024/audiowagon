@@ -21,7 +21,7 @@ private val logger = Logger
 private const val MAX_BYTES_TO_CACHE = 1200 * 1024
 
 class USBMetaDataSource(
-    private val usbFile: USBFile?,
+    usbFile: USBFile?,
     private val chunkSize: Int,
 ) : USBAudioCachedDataSource(usbFile, chunkSize) {
 

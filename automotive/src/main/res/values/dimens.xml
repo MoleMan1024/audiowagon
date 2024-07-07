@@ -59,4 +59,12 @@
     <dimen name="button_height">56dp</dimen>
     <dimen name="button_padding">56dp</dimen>
 
+    <!-- taken from https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:preference/preference/res/values/dimens.xml -->
+    <!-- The padding at the start and end of the Seekbar within a SeekBarPreference -->
+    <dimen name="preference_seekbar_eq_padding_horizontal">0dp</dimen>
+    <!-- The padding at the top and bottom of the Seekbar within a SeekBarPreference -->
+    <dimen name="preference_seekbar_eq_padding_vertical">15dp</dimen>
+    <!-- The minimum width of the TextView indicating the current value of the SeekBarPreference -->
+    <dimen name="preference_seekbar_eq_value_minWidth">160dp</dimen>
+
 </resources>

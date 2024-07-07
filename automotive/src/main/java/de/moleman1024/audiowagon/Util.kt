@@ -424,8 +424,19 @@ class Util {
             logger.debug(tag, "JVM memory: ${getAppMemory()}")
         }
 
-        fun getLocalDateTimeNow(): Instant {
-            return LocalDateTime.now().toInstant(ZoneOffset.UTC)
+        fun getLocalDateTimeNow(): LocalDateTime {
+            // Watch out: this clock will not tick when car is in sleep mode. Also these timestamps might change when
+            // the clock gets updated (e.g. from GPS) after the car wakes from sleep.
+            return LocalDateTime.now()
+        }
+
+        fun getLocalDateTimeNowInstant(): Instant {
+            return getLocalDateTimeNow().toInstant(ZoneOffset.UTC)
+        }
+
+        fun getMillisNow(): Long {
+            // This clock will return the elapsed milliseconds since boot (monotonic)
+            return SystemClock.elapsedRealtime()
         }
 
         fun getDifferenceInSecondsForInstants(oldInstant: Instant, newInstant: Instant): Long {
@@ -438,7 +449,7 @@ class Util {
         }
 
         fun getUptimeString(): String {
-            return "uptimeMillis=${SystemClock.uptimeMillis()} elapsedRealtime=${SystemClock.elapsedRealtime()}"
+            return "uptimeMillis=${SystemClock.uptimeMillis()} elapsedRealtime=${getMillisNow()}"
         }
 
     }

@@ -31,6 +31,7 @@ private const val PREF_DELETE_DATABASES = "deleteDatabases"
 private const val PREF_LEGAL_DISCLAIMER = "legalDisclaimer"
 private const val PREF_READ_METADATA_NOW = "readMetaDataNow"
 private const val PREF_VERSION = "version"
+private const val PREF_GOTO_EQUALIZER_PREFERENCES_SCREEN = "gotoEqualizerPreferencesScreen"
 
 @ExperimentalCoroutinesApi
 class SettingsFragment : PreferenceFragmentCompat() {
@@ -49,14 +50,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
                         updateDatabaseStatus()
                         updateDatabaseStatusJob = null
                     }
-                }
-                SHARED_PREF_ENABLE_EQUALIZER -> {
-                    updateEqualizerSwitch(sharedPreferences)
-                }
-                SHARED_PREF_EQUALIZER_PRESET -> {
-                    updateEqualizerPreset(sharedPreferences)
-                    val eqPreset = getSharedPrefs().getEQPreset(sharedPreferences)
-                    getParentSettingsActivity().updateEqualizerPreset(eqPreset)
                 }
                 SHARED_PREF_ENABLE_REPLAYGAIN -> {
                     updateReplayGainSwitch(sharedPreferences)
@@ -135,8 +128,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
     private fun updateFromSharedPrefs(sharedPreferences: SharedPreferences?) {
         updateLogToUSB(sharedPreferences)
         updateCrashReporting(sharedPreferences)
-        updateEqualizerSwitch(sharedPreferences)
-        updateEqualizerPreset(sharedPreferences)
         updateReplayGainSwitch(sharedPreferences)
         updateAudioFocusList(sharedPreferences)
         updateAlbumStyleList(sharedPreferences)
@@ -158,19 +149,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
         val value = getSharedPrefs().isCrashReportingEnabled(sharedPreferences)
         findPreference<SwitchPreferenceCompat>(SHARED_PREF_CRASH_REPORTING)?.isChecked = value
         logger.debug(TAG, "${SHARED_PREF_CRASH_REPORTING}=${value}")
-    }
-
-    private fun updateEqualizerSwitch(sharedPreferences: SharedPreferences?) {
-        val value = getSharedPrefs().isEQEnabled(sharedPreferences)
-        findPreference<SwitchPreferenceCompat>(SHARED_PREF_ENABLE_EQUALIZER)?.isChecked = value
-        findPreference<ListPreference>(SHARED_PREF_EQUALIZER_PRESET)?.isEnabled = value
-        logger.debug(TAG, "${SHARED_PREF_ENABLE_EQUALIZER}=${value}")
-    }
-
-    private fun updateEqualizerPreset(sharedPreferences: SharedPreferences?) {
-        val eqPreset = getSharedPrefs().getEQPreset(sharedPreferences)
-        findPreference<ListPreference>(SHARED_PREF_EQUALIZER_PRESET)?.value = eqPreset
-        logger.debug(TAG, "${SHARED_PREF_EQUALIZER_PRESET}=${eqPreset}")
     }
 
     private fun updateReplayGainSwitch(sharedPreferences: SharedPreferences?) {
@@ -240,8 +218,10 @@ class SettingsFragment : PreferenceFragmentCompat() {
         usbStatusPref?.isVisible = true
         ejectPref?.isVisible = true
         usbStatusPref?.summary = text
+        @Suppress("KotlinConstantConditions")
         if (BuildConfig.BUILD_TYPE != Util.BUILD_VARIANT_EMULATOR_SD_CARD
-            && value in listOf(R.string.setting_USB_status_ejected, R.string.setting_USB_status_not_connected)) {
+            && value in listOf(R.string.setting_USB_status_ejected, R.string.setting_USB_status_not_connected)
+        ) {
             disableSettingsThatNeedRemovableDrive()
         } else {
             enableSettingsThatNeedRemovableDrive(sharedPreferences)
@@ -402,7 +382,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                     }
                 }
                 SHARED_PREF_CRASH_REPORTING -> {
-                    if((preference as SwitchPreferenceCompat).isChecked) {
+                    if ((preference as SwitchPreferenceCompat).isChecked) {
                         settingsActivity.enableCrashReporting()
                     } else {
                         settingsActivity.disableCrashReporting()
@@ -417,15 +397,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 }
                 PREF_READ_METADATA_NOW -> {
                     settingsActivity.readMetadataNow()
-                }
-                SHARED_PREF_ENABLE_EQUALIZER -> {
-                    if ((preference as SwitchPreferenceCompat).isChecked) {
-                        findPreference<ListPreference>(SHARED_PREF_EQUALIZER_PRESET)?.isEnabled = true
-                        settingsActivity.enableEqualizer()
-                    } else {
-                        findPreference<ListPreference>(SHARED_PREF_EQUALIZER_PRESET)?.isEnabled = false
-                        settingsActivity.disableEqualizer()
-                    }
                 }
                 SHARED_PREF_ENABLE_REPLAYGAIN -> {
                     if ((preference as SwitchPreferenceCompat).isChecked) {

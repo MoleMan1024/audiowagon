@@ -62,7 +62,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
     <string name="action_eject">Mata ut</string>
     <string name="action_rewind">Spola tillbaka</string>
     <string name="settings_title">Inställningar</string>
-    <string name="setting_enable_equalizer_title">Equalizer</string>
+    <string name="setting_equalizer_title">Equalizer</string>
     <string name="setting_sound_category_title">Ljud</string>
     <string name="setting_equalizer_preset_title">Equalizerförval</string>
     <string name="equalizer_preset_less_bass">Mindre bas</string>
@@ -146,4 +146,6 @@ förbättra appen (kräver internetanslutning).</string>
     <string name="setting_view_tab_4">Flik 4</string>
     <string name="setting_view_tab_none">Ingen</string>
     <string name="browse_tree_please_wait">Vänta …</string>
+    <string name="setting_equalizer_enable">Aktiverad</string>
+    <string name="equalizer_preset_custom">Anpassat</string>
 </resources>

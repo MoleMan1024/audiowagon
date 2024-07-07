@@ -62,7 +62,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
     <string name="action_eject">Éjecter</string>
     <string name="action_rewind">Rembobiner</string>
     <string name="settings_title">Réglages</string>
-    <string name="setting_enable_equalizer_title">Égaliseur</string>
+    <string name="setting_equalizer_title">Égaliseur</string>
     <string name="setting_sound_category_title">Son</string>
     <string name="setting_equalizer_preset_title">Préréglage de l\'égaliseur</string>
     <string name="equalizer_preset_less_bass">Moins de graves</string>
@@ -146,4 +146,6 @@ de l\'application \"Media Center\")</string>
     <string name="setting_view_tab_4">Onglet 4</string>
     <string name="setting_view_tab_none">Aucun</string>
     <string name="browse_tree_please_wait">Veuillez patienter …</string>
+    <string name="setting_equalizer_enable">Activé</string>
+    <string name="equalizer_preset_custom">Personnalisé</string>
 </resources>

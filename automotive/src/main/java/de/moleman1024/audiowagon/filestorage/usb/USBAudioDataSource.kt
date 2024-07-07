@@ -6,6 +6,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 package de.moleman1024.audiowagon.filestorage.usb
 
 import android.media.MediaDataSource
+import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.filestorage.usb.lowlevel.USBFile
 import de.moleman1024.audiowagon.log.Logger
 import java.io.IOException
@@ -13,6 +14,8 @@ import java.nio.ByteBuffer
 import kotlin.math.min
 
 private const val TAG = "USBAudDataSrc"
+private const val NUM_MAX_USB_READ_TIMINGS_TO_KEEP = 50
+private const val MIN_READ_DURATION_MILLISEC_CONSIDERED_SLOW = 50
 private val logger = Logger
 
 /**
@@ -22,12 +25,13 @@ private val logger = Logger
  * Use [USBAudioCachedDataSource] instead for playback.
  */
 open class USBAudioDataSource(
-    private var usbFile: USBFile?,
+    protected var usbFile: USBFile?,
     private val chunkSize: Int
 ) : MediaDataSource() {
     var isClosed = false
     var hasError = false
-    var fileSize: Long = -1L
+    private var fileSize: Long = -1L
+    private val lastUSBReadTimings: MutableList<Long> = mutableListOf()
 
     init {
         logger.verbose(
@@ -125,6 +129,7 @@ open class USBAudioDataSource(
     }
 
     fun read(position: Long, outBuffer: ByteBuffer) {
+        val tic = Util.getMillisNow()
         try {
             usbFile?.read(position, outBuffer)
         } catch (exc: IOException) {
@@ -132,6 +137,23 @@ open class USBAudioDataSource(
             hasError = true
             throw exc
         }
+        val toc = Util.getMillisNow()
+        val readDurationMilliSec = toc - tic
+        if (readDurationMilliSec > MIN_READ_DURATION_MILLISEC_CONSIDERED_SLOW
+            && lastUSBReadTimings.size == NUM_MAX_USB_READ_TIMINGS_TO_KEEP) {
+            logSlowReadTime(readDurationMilliSec)
+        }
+        lastUSBReadTimings.add(readDurationMilliSec)
+        if (lastUSBReadTimings.size > NUM_MAX_USB_READ_TIMINGS_TO_KEEP) {
+            lastUSBReadTimings.removeAt(0)
+        }
+    }
+
+    private fun logSlowReadTime(lastReadDurationMilliSec: Long) {
+        val avgReadDurationMilliSec = lastUSBReadTimings.average()
+        logger.warning(TAG, "Last read of up to $chunkSize bytes from USB was slow: $lastReadDurationMilliSec ms " +
+                "compared to average: $avgReadDurationMilliSec ms"
+        )
     }
 
 }

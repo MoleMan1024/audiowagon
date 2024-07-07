@@ -155,6 +155,14 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
         mediaController.sendCommand(CMD_SET_EQUALIZER_PRESET, bundle, null)
     }
 
+    fun updateEqualizerBandValue(eqBandIndex: Int, eqBandValue: Float) {
+        assertMediaControllerInitialized()
+        val bundle = Bundle()
+        bundle.putInt(EQUALIZER_BAND_INDEX_KEY, eqBandIndex)
+        bundle.putFloat(EQUALIZER_BAND_VALUE_KEY, eqBandValue)
+        mediaController.sendCommand(CMD_SET_EQUALIZER_BAND, bundle, null)
+    }
+
     fun eject() {
         assertMediaControllerInitialized()
         mediaController.sendCommand(CMD_EJECT, null, null)
@@ -210,6 +218,7 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
      * https://developer.android.com/guide/topics/ui/settings/organize-your-settings#split_your_hierarchy_into_multiple_screens
      */
     override fun onPreferenceStartFragment(caller: PreferenceFragmentCompat, pref: Preference): Boolean {
+        logger.debug(TAG, "onPreferenceStartFragment(pref=$pref)")
         val args = pref.extras
         val fragment = supportFragmentManager.fragmentFactory.instantiate(
             classLoader, pref.fragment.toString()

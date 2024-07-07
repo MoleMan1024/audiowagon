@@ -91,7 +91,7 @@ class USBDeviceConnections(
             logger.debug(
                 TAG,
                 "Delaying to process USB device attached intent until ${
-                    Util.getLocalDateTimeNow().plusMillis(delayTimeMS)
+                    Util.getLocalDateTimeNowInstant().plusMillis(delayTimeMS)
                 }"
             )
             delay(delayTimeMS)

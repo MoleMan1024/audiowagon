@@ -62,7 +62,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
     <string name="action_eject">Odłącz dysk USB</string>
     <string name="action_rewind">Przewijanie do tyłu</string>
     <string name="settings_title">Ustawienia</string>
-    <string name="setting_enable_equalizer_title">Korektor dźwięku</string>
+    <string name="setting_equalizer_title">Korektor dźwięku</string>
     <string name="setting_sound_category_title">Dźwięk</string>
     <string name="setting_equalizer_preset_title">Ustawienie korektora</string>
     <string name="equalizer_preset_less_bass">Mniej basów</string>
@@ -144,4 +144,6 @@ to w ulepszeniu aplikacji (funkcja wymaga połączenia z internetem).</string>
     <string name="setting_view_tab_4">Karta 4</string>
     <string name="setting_view_tab_none">Brak</string>
     <string name="browse_tree_please_wait">Proszę czekać …</string>
+    <string name="setting_equalizer_enable">Włączony</string>
+    <string name="equalizer_preset_custom">Niestandardowe</string>
 </resources>

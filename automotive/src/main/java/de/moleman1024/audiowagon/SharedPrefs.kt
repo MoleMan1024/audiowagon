@@ -21,6 +21,11 @@ const val SHARED_PREF_USB_STATUS = "usbStatusResID"
 const val SHARED_PREF_READ_METADATA = "readMetaData"
 const val SHARED_PREF_ENABLE_EQUALIZER = "enableEqualizer"
 const val SHARED_PREF_EQUALIZER_PRESET = "equalizerPreset"
+const val SHARED_PREF_EQUALIZER_BAND60 = "eqBand60"
+const val SHARED_PREF_EQUALIZER_BAND230 = "eqBand230"
+const val SHARED_PREF_EQUALIZER_BAND910 = "eqBand910"
+const val SHARED_PREF_EQUALIZER_BAND3600 = "eqBand3600"
+const val SHARED_PREF_EQUALIZER_BAND14K = "eqBand14000"
 const val SHARED_PREF_ENABLE_REPLAYGAIN = "enableReplayGain"
 const val SHARED_PREF_AUDIOFOCUS = "audioFocus"
 const val SHARED_PREF_ALBUM_STYLE = "albumStyle"
@@ -79,6 +84,50 @@ open class SharedPrefs {
     fun getEQPreset(sharedPreferences: SharedPreferences?): String {
         return sharedPreferences?.getString(SHARED_PREF_EQUALIZER_PRESET, SHARED_PREF_EQUALIZER_PRESET_DEFAULT)
             ?: SHARED_PREF_EQUALIZER_PRESET_DEFAULT
+    }
+
+    fun getEQBandValues(context: Context): FloatArray {
+        return try {
+            getEQBandValues(getDefaultSharedPreferences(context))
+        } catch (exc: IllegalStateException) {
+            // this might happen when user has not yet unlocked the device
+            logger.exception(TAG, exc.message.toString(), exc)
+            floatArrayOf(0f, 0f, 0f, 0f, 0f)
+        }
+    }
+
+    fun getEQBandValues(sharedPreferences: SharedPreferences?): FloatArray {
+        return floatArrayOf(
+            getEQBandValue60Float(sharedPreferences),
+            getEQBandValue230Float(sharedPreferences),
+            getEQBandValue910Float(sharedPreferences),
+            getEQBandValue3600Float(sharedPreferences),
+            getEQBandValue14KFloat(sharedPreferences),
+        )
+    }
+
+    fun getEQBandValue60Float(sharedPreferences: SharedPreferences?): Float {
+        return getEQBandValueRaw(sharedPreferences, SHARED_PREF_EQUALIZER_BAND60).toFloat() / 10f
+    }
+
+    fun getEQBandValue230Float(sharedPreferences: SharedPreferences?): Float {
+        return getEQBandValueRaw(sharedPreferences, SHARED_PREF_EQUALIZER_BAND230).toFloat() / 10f
+    }
+
+    fun getEQBandValue910Float(sharedPreferences: SharedPreferences?): Float {
+        return getEQBandValueRaw(sharedPreferences, SHARED_PREF_EQUALIZER_BAND910).toFloat() / 10f
+    }
+
+    fun getEQBandValue3600Float(sharedPreferences: SharedPreferences?): Float {
+        return getEQBandValueRaw(sharedPreferences, SHARED_PREF_EQUALIZER_BAND3600).toFloat() / 10f
+    }
+
+    fun getEQBandValue14KFloat(sharedPreferences: SharedPreferences?): Float {
+        return getEQBandValueRaw(sharedPreferences, SHARED_PREF_EQUALIZER_BAND14K).toFloat() / 10f
+    }
+
+    private fun getEQBandValueRaw(sharedPreferences: SharedPreferences?, equalizerBandKey: String): Int {
+        return sharedPreferences?.getInt(equalizerBandKey, 0) ?: 0
     }
 
     fun isEQEnabled(context: Context): Boolean {

@@ -8,6 +8,7 @@ data class LogData(
     var msg: String,
     val stackTrace: String? = null,
     var timestamp: String? = null,
+    var timestampMonotonic: Long? = null,
     var threadID: Int? = null,
     var processID: Int? = null
 )

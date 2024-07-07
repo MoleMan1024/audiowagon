@@ -120,7 +120,7 @@ class AlbumArtContentProvider : ContentProvider() {
             context?.unbindService(connection)
             audioBrowserService = null
             binderStatus = BinderStatus.UNBOUND
-            lastUnbindTimestamp = Util.getLocalDateTimeNow()
+            lastUnbindTimestamp = Util.getLocalDateTimeNowInstant()
         }
     }
 
@@ -190,7 +190,7 @@ class AlbumArtContentProvider : ContentProvider() {
             if (lastUnbindTime == null) {
                 bindAudioBrowserService()
             } else {
-                val now = Util.getLocalDateTimeNow()
+                val now = Util.getLocalDateTimeNowInstant()
                 if (Util.getDifferenceInSecondsForInstants(lastUnbindTime, now) > SECONDS_TO_BLOCK_AFTER_UNBIND) {
                     bindAudioBrowserService()
                 } else {

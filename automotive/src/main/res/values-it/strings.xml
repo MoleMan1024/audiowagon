@@ -61,7 +61,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
     <string name="action_eject">Espelli</string>
     <string name="action_rewind">Riavvolgere</string>
     <string name="settings_title">Impostazioni</string>
-    <string name="setting_enable_equalizer_title">Equalizzatore</string>
+    <string name="setting_equalizer_title">Equalizzatore</string>
     <string name="setting_sound_category_title">Suono</string>
     <string name="setting_equalizer_preset_title">Preset equalizzatore</string>
     <string name="equalizer_preset_less_bass">Meno bassi</string>
@@ -145,5 +145,7 @@ Center\")</string>
     <string name="setting_view_tab_4">Tab 4</string>
     <string name="setting_view_tab_none">Nessuno</string>
     <string name="browse_tree_please_wait">Attendere …</string>
+    <string name="setting_equalizer_enable">Abilitato</string>
+    <string name="equalizer_preset_custom">Personalizzato</string>
 </resources>
 

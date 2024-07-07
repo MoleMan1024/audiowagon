@@ -62,7 +62,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
     <string name="action_eject">Tag USB-drevet ud</string>
     <string name="action_rewind">Spole tilbage</string>
     <string name="settings_title">Indstillinger</string>
-    <string name="setting_enable_equalizer_title">Equalizer</string>
+    <string name="setting_equalizer_title">Equalizer</string>
     <string name="setting_sound_category_title">Lyd</string>
     <string name="setting_equalizer_preset_title">Equalizer preset</string>
     <string name="equalizer_preset_less_bass">Mindre bas</string>
@@ -147,4 +147,6 @@ forbedre appen (kræver internetforbindelse).</string>
     <string name="setting_view_tab_4">Fane 4</string>
     <string name="setting_view_tab_none">Ingen</string>
     <string name="browse_tree_please_wait">Vent …</string>
+    <string name="setting_equalizer_enable">Aktiveret</string>
+    <string name="equalizer_preset_custom">Brugerdefineret</string>
 </resources>

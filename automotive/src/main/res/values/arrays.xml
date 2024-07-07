@@ -12,6 +12,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
         <item>@string/equalizer_preset_P2</item>
         <item>@string/equalizer_preset_P2_plus</item>
         <item>@string/equalizer_preset_V_shape</item>
+        <item>@string/equalizer_preset_custom</item>
     </string-array>
     <string-array name="equalizer_preset_values">
         <item>LESS_BASS</item>
@@ -21,6 +22,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
         <item>P2</item>
         <item>P2_PLUS</item>
         <item>V_SHAPE</item>
+        <item>CUSTOM</item>
     </string-array>
     <string-array name="read_metadata_settings">
         <item>@string/setting_read_metadata_when_connected</item>

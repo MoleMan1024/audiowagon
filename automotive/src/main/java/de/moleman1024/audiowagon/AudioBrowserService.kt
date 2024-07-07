@@ -347,7 +347,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             logger.debug(
                 TAG,
                 "Delaying to update attached devices until ${
-                    Util.getLocalDateTimeNow().plusMillis(UPDATE_ATTACHED_DEVICES_AFTER_UNLOCK_DELAY_MS)
+                    Util.getLocalDateTimeNowInstant().plusMillis(UPDATE_ATTACHED_DEVICES_AFTER_UNLOCK_DELAY_MS)
                 }"
             )
             delay(UPDATE_ATTACHED_DEVICES_AFTER_UNLOCK_DELAY_MS)

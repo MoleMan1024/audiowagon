@@ -62,7 +62,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
     <string name="action_eject">Ontkoppelen</string>
     <string name="action_rewind">Terugspoelen</string>
     <string name="settings_title">Instellingen</string>
-    <string name="setting_enable_equalizer_title">Equalizer</string>
+    <string name="setting_equalizer_title">Equalizer</string>
     <string name="setting_sound_category_title">Geluid</string>
     <string name="setting_equalizer_preset_title">Equalizer voorkeursinstelling</string>
     <string name="equalizer_preset_less_bass">Minder bass</string>
@@ -148,4 +148,6 @@ verbeteren (vereist een internetverbinding).</string>
     <string name="setting_view_tab_4">Tabblad 4</string>
     <string name="setting_view_tab_none">Geen</string>
     <string name="browse_tree_please_wait">Een ogenblik geduld …</string>
+    <string name="setting_equalizer_enable">Ingeschakeld</string>
+    <string name="equalizer_preset_custom">Aangepast</string>
 </resources>

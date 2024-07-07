@@ -9,6 +9,8 @@ import de.moleman1024.audiowagon.enums.AudioSessionChangeType
 import de.moleman1024.audiowagon.enums.ViewTabSetting
 import de.moleman1024.audiowagon.enums.AudioItemType
 
+const val EQUALIZER_BAND_VALUE_EMPTY = -99.0f
+
 // TODO: rework this, these items are kind of unrelated
 data class AudioSessionChange(val type: AudioSessionChangeType) {
     var queueID: Long = -1L
@@ -19,6 +21,11 @@ data class AudioSessionChange(val type: AudioSessionChangeType) {
     var queryToPlay: String = ""
     var queryFocus: AudioItemType = AudioItemType.UNSPECIFIC
     var equalizerPreset: String = ""
+    var equalizerBand60: Float = EQUALIZER_BAND_VALUE_EMPTY
+    var equalizerBand230: Float = EQUALIZER_BAND_VALUE_EMPTY
+    var equalizerBand910: Float = EQUALIZER_BAND_VALUE_EMPTY
+    var equalizerBand3600: Float = EQUALIZER_BAND_VALUE_EMPTY
+    var equalizerBand14K: Float = EQUALIZER_BAND_VALUE_EMPTY
     var metadataReadSetting: String = ""
     var audioFocusSetting: String = ""
     var albumStyleSetting: String = ""
@@ -26,11 +33,23 @@ data class AudioSessionChange(val type: AudioSessionChangeType) {
     val viewTabs: MutableList<ViewTabSetting> = mutableListOf()
 
     override fun toString(): String {
-        return "AudioSessionChange(type=$type, queueID=$queueID, " +
-                "contentHierarchyID='$contentHierarchyID', artistToPlay='$artistToPlay', albumToPlay='$albumToPlay', " +
-                "trackToPlay='$trackToPlay', queryToPlay='$queryToPlay', queryFocus='$queryFocus' " +
-                "equalizerPreset='$equalizerPreset', metadataReadSetting='$metadataReadSetting', " +
-                "audioFocusSetting='$audioFocusSetting', albumStyleSetting='$albumStyleSetting', " +
+        return "AudioSessionChange(type=$type, " +
+                "queueID=$queueID, " +
+                "contentHierarchyID='$contentHierarchyID', " +
+                "artistToPlay='$artistToPlay', " +
+                "albumToPlay='$albumToPlay', " +
+                "trackToPlay='$trackToPlay', " +
+                "queryToPlay='$queryToPlay', " +
+                "queryFocus='$queryFocus' " +
+                "equalizerPreset='$equalizerPreset', " +
+                "equalizerBand60='$equalizerBand60', " +
+                "equalizerBand230='$equalizerBand230', " +
+                "equalizerBand910='$equalizerBand910', " +
+                "equalizerBand3600='$equalizerBand3600', " +
+                "equalizerBand14K='$equalizerBand14K', " +
+                "metadataReadSetting='$metadataReadSetting', " +
+                "audioFocusSetting='$audioFocusSetting', " +
+                "albumStyleSetting='$albumStyleSetting', " +
                 "viewTabs=$viewTabs)"
     }
 

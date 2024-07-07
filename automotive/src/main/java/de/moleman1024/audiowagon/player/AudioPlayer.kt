@@ -129,8 +129,17 @@ class AudioPlayer(
         equalizerPresetPreference.let {
             try {
                 val equalizerPreset = EqualizerPreset.valueOf(it)
-                effectsFlip?.setEQPreset(equalizerPreset)
-                effectsFlop?.setEQPreset(equalizerPreset)
+                if (equalizerPreset != EqualizerPreset.CUSTOM) {
+                    effectsFlip?.storeAndApplyEQPreset(equalizerPreset)
+                    effectsFlop?.storeAndApplyEQPreset(equalizerPreset)
+                } else {
+                    logger.debug(TAG, "Using custom equalizer settings")
+                    val eqBandValues = sharedPrefs.getEQBandValues(context)
+                    eqBandValues.forEachIndexed { index, value ->
+                        effectsFlip?.storeAndApplyEqualizerBandValue(index, value)
+                        effectsFlop?.storeAndApplyEqualizerBandValue(index, value)
+                    }
+                }
             } catch (exc: IllegalArgumentException) {
                 logger.exception(TAG, "Could not convert preference value to equalizer preset", exc)
             }
@@ -1081,8 +1090,16 @@ class AudioPlayer(
     suspend fun setEqualizerPreset(preset: EqualizerPreset) {
         withContext(dispatcher) {
             assertEffectsObjectsExist()
-            effectsFlip?.setEQPreset(preset)
-            effectsFlop?.setEQPreset(preset)
+            effectsFlip?.storeAndApplyEQPreset(preset)
+            effectsFlop?.storeAndApplyEQPreset(preset)
+        }
+    }
+
+    suspend fun setEqualizerBandValue(equalizerBandIndex: Int, equalizerBandValue: Float) {
+        withContext(dispatcher) {
+            assertEffectsObjectsExist()
+            effectsFlip?.storeAndApplyEqualizerBandValue(equalizerBandIndex, equalizerBandValue)
+            effectsFlop?.storeAndApplyEqualizerBandValue(equalizerBandIndex, equalizerBandValue)
         }
     }
 

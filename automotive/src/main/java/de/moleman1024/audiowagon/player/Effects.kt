@@ -6,6 +6,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 package de.moleman1024.audiowagon.player
 
 import android.media.audiofx.DynamicsProcessing
+import de.moleman1024.audiowagon.EQUALIZER_PRESET_MAPPING
 import de.moleman1024.audiowagon.enums.EqualizerPreset
 import de.moleman1024.audiowagon.log.Logger
 
@@ -38,46 +39,42 @@ class Effects(audioSessionID: Int) {
         false
     ).build()
     private val dynamicsProcessing = DynamicsProcessing(normalPrio, audioSessionID, config)
-    private var currentPreset: EqualizerPreset = EqualizerPreset.LESS_BASS
-    // Polestar 2 and Pixel 3 XL have 5 band EQs, with Q approx 0.6
-    // center 60 from 30 til 120 Hz
-    // center 230 from 120 til 460 Hz
-    // center 910 from 460 til 1800 Hz
-    // center 3600 from 1800 til 7000 Hz
-    // center 14000 from 7000 til 20000 Hz
-    // TODO: It seems DynamicsProcessing allows for more bands
-    private val presetLevels = mapOf(
-        EqualizerPreset.LESS_BASS to floatArrayOf(-3f, 0f, 0f, 0f, 0f),
-        EqualizerPreset.MORE_BASS to floatArrayOf(3f, 0f, 0f, 0f, 0f),
-        EqualizerPreset.LESS_HIGHS to floatArrayOf(0f, 0f, 0f, 0f, -4f),
-        EqualizerPreset.MORE_HIGHS to floatArrayOf(0f, 0f, 0f, 0f, 4f),
-        EqualizerPreset.P2 to floatArrayOf(-2f, -0.5f, -0.7f, 0.7f, -1f),
-        EqualizerPreset.P2_PLUS to floatArrayOf(-4f, -1f, -1.5f, 1.4f, -2f),
-        EqualizerPreset.V_SHAPE to floatArrayOf(3f, 1f, -1f, 1.5f, 5f)
-    )
+    private val currentEqualizerBandValues = floatArrayOf(0f, 0f, 0f, 0f, 0f)
 
     init {
         logger.debug(TAG, "Init Effects for audio session id: $audioSessionID")
     }
 
-    fun setEQPreset(preset: EqualizerPreset) {
+    fun storeAndApplyEQPreset(preset: EqualizerPreset) {
         logger.debug(TAG, "Setting equalizer preset $preset on $dynamicsProcessing")
-        currentPreset = preset
-        applyEQPreset()
+        EQUALIZER_PRESET_MAPPING[preset]?.forEachIndexed { index, levelInDecibel ->
+            currentEqualizerBandValues[index] = levelInDecibel
+        }
+        applyAllEqualizerBandValues()
     }
 
-    private fun applyEQPreset() {
-        presetLevels[currentPreset]?.forEachIndexed { index, levelInDecibel ->
-            val eqBand = DynamicsProcessing.EqBand(true, CUTOFF_FREQS[index], levelInDecibel)
-            dynamicsProcessing.setPreEqBandAllChannelsTo(index, eqBand)
+    private fun applyAllEqualizerBandValues() {
+        currentEqualizerBandValues.forEachIndexed { index, levelInDecibel ->
+            applyEqualizerBandValue(index, levelInDecibel)
         }
+    }
+
+    fun storeAndApplyEqualizerBandValue(index: Int, levelInDecibel: Float) {
+        currentEqualizerBandValues[index] = levelInDecibel
+        applyEqualizerBandValue(index, levelInDecibel)
+    }
+
+    private fun applyEqualizerBandValue(index: Int, levelInDecibel: Float) {
+        logger.verbose(TAG, "Applying equalizer band $index value: $levelInDecibel")
+        val eqBand = DynamicsProcessing.EqBand(true, CUTOFF_FREQS[index], levelInDecibel)
+        dynamicsProcessing.setPreEqBandAllChannelsTo(index, eqBand)
     }
 
     fun enableEQ() {
         logger.debug(TAG, "Enabling EQ: $dynamicsProcessing")
         val equalizer = DynamicsProcessing.Eq(true, true, NUM_EQ_BANDS)
         dynamicsProcessing.setPreEqAllChannelsTo(equalizer)
-        applyEQPreset()
+        applyAllEqualizerBandValues()
         if (!isEQEnabled && !isGainEnabled) {
             enableEffects()
         }

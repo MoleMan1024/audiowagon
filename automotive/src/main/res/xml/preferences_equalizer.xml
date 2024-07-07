@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+SPDX-FileCopyrightText: 2024 MoleMan1024 <moleman1024dev@gmail.com>
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
+<androidx.preference.PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory
+            app:title="@string/setting_equalizer_title"
+            app:icon="@drawable/equalizer">
+        <SwitchPreferenceCompat
+                app:key="enableEqualizer"
+                app:title="@string/setting_equalizer_enable"
+                app:summary=""
+                app:persistent="true"
+                app:defaultValue="false" />
+        <ListPreference
+                app:key="equalizerPreset"
+                app:title="@string/setting_equalizer_preset_title"
+                app:persistent="true"
+                app:defaultValue="LESS_BASS"
+                app:useSimpleSummaryProvider="true"
+                app:entries="@array/equalizer_presets"
+                app:entryValues="@array/equalizer_preset_values" />
+        <de.moleman1024.audiowagon.activities.EqualizerSeekbarPreference
+                app:title="14k Hz"
+                android:selectable="false"
+                app:persistent="true"
+                app:min="-100"
+                android:max="100"
+                app:defaultValue="0"
+                app:seekBarIncrement="1"
+                app:showSeekBarValue="true"
+                app:updatesContinuously="true"
+                app:key="eqBand14000" />
+        <de.moleman1024.audiowagon.activities.EqualizerSeekbarPreference
+                app:title="3600 Hz"
+                android:selectable="false"
+                app:persistent="true"
+                app:min="-100"
+                android:max="100"
+                app:defaultValue="0"
+                app:seekBarIncrement="1"
+                app:showSeekBarValue="true"
+                app:updatesContinuously="true"
+                app:key="eqBand3600" />
+        <de.moleman1024.audiowagon.activities.EqualizerSeekbarPreference
+                app:title="910 Hz"
+                android:selectable="false"
+                app:persistent="true"
+                app:min="-100"
+                android:max="100"
+                app:defaultValue="0"
+                app:seekBarIncrement="1"
+                app:showSeekBarValue="true"
+                app:updatesContinuously="true"
+                app:key="eqBand910" />
+        <de.moleman1024.audiowagon.activities.EqualizerSeekbarPreference
+                app:title="230 Hz"
+                android:selectable="false"
+                app:persistent="true"
+                app:min="-100"
+                android:max="100"
+                app:defaultValue="0"
+                app:seekBarIncrement="1"
+                app:showSeekBarValue="true"
+                app:updatesContinuously="true"
+                app:key="eqBand230" />
+        <de.moleman1024.audiowagon.activities.EqualizerSeekbarPreference
+                app:title="60 Hz"
+                android:selectable="false"
+                app:persistent="true"
+                app:min="-100"
+                android:max="100"
+                app:defaultValue="0"
+                app:seekBarIncrement="1"
+                app:showSeekBarValue="true"
+                app:updatesContinuously="true"
+                app:key="eqBand60" />
+    </PreferenceCategory>
+</androidx.preference.PreferenceScreen>

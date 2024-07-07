@@ -61,7 +61,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
     <string name="action_eject">Auswerfen</string>
     <string name="action_rewind">Zurückspulen</string>
     <string name="settings_title">Einstellungen</string>
-    <string name="setting_enable_equalizer_title">Equalizer</string>
+    <string name="setting_equalizer_title">Equalizer</string>
     <string name="setting_sound_category_title">Klang</string>
     <string name="setting_equalizer_preset_title">Equalizer Profil</string>
     <string name="equalizer_preset_less_bass">Weniger Bass</string>
@@ -148,4 +148,6 @@ verbessern (benötigt Internetverbindung).</string>
     <string name="setting_view_tab_4">Tab 4</string>
     <string name="setting_view_tab_none">Nichts</string>
     <string name="browse_tree_please_wait">Bitte warten …</string>
+    <string name="setting_equalizer_enable">Aktiviert</string>
+    <string name="equalizer_preset_custom">Benutzerdefiniert</string>
 </resources>

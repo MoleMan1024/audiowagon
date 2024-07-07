@@ -12,5 +12,6 @@ enum class EqualizerPreset {
     MORE_HIGHS,
     P2,
     P2_PLUS,
-    V_SHAPE
+    V_SHAPE,
+    CUSTOM
 }

@@ -8,20 +8,11 @@ SPDX-License-Identifier: GPL-3.0-or-later
     <PreferenceCategory
             app:title="@string/setting_sound_category_title"
             app:icon="@drawable/speaker">
-        <SwitchPreferenceCompat
-                app:key="enableEqualizer"
-                app:title="@string/setting_enable_equalizer_title"
-                app:summary=""
-                app:persistent="true"
-                app:defaultValue="false" />
-        <ListPreference
-                app:key="equalizerPreset"
-                app:title="@string/setting_equalizer_preset_title"
-                app:persistent="true"
-                app:defaultValue="LESS_BASS"
-                app:useSimpleSummaryProvider="true"
-                app:entries="@array/equalizer_presets"
-                app:entryValues="@array/equalizer_preset_values" />
+        <Preference
+                app:key="gotoEqualizerPreferencesScreen"
+                app:title="@string/setting_equalizer_title"
+                app:fragment="de.moleman1024.audiowagon.activities.EqualizerSettingsFragment"
+                app:persistent="false" />
         <SwitchPreferenceCompat
                 app:key="enableReplayGain"
                 app:title="@string/setting_enable_replaygain"
