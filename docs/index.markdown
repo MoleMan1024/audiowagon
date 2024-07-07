@@ -25,7 +25,7 @@ This app will **play audio files** from an attached **USB flash drive** in cars 
 - **compilation albums** are indicated (if marked as such in metadata)
 - **persistency**: remembers the last used playback queue and playback position
 - **search**: search for entries using the on-screen keyboard
-- **equalizer** with multiple presets
+- 5-band **equalizer** with multiple presets and customization
 - [**ReplayGain**](https://en.wikipedia.org/wiki/ReplayGain) for volume normalization of tracks
 - [**gapless playback**](https://en.wikipedia.org/wiki/Gapless_playback) for FLAC files
 - support for **voice input**
@@ -100,7 +100,7 @@ See [the FAQ section]({{ site.baseurl }}{% link faq.markdown %}).
 
 ## How do I report an issue?
 
-If you encounter any issues, first read this page and the [FAQ]({{ site.baseurl }}{% link faq.markdown %}). If that 
+If you encounter any issues, first read this page and the [FAQ]({{ site.baseurl }}{% link faq.markdown %}). If that
 does not help, please let me know, I will try to fix the issue. If possible provide all of the following info to me
 at my email (see below, or you can use [GitHub](https://github.com/MoleMan1024/audiowagon/issues)):
 
@@ -124,7 +124,7 @@ at my email (see below, or you can use [GitHub](https://github.com/MoleMan1024/a
 ### Native speakers
 
 I am still looking for **volunteer native speakers to translate** the GUI texts in the app to all languages (already
-translated: German, English, Dutch, Swedish, Norwegian, Danish, French, Russian, Polish, Italian, Japanese, Hungarian). 
+translated: German, English, Dutch, Swedish, Norwegian, Danish, French, Russian, Polish, Italian, Japanese, Hungarian).
 You can get the [English strings to translate here](https://github.com/MoleMan1024/audiowagon/blob/master/automotive/src/main/res/values/strings.xml).
 
 

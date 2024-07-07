@@ -24,6 +24,23 @@ to improve this. This would allow the user to select *AudioWagon* to be the defa
 should not interfere with wired CarPlay). I would provide help on how to integrate this code if *Volvo/Polestar* decides
 to use it.
 
+Some more details in [Github](https://github.com/MoleMan1024/audiowagon/issues/133).
+
+
+### Why is there a popup saying "Unavailable for your safety" when I want to open AudioWagon settings?
+
+![Unavailable for your safety](/img/settings_unavailable_while_driving.jpg)
+
+This was not added by my app, this came in due to an upgrade to Android 12 done in Volvo/Polestar software versions 
+P3.0.3. In this version of Android Automotive the *driver distaction guidelines* are enforced more strictly, so it 
+is no longer allowed to use most apps' settings screens while the car is in motion. This means you can only access an
+app's setting screen while the car is parked or has come to a complete stop (e.g. at a red light). As far as I know
+there is no way for a third party app developer to go around this restriction and there is no consideration of front
+seat passengers that could modify the settings while the driver concentrates on the road.
+
+Some more details in [Github](https://github.com/MoleMan1024/audiowagon/issues/142).
+
+
 ### Why is there a popup about "USB device is not supported" when the USB device works fine?
 
 ![Not supported popup](/img/not_supported.jpg)
@@ -32,6 +49,7 @@ to use it.
 version *P2.13.1*.
 
 As far as I know, this issue does not appear when using the app on *Renault* and *GMC* cars.
+
 
 ### Why is my USB drive not recognized?
 
@@ -153,7 +171,7 @@ If the *artist* tag is empty an entry "Unknown artist" will be created to collec
 If the *title* tag is empty, the file name will be used instead.
 
 
-### After adding more files to my USB drive the browse view looks strange
+### After adding more files to my USB drive the browse view looks strange, why?
 
 When you add more than 400 tracks/albums/artists they will be shown using *groups*, for albums it looks like this:
 
