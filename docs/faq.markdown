@@ -31,8 +31,8 @@ Some more details in [Github](https://github.com/MoleMan1024/audiowagon/issues/1
 
 ![Unavailable for your safety](/img/settings_unavailable_while_driving.jpg)
 
-This was not added by my app, this came in due to an upgrade to Android 12 done in Volvo/Polestar software versions 
-P3.0.3. In this version of Android Automotive the *driver distaction guidelines* are enforced more strictly, so it 
+This was not added by my app, this came in due to an upgrade to Android 12 done in Volvo/Polestar software versions
+P3.0.3. In this version of Android Automotive the *driver distaction guidelines* are enforced more strictly, so it
 is no longer allowed to use most apps' settings screens while the car is in motion. This means you can only access an
 app's setting screen while the car is parked or has come to a complete stop (e.g. at a red light). As far as I know
 there is no way for a third party app developer to go around this restriction and there is no consideration of front
