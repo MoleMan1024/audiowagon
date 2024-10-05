@@ -389,12 +389,8 @@ class AudioItemLibrary(
             ContentHierarchyType.ROOT_FILES -> ContentHierarchyRootFiles(context, this, audioFileStorage, sharedPrefs)
             ContentHierarchyType.ROOT_ALBUMS -> ContentHierarchyRootAlbums(context, this, audioFileStorage, sharedPrefs)
             ContentHierarchyType.ROOT_ARTISTS -> ContentHierarchyRootArtists(
-                context,
-                this,
-                audioFileStorage,
-                sharedPrefs
+                context, this, audioFileStorage, sharedPrefs
             )
-
             ContentHierarchyType.TRACK -> ContentHierarchyTrack(contentHierarchyID, context, this)
             ContentHierarchyType.ALBUM -> ContentHierarchyAlbum(contentHierarchyID, context, this)
             ContentHierarchyType.COMPILATION -> ContentHierarchyCompilation(contentHierarchyID, context, this)
@@ -404,37 +400,27 @@ class AudioItemLibrary(
             ContentHierarchyType.DIRECTORY -> ContentHierarchyDirectory(
                 contentHierarchyID, context, this, audioFileStorage, sharedPrefs
             )
-
             ContentHierarchyType.PLAYLIST -> ContentHierarchyPlaylist(
-                contentHierarchyID,
-                context,
-                this,
-                audioFileStorage
+                contentHierarchyID, context, this, audioFileStorage
             )
-
             ContentHierarchyType.TRACK_GROUP -> ContentHierarchyGroupTracks(contentHierarchyID, context, this)
             ContentHierarchyType.ALBUM_GROUP -> ContentHierarchyGroupAlbums(contentHierarchyID, context, this)
             ContentHierarchyType.ARTIST_GROUP -> ContentHierarchyGroupArtists(contentHierarchyID, context, this)
             ContentHierarchyType.FILELIKE_GROUP -> ContentHierarchyGroupFileLike(
                 contentHierarchyID, context, this, audioFileStorage, sharedPrefs
             )
-
             ContentHierarchyType.ALL_TRACKS_FOR_ARTIST -> ContentHierarchyAllTracksForArtist(
                 contentHierarchyID, context, this
             )
-
             ContentHierarchyType.ALL_TRACKS_FOR_ALBUM -> ContentHierarchyAllTracksForAlbum(
                 contentHierarchyID, context, this
             )
-
             ContentHierarchyType.ALL_TRACKS_FOR_COMPILATION -> ContentHierarchyAllTracksForCompilation(
                 contentHierarchyID, context, this
             )
-
             ContentHierarchyType.ALL_TRACKS_FOR_UNKN_ALBUM -> ContentHierarchyAllTracksForUnknAlbum(
                 contentHierarchyID, context, this
             )
-
             ContentHierarchyType.ALL_FILES_FOR_DIRECTORY -> ContentHierarchyAllFilesForDirectory(
                 contentHierarchyID, context, this, audioFileStorage
             )
@@ -520,7 +506,6 @@ class AudioItemLibrary(
                         )
                     )
                 }
-
                 ContentHierarchyType.ALBUM,
                 ContentHierarchyType.UNKNOWN_ALBUM,
                 ContentHierarchyType.COMPILATION -> {
@@ -553,7 +538,6 @@ class AudioItemLibrary(
                         )
                     }
                 }
-
                 ContentHierarchyType.TRACK -> {
                     setTitle(audioItem.title)
                     if (audioItem.artist.isNotBlank()) {
@@ -572,7 +556,6 @@ class AudioItemLibrary(
                         )
                     }
                 }
-
                 ContentHierarchyType.FILE -> {
                     setTitle(audioItem.title)
                     setIconUri(
@@ -582,7 +565,6 @@ class AudioItemLibrary(
                         )
                     )
                 }
-
                 ContentHierarchyType.DIRECTORY -> {
                     setTitle(audioItem.title)
                     setIconUri(
@@ -592,7 +574,6 @@ class AudioItemLibrary(
                         )
                     )
                 }
-
                 else -> {
                     throw AssertionError("Cannot create audio item description for type: ${contentHierarchyID.type}")
                 }

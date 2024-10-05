@@ -31,6 +31,8 @@ data class AudioSessionChange(val type: AudioSessionChangeType) {
     var albumStyleSetting: String = ""
     // https://github.com/MoleMan1024/audiowagon/issues/124
     val viewTabs: MutableList<ViewTabSetting> = mutableListOf()
+    // https://developer.android.com/reference/kotlin/androidx/media/utils/MediaConstants#TRANSPORT_CONTROLS_EXTRAS_KEY_SHUFFLE()
+    var isShuffleRequested: Boolean = false
 
     override fun toString(): String {
         return "AudioSessionChange(type=$type, " +
@@ -50,7 +52,8 @@ data class AudioSessionChange(val type: AudioSessionChangeType) {
                 "metadataReadSetting='$metadataReadSetting', " +
                 "audioFocusSetting='$audioFocusSetting', " +
                 "albumStyleSetting='$albumStyleSetting', " +
-                "viewTabs=$viewTabs)"
+                "viewTabs=$viewTabs, " +
+                "shuffleRequested=$isShuffleRequested)"
     }
 
 }

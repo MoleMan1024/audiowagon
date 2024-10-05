@@ -16,29 +16,29 @@ private const val TAG = "MediaBrowserTraversal"
 
 class MediaBrowserTraversal(private val browser: MediaBrowserCompat) {
     val hierarchy = mutableMapOf<String, MutableList<MediaBrowserCompat.MediaItem>>()
-    var nodes = Stack<String>()
+    var browsableNodes = Stack<String>()
     val traversalCompleteFuture = CompletableFuture<Unit>()
     private val callback = object : MediaBrowserCompat.SubscriptionCallback() {
         override fun onChildrenLoaded(parentId: String, children: MutableList<MediaBrowserCompat.MediaItem>) {
             Logger.debug(TAG, "Received onChildrenLoaded() for $parentId num items: ${children.size}")
             children.forEach {
-                if (parentId in hierarchy) {
-                    hierarchy[parentId]?.add(it)
-                } else {
-                    hierarchy[parentId] = mutableListOf(it)
+                if (parentId !in hierarchy) {
+                    hierarchy[parentId] = mutableListOf()
                 }
+                hierarchy[parentId]?.add(it)
                 if (it.isBrowsable) {
-                    nodes.push(it.mediaId)
+                    browsableNodes.push(it.mediaId)
                 }
             }
-            Logger.debug(TAG, "nodes=$nodes")
-            if (!nodes.empty()) {
+            Logger.debug(TAG, "hiearchy[${parentId}]=${hierarchy[parentId]}")
+            Logger.debug(TAG, "browseableNodes=$browsableNodes")
+            if (!browsableNodes.empty()) {
                 var node = ""
                 do {
-                    if (nodes.empty()) {
+                    if (browsableNodes.empty()) {
                         break
                     }
-                    node = nodes.pop()
+                    node = browsableNodes.pop()
                 } while (node == "{\"type\":\"NONE\"}")
                 if (node.isNotBlank()) {
                     traverse(node)

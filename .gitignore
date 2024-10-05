@@ -16,6 +16,9 @@
 .idea/gradle.xml
 .idea/libraries
 .idea/emulatorDisplays.xml
+.idea/androidTestResultsUserPreferences.xml
+.idea/runConfigurations.xml
+.idea/deploymentTargetSelector.xml
 **/.idea/modules.xml
 .idea/navEditor.xml
 **/.idea/vcs.xml

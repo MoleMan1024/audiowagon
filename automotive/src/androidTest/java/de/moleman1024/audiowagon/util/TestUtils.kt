@@ -32,6 +32,18 @@ object TestUtils {
         }
     }
 
+    fun assertFalseForMillisecOrFail(func: () -> Boolean, timeoutMS: Int) {
+        var timeout = 0
+        while (timeout <= timeoutMS) {
+            val result = func()
+            if (result) {
+                Assert.fail("Assertion which should have been false for $timeoutMS ms turned true")
+            }
+            Thread.sleep(10)
+            timeout += 10
+        }
+    }
+
     @ExperimentalCoroutinesApi
     fun waitForIndexingCompleted(audioBrowserService: AudioBrowserService, timeoutMS: Int = 1000 * 10) {
         Logger.debug(TAG, "waitForIndexingCompleted()")

@@ -7,6 +7,7 @@ package de.moleman1024.audiowagon.medialibrary.contenthierarchy
 
 import android.content.Context
 import android.support.v4.media.MediaBrowserCompat.MediaItem
+import de.moleman1024.audiowagon.enums.ContentHierarchyType
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.AudioItem
 import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
@@ -50,11 +51,36 @@ class ContentHierarchyTrack(
                 tracks += repo.getTracksForArtist(id.artistID)
             } else if (id.albumID > DATABASE_ID_UNKNOWN) {
                 tracks += repo.getTracksForAlbum(id.albumID)
+            } else if (id.trackGroupIndex >= 0) {
+                // Selected a single track in tracks browse view when tracks are grouped, play tracks in alphabetical
+                // order, like shown ( https://github.com/MoleMan1024/audiowagon/issues/157 )
+                tracks += repo.getTracksLimitOffset(
+                    CONTENT_HIERARCHY_MAX_NUM_ITEMS, CONTENT_HIERARCHY_MAX_NUM_ITEMS * id.trackGroupIndex
+                )
             } else {
-                // selected a single track in tracks browse view, fill up playback queue with random tracks
-                val track = repo.getTrack(id.trackID)
-                tracks += track
-                tracks += repo.getRandomTracks(NUM_ITEMS_MAX_FOR_PLAY_SHUFFLE_ALL-1).filterNot { it.id == track.id }
+                // Selected a single track from tracks view or from a search: play tracks in alphabetical order, like
+                // shown in tracks view ( https://github.com/MoleMan1024/audiowagon/issues/157 )
+                val numTracks = repo.getNumTracks()
+                if (!hasTooManyItems(numTracks)) {
+                    tracks += repo.getAllTracks()
+                } else {
+                    // TODO: similar code in other places
+                    val lastGroupIndex = numTracks / CONTENT_HIERARCHY_MAX_NUM_ITEMS
+                    var offset = 0
+                    val contentHierarchyID = serialize(id)
+                    for (groupIndex in 0..lastGroupIndex) {
+                        val tracksInGroup = repo.getTracksLimitOffset(CONTENT_HIERARCHY_MAX_NUM_ITEMS, offset)
+                        if (tracksInGroup.any { it.id == contentHierarchyID }) {
+                            tracks += tracksInGroup
+                            break
+                        }
+                        offset += CONTENT_HIERARCHY_MAX_NUM_ITEMS
+                    }
+                    if (tracks.isEmpty()) {
+                        Logger.error(TAG, "Could not find track in track groups: $id")
+                        tracks += repo.getAllTracks()
+                    }
+                }
             }
         } catch (exc: RuntimeException) {
             logger.exception(TAG, exc.message.toString(), exc)

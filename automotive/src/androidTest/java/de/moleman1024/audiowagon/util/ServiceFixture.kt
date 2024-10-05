@@ -137,6 +137,8 @@ class ServiceFixture {
         // TODO: need to ensure in each test that service is destroyed
         // FIXME: this fails sometimes, unclear why
         if (this::audioBrowserService.isInitialized) {
+            Logger.debug(TAG, "Shutting down and destroying AudioBrowserService")
+            audioBrowserService.shutdown()
             Logger.debug(TAG, "Waiting for service to be destroyed")
             TestUtils.waitForTrueOrFail(
                 { audioBrowserService.lifecycle.currentState == Lifecycle.State.DESTROYED },

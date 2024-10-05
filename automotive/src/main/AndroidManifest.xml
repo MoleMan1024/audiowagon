@@ -49,6 +49,9 @@
         <meta-data
                 android:name="firebase_crashlytics_collection_enabled"
                 android:value="false" />
+        <meta-data
+                android:name="androidx.car.app.TintableAttributionIcon"
+                android:resource="@drawable/ic_notif" />
 
         <dist:module dist:instant="true" />
 

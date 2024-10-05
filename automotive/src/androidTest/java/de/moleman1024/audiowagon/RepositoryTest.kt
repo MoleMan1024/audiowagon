@@ -12,6 +12,7 @@ import de.moleman1024.audiowagon.filestorage.sd.SDCardMediaDevice
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.util.ServiceFixture
 import de.moleman1024.audiowagon.util.TestUtils
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -59,7 +60,12 @@ class RepositoryTest {
         Logger.debug(TAG, "tearDown()")
         browser.unsubscribe(browser.root)
         browser.disconnect()
-        serviceFixture.shutdown()
+        try {
+            serviceFixture.shutdown()
+        } catch (e: CancellationException) {
+            Logger.exception(TAG, e.message.toString(), e)
+        }
+        Logger.debug(TAG, "tearDown() has ended")
     }
 
     @Test

@@ -67,9 +67,7 @@ const val DEFAULT_NUM_TITLE_CHARS_FOR_GROUP = 24
  */
 @ExperimentalCoroutinesApi
 abstract class ContentHierarchyElement(
-    val id: ContentHierarchyID,
-    val context: Context,
-    val audioItemLibrary: AudioItemLibrary
+    val id: ContentHierarchyID, val context: Context, val audioItemLibrary: AudioItemLibrary
 ) {
     abstract suspend fun getMediaItems(): List<MediaItem>
     abstract suspend fun getAudioItems(): List<AudioItem>
@@ -86,12 +84,30 @@ abstract class ContentHierarchyElement(
         }
 
         fun generateExtrasBrowsableGridItems(): Bundle {
-            val extras = Bundle()
-            extras.putInt(
-                MediaConstants.DESCRIPTION_EXTRAS_KEY_CONTENT_STYLE_BROWSABLE,
-                MediaConstants.DESCRIPTION_EXTRAS_VALUE_CONTENT_STYLE_GRID_ITEM
-            )
-            return extras
+            return Bundle().apply {
+                putInt(
+                    MediaConstants.DESCRIPTION_EXTRAS_KEY_CONTENT_STYLE_BROWSABLE,
+                    MediaConstants.DESCRIPTION_EXTRAS_VALUE_CONTENT_STYLE_GRID_ITEM
+                )
+            }
+        }
+
+        fun generateExtrasBrowsableCategoryGridItems(): Bundle {
+            return Bundle().apply {
+                putInt(
+                    MediaConstants.DESCRIPTION_EXTRAS_KEY_CONTENT_STYLE_BROWSABLE,
+                    MediaConstants.DESCRIPTION_EXTRAS_VALUE_CONTENT_STYLE_CATEGORY_GRID_ITEM
+                )
+            }
+        }
+
+        fun generateExtrasBrowsableCategoryListItems(): Bundle {
+            return Bundle().apply {
+                putInt(
+                    MediaConstants.DESCRIPTION_EXTRAS_KEY_CONTENT_STYLE_BROWSABLE,
+                    MediaConstants.DESCRIPTION_EXTRAS_VALUE_CONTENT_STYLE_CATEGORY_LIST_ITEM
+                )
+            }
         }
     }
 
@@ -123,13 +139,14 @@ abstract class ContentHierarchyElement(
         val groups = mutableListOf<MediaItem>()
         var offset = 0
         val repo = audioItemLibrary.getPrimaryRepository() ?: return groups
-        var extras: Bundle? = null
-        if (audioItemLibrary.albumArtStyleSetting == AlbumStyleSetting.GRID) {
-            extras = generateExtrasBrowsableGridItems()
+        val extras: Bundle = if (audioItemLibrary.albumArtStyleSetting == AlbumStyleSetting.GRID) {
+            generateExtrasBrowsableCategoryGridItems()
+        } else {
+            generateExtrasBrowsableCategoryListItems()
         }
         // TODO: partially duplicated code with createGroupsForType
         val numGroups = numItems / CONTENT_HIERARCHY_MAX_NUM_ITEMS
-        for (groupIndex in 0 .. numGroups) {
+        for (groupIndex in 0..numGroups) {
             val offsetRows = if (groupIndex < numGroups) {
                 offset + CONTENT_HIERARCHY_MAX_NUM_ITEMS - 1
             } else {
@@ -159,8 +176,7 @@ abstract class ContentHierarchyElement(
                         val firstLastItemInGroup = repo.getTrackGroup(groupIndex)
                         firstItemInGroup = listOf(firstLastItemInGroup.first)
                         lastItemInGroup = listOf(firstLastItemInGroup.second)
-                        if (firstLastItemInGroup.first.id.isBlank()
-                            || firstLastItemInGroup.second.id.isBlank()) {
+                        if (firstLastItemInGroup.first.id.isBlank() || firstLastItemInGroup.second.id.isBlank()) {
                             logger.warning(TAG, "No tracks in group, fallback to slow method")
                             firstItemInGroup = repo.getTracksLimitOffset(1, offset)
                             lastItemInGroup = repo.getTracksLimitOffset(1, offsetRows)
@@ -172,8 +188,7 @@ abstract class ContentHierarchyElement(
                         val firstLastItemInGroup = repo.getAlbumGroup(groupIndex)
                         firstItemInGroup = listOf(firstLastItemInGroup.first)
                         lastItemInGroup = listOf(firstLastItemInGroup.second)
-                        if (firstLastItemInGroup.first.id.isBlank()
-                            || firstLastItemInGroup.second.id.isBlank()) {
+                        if (firstLastItemInGroup.first.id.isBlank() || firstLastItemInGroup.second.id.isBlank()) {
                             logger.warning(TAG, "No albums in group, fallback to slow method")
                             firstItemInGroup = repo.getAlbumsLimitOffset(1, offset)
                             lastItemInGroup = repo.getAlbumsLimitOffset(1, offsetRows)
@@ -189,8 +204,7 @@ abstract class ContentHierarchyElement(
                     val firstLastItemInGroup = repo.getArtistGroup(groupIndex)
                     firstItemInGroup = listOf(firstLastItemInGroup.first)
                     lastItemInGroup = listOf(firstLastItemInGroup.second)
-                    if (firstLastItemInGroup.first.id.isBlank()
-                        || firstLastItemInGroup.second.id.isBlank()) {
+                    if (firstLastItemInGroup.first.id.isBlank() || firstLastItemInGroup.second.id.isBlank()) {
                         logger.warning(TAG, "No artists in group, fallback to slow method")
                         firstItemInGroup = repo.getAlbumAndCompilationArtistsLimitOffset(1, offset)
                         lastItemInGroup = repo.getAlbumAndCompilationArtistsLimitOffset(1, offsetRows)
@@ -232,8 +246,7 @@ abstract class ContentHierarchyElement(
             }
             val description = MediaDescriptionCompat.Builder().apply {
                 setTitle(
-                    "${firstItemTitle.take(numTitleCharsPerGroup)} " +
-                            "… ${lastItemTitle.take(numTitleCharsPerGroup)}"
+                    "${firstItemTitle.take(numTitleCharsPerGroup)} " + "… ${lastItemTitle.take(numTitleCharsPerGroup)}"
                 )
                 setIconUri(Uri.parse(RESOURCE_ROOT_URI + context.resources.getResourceEntryName(iconID)))
                 setMediaId(serialize(groupContentHierarchyID))
@@ -248,8 +261,7 @@ abstract class ContentHierarchyElement(
     }
 
     fun createFileLikeMediaItemsForDir(
-        directoryContents: List<FileLike>,
-        audioFileStorage: AudioFileStorage
+        directoryContents: List<FileLike>, audioFileStorage: AudioFileStorage
     ): MutableList<MediaItem> {
         val items = mutableListOf<MediaItem>()
         for (fileOrDir in directoryContents) {
@@ -258,14 +270,17 @@ abstract class ContentHierarchyElement(
                     val description = audioFileStorage.createDirectoryDescription(fileOrDir)
                     MediaItem(description, MediaItem.FLAG_BROWSABLE)
                 }
+
                 is AudioFile -> {
                     val description = audioFileStorage.createAudioFileDescription(fileOrDir)
                     MediaItem(description, MediaItem.FLAG_PLAYABLE)
                 }
+
                 is PlaylistFile -> {
                     val description = audioFileStorage.createPlaylistFileDescription(fileOrDir)
                     MediaItem(description, MediaItem.FLAG_PLAYABLE)
                 }
+
                 else -> {
                     throw AssertionError("Invalid type: $fileOrDir")
                 }
@@ -277,8 +292,7 @@ abstract class ContentHierarchyElement(
     protected fun createPseudoFoundXItems(): MediaItem {
         logger.debug(TAG, "Showing pseudo MediaItem 'Found <num> items ...'")
         val numItemsFoundText = context.getString(
-            R.string.notif_indexing_text_in_progress_num_items,
-            audioItemLibrary.numFileDirsSeenWhenBuildingLibrary
+            R.string.notif_indexing_text_in_progress_num_items, audioItemLibrary.numFileDirsSeenWhenBuildingLibrary
         )
         val description = MediaDescriptionCompat.Builder().apply {
             setMediaId(serialize(ContentHierarchyID(ContentHierarchyType.NONE)))
@@ -292,8 +306,7 @@ abstract class ContentHierarchyElement(
     }
 
     protected suspend fun createPseudoNoEntriesItem(
-        audioFileStorage: AudioFileStorage,
-        sharedPrefs: SharedPrefs
+        audioFileStorage: AudioFileStorage, sharedPrefs: SharedPrefs
     ): MediaItem {
         var title = context.getString(R.string.browse_tree_no_entries_title)
         var subtitle: String
@@ -306,9 +319,7 @@ abstract class ContentHierarchyElement(
                     if (audioFileStorage.areAnyStoragesAvail()) {
                         if (this !is ContentHierarchyRootFiles) {
                             val metadataReadSetting = sharedPrefs.getMetadataReadSettingEnum(context, logger, TAG)
-                            if (metadataReadSetting == MetadataReadSetting.MANUALLY
-                                || metadataReadSetting == MetadataReadSetting.FILEPATHS_ONLY
-                            ) {
+                            if (metadataReadSetting == MetadataReadSetting.MANUALLY || metadataReadSetting == MetadataReadSetting.FILEPATHS_ONLY) {
                                 title = context.getString(R.string.browse_tree_metadata_not_yet_indexed_title)
                                 subtitle = context.getString(R.string.browse_tree_metadata_not_yet_indexed_desc)
                                 iconID = R.drawable.usb
@@ -348,8 +359,7 @@ abstract class ContentHierarchyElement(
             setIconUri(Uri.parse(RESOURCE_ROOT_URI + context.resources.getResourceEntryName(iconID)))
         }.build()
         logger.debug(
-            TAG,
-            "Showing pseudo MediaItem 'No entries available': ${description.title} (${description.subtitle})'"
+            TAG, "Showing pseudo MediaItem 'No entries available': ${description.title} (${description.subtitle})'"
         )
         // Tapping this should do nothing. We use BROWSABLE flag here, when clicked an empty subfolder will open.
         // This is the better alternative than flag PLAYABLE which will open the playback view in front of the browser
@@ -361,9 +371,11 @@ abstract class ContentHierarchyElement(
             id.artistID >= DATABASE_ID_UNKNOWN -> {
                 id.artistID
             }
+
             id.albumArtistID >= DATABASE_ID_UNKNOWN -> {
                 id.albumArtistID
             }
+
             else -> {
                 -99
             }

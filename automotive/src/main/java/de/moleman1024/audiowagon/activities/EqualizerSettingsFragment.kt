@@ -7,6 +7,7 @@ package de.moleman1024.audiowagon.activities
 
 import android.content.SharedPreferences
 import android.os.Bundle
+import androidx.annotation.Keep
 import androidx.preference.ListPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
@@ -30,6 +31,7 @@ private val logger = Logger
 private const val EQUALIZER_PRESET_NAME_CUSTOM = "CUSTOM"
 
 @ExperimentalCoroutinesApi
+@Keep
 class EqualizerSettingsFragment : PreferenceFragmentCompat() {
     private val listener = SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
         run {

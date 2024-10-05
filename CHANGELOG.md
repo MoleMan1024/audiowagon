@@ -12,12 +12,51 @@ Google's review process which can take a couple of days.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project loosely follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.0] - 2024-10-05
+
+### Fixed
+
+- when starting up a Renaul Austral car the app sometimes reports an error "audio focus denied". This might be related
+  to some boot/startup chime that this car will play during initialization which conflicts with the feature to resume
+  music playback that was playing when the car was shut down previously. Such audio focus errors are now ignored if they
+  appear within 15 seconds of starting the app and the app will try again to re-start playback 5 seconds later. The
+  timings are guesswork based on a single log file I received, I do not have such a car available for fine tuning
+  [#151](https://github.com/MoleMan1024/audiowagon/issues/151)
+
+### Added
+
+- some things added after noticing the Android Automotive media browser documentation has been updated with some new
+  info. However none of this will likely have any effect in Android <= 13:
+    - handle shuffle-request extras in certain media session callbacks binder calls. No clue what this does, but it is
+      mentioned in documentation
+    - added a "TintableAttributionIcon"
+    - log if custom browser actions are supported. At least the Polestar 2 on Android 12 does not support such extra
+      actions (e.g. "favorite", "download") linked to each media item.
+    - differentiate normal browse view items and "category" items
+
+### Changed
+
+- when selecting a track from the tracks view, a randomized playback queue of tracks was created with the selected track
+  as starting item. This causes issues for autistic people who expect the track list which is shown in alphabetical
+  order to also play back in this exact order. This has been changed so that when picking a track from the "Tracks"
+  browse view, a playback queue will be created using all tracks as shown in that view starting at the selected track's
+  index. You can still create a random playback queue of tracks using either the "shuffle all" button or using the
+  shuffle mode in the playback view [#157](https://github.com/MoleMan1024/audiowagon/issues/157)
+- when selecting a single track from a search, the resulting playback queue will be shortened to maximum 400 items to
+  avoid huge playback queues
+- ignore media IDs that start with "sid:<number>". I saw this once in Crashlytics, it seems to be related to some new
+  standard called "CMCD" which the app does not support
+- ignore some more USB devices that are not mass storage devices
+- re-enable minification to make app smaller which was accidentally turned off some time ago
+- strip all logcat logging from release build since I can not access it anyway and to reduce stress on logd
+- bump some library dependency versions
+
 
 ## [2.7.0] - 2024-07-07
 
 ### Added
 
-- Some Volvo cars do not come with a graphical equalizer like the Polestar 2 does. Some users also wanted to tweak the
+- some Volvo cars do not come with a graphical equalizer like the Polestar 2 does. Some users also wanted to tweak the
   equalizer presets used by AudioWagon a bit. That is why you can now adjust the built-in 5-band equalizer to your own
   liking. To use this new feature, go to AudioWagon settings > Sound > Equalizer, enable the equalizer, select preset
   "customized" and adjust the equalizer bands as you like [#55](https://github.com/MoleMan1024/audiowagon/issues/55)

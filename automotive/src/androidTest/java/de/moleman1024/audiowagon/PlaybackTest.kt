@@ -1,5 +1,5 @@
 /*
-SPDX-FileCopyrightText: 2021-2022 MoleMan1024 <moleman1024dev@gmail.com>
+SPDX-FileCopyrightText: 2021-2024 MoleMan1024 <moleman1024dev@gmail.com>
 SPDX-License-Identifier: GPL-3.0-or-later
 */
 
@@ -29,6 +29,7 @@ private const val TEMPLATE_MP3_NAME = "test.mp3"
 private const val TEMPLATE_MP3_PATH = "/.template/$TEMPLATE_MP3_NAME"
 private const val MUSIC_ROOT = "/Music"
 private const val STORAGE_ID = "\"storage\":\"123456789ABC-5118-7715\""
+private const val ACTION_SHUFFLE_OFF = "de.moleman1024.audiowagon.ACTION_SHUFFLE_OFF"
 
 @ExperimentalCoroutinesApi
 class PlaybackTest {
@@ -115,7 +116,7 @@ class PlaybackTest {
      */
     @Test
     fun shuffleNewPlaybackQueue_default_firstTrackIsShuffled() {
-        serviceFixture.transportControls?.sendCustomAction("de.moleman1024.audiowagon.ACTION_SHUFFLE_OFF", null)
+        serviceFixture.transportControls?.sendCustomAction(ACTION_SHUFFLE_OFF, null)
         for (index in 0 until 20) {
             createMP3().apply {
                 id3v2Tag.title = "Track${index}"
@@ -326,6 +327,48 @@ class PlaybackTest {
         serviceFixture.transportControls?.playFromSearch("We Didn't Start a Fire", queryExtras)
         TestUtils.waitForAudioPlayerState(PlaybackStateCompat.STATE_PLAYING, audioBrowserService)
         Assert.assertEquals(numTracks, serviceFixture.playbackQueue?.size)
+    }
+
+    /**
+     * https://github.com/MoleMan1024/audiowagon/issues/157
+     */
+    @Test
+    fun selectTrackInTrackView_default_playbackQueueIsSortedAlphabetically() {
+        serviceFixture.transportControls?.sendCustomAction(ACTION_SHUFFLE_OFF, null)
+        for (index in 1 until  10) {
+            createMP3().apply {
+                id3v2Tag.title = "Track${index}"
+                id3v2Tag.album = "Album"
+            }.also { storeMP3(it, "$MUSIC_ROOT/folder/track${index}.mp3") }
+        }
+        attachUSBDevice(mockUSBDevice)
+        TestUtils.waitForIndexingCompleted(audioBrowserService)
+        Thread.sleep(1000)
+        serviceFixture.transportControls?.stop()
+        Thread.sleep(500)
+        // Track IDs are generated in multiple threads, so they are not necessarily in ascending order, need to
+        // browse first
+        val traversal = MediaBrowserTraversal(browser)
+        val tracksRoot = "{\"type\":\"ROOT_TRACKS\"}"
+        traversal.start(tracksRoot)
+        // track list should have: "Shuffle all", "Track1", "Track2", "Track3", ...
+        val startingTrack3 = traversal.hierarchy[tracksRoot]?.get(3)
+        val thirdTrackMediaID = startingTrack3?.mediaId
+        for (tries in 0 until 2) {
+            Logger.debug(TAG, "Start playback from track: $startingTrack3")
+            serviceFixture.transportControls?.playFromMediaId(thirdTrackMediaID, null)
+            TestUtils.waitForAudioPlayerState(PlaybackStateCompat.STATE_PLAYING, audioBrowserService)
+            serviceFixture.transportControls?.pause()
+            TestUtils.waitForAudioPlayerState(PlaybackStateCompat.STATE_PAUSED, audioBrowserService)
+            Logger.debug(TAG, "Asserting that tracks are played in order")
+            Assert.assertEquals(9, serviceFixture.playbackQueue?.size)
+            for (index in 1 until 10) {
+                val title = serviceFixture.playbackQueue?.get(index-1)?.description?.title.toString()
+                Assert.assertEquals("Track${index}", title)
+            }
+            val currentTrackTitle = serviceFixture.metadata?.description?.title.toString()
+            Assert.assertEquals(startingTrack3?.description?.title, currentTrackTitle)
+        }
     }
 
 }

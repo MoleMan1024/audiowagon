@@ -33,3 +33,11 @@
 -keepclassmembers class <1>.<2> {
   <1>.<2>$Companion Companion;
 }
+
+# Strip most Android logcat logging from release builds which I have no access to anyway to reduce stress on logd
+-assumenosideeffects class android.util.Log {
+    public static boolean isLoggable(java.lang.String, int);
+    public static int v(...);
+    public static int d(...);
+    public static int i(...);
+}

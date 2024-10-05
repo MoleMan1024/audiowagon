@@ -12,17 +12,24 @@ import android.os.Build
 import android.util.Log
 import android.util.Log.getStackTraceString
 import androidx.annotation.VisibleForTesting
+import de.moleman1024.audiowagon.BuildConfig
 import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.enums.LogLevel
 import de.moleman1024.audiowagon.filestorage.usb.lowlevel.USBFile
 import de.moleman1024.audiowagon.filestorage.usb.lowlevel.USBFileOutputStream
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.yield
 import java.io.IOException
-import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.*
+import java.util.Collections
 
 /**
  * Custom logger to intercept all logging and write it to USB flash drive if possible.
@@ -106,7 +113,8 @@ object Logger : LoggerInterface {
         } else {
             context.packageManager.getPackageInfo(context.packageName, 0)
         }
-        info(TAG, "Version: ${packageInfo.versionName} (code: ${packageInfo.longVersionCode})")
+        info(TAG, "Version: ${packageInfo.versionName} " +
+                "(code: ${packageInfo.longVersionCode}, variant: ${BuildConfig.BUILD_TYPE})")
         info(
             TAG, "Running on Android: ${Build.VERSION.CODENAME} " +
                     "(release: ${Build.VERSION.RELEASE}, securityPatch: ${Build.VERSION.SECURITY_PATCH}, " +

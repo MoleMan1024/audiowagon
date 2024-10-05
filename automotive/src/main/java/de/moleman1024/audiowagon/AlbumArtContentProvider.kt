@@ -128,7 +128,7 @@ class AlbumArtContentProvider : ContentProvider() {
         if (context == null) {
             return null
         }
-        logger.verbose(TAG, "openFile(uri=$uri)")
+        logger.verbose(TAG, "openFile(uri=$uri, mode=$mode)")
         init()
         val parcelFileDescriptor = createParcelFileDescriptor(uri)
         logger.verbose(TAG, "Got parcel file descriptor for: $uri")
@@ -239,7 +239,7 @@ class AlbumArtContentProvider : ContentProvider() {
         val stream = ByteArrayOutputStream()
         val quality = DEFAULT_JPEG_QUALITY_PERCENTAGE
         // TODO: I am getting some warnings in log on Pixel 3 XL AAOS that this takes some time
-        bitmap?.compress(Bitmap.CompressFormat.JPEG, quality, stream)
+        bitmap.compress(Bitmap.CompressFormat.JPEG, quality, stream)
         return stream.toByteArray()
     }
 

@@ -20,6 +20,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import android.support.v4.media.session.MediaControllerCompat
+import androidx.media.utils.MediaConstants
 import de.moleman1024.audiowagon.activities.SettingsActivity
 import de.moleman1024.audiowagon.enums.AudioFocusSetting
 import de.moleman1024.audiowagon.enums.AudioSessionChangeType
@@ -243,9 +244,23 @@ class AudioSessionCallback(
         if (mediaId == null) {
             return
         }
-        val change = AudioSessionChange(AudioSessionChangeType.ON_PLAY_FROM_MEDIA_ID)
-        change.contentHierarchyID = mediaId
-        notifyObservers(change)
+        val isShuffleRequested =
+            extras?.getBoolean(MediaConstants.TRANSPORT_CONTROLS_EXTRAS_KEY_SHUFFLE, false) ?: false
+        // Seen once in Crashlytics that a "sid:<number>" was passed here during startup. This looks like it belongs
+        // to a new standard called CMCD, see for example https://github.com/google/ExoPlayer/issues/8699
+        // I don't support such "session IDs", treat it like there was no media ID given
+        if (mediaId.startsWith("sid:")) {
+            playSingletonCoroutine.launch {
+                val audioSessionChange = AudioSessionChange(AudioSessionChangeType.ON_PLAY)
+                audioSessionChange.isShuffleRequested = isShuffleRequested
+                notifyObservers(audioSessionChange)
+            }
+            return
+        }
+        val audioSessionChange = AudioSessionChange(AudioSessionChangeType.ON_PLAY_FROM_MEDIA_ID)
+        audioSessionChange.isShuffleRequested = isShuffleRequested
+        audioSessionChange.contentHierarchyID = mediaId
+        notifyObservers(audioSessionChange)
     }
 
     /**
@@ -262,6 +277,9 @@ class AudioSessionCallback(
         super.onPlayFromSearch(query, extras)
         playFromSearchSingletonCoroutine.launch {
             val audioSessionChange = AudioSessionChange(AudioSessionChangeType.ON_PLAY_FROM_SEARCH)
+            val isShuffleRequested =
+                extras?.getBoolean(MediaConstants.TRANSPORT_CONTROLS_EXTRAS_KEY_SHUFFLE, false) ?: false
+            audioSessionChange.isShuffleRequested = isShuffleRequested
             if (!query.isNullOrEmpty()) {
                 audioSessionChange.queryToPlay = query
                 // Google has fixed EXTRA_MEDIA_FOCUS meanwhile ( https://github.com/MoleMan1024/audiowagon/issues/119 )

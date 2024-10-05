@@ -11,6 +11,7 @@ import android.content.Context
 import android.content.Intent
 import android.media.MediaPlayer
 import android.os.Build
+import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.support.v4.media.MediaMetadataCompat
@@ -18,6 +19,7 @@ import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import androidx.annotation.VisibleForTesting
 import androidx.media.session.MediaButtonReceiver
+import androidx.media.utils.MediaConstants
 import de.moleman1024.audiowagon.*
 import de.moleman1024.audiowagon.enums.AudioItemType
 import de.moleman1024.audiowagon.enums.AudioPlayerState
@@ -49,10 +51,12 @@ import java.io.FileNotFoundException
 import java.io.IOException
 import java.util.concurrent.Executors
 import kotlin.coroutines.coroutineContext
+import kotlin.math.abs
 import kotlin.random.Random
 
 private const val TAG = "AudioSession"
 private val logger = Logger
+private const val IGNORE_AUDIO_FOCUS_ERROR_AFTER_WAKEUP_SECONDS = 15
 const val SESSION_TAG = "AudioSession"
 const val PLAYBACK_SPEED: Float = 1.0f
 
@@ -123,6 +127,7 @@ class AudioSession(
     private val replayGain = ReplayGain(context, sharedPrefs, audioPlayer, audioFileStorage)
     private val audioCodec = AudioCodec(audioFileStorage)
     private val playbackStateActions = PlaybackStateActions(context)
+    private var lastWakeupTimeMillis = 0L
 
     init {
         logger.debug(TAG, "Init AudioSession()")
@@ -228,6 +233,11 @@ class AudioSession(
                 addCustomAction(customActionRepeat)
                 setState(audioPlayerStatus.playbackState, audioPlayerStatus.positionInMilliSec, PLAYBACK_SPEED)
                 audioPlayerStatus.queueItem?.queueId?.let { setActiveQueueItemId(it) }
+                audioPlayerStatus.queueItem?.description?.mediaId.let {
+                    setExtras(Bundle().apply {
+                        putString(MediaConstants.PLAYBACK_STATE_EXTRAS_KEY_MEDIA_ID, it)
+                    })
+                }
             }
             if (audioPlayerStatus.errorCode == 0) {
                 newPlaybackState =
@@ -252,6 +262,22 @@ class AudioSession(
                 audioPlayerEvt.errorCode = audioPlayerStatusEnhanced.errorCode
                 notifyObservers(audioPlayerEvt)
                 handlePlayerError(audioPlayerStatusEnhanced.errorCode)
+            }
+            // https://github.com/MoleMan1024/audiowagon/issues/151
+            if (newPlaybackState.errorCode == MEDIA_ERROR_AUDIO_FOCUS_DENIED
+                && abs(Util.getMillisNow() - lastWakeupTimeMillis) < 1000 * IGNORE_AUDIO_FOCUS_ERROR_AFTER_WAKEUP_SECONDS
+            ) {
+                logger.info(
+                    TAG,
+                    "Will not show error message for audio focus denial shortly after system woke up, could be " +
+                            "blocked due to startup sound"
+                )
+                playSingletonCoroutine.launch {
+                    logger.info(TAG, "Will try audio playback start() again in 5 seconds")
+                    delay(5000)
+                    audioPlayer.start()
+                }
+                return@add
             }
             playbackState = newPlaybackState
             audioFocusChangeListener.playbackState = newPlaybackState.state
@@ -440,7 +466,10 @@ class AudioSession(
                 AudioSessionChangeType.ON_PLAY_FROM_MEDIA_ID -> {
                     audioFocusChangeListener.lastUserRequestedStateChange = AudioSessionChangeType.ON_PLAY
                     playFromMediaIDSingletonCoroutine.launch {
-                        playFromContentHierarchyID(audioSessionChange.contentHierarchyID)
+                        playFromContentHierarchyID(
+                            audioSessionChange.contentHierarchyID,
+                            audioSessionChange.isShuffleRequested
+                        )
                     }
                 }
                 AudioSessionChangeType.ON_SKIP_TO_QUEUE_ITEM -> {
@@ -646,7 +675,7 @@ class AudioSession(
      */
     private suspend fun playFromSearch(change: AudioSessionChange) {
         logger.debug(TAG, "playFromSearch(audioSessionChange=$change)")
-        var audioItems: List<AudioItem> = listOf()
+        var audioItems: MutableList<AudioItem> = mutableListOf()
         // We show the search query to the user so that hopefully they will adjust their voice input if something does
         // not work
         var searchQueryForGUI: String = change.queryToPlay
@@ -702,6 +731,9 @@ class AudioSession(
         }
         val delayBeforeVoiceSearchPopupMS = 2000L
         if (audioItems.isNotEmpty()) {
+            if (change.isShuffleRequested) {
+                audioItems.shuffle()
+            }
             createQueueAndPlay(audioItems)
             // because I use the MediaSession error messages for "regular" popup messages as well, I need to postpone
             // this popup until after playback started. Otherwise Google Assistant will play error prompts
@@ -713,8 +745,12 @@ class AudioSession(
         // if the more specific fields above did not yield any results, try searching using the raw query
         if (change.queryToPlay.isNotBlank()) {
             searchQueryForGUI = change.queryToPlay
-            audioItems = audioItemLibrary.searchUnspecificWithFallback(change.queryToPlay, change.trackToPlay)
+            audioItems =
+                audioItemLibrary.searchUnspecificWithFallback(change.queryToPlay, change.trackToPlay).toMutableList()
             if (audioItems.isNotEmpty()) {
+                if (change.isShuffleRequested) {
+                    audioItems.shuffle()
+                }
                 createQueueAndPlay(audioItems)
                 delay(delayBeforeVoiceSearchPopupMS)
                 showPopup(context.getString(R.string.searching_voice_input, searchQueryForGUI))
@@ -740,26 +776,21 @@ class AudioSession(
         }
     }
 
-    private suspend fun playFromContentHierarchyID(contentHierarchyIDStr: String) {
+    private suspend fun playFromContentHierarchyID(contentHierarchyIDStr: String, isShuffleRequested: Boolean = false) {
         val contentHierarchyID = ContentHierarchyElement.deserialize(contentHierarchyIDStr)
-        logger.debug(TAG, "playFromContentHierarchyID($contentHierarchyID)")
-        val audioItems: List<AudioItem> = audioItemLibrary.getAudioItemsStartingFrom(contentHierarchyID)
+        logger.debug(TAG, "playFromContentHierarchyID(contentHierarchyIDstr=$contentHierarchyID," +
+                "isShuffleRequested=$isShuffleRequested)")
+        val audioItems: MutableList<AudioItem> =
+            audioItemLibrary.getAudioItemsStartingFrom(contentHierarchyID).toMutableList()
+        if (isShuffleRequested) {
+            audioItems.shuffle()
+        }
         lastContentHierarchyIDPlayed = contentHierarchyIDStr
         var startIndex = 0
         when (contentHierarchyID.type) {
             ContentHierarchyType.TRACK -> {
                 startIndex = audioItems.indexOfFirst {
                     ContentHierarchyElement.deserialize(it.id).trackID == contentHierarchyID.trackID
-                }
-                if (contentHierarchyID.artistID <= DATABASE_ID_UNKNOWN
-                    && contentHierarchyID.albumArtistID <= DATABASE_ID_UNKNOWN
-                    && contentHierarchyID.albumID <= DATABASE_ID_UNKNOWN
-                ) {
-                    // User tapped on an entry in track view, we are playing a random selection of tracks afterwards.
-                    // Treat this the same as SHUFFLE_ALL_TRACKS
-                    lastContentHierarchyIDPlayed = ContentHierarchyElement.serialize(
-                        ContentHierarchyID(ContentHierarchyType.SHUFFLE_ALL_TRACKS)
-                    )
                 }
             }
             ContentHierarchyType.FILE -> {
@@ -1189,9 +1220,18 @@ class AudioSession(
         observers.add(func)
     }
 
+    fun setLastWakeupTimeMillis(lastWakeupTimeMillis: Long) {
+        this.lastWakeupTimeMillis = lastWakeupTimeMillis
+    }
+
     @VisibleForTesting(otherwise = VisibleForTesting.NONE)
     fun getAudioPlayerStatus(): AudioPlayerStatus {
         return audioPlayer.playerStatus
+    }
+
+    @VisibleForTesting(otherwise = VisibleForTesting.NONE)
+    fun getPlaybackState(): PlaybackStateCompat {
+        return playbackState
     }
 
     // TODO: split file, too long

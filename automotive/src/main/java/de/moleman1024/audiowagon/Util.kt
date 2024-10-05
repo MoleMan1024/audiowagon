@@ -62,7 +62,7 @@ class Util {
             Pair(17, 30600),
             // Microchip AN20021 USB to UART Bridge with USB 2.0 hub 0x2530
             Pair(1060, 9520),
-            // USB Ethernet 0X9E08
+            // USB Ethernet 0x9E08
             Pair(1060, 40456),
             // MicroChip OS81118 network interface card 0x0424
             Pair(1060, 53016),
@@ -70,6 +70,8 @@ class Util {
             Pair(1060, 18704),
             // Microchip USB4913
             Pair(1060, 18707),
+            // Microchip USB hub (0x0424, 0x4915)
+            Pair(1060, 18709),
             // Microchip Tech USB2 Controller Hub
             Pair(1060, 18752),
             // Microchip MCP2200 USB to UART converter 0x04D8
@@ -86,17 +88,21 @@ class Util {
             Pair(2578, 1),
             // Cambridge Silicon Radio Bluetooth dongle 0x0A12
             Pair(2578, 3),
+            // ASIX Electronics Corp AX88179 Gigabit Ethernet 0xb95 / 0x1790
+            Pair(2965, 6032),
             // Android Open Accessory device 0x18D1 / 0x2D00
             Pair(6353, 11520),
             // Linux xHCI Host Controller
             Pair(7531, 2),
             // Linux xHCI Host Controller
             Pair(7531, 3),
+            // VIA Labs Inc. USB Billboard device 0x2109 / 0x8817
+            Pair(8457, 34839),
             // Aptiv H2H Bridge
             Pair(10646, 261),
             // Aptiv Vendor
             Pair(10646, 288),
-            // Aptiv GM V10  E2 PD
+            // Aptiv GM V10 E2 PD
             Pair(10646, 306),
             // Delphi Host to Host Bridge
             Pair(11336, 261),
@@ -368,6 +374,10 @@ class Util {
                     || Build.PRODUCT.contains("simulator"))
         }
 
+        private fun isUnitTest(): Boolean {
+            return Build.BRAND == null && Build.DEVICE == null
+        }
+
         private fun getScreenWidthPixels(context: Context): Int {
             val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
             return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -435,8 +445,12 @@ class Util {
         }
 
         fun getMillisNow(): Long {
-            // This clock will return the elapsed milliseconds since boot (monotonic)
-            return SystemClock.elapsedRealtime()
+            return if (!isUnitTest()) {
+                // This clock will return the elapsed milliseconds since boot (monotonic)
+                SystemClock.elapsedRealtime()
+            } else {
+                System.currentTimeMillis()
+            }
         }
 
         fun getDifferenceInSecondsForInstants(oldInstant: Instant, newInstant: Instant): Long {
