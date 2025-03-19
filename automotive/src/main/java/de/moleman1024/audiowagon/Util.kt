@@ -7,6 +7,7 @@ package de.moleman1024.audiowagon
 
 import android.app.ActivityManager
 import android.content.Context
+import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.graphics.Insets
 import android.graphics.Paint
@@ -39,6 +40,7 @@ import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
+import kotlin.coroutines.CoroutineContext
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.floor
@@ -70,6 +72,8 @@ class Util {
             Pair(1060, 18704),
             // Microchip USB4913
             Pair(1060, 18707),
+            // Microchip USB high-speed hub (0x0424, 0x4914)
+            Pair(1060, 18708),
             // Microchip USB hub (0x0424, 0x4915)
             Pair(1060, 18709),
             // Microchip Tech USB2 Controller Hub
@@ -464,6 +468,19 @@ class Util {
 
         fun getUptimeString(): String {
             return "uptimeMillis=${SystemClock.uptimeMillis()} elapsedRealtime=${getMillisNow()}"
+        }
+
+        fun TAGCRT(tag: String, coroutineContext: CoroutineContext): String {
+            val coroutineName = coroutineContext[CoroutineName.Key]?.name
+            return if (coroutineName == null) {
+                tag
+            } else {
+                "${tag}-${coroutineName}"
+            }
+        }
+
+        fun createHashFromIntent(intent: Intent): Int {
+            return abs(abs(intent.action.hashCode()) + abs(intent.component.hashCode()))
         }
 
     }

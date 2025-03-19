@@ -52,7 +52,7 @@ class USBInternalBroadcastReceiver : ManagedBroadcastReceiver() {
         try {
             usbMediaDevice = usbDeviceConnections?.getUSBMassStorageDeviceFromIntent(intent)
             Logger.debug(TAG, "Broadcast with action ${intent.action} received for USB device: $usbMediaDevice")
-        } catch (exc: DeviceIgnoredException) {
+        } catch (_: DeviceIgnoredException) {
             // one of the built-in USB devices (e.g. bluetooth dongle) has attached/detached, ignore these
             return
         } catch (exc: RuntimeException) {

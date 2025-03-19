@@ -15,6 +15,7 @@ import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.*
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.coroutines.coroutineContext
 
 private const val TAG = "AudioBrowserGUI"
 private val logger = Logger
@@ -65,7 +66,7 @@ open class GUI(
 
     fun showIndexingNotification() {
         changeIndexingNotifJob = scope.launch(Dispatchers.Main) {
-            logger.debug(TAG, "Showing indexing notification")
+            logger.debug(Util.TAGCRT(TAG, coroutineContext), "Showing indexing notification")
             val builder = getIndexingNotificationBuilder()
             builder.setContentText(context.getString(R.string.notif_indexing_text_in_progress))
             builder.setProgress(0, 0, true)
@@ -75,7 +76,7 @@ open class GUI(
 
     fun updateIndexingNotification(numItems: Int) {
         changeIndexingNotifJob = scope.launch(Dispatchers.Main) {
-            logger.debug(TAG, "Updating indexing notification: numItems=$numItems")
+            logger.debug(Util.TAGCRT(TAG, coroutineContext), "Updating indexing notification: numItems=$numItems")
             val builder = getIndexingNotificationBuilder()
             builder.setContentText(context.getString(R.string.notif_indexing_text_in_progress_num_items, numItems))
             builder.setProgress(0, 0, true)
@@ -85,7 +86,7 @@ open class GUI(
 
     fun showIndexingFinishedNotification() {
         scope.launch(Dispatchers.Main) {
-            logger.debug(TAG, "Showing indexing finished notification")
+            logger.debug(Util.TAGCRT(TAG, coroutineContext), "Showing indexing finished notification")
             changeIndexingNotifJob?.cancelAndJoin()
             val builder = getIndexingNotificationBuilder()
             builder.setContentText(context.getString(R.string.notif_indexing_text_completed))
@@ -98,7 +99,7 @@ open class GUI(
     private fun sendNotification(builder: Notification.Builder) {
         notificationSingletonCoroutine.launch {
             if (!isChannelCreated.get()) {
-                logger.warning(TAG, "Cannot send notification, no channel available: ${builder.extras}")
+                logger.warning(Util.TAGCRT(TAG, coroutineContext), "Cannot send notification, no channel available: ${builder.extras}")
                 return@launch
             }
             notificationManager.notify(INDEXING_NOTIFICATION_ID, builder.build())

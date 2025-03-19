@@ -33,12 +33,10 @@
     </queries>
 
     <application
-            android:allowBackup="false"
             android:appCategory="audio"
             android:directBootAware="true"
             android:icon="@mipmap/ic_launcher"
             android:label="@string/app_name"
-            android:requestLegacyExternalStorage="${requestLegacyExternalStorage}"
             android:supportsRtl="false"
             android:testOnly="false"
             android:theme="@style/AppTheme">

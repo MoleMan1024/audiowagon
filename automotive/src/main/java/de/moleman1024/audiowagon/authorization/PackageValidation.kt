@@ -45,7 +45,7 @@ private val WHITESPACE_REGEX = "\\s|\\n".toRegex()
 /**
  * Validates other packages that try to access the MediaBrowser of the app (and blocks them if necessary)
  */
-class PackageValidation constructor(context: Context, @XmlRes xmlResId: Int) {
+class PackageValidation(context: Context, @XmlRes xmlResId: Int) {
     private val packageManager: PackageManager = context.packageManager
     private val certificateAllowList: Map<String, KnownCallerInfo>
     private val platformSignature: String

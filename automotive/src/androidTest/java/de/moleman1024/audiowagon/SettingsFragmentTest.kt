@@ -31,16 +31,12 @@ class SettingsFragmentTest {
         Logger.debug(TAG, "setUp()")
         serviceFixture = ServiceFixture()
         browser = serviceFixture.createMediaBrowser()
-        browser.connect()
-        audioBrowserService = serviceFixture.waitForAudioBrowserService()
+        audioBrowserService = serviceFixture.getAudioBrowserService()
     }
 
     @After
     fun tearDown() {
         Logger.debug(TAG, "tearDown()")
-        browser.unsubscribe(browser.root)
-        browser.disconnect()
-        serviceFixture.stopService()
         serviceFixture.shutdown()
     }
 
@@ -50,7 +46,7 @@ class SettingsFragmentTest {
     @Test
     fun onCreate_noDatabaseDir_doesNotCrash() {
         TestUtils.deleteDatabaseDirectory()
-        // FIXME: this leaves a service instance lingering
+        // FIXME: intent
         val scenario = launchFragmentInContainer<SettingsFragment>()
         thread(start=true) {
             scenario.moveToState(Lifecycle.State.DESTROYED)

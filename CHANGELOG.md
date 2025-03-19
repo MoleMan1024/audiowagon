@@ -12,6 +12,38 @@ Google's review process which can take a couple of days.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project loosely follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [2.8.7] - 2025-03-19
+
+### Fixed
+
+- After 4 years Polestar/Volvo have finally changed something regarding the [USB permission popup](https://moleman1024.github.io/audiowagon/faq.html#why-does-the-permission-popup-appear-each-time-the-always-open-audiowagon--checkbox-does-not-do-anything). The USB permission popup should no longer appear constantly if you
+  upgrade to car software version 3.4.4 or higher (the one with wired Android Auto) and the most recent AudioWagon
+  release [#133](https://github.com/MoleMan1024/audiowagon/issues/133)
+- avoid to trigger multiple attached USB device updates at the same time that could cause overlapping permission popup
+  calls which would cancel the previous permission popup and make the next one possibly not appear at all
+  [#161](https://github.com/MoleMan1024/audiowagon/issues/161)
+- do not try to shuffle an empty playback queue
+- try to avoid some race conditions in broadcast receivers during suspend-to-RAM
+
+### Added
+
+- translations for Simplified Chinese
+
+### Changed
+
+- register/unregister runtime USB broadcast receivers when car goes into suspend or wakes up again
+- stop player when car goes into suspend
+- internal improvements for binder code
+- ignore another USB hub device
+- improved logging of Kotlin coroutines
+- improved compatibility with Android 14 [#166](https://github.com/MoleMan1024/audiowagon/issues/166)
+- improvements to instrumented tests to not depend on a big SD card image
+- migrate Gradle scripts to Kotlin and use version catalog for dependencies
+- use Android Room Gradle plugin
+- bumped some dependency versions
+
+
 ## [2.8.0] - 2024-10-05
 
 ### Fixed

@@ -31,7 +31,6 @@ class AudioBrowserServiceTest {
     @After
     fun tearDown() {
         Logger.debug(TAG, "tearDown()")
-        serviceFixture.stopService()
         serviceFixture.shutdown()
     }
 
@@ -39,19 +38,21 @@ class AudioBrowserServiceTest {
     // https://stuff.mit.edu/afs/sipb/project/android/docs/tools/testing/service_testing.html
     @Test
     fun onBind_default_bindsService() {
-        serviceFixture.bind()
+        serviceFixture.bindToServiceAndWait()
         assertTrue(serviceFixture.isBound)
     }
 
     @Test
     fun onCreate_default_createsService() {
-        val audioBrowserService = serviceFixture.createAudioBrowserService()
+        serviceFixture.createMediaBrowser()
+        val audioBrowserService = serviceFixture.getAudioBrowserService()
         assertEquals(Lifecycle.State.CREATED, audioBrowserService.lifecycle.currentState)
     }
 
     @Test
     fun onStartCommand_default_startsService() {
-        val audioBrowserService = serviceFixture.createAudioBrowserService()
+        serviceFixture.createMediaBrowser()
+        val audioBrowserService = serviceFixture.getAudioBrowserService()
         serviceFixture.startService()
         TestUtils.waitForTrueOrFail({ audioBrowserService.lifecycle.currentState == Lifecycle.State.STARTED }, 200,
             "lifecycle started")
@@ -59,7 +60,8 @@ class AudioBrowserServiceTest {
 
     @Test
     fun onStartCommand_serviceAlreadyStarted_callsOnStartCommandAgain() {
-        val audioBrowserService = serviceFixture.createAudioBrowserService()
+        serviceFixture.createMediaBrowser()
+        val audioBrowserService = serviceFixture.getAudioBrowserService()
         serviceFixture.startService()
         TestUtils.waitForTrueOrFail({ audioBrowserService.lifecycle.currentState == Lifecycle.State.STARTED }, 200,
             "lifecycle started")
@@ -72,7 +74,8 @@ class AudioBrowserServiceTest {
 
     @Test
     fun onDestroy_default_destroysService() {
-        val audioBrowserService = serviceFixture.createAudioBrowserService()
+        serviceFixture.createMediaBrowser()
+        val audioBrowserService = serviceFixture.getAudioBrowserService()
         var isDestroyed = false
         getInstrumentation().runOnMainSync {
             audioBrowserService.lifecycle.addObserver(object : LifecycleEventObserver {
@@ -83,7 +86,7 @@ class AudioBrowserServiceTest {
                 }
             })
         }
-        serviceFixture.mediaBrowser.disconnect()
+        serviceFixture.mediaBrowser?.disconnect()
         serviceFixture.unbindService()
         serviceFixture.stopService()
         TestUtils.waitForTrueOrFail({ isDestroyed }, 1000, "isDestroyed")

@@ -14,6 +14,7 @@ import de.moleman1024.audiowagon.filestorage.usb.USBDevice
 import de.moleman1024.audiowagon.filestorage.usb.lowlevel.USBDeviceConfig
 import de.moleman1024.audiowagon.filestorage.usb.lowlevel.USBEndpoint
 import de.moleman1024.audiowagon.filestorage.usb.lowlevel.USBInterface
+import de.moleman1024.audiowagon.log.Logger
 
 private const val TAG = "MockUSBDevice"
 
@@ -92,6 +93,7 @@ class MockUSBDevice(
     }
 
     override fun initFilesystem(context: Context): FileSystem? {
+        Logger.debug(TAG, "initFileSystem()")
         fileSystem.init()
         usbDeviceToFileSystemMap[hashCode().toString()] = fileSystem
         return fileSystem

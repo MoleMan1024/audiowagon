@@ -76,6 +76,7 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
     }
 
     fun enableLogToUSB() {
+        // FIXME: depending on timing, these calls can fail when mediacontroller does not connect quickly
         assertMediaControllerInitialized()
         mediaController.sendCommand(CMD_ENABLE_LOG_TO_USB, null, null)
     }

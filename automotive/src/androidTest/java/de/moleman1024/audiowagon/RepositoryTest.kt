@@ -6,13 +6,10 @@ SPDX-License-Identifier: GPL-3.0-or-later
 package de.moleman1024.audiowagon
 
 import android.support.v4.media.MediaBrowserCompat
-import androidx.test.platform.app.InstrumentationRegistry
-import de.moleman1024.audiowagon.enums.IndexingStatus
-import de.moleman1024.audiowagon.filestorage.sd.SDCardMediaDevice
 import de.moleman1024.audiowagon.log.Logger
+import de.moleman1024.audiowagon.util.MockUSBDeviceFixture
 import de.moleman1024.audiowagon.util.ServiceFixture
 import de.moleman1024.audiowagon.util.TestUtils
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -22,7 +19,6 @@ import org.junit.Test
 
 
 private const val TAG = "RepositoryTest"
-private const val TIMEOUT_MS_LIBRARY_CREATION = 10 * 1000
 private const val ALBUM_ARTIST_ID = 1L
 
 @ExperimentalCoroutinesApi
@@ -31,45 +27,64 @@ class RepositoryTest {
     private lateinit var serviceFixture: ServiceFixture
     private lateinit var browser: MediaBrowserCompat
     private lateinit var audioBrowserService: AudioBrowserService
+    private lateinit var mockUSBDeviceFixture: MockUSBDeviceFixture
 
     @Before
     fun setUp() {
-        val uiAutomation = InstrumentationRegistry.getInstrumentation().uiAutomation
-        uiAutomation.grantRuntimePermission(BuildConfig.APPLICATION_ID, "android.permission.READ_EXTERNAL_STORAGE")
         // TODO: duplicated code
         Logger.debug(TAG, "setUp()")
         serviceFixture = ServiceFixture()
         browser = serviceFixture.createMediaBrowser()
-        browser.connect()
-        audioBrowserService = serviceFixture.waitForAudioBrowserService()
+        audioBrowserService = serviceFixture.getAudioBrowserService()
         audioBrowserService.setUseInMemoryDatabase()
-        val sdCardMediaDevice = SDCardMediaDevice(SD_CARD_ID, "/metadata")
-        audioBrowserService.setMediaDeviceForTest(sdCardMediaDevice)
-        runBlocking {
-            audioBrowserService.updateAttachedDevices()
-        }
-        TestUtils.waitForTrueOrFail(
-            { audioBrowserService.getIndexingStatus().any { it == IndexingStatus.COMPLETED } },
-            TIMEOUT_MS_LIBRARY_CREATION, "indexing completed"
-        )
+        mockUSBDeviceFixture = MockUSBDeviceFixture()
+        mockUSBDeviceFixture.init()
+        mockUSBDeviceFixture.createMP3().apply {
+            id3v2Tag.title = "TITLE_X"
+            id3v2Tag.artist = "ARTIST_0"
+            id3v2Tag.albumArtist = "ALBUM_ARTIST"
+            id3v2Tag.album = "ALBUM_X"
+        }.also { mockUSBDeviceFixture.storeMP3(it, "/album_artist_0.mp3") }
+        mockUSBDeviceFixture.createMP3().apply {
+            id3v2Tag.title = "TITLE_Y"
+            id3v2Tag.artist = "ARTIST_1"
+            id3v2Tag.albumArtist = "ALBUM_ARTIST"
+            id3v2Tag.album = "ALBUM_X"
+        }.also { mockUSBDeviceFixture.storeMP3(it, "/album_artist_1.mp3") }
+        mockUSBDeviceFixture.createMP3().apply {
+            id3v2Tag.title = "COMPILATION_TITLE_0"
+            id3v2Tag.artist = "COMPILATION_ARTIST_0"
+            id3v2Tag.albumArtist = "Various artists"
+            id3v2Tag.album = "ALBUM_Y"
+        }.also { mockUSBDeviceFixture.storeMP3(it, "/comp_0.mp3") }
+        mockUSBDeviceFixture.createMP3().apply {
+            id3v2Tag.title = "COMPILATION_TITLE_1"
+            id3v2Tag.artist = "COMPILATION_ARTIST_1"
+            id3v2Tag.albumArtist = "Various artists"
+            id3v2Tag.album = "ALBUM_Y"
+        }.also { mockUSBDeviceFixture.storeMP3(it, "/comp_1.mp3") }
+        mockUSBDeviceFixture.createMP3().apply {
+            id3v2Tag.title = "UNKNOWN_ALBUM_TITLE"
+            id3v2Tag.artist = "UNKNOWN_ALBUM_ARTIST"
+        }.also { mockUSBDeviceFixture.storeMP3(it, "/unknown_album.mp3") }
+        mockUSBDeviceFixture.createMP3().apply {
+            id3v2Tag.title = "UNKNOWN_ARTIST_TITLE"
+            id3v2Tag.album = "UNKNOWN_ARTIST_ALBUM"
+        }.also { mockUSBDeviceFixture.storeMP3(it, "/unknown_artist.mp3") }
+        mockUSBDeviceFixture.attachUSBDevice()
+        TestUtils.waitForIndexingCompleted(audioBrowserService)
         Logger.info(TAG, "Indexing was completed")
     }
 
     @After
     fun tearDown() {
         Logger.debug(TAG, "tearDown()")
-        browser.unsubscribe(browser.root)
-        browser.disconnect()
-        try {
-            serviceFixture.shutdown()
-        } catch (e: CancellationException) {
-            Logger.exception(TAG, e.message.toString(), e)
-        }
+        serviceFixture.shutdown()
         Logger.debug(TAG, "tearDown() has ended")
     }
 
     @Test
-    fun database_metadataSDCardImage_createsUnknownArtist() {
+    fun database_default_createsUnknownArtist() {
         runBlocking {
             val unknownArtist = audioBrowserService.getPrimaryRepo()?.getAudioItemForUnknownArtist()
             Assert.assertNotNull(unknownArtist)
@@ -77,7 +92,7 @@ class RepositoryTest {
     }
 
     @Test
-    fun database_metadataSDCardImage_createsUnknownAlbum() {
+    fun database_default_createsUnknownAlbum() {
         runBlocking {
             val unknownAlbum = audioBrowserService.getPrimaryRepo()?.getAudioItemForUnknownAlbum()
             Assert.assertNotNull(unknownAlbum)
@@ -85,7 +100,7 @@ class RepositoryTest {
     }
 
     @Test
-    fun database_metadataSDCardImage_createsPseudoCompilationArtist() {
+    fun database_default_createsPseudoCompilationArtist() {
         runBlocking {
             val pseudoCompArtistID = audioBrowserService.getPrimaryRepo()?.getPseudoCompilationArtistID()
             Assert.assertNotNull(pseudoCompArtistID)
@@ -93,7 +108,7 @@ class RepositoryTest {
     }
 
     @Test
-    fun database_metadataSDCardImage_createsAlbumArtist() {
+    fun database_default_createsAlbumArtist() {
         runBlocking {
             val tracksForAlbum = audioBrowserService.getPrimaryRepo()?.getTracksForAlbum(ALBUM_ARTIST_ID)
             Assert.assertNotNull(tracksForAlbum)

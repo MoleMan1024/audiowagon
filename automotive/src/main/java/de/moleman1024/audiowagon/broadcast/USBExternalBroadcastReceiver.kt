@@ -23,8 +23,6 @@ class USBExternalBroadcastReceiver : ManagedBroadcastReceiver() {
 
     override fun getIntentFilter(): IntentFilter {
         return IntentFilter().apply {
-            // USB_DEVICE_ATTACHED is not desired here, it should be handled by manifest. However that does not work
-            // on Polestar 2 car. Works fine on Pixel 3 XL with AAOS though...
             addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED)
             addAction(UsbManager.ACTION_USB_DEVICE_DETACHED)
         }
@@ -46,7 +44,7 @@ class USBExternalBroadcastReceiver : ManagedBroadcastReceiver() {
         try {
             usbMediaDevice = usbDeviceConnections?.getUSBMassStorageDeviceFromIntent(intent)
             logger.debug(TAG, "Broadcast with action ${intent.action} received for USB device: $usbMediaDevice")
-        } catch (exc: DeviceIgnoredException) {
+        } catch (_: DeviceIgnoredException) {
             // one of the built-in USB devices (e.g. bluetooth dongle) has attached/detached, ignore these
             return
         } catch (exc: RuntimeException) {

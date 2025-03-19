@@ -27,7 +27,6 @@ private const val TAG = "SharedPrefsTest"
  */
 @ExperimentalCoroutinesApi
 class SharedPrefsTest {
-
     private lateinit var sharedPreferencesVersion110: SharedPreferences
     private val sharedPrefs = SharedPrefs()
     private lateinit var serviceFixture: ServiceFixture
@@ -41,15 +40,12 @@ class SharedPrefsTest {
             TestUtils.createSharedPrefsVersion110(InstrumentationRegistry.getInstrumentation().context)
         serviceFixture = ServiceFixture()
         browser = serviceFixture.createMediaBrowser()
-        browser.connect()
-        audioBrowserService = serviceFixture.waitForAudioBrowserService()
+        audioBrowserService = serviceFixture.getAudioBrowserService()
     }
 
     @After
     fun tearDown() {
         Logger.debug(TAG, "tearDown()")
-        browser.unsubscribe(browser.root)
-        browser.disconnect()
         serviceFixture.shutdown()
     }
 

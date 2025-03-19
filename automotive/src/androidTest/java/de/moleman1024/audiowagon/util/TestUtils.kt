@@ -52,7 +52,6 @@ object TestUtils {
                 val isIndexingCompleted = audioBrowserService.getIndexingStatus().any {
                     it == IndexingStatus.COMPLETED
                 }
-                Thread.sleep(100)
                 return@waitForTrueOrFail isIndexingCompleted
             },
             timeoutMS, "waitForIndexingCompleted()"
@@ -74,12 +73,12 @@ object TestUtils {
         databasesDir.delete()
     }
 
-    private fun getDatabaseDirectory(): File {
+    fun getDatabaseDirectory(): File {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         return File(context?.dataDir.toString() + "/databases")
     }
 
-    fun copyAssetToDatbaseDirectory(context: Context, assetFileName: File, outFileName: String) {
+    fun copyAssetToDatabaseDirectory(context: Context, assetFileName: File, outFileName: String): File {
         Logger.debug(TAG, "Copying to database directory: $assetFileName")
         val databasesDir = getDatabaseDirectory()
         val assetManager: AssetManager = context.assets
@@ -97,6 +96,8 @@ object TestUtils {
         assetFile.close()
         outStream.flush()
         outStream.close()
+        Logger.debug(TAG, "Copied: ${outFile.absolutePath}")
+        return outFile
     }
 
     fun createSharedPrefsVersion110(context: Context): SharedPreferences {

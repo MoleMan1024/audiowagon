@@ -35,12 +35,9 @@ import org.junit.runners.Suite
     DatabaseTest::class,
     MediaSearchTest::class,
     PlaybackTest::class,
-/* WIP
     AlbumArtTest::class,
-*/
     // TODO: tests are slow
     MediaBrowserTest::class,
-    // FIXME: this leaves a service instance lingering
     SettingsFragmentTest::class,
 )
 class InstrumentedTestSuite

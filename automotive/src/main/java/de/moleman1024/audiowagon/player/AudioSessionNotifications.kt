@@ -129,7 +129,7 @@ class AudioSessionNotifications(
 
     private fun createNotificationAction(action: String, icon: IconCompat, stringID: Int): NotificationCompat.Action {
         val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            PendingIntent.FLAG_MUTABLE
+            PendingIntent.FLAG_IMMUTABLE
         } else {
             0
         }

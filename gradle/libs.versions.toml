@@ -1,0 +1,59 @@
+# SPDX-FileCopyrightText: 2025 MoleMan1024 <moleman1024dev@gmail.com>
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+[versions]
+ver-agp = "8.7.3"
+ver-androidx-appcompat = "1.7.0"
+ver-androidx-media = "1.7.0"
+ver-androidx-preference-ktx = "1.2.1"
+ver-androidx-test-core = "1.6.1"
+ver-androidx-test-ext = "1.2.1"
+ver-androidx-test-rules = "1.6.1"
+ver-core-ktx = "1.13.1"
+ver-crashlytics = "3.0.2"
+ver-firebase-bom = "33.7.0"
+ver-fragment-testing = "1.8.5"
+ver-google-android-material = "1.12.0"
+ver-google-services = "4.4.2"
+ver-jimfs = "1.2"
+ver-junit = "4.13.2"
+ver-kotlin = "2.0.21"
+ver-kotlinx-coroutines-test = "1.8.0"
+ver-kotlinx-serialization = "1.7.3"
+# https://github.com/google/ksp/releases (must match Kotlin version)
+ver-ksp = "2.0.21-1.0.28"
+ver-lifecycle = "2.8.7"
+ver-mockito-core = "5.11.0"
+ver-room = "2.6.1"
+
+[libraries]
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "ver-androidx-appcompat" }
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "ver-core-ktx" }
+androidx-fragment-testing = { group = "androidx.fragment", name = "fragment-testing", version.ref = "ver-fragment-testing" }
+androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "ver-lifecycle" }
+androidx-media = { group = "androidx.media", name = "media", version.ref = "ver-androidx-media" }
+androidx-preference-ktx = { group = "androidx.preference", name = "preference-ktx", version.ref = "ver-androidx-preference-ktx" }
+androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "ver-room" }
+androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "ver-room" }
+androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "ver-room" }
+androidx-test-core-ktx = { group = "androidx.test", name = "core-ktx", version.ref = "ver-androidx-test-core" }
+androidx-test-ext = { group = "androidx.test.ext", name = "junit-ktx", version.ref = "ver-androidx-test-ext" }
+androidx-test-rules = { group = "androidx.test", name = "rules", version.ref = "ver-androidx-test-rules" }
+com-google-jimfs = { group = "com.google.jimfs", name = "jimfs", version.ref = "ver-jimfs" }
+firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "ver-firebase-bom" }
+firebase-crashlytics = { group = "com.google.firebase", name = "firebase-crashlytics", version.ref = "ver-crashlytics" }
+google-android-material = { group = "com.google.android.material", name = "material", version.ref = "ver-google-android-material" }
+jetbrains-kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "ver-kotlinx-serialization" }
+junit = { group = "junit", name = "junit", version.ref = "ver-junit" }
+kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "ver-kotlinx-coroutines-test" }
+kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "ver-kotlin" }
+mockito-core = { group = "org.mockito", name = "mockito-core", version.ref = "ver-mockito-core" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "ver-agp" }
+androidx-room = { id = "androidx.room", version.ref = "ver-room" }
+firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "ver-crashlytics" }
+google-devtools-ksp = { id = "com.google.devtools.ksp", version.ref = "ver-ksp" }
+google-gms-services = { id = "com.google.gms.google-services", version.ref = "ver-google-services" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "ver-kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "ver-kotlin" }

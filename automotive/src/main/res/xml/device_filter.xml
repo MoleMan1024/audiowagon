@@ -17,7 +17,7 @@ taken from: https://github.com/magnusja/libaums/blob/develop/app/src/main/res/xm
  * limitations under the License.
  */
 -->
-<!-- does not work in Polestar 2 car (see USBDummyActiviy), works fine in Pixel 3 XL phone with AAOS -->
+<!-- works in Polestar 2 car with car version 3.4.4 (see USBDummyActiviy). Does not work in lower versions -->
 <resources>
     <usb-device
             class="8"

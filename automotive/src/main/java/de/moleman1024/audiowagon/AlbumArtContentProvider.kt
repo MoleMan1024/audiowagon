@@ -219,7 +219,7 @@ class AlbumArtContentProvider : ContentProvider() {
 
     private fun bindAudioBrowserService() {
         val intent =
-            Intent(AudioBrowserService::class.java.name, Uri.EMPTY, context, AudioBrowserService::class.java)
+            Intent(ACTION_BIND_ALBUM_ART_CONTENT_PROVIDER, Uri.EMPTY, context, AudioBrowserService::class.java)
         logger.debug(TAG, "bindService(intent=$intent, connection=$connection)")
         context?.bindService(intent, connection, Context.BIND_AUTO_CREATE)
         binderStatus = BinderStatus.BIND_REQUESTED

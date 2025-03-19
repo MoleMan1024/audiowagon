@@ -5,17 +5,12 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 package de.moleman1024.audiowagon
 
-import android.content.Intent
-import android.content.res.AssetManager
-import android.hardware.usb.UsbManager
 import android.os.Bundle
 import android.support.v4.media.MediaBrowserCompat
 import android.support.v4.media.session.PlaybackStateCompat
-import androidx.test.platform.app.InstrumentationRegistry
-import com.mpatric.mp3agic.Mp3File
 import de.moleman1024.audiowagon.log.Logger
-import de.moleman1024.audiowagon.mocks.MockUSBDevice
 import de.moleman1024.audiowagon.util.MediaBrowserTraversal
+import de.moleman1024.audiowagon.util.MockUSBDeviceFixture
 import de.moleman1024.audiowagon.util.ServiceFixture
 import de.moleman1024.audiowagon.util.TestUtils
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -25,8 +20,6 @@ import org.junit.Before
 import org.junit.Test
 
 private const val TAG = "PlaybackTest"
-private const val TEMPLATE_MP3_NAME = "test.mp3"
-private const val TEMPLATE_MP3_PATH = "/.template/$TEMPLATE_MP3_NAME"
 private const val MUSIC_ROOT = "/Music"
 private const val STORAGE_ID = "\"storage\":\"123456789ABC-5118-7715\""
 private const val ACTION_SHUFFLE_OFF = "de.moleman1024.audiowagon.ACTION_SHUFFLE_OFF"
@@ -36,7 +29,7 @@ class PlaybackTest {
     private lateinit var serviceFixture: ServiceFixture
     private lateinit var browser: MediaBrowserCompat
     private lateinit var audioBrowserService: AudioBrowserService
-    private lateinit var mockUSBDevice: MockUSBDevice
+    private lateinit var mockUSBDeviceFixture: MockUSBDeviceFixture
 
     @Before
     fun setUp() {
@@ -45,44 +38,15 @@ class PlaybackTest {
         // TODO: delete persisted playback queue
         serviceFixture = ServiceFixture()
         browser = serviceFixture.createMediaBrowser()
-        browser.connect()
-        audioBrowserService = serviceFixture.waitForAudioBrowserService()
-        mockUSBDevice = MockUSBDevice()
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
-        mockUSBDevice.initFilesystem(context)
-        val assetManager: AssetManager = context.assets
-        val assetFileInputStream = assetManager.open(TEMPLATE_MP3_NAME)
-        mockUSBDevice.fileSystem.copyToFile(assetFileInputStream, TEMPLATE_MP3_PATH)
+        audioBrowserService = serviceFixture.getAudioBrowserService()
+        mockUSBDeviceFixture = MockUSBDeviceFixture()
+        mockUSBDeviceFixture.init()
     }
 
     @After
     fun tearDown() {
         Logger.debug(TAG, "tearDown()")
-        if (this::browser.isInitialized) {
-            browser.unsubscribe(browser.root)
-            browser.disconnect()
-        }
-        if (this::serviceFixture.isInitialized) {
-            serviceFixture.shutdown()
-        }
-    }
-
-    private fun attachUSBDevice(usbDevice: MockUSBDevice) {
-        val deviceAttachedIntent = Intent(ACTION_USB_ATTACHED)
-        deviceAttachedIntent.putExtra(UsbManager.EXTRA_DEVICE, usbDevice)
-        Logger.info(TAG, "Sending broadcast to attach USB device")
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
-        context.sendBroadcast(deviceAttachedIntent)
-    }
-
-    private fun createMP3(): Mp3File {
-        val tempPath = mockUSBDevice.fileSystem.getPath(TEMPLATE_MP3_PATH)
-        return Mp3File(tempPath)
-    }
-
-    private fun storeMP3(mp3File: Mp3File, filePath: String) {
-        mockUSBDevice.fileSystem.createDirectories(filePath.split("/").dropLast(1).joinToString("/"))
-        mp3File.save(mockUSBDevice.fileSystem.getPath(filePath))
+        serviceFixture.shutdown()
     }
 
     /**
@@ -90,16 +54,16 @@ class PlaybackTest {
      */
     @Test
     fun playAll_hasSubdirectories_playRecursively() {
-        createMP3().apply {
+        mockUSBDeviceFixture.createMP3().apply {
             id3v2Tag.title = "Track1"
-        }.also { storeMP3(it, "$MUSIC_ROOT/folder1/track1.mp3") }
-        createMP3().apply {
+        }.also { mockUSBDeviceFixture.storeMP3(it, "$MUSIC_ROOT/folder1/track1.mp3") }
+        mockUSBDeviceFixture.createMP3().apply {
             id3v2Tag.title = "Track2"
-        }.also { storeMP3(it, "$MUSIC_ROOT/folder1/track2.mp3") }
-        createMP3().apply {
+        }.also { mockUSBDeviceFixture.storeMP3(it, "$MUSIC_ROOT/folder1/track2.mp3") }
+        mockUSBDeviceFixture.createMP3().apply {
             id3v2Tag.title = "Track3"
-        }.also { storeMP3(it, "$MUSIC_ROOT/folder2/track3.mp3") }
-        attachUSBDevice(mockUSBDevice)
+        }.also { mockUSBDeviceFixture.storeMP3(it, "$MUSIC_ROOT/folder2/track3.mp3") }
+        mockUSBDeviceFixture.attachUSBDevice()
         TestUtils.waitForIndexingCompleted(audioBrowserService)
         val traversal = MediaBrowserTraversal(browser)
         val filesRoot = "{\"type\":\"DIRECTORY\",\"path\":\"$MUSIC_ROOT\"}"
@@ -118,12 +82,12 @@ class PlaybackTest {
     fun shuffleNewPlaybackQueue_default_firstTrackIsShuffled() {
         serviceFixture.transportControls?.sendCustomAction(ACTION_SHUFFLE_OFF, null)
         for (index in 0 until 20) {
-            createMP3().apply {
+            mockUSBDeviceFixture.createMP3().apply {
                 id3v2Tag.title = "Track${index}"
                 id3v2Tag.album = "Album"
-            }.also { storeMP3(it, "$MUSIC_ROOT/folder/track${index}.mp3") }
+            }.also { mockUSBDeviceFixture.storeMP3(it, "$MUSIC_ROOT/folder/track${index}.mp3") }
         }
-        attachUSBDevice(mockUSBDevice)
+        mockUSBDeviceFixture.attachUSBDevice()
         TestUtils.waitForIndexingCompleted(audioBrowserService)
         // TODO: improve and get rid of unreliable sleeps, wait for persistance
         Thread.sleep(1000)
@@ -159,12 +123,12 @@ class PlaybackTest {
     fun skipToNext_repeatAllAndEndOfPlaybackQueue_repeatsPlaybackQueueFromFirstEntry() {
         serviceFixture.transportControls?.sendCustomAction("de.moleman1024.audiowagon.ACTION_REPEAT_OFF", null)
         for (index in 0 until 2) {
-            createMP3().apply {
+            mockUSBDeviceFixture.createMP3().apply {
                 id3v2Tag.title = "Track${index}"
                 id3v2Tag.album = "Album"
-            }.also { storeMP3(it, "$MUSIC_ROOT/folder/track${index}.mp3") }
+            }.also { mockUSBDeviceFixture.storeMP3(it, "$MUSIC_ROOT/folder/track${index}.mp3") }
         }
-        attachUSBDevice(mockUSBDevice)
+        mockUSBDeviceFixture.attachUSBDevice()
         TestUtils.waitForIndexingCompleted(audioBrowserService)
         Thread.sleep(1000)
         serviceFixture.transportControls?.stop()
@@ -195,12 +159,12 @@ class PlaybackTest {
     fun trackEnds_repeatOne_repeatsSameTrackAgain() {
         serviceFixture.transportControls?.sendCustomAction("de.moleman1024.audiowagon.ACTION_REPEAT_OFF", null)
         for (index in 0 until 2) {
-            createMP3().apply {
+            mockUSBDeviceFixture.createMP3().apply {
                 id3v2Tag.title = "Track${index}"
                 id3v2Tag.album = "Album"
-            }.also { storeMP3(it, "$MUSIC_ROOT/folder/track${index}.mp3") }
+            }.also { mockUSBDeviceFixture.storeMP3(it, "$MUSIC_ROOT/folder/track${index}.mp3") }
         }
-        attachUSBDevice(mockUSBDevice)
+        mockUSBDeviceFixture.attachUSBDevice()
         TestUtils.waitForIndexingCompleted(audioBrowserService)
         Thread.sleep(1000)
         serviceFixture.transportControls?.stop()
@@ -223,12 +187,12 @@ class PlaybackTest {
     fun skipToNext_repeatOffAndEndOfPlaybackQueue_playbackEnds() {
         serviceFixture.transportControls?.sendCustomAction("de.moleman1024.audiowagon.ACTION_REPEAT_OFF", null)
         for (index in 0 until 2) {
-            createMP3().apply {
+            mockUSBDeviceFixture.createMP3().apply {
                 id3v2Tag.title = "Track${index}"
                 id3v2Tag.album = "Album"
-            }.also { storeMP3(it, "$MUSIC_ROOT/folder/track${index}.mp3") }
+            }.also { mockUSBDeviceFixture.storeMP3(it, "$MUSIC_ROOT/folder/track${index}.mp3") }
         }
-        attachUSBDevice(mockUSBDevice)
+        mockUSBDeviceFixture.attachUSBDevice()
         TestUtils.waitForIndexingCompleted(audioBrowserService)
         Thread.sleep(1000)
         serviceFixture.transportControls?.stop()
@@ -256,12 +220,12 @@ class PlaybackTest {
         val artistName = "Billy Talent"
         val numTracks = 10
         for (index in 0 until numTracks) {
-            createMP3().apply {
+            mockUSBDeviceFixture.createMP3().apply {
                 id3v2Tag.artist = artistName
                 id3v2Tag.title = "Track${index}"
-            }.also { storeMP3(it, "$MUSIC_ROOT/${artistName}/track${index}.mp3")}
+            }.also { mockUSBDeviceFixture.storeMP3(it, "$MUSIC_ROOT/${artistName}/track${index}.mp3")}
         }
-        attachUSBDevice(mockUSBDevice)
+        mockUSBDeviceFixture.attachUSBDevice()
         TestUtils.waitForIndexingCompleted(audioBrowserService)
         Thread.sleep(1000)
         serviceFixture.transportControls?.stop()
@@ -282,14 +246,14 @@ class PlaybackTest {
         val artistName = "Billy Talent"
         val numTracks = 10
         for (index in 0 until numTracks) {
-            createMP3().apply {
+            mockUSBDeviceFixture.createMP3().apply {
                 id3v2Tag.artist = artistName
                 id3v2Tag.albumArtist = id3v2Tag.artist
                 id3v2Tag.album = albumName
                 id3v2Tag.title = "Track${index}"
-            }.also { storeMP3(it, "$MUSIC_ROOT/${albumName}/track${index}.mp3")}
+            }.also { mockUSBDeviceFixture.storeMP3(it, "$MUSIC_ROOT/${albumName}/track${index}.mp3")}
         }
-        attachUSBDevice(mockUSBDevice)
+        mockUSBDeviceFixture.attachUSBDevice()
         TestUtils.waitForIndexingCompleted(audioBrowserService)
         Thread.sleep(1000)
         serviceFixture.transportControls?.stop()
@@ -306,13 +270,13 @@ class PlaybackTest {
     @Test
     fun onPlayFromSearch_voiceSearchForTrackWithExtrasMisrecognition_playsTrack() {
         val numTracks = 1
-        createMP3().apply {
+        mockUSBDeviceFixture.createMP3().apply {
             id3v2Tag.artist = "Billy Joel"
             id3v2Tag.albumArtist = id3v2Tag.artist
             id3v2Tag.album = "Storm Front"
             id3v2Tag.title = "We Didn't Start The Fire"
-        }.also { storeMP3(it, "$MUSIC_ROOT/track.mp3")}
-        attachUSBDevice(mockUSBDevice)
+        }.also { mockUSBDeviceFixture.storeMP3(it, "$MUSIC_ROOT/track.mp3")}
+        mockUSBDeviceFixture.attachUSBDevice()
         TestUtils.waitForIndexingCompleted(audioBrowserService)
         Thread.sleep(1000)
         serviceFixture.transportControls?.stop()
@@ -336,12 +300,12 @@ class PlaybackTest {
     fun selectTrackInTrackView_default_playbackQueueIsSortedAlphabetically() {
         serviceFixture.transportControls?.sendCustomAction(ACTION_SHUFFLE_OFF, null)
         for (index in 1 until  10) {
-            createMP3().apply {
+            mockUSBDeviceFixture.createMP3().apply {
                 id3v2Tag.title = "Track${index}"
                 id3v2Tag.album = "Album"
-            }.also { storeMP3(it, "$MUSIC_ROOT/folder/track${index}.mp3") }
+            }.also { mockUSBDeviceFixture.storeMP3(it, "$MUSIC_ROOT/folder/track${index}.mp3") }
         }
-        attachUSBDevice(mockUSBDevice)
+        mockUSBDeviceFixture.attachUSBDevice()
         TestUtils.waitForIndexingCompleted(audioBrowserService)
         Thread.sleep(1000)
         serviceFixture.transportControls?.stop()

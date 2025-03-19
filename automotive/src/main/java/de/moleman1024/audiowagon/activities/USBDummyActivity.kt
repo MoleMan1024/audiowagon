@@ -35,9 +35,9 @@ private val logger = Logger
  * https://www.sdgsystems.com/post/android-usb-permissions
  * https://stackoverflow.com/questions/12388914/usb-device-access-pop-up-suppression
  *
- * This does not work on AAOS in Polestar 2, works fine on Pixel 3 XL with AAOS. I have not seen any app related to
- * https://android.googlesource.com/platform/packages/services/Car/+/refs/tags/android-10.0.0_r40/car-usb-handler/ in
- * the Polestar, maybe that is why ...
+ * This works in AAOS in Polestar 2 with car version 3.4.4 only. Lower versions probably do not integrated the
+ * car-usb-handler ( https://android.googlesource.com/platform/packages/services/Car/+/refs/tags/android-10.0.0_r40/car-usb-handler/ ).
+ * Works fine on Pixel 3 XL with default AAOS.
  */
 @ExperimentalCoroutinesApi
 class USBDummyActivity : AppCompatActivity() {

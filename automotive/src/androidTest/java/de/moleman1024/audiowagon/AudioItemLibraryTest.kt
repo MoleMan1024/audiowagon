@@ -5,12 +5,11 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 package de.moleman1024.audiowagon
 
-import android.content.Intent
-import android.hardware.usb.UsbManager
-import androidx.test.platform.app.InstrumentationRegistry
+import android.support.v4.media.MediaBrowserCompat
 import de.moleman1024.audiowagon.log.Logger
-import de.moleman1024.audiowagon.mocks.MockUSBDevice
+import de.moleman1024.audiowagon.util.MockUSBDeviceFixture
 import de.moleman1024.audiowagon.util.ServiceFixture
+import de.moleman1024.audiowagon.util.TestUtils
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -18,44 +17,40 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
-const val ACTION_USB_ATTACHED = "de.moleman1024.audiowagon.USB_ATTACHED"
 private const val TAG = "AudioItemLibraryTest"
+private const val MUSIC_ROOT = "/Music"
 
 @ExperimentalCoroutinesApi
 class AudioItemLibraryTest {
     private lateinit var serviceFixture: ServiceFixture
+    private lateinit var browser: MediaBrowserCompat
     private lateinit var audioBrowserService: AudioBrowserService
+    private lateinit var mockUSBDeviceFixture: MockUSBDeviceFixture
 
     @Before
     fun setUp() {
         Logger.debug(TAG, "setUp()")
+        TestUtils.deleteDatabaseDirectory()
         serviceFixture = ServiceFixture()
-        serviceFixture.startService()
-        audioBrowserService = serviceFixture.createAudioBrowserService()
+        browser = serviceFixture.createMediaBrowser()
+        audioBrowserService = serviceFixture.getAudioBrowserService()
+        mockUSBDeviceFixture = MockUSBDeviceFixture()
+        mockUSBDeviceFixture.init()
     }
 
     @After
     fun tearDown() {
         Logger.debug(TAG, "tearDown()")
-        serviceFixture.stopService()
         serviceFixture.shutdown()
-    }
-
-    private fun attachUSBDevice() {
-        // UsbDevice class in Android is almost untestable, so I introduced lots of interfaces and wrote my own
-        // mock USB device class
-        val mockUSBDevice = MockUSBDevice()
-        val deviceAttachedIntent = Intent(ACTION_USB_ATTACHED)
-        deviceAttachedIntent.putExtra(UsbManager.EXTRA_DEVICE, mockUSBDevice)
-        Logger.info(TAG, "Sending broadcast to attach USB device")
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
-        context.sendBroadcast(deviceAttachedIntent)
-        Thread.sleep(200)
     }
 
     @Test
     fun usbDeviceAttachedBroadcast_default_isHandled() {
-        attachUSBDevice()
+        mockUSBDeviceFixture.createMP3().apply {
+            id3v2Tag.title = "Track1"
+        }.also { mockUSBDeviceFixture.storeMP3(it, "$MUSIC_ROOT/folder1/track1.mp3") }
+        mockUSBDeviceFixture.attachUSBDevice()
+        TestUtils.waitForIndexingCompleted(audioBrowserService)
         val audioItemLibrary = audioBrowserService.getAudioItemLibrary()
         runBlocking {
             assertTrue("No repositories", audioItemLibrary.areAnyReposAvail())

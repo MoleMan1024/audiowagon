@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-	<!-- Used for accessing SD cards. Only used on emulator for debugging -->
-	<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-	<!-- Used to kill service so that each testcase can start clean -->
-	<uses-permission android:name="android.permission.KILL_BACKGROUND_PROCESSES" />
-</manifest>

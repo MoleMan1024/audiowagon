@@ -5,6 +5,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 package de.moleman1024.audiowagon.filestorage.sd
 
+import android.content.Context
 import android.media.MediaDataSource
 import android.net.Uri
 import de.moleman1024.audiowagon.exceptions.NoSuchDeviceException
@@ -17,10 +18,10 @@ import java.io.IOException
 /**
  * NOTE: SD card support is only enabled in debug builds used in the Android emulator
  */
-class SDCardMediaDevice(val id: String, private val rootDir: String = "/") : MediaDevice {
+class SDCardMediaDevice(val context: Context, val id: String, private val rootDir: String = "/") : MediaDevice {
     override val TAG = "SDCardMediaDevice"
     override val logger = Logger
-    private val rootDirectory = File("/storage/${id}${rootDir}")
+    private val rootDirectory = File("/mnt/media_rw/${id}${rootDir}")
     var isClosed: Boolean = false
 
     init {

@@ -36,7 +36,7 @@ import java.util.Collections
  */
 private const val TAG = "Logger"
 const val NUM_BYTES_CRASH_REPORT = 65536
-private const val USB_LOGFILE_WRITE_PERIOD_MS: Long = 500L
+private const val USB_LOGFILE_WRITE_PERIOD_MS: Long = 200L
 
 object Logger : LoggerInterface {
     private var scope: CoroutineScope? = null

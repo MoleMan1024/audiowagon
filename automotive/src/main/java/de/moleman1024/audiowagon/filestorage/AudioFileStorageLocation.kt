@@ -22,7 +22,7 @@ import java.io.InputStream
 import java.util.*
 
 /**
- * An interface for a  location to be managed by [AudioFileStorage] class.
+ * An interface for a location to be managed by [AudioFileStorage] class.
  * This works with File-like objects and URIs only, so the different implementations can be used (USB, SD card, local
  * filesystem, Android asset files, ...)
  */

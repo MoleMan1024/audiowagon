@@ -35,6 +35,7 @@ import kotlinx.coroutines.*
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.util.concurrent.Executors
+import kotlin.coroutines.coroutineContext
 
 private const val TAG = "AudioPlayer"
 private val logger = Logger
@@ -103,11 +104,11 @@ class AudioPlayer(
 
     private suspend fun initMediaPlayers() {
         mediaPlayerFlip = MediaPlayer()
-        logger.debug(TAG, "Init media player: $mediaPlayerFlip")
+        logger.debug(Util.TAGCRT(TAG, coroutineContext), "Init media player: $mediaPlayerFlip")
         setState(mediaPlayerFlip, AudioPlayerState.IDLE)
         currentMediaPlayer = mediaPlayerFlip
         mediaPlayerFlop = MediaPlayer()
-        logger.debug(TAG, "Init next media player: $mediaPlayerFlop")
+        logger.debug(Util.TAGCRT(TAG, coroutineContext), "Init next media player: $mediaPlayerFlop")
         setState(mediaPlayerFlop, AudioPlayerState.IDLE)
         setCompletionListener(mediaPlayerFlip)
         setCompletionListener(mediaPlayerFlop)
@@ -156,7 +157,7 @@ class AudioPlayer(
         }
     }
 
-    private suspend fun setCompletionListener(mediaPlayer: MediaPlayer?) {
+    private fun setCompletionListener(mediaPlayer: MediaPlayer?) {
         mediaPlayer?.setOnCompletionListener { completedMediaPlayer ->
             logger.debug(TAG, "onCompletion($mediaPlayer)")
             onCompletionJob = launchInScopeSafely {
@@ -202,7 +203,7 @@ class AudioPlayer(
         return false
     }
 
-    private suspend fun setInfoListener(mediaPlayer: MediaPlayer?) {
+    private fun setInfoListener(mediaPlayer: MediaPlayer?) {
         mediaPlayer?.setOnInfoListener { mediaPlayerWithInfo, what, extra ->
             logger.debug(TAG, "onInfo($mediaPlayerWithInfo): $what $extra")
             when (what) {
@@ -220,7 +221,7 @@ class AudioPlayer(
         }
     }
 
-    private suspend fun setErrorListener() {
+    private fun setErrorListener() {
         currentMediaPlayer?.setOnErrorListener { player, what, extra ->
             logger.debug(TAG, "onError(player=$player,what=$what,extra=$extra")
             launchInScopeSafely {
@@ -268,7 +269,7 @@ class AudioPlayer(
     }
 
     private suspend fun getCurrentPositionMilliSec(): Long = withContext(dispatcher) {
-        logger.debug(TAG, "getCurrentPositionMilliSec()")
+        logger.debug(Util.TAGCRT(TAG, coroutineContext), "getCurrentPositionMilliSec()")
         if (!isAtLeastPrepared(currentMediaPlayer)) {
             return@withContext PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN
         }
@@ -277,7 +278,7 @@ class AudioPlayer(
     }
 
     suspend fun getCurrentPositionMilliSecIgnorePlayerError(): Long = withContext(dispatcher) {
-        logger.debug(TAG, "getCurrentPositionMilliSecIgnorePlayerError()")
+        logger.debug(Util.TAGCRT(TAG, coroutineContext), "getCurrentPositionMilliSecIgnorePlayerError()")
         return@withContext if (getState(currentMediaPlayer) != AudioPlayerState.ERROR) {
             getCurrentPositionMilliSec()
         } else {
@@ -292,12 +293,12 @@ class AudioPlayer(
 
     suspend fun pause() {
         withContext(dispatcher) {
-            logger.debug(TAG, "pause()")
+            logger.debug(Util.TAGCRT(TAG, coroutineContext), "pause()")
             val state = getState(currentMediaPlayer)
             val validStates =
                 listOf(AudioPlayerState.STARTED, AudioPlayerState.PAUSED, AudioPlayerState.PLAYBACK_COMPLETED)
             if (state !in validStates) {
-                logger.warning(TAG, "Invalid call to pause() in state: $state")
+                logger.warning(Util.TAGCRT(TAG, coroutineContext), "Invalid call to pause() in state: $state")
                 return@withContext
             }
             currentMediaPlayer?.pause()
@@ -309,11 +310,11 @@ class AudioPlayer(
     }
 
     private suspend fun prepare() {
-        logger.debug(TAG, "prepare(currentMediaPlayer=$currentMediaPlayer)")
+        logger.debug(Util.TAGCRT(TAG, coroutineContext), "prepare(currentMediaPlayer=$currentMediaPlayer)")
         val validStates = listOf(AudioPlayerState.INITIALIZED, AudioPlayerState.STOPPED)
         val state = getState(currentMediaPlayer)
         if (state !in validStates) {
-            logger.warning(TAG, "Invalid call to prepare() in state: $state")
+            logger.warning(Util.TAGCRT(TAG, coroutineContext), "Invalid call to prepare() in state: $state")
             return
         }
         playerStatus.hasPlaybackQueueEnded = false
@@ -323,10 +324,10 @@ class AudioPlayer(
     }
 
     private suspend fun reset(player: MediaPlayer?) {
-        logger.debug(TAG, "reset(player=$player)")
+        logger.debug(Util.TAGCRT(TAG, coroutineContext), "reset(player=$player)")
         val state = getState(player)
         if (state == AudioPlayerState.IDLE) {
-            logger.debug(TAG, "No reset necessary")
+            logger.debug(Util.TAGCRT(TAG, coroutineContext), "No reset necessary")
             return
         }
         player?.reset()
@@ -340,7 +341,7 @@ class AudioPlayer(
 
     suspend fun seekTo(millisec: Int) {
         withContext(dispatcher) {
-            logger.debug(TAG, "seekTo(millisec=$millisec)")
+            logger.debug(Util.TAGCRT(TAG, coroutineContext), "seekTo(millisec=$millisec)")
             val invalidStatesForSeek = listOf(
                 AudioPlayerState.IDLE,
                 AudioPlayerState.INITIALIZED,
@@ -350,7 +351,7 @@ class AudioPlayer(
             )
             val state = getState(currentMediaPlayer)
             if (state in invalidStatesForSeek) {
-                logger.warning(TAG, "Invalid call to seekTo() in state: $state")
+                logger.warning(Util.TAGCRT(TAG, coroutineContext), "Invalid call to seekTo() in state: $state")
                 return@withContext
             }
             currentMediaPlayer?.setOnSeekCompleteListener {
@@ -364,7 +365,7 @@ class AudioPlayer(
 
     suspend fun rewind(millisec: Int) {
         withContext(dispatcher) {
-            logger.debug(TAG, "rewind(millisec=$millisec)")
+            logger.debug(Util.TAGCRT(TAG, coroutineContext), "rewind(millisec=$millisec)")
             val currentPosMilliSec = getCurrentPositionMilliSec()
             var newPosMilliSec = currentPosMilliSec - millisec
             if (newPosMilliSec < 0) {
@@ -375,11 +376,11 @@ class AudioPlayer(
     }
 
     private suspend fun setDataSource(mediaDataSource: MediaDataSource) {
-        logger.debug(TAG, "setDataSource(currentMediaPlayer=$currentMediaPlayer)")
+        logger.debug(Util.TAGCRT(TAG, coroutineContext), "setDataSource(currentMediaPlayer=$currentMediaPlayer)")
         val validStates = listOf(AudioPlayerState.IDLE)
         val state = getState(currentMediaPlayer)
         if (state !in validStates) {
-            logger.warning(TAG, "Invalid call to setDataSource() in state: $state")
+            logger.warning(Util.TAGCRT(TAG, coroutineContext), "Invalid call to setDataSource() in state: $state")
             return
         }
         currentMediaPlayer?.setDataSource(mediaDataSource)
@@ -389,10 +390,10 @@ class AudioPlayer(
     suspend fun skipNextTrack() {
         cancelSetupNextPlayerJob()
         withContext(dispatcher) {
-            logger.debug(TAG, "skipNextTrack()")
+            logger.debug(Util.TAGCRT(TAG, coroutineContext), "skipNextTrack()")
             val nextQueueIndex = playbackQueue.getNextIndexIgnoreRepeatOne()
             if (nextQueueIndex <= -1) {
-                logger.warning(TAG, "No next track for skipping")
+                logger.warning(Util.TAGCRT(TAG, coroutineContext), "No next track for skipping")
                 // need to set pause here, because Android Automotive media browser client will change transport
                 // controls to paused in STATE_ERROR it seems
                 pause()
@@ -417,10 +418,10 @@ class AudioPlayer(
     suspend fun skipPreviousTrack() {
         cancelSetupNextPlayerJob()
         withContext(dispatcher) {
-            logger.debug(TAG, "skipPreviousTrack()")
+            logger.debug(Util.TAGCRT(TAG, coroutineContext), "skipPreviousTrack()")
             val prevQueueIndex = playbackQueue.getPrevIndex()
             if (prevQueueIndex <= -1) {
-                logger.warning(TAG, "No previous track for skipping")
+                logger.warning(Util.TAGCRT(TAG, coroutineContext), "No previous track for skipping")
                 pause()
                 val endOfQueueStatus = AudioPlayerStatus(playerStatus.playbackState)
                 endOfQueueStatus.positionInMilliSec = getCurrentPositionMilliSec()
@@ -472,16 +473,16 @@ class AudioPlayer(
 
     suspend fun setShuffle(isOn: Boolean) {
         withContext(dispatcher) {
-            logger.debug(TAG, "setShuffle(isOn=$isOn)")
+            logger.debug(Util.TAGCRT(TAG, coroutineContext), "setShuffle(isOn=$isOn)")
             if (isOn) {
                 if (playerStatus.isShuffling) {
-                    logger.debug(TAG, "Shuffle is already turned on")
+                    logger.debug(Util.TAGCRT(TAG, coroutineContext), "Shuffle is already turned on")
                     return@withContext
                 }
                 playbackQueue.shuffleExceptCurrentItem()
             } else {
                 if (!playerStatus.isShuffling) {
-                    logger.debug(TAG, "Shuffle is already turned off")
+                    logger.debug(Util.TAGCRT(TAG, coroutineContext), "Shuffle is already turned off")
                     return@withContext
                 }
                 playbackQueue.unshuffle()
@@ -520,9 +521,9 @@ class AudioPlayer(
 
     suspend fun setRepeatMode(mode: RepeatMode) {
         withContext(dispatcher) {
-            logger.debug(TAG, "setRepeatMode(mode=$mode)")
+            logger.debug(Util.TAGCRT(TAG, coroutineContext), "setRepeatMode(mode=$mode)")
             if (playerStatus.repeatMode == mode) {
-                logger.debug(TAG, "Repeat mode is already: $mode")
+                logger.debug(Util.TAGCRT(TAG, coroutineContext), "Repeat mode is already: $mode")
                 return@withContext
             }
             playbackQueue.setRepeatMode(mode)
@@ -532,7 +533,7 @@ class AudioPlayer(
 
     suspend fun start() {
         withContext(dispatcher) {
-            logger.debug(TAG, "start()")
+            logger.debug(Util.TAGCRT(TAG, coroutineContext), "start()")
             val invalidStatesForStart = listOf(
                 AudioPlayerState.STARTED,
                 AudioPlayerState.IDLE,
@@ -542,12 +543,12 @@ class AudioPlayer(
             )
             val state = getState(currentMediaPlayer)
             if (state in invalidStatesForStart) {
-                logger.warning(TAG, "Invalid call to start() in state: $state")
+                logger.warning(Util.TAGCRT(TAG, coroutineContext), "Invalid call to start() in state: $state")
                 return@withContext
             }
             val audioFocusRequestResult = audioFocus.request()
             if (audioFocusRequestResult == AudioFocusRequestResult.DENIED) {
-                logger.warning(TAG, "Cannot start playback, audio focus request was denied")
+                logger.warning(Util.TAGCRT(TAG, coroutineContext), "Cannot start playback, audio focus request was denied")
                 val audioFocusDeniedStatus = AudioPlayerStatus(playerStatus.playbackState)
                 audioFocusDeniedStatus.positionInMilliSec = getCurrentPositionMilliSec()
                 audioFocusDeniedStatus.queueItem = playbackQueue.getCurrentItem()
@@ -567,14 +568,14 @@ class AudioPlayer(
 
     suspend fun stop() {
         withContext(dispatcher) {
-            logger.debug(TAG, "stop(currentMediaPlayer=$currentMediaPlayer)")
+            logger.debug(Util.TAGCRT(TAG, coroutineContext), "stop(currentMediaPlayer=$currentMediaPlayer)")
             try {
                 stopCurrentPlayer()
-            } catch (exc: AlreadyStoppedException) {
-                logger.debug(TAG, ALREADY_STOPPED)
+            } catch (_: AlreadyStoppedException) {
+                logger.debug(Util.TAGCRT(TAG, coroutineContext), ALREADY_STOPPED)
                 return@withContext
             } catch (exc: IllegalStateException) {
-                logger.warning(TAG, exc.message.toString())
+                logger.warning(Util.TAGCRT(TAG, coroutineContext), exc.message.toString())
                 return@withContext
             }
             setState(currentMediaPlayer, AudioPlayerState.STOPPED)
@@ -605,7 +606,7 @@ class AudioPlayer(
 
     suspend fun notifyPlayerStatusChange(status: AudioPlayerStatus? = null) {
         if (isRecoveringFromIOError) {
-            logger.warning(TAG, "Error recovery is still in progress")
+            logger.warning(Util.TAGCRT(TAG, coroutineContext), "Error recovery is still in progress")
             return
         }
         if (status == null) {
@@ -621,9 +622,9 @@ class AudioPlayer(
         // this needs to run in a different dispatcher than the single thread used for this AudioPlayer to avoid
         // deadlocks
         val exceptionHandler = CoroutineExceptionHandler { coroutineContext, exc ->
-            logger.exception(TAG, "$coroutineContext threw ${exc.message}", exc)
+            logger.exception(Util.TAGCRT(TAG, coroutineContext), "$coroutineContext threw ${exc.message}", exc)
         }
-        logger.debug(TAG, "notifyPlayerStatus(): $status")
+        logger.debug(Util.TAGCRT(TAG, coroutineContext), "notifyPlayerStatus(): $status")
         scope.launch(exceptionHandler + playerStatusDispatcher) {
             playerStatusObservers.forEach { it(status) }
         }
@@ -631,13 +632,13 @@ class AudioPlayer(
 
     suspend fun startPlayFromQueue() {
         withContext(dispatcher) {
-            logger.debug(TAG, "startPlayFromQueue()")
+            logger.debug(Util.TAGCRT(TAG, coroutineContext), "startPlayFromQueue()")
             try {
                 stopCurrentPlayer()
             } catch (exc: AlreadyStoppedException) {
-                logger.debug(TAG, ALREADY_STOPPED)
+                logger.debug(Util.TAGCRT(TAG, coroutineContext), ALREADY_STOPPED)
             } catch (exc: IllegalStateException) {
-                logger.warning(TAG, exc.message.toString())
+                logger.warning(Util.TAGCRT(TAG, coroutineContext), exc.message.toString())
             }
             reset(currentMediaPlayer)
             val queueItem: MediaSessionCompat.QueueItem =
@@ -698,15 +699,15 @@ class AudioPlayer(
 
     suspend fun preparePlayFromQueue(queueIndex: Int = 0, startPositionMS: Int = 0) {
         withContext(dispatcher) {
-            logger.debug(TAG, "preparePlayFromQueue()")
+            logger.debug(Util.TAGCRT(TAG, coroutineContext), "preparePlayFromQueue()")
             playbackQueue.setIndex(queueIndex)
             playbackQueue.notifyQueueChanged()
             try {
                 stopCurrentPlayer()
-            } catch (exc: AlreadyStoppedException) {
-                logger.debug(TAG, ALREADY_STOPPED)
+            } catch (_: AlreadyStoppedException) {
+                logger.debug(Util.TAGCRT(TAG, coroutineContext), ALREADY_STOPPED)
             } catch (exc: IllegalStateException) {
-                logger.warning(TAG, exc.message.toString())
+                logger.warning(Util.TAGCRT(TAG, coroutineContext), exc.message.toString())
             }
             reset(currentMediaPlayer)
             val queueItem: MediaSessionCompat.QueueItem =
@@ -715,12 +716,14 @@ class AudioPlayer(
             val mediaDataSource: MediaDataSource
             try {
                 mediaDataSource = getDataSourceForURI(uri)
-            } catch (exc: UnsupportedOperationException) {
+            } catch (_: UnsupportedOperationException) {
                 return@withContext
             } catch (exc: FileNotFoundException) {
                 throw exc
             } catch (exc: IOException) {
-                logger.exception(TAG, "I/O exception when getting media data source", exc)
+                logger.exception(
+                    Util.TAGCRT(TAG, coroutineContext), "I/O exception when getting media data source", exc
+                )
                 // TODO: handle this better
                 return@withContext
             }
@@ -731,7 +734,7 @@ class AudioPlayer(
     }
 
     private suspend fun onPreparePlayFromQueueReady(mediaPlayer: MediaPlayer?, startPositionMS: Int) {
-        logger.debug(TAG, "onPreparePlayFromQueueReady(mediaPlayer=$mediaPlayer)")
+        logger.debug(Util.TAGCRT(TAG, coroutineContext), "onPreparePlayFromQueueReady(mediaPlayer=$mediaPlayer)")
         setState(mediaPlayer, AudioPlayerState.PREPARED)
         if (startPositionMS > 0) {
             seekTo(startPositionMS)
@@ -740,7 +743,7 @@ class AudioPlayer(
         setupNextPlayer()
     }
 
-    private suspend fun setupNextPlayer() {
+    private fun setupNextPlayer() {
         setupNextPlayerJob = launchInScopeSafely {
             logger.debug(TAG, "setupNextPlayer()")
             val nextQueueItem: MediaSessionCompat.QueueItem? = playbackQueue.getNextItem()
@@ -776,7 +779,7 @@ class AudioPlayer(
         if (setupNextPlayerJob == null) {
             return
         }
-        logger.debug(TAG, "cancelSetupNextPlayerJob()")
+        logger.debug(Util.TAGCRT(TAG, coroutineContext), "cancelSetupNextPlayerJob()")
         setupNextPlayerJob?.cancelAndJoin()
         setupNextPlayerJob = null
     }
@@ -785,25 +788,25 @@ class AudioPlayer(
         if (onCompletionJob == null) {
             return
         }
-        logger.debug(TAG, "cancelOnCompletionJob()")
+        logger.debug(Util.TAGCRT(TAG, coroutineContext), "cancelOnCompletionJob()")
         onCompletionJob?.cancelAndJoin()
         onCompletionJob = null
     }
 
     private suspend fun onPreparedNextPlayer(mediaPlayer: MediaPlayer?) {
-        logger.debug(TAG, "onPreparedListener(nextMediaPlayer=$mediaPlayer)")
+        logger.debug(Util.TAGCRT(TAG, coroutineContext), "onPreparedListener(nextMediaPlayer=$mediaPlayer)")
         setState(mediaPlayer, AudioPlayerState.PREPARED)
         val nextItem: MediaSessionCompat.QueueItem? = playbackQueue.getNextItem()
         if (nextItem == null) {
-            logger.debug(TAG, "This is the last track, no next player necessary")
+            logger.debug(Util.TAGCRT(TAG, coroutineContext), "This is the last track, no next player necessary")
             return
         }
         try {
             currentMediaPlayer?.setNextMediaPlayer(mediaPlayer)
         } catch (exc: IllegalArgumentException) {
             logger.exception(
-                TAG,
-                "Exception setting next media player $mediaPlayer for current " + "media player: $currentMediaPlayer",
+                Util.TAGCRT(TAG, coroutineContext),
+                "Exception setting next media player $mediaPlayer for current media player: $currentMediaPlayer",
                 exc
             )
         }
@@ -824,7 +827,7 @@ class AudioPlayer(
 
     private suspend fun playQueueAtIndex(index: Int) {
         withContext(dispatcher) {
-            logger.debug(TAG, "playQueueAtIndex($index)")
+            logger.debug(Util.TAGCRT(TAG, coroutineContext), "playQueueAtIndex($index)")
             val playbackQueueSize = playbackQueue.getSize()
             if (index >= playbackQueueSize) {
                 throw IndexOutOfBoundsException("Index $index is larger than play queue size: $playbackQueueSize")
@@ -842,7 +845,7 @@ class AudioPlayer(
 
     suspend fun playFromQueueID(queueID: Long) {
         withContext(dispatcher) {
-            logger.debug(TAG, "playFromQueueID($queueID)")
+            logger.debug(Util.TAGCRT(TAG, coroutineContext), "playFromQueueID($queueID)")
             var index = playbackQueue.getIndexForQueueID(queueID)
             if (index >= playbackQueue.getSize()) {
                 index = playbackQueue.getSize() - 1
@@ -882,11 +885,11 @@ class AudioPlayer(
     }
 
     private suspend fun getDataSourceForURI(uri: Uri): MediaDataSource {
-        logger.debug(TAG, "getDataSourceForURI($uri)")
+        logger.debug(Util.TAGCRT(TAG, coroutineContext), "getDataSourceForURI($uri)")
         try {
             return audioFileStorage.getBufferedDataSourceForURI(uri)
         } catch (exc: UnsupportedOperationException) {
-            logger.exception(TAG, "Cannot get data source for URI: $uri", exc)
+            logger.exception(Util.TAGCRT(TAG, coroutineContext), "Cannot get data source for URI: $uri", exc)
             playerStatus.errorCode = PlaybackStateCompat.ERROR_CODE_UNKNOWN_ERROR
             playerStatus.errorMsg = "No datasource"
             playerStatus.playbackState = PlaybackStateCompat.STATE_ERROR
@@ -896,7 +899,7 @@ class AudioPlayer(
     }
 
     private suspend fun resetAllPlayers() {
-        logger.debug(TAG, "resetAllPlayers()")
+        logger.debug(Util.TAGCRT(TAG, coroutineContext), "resetAllPlayers()")
         reset(mediaPlayerFlip)
         reset(mediaPlayerFlop)
         notifyPlayerStatusChange()
@@ -904,7 +907,7 @@ class AudioPlayer(
 
     suspend fun shutdown() {
         withContext(dispatcher) {
-            logger.debug(TAG, "shutdown()")
+            logger.debug(Util.TAGCRT(TAG, coroutineContext), "shutdown()")
             effectsFlip?.shutdown()
             effectsFlop?.shutdown()
             cancelSetupNextPlayerJob()
@@ -915,7 +918,7 @@ class AudioPlayer(
 
     suspend fun reset() {
         withContext(dispatcher) {
-            logger.debug(TAG, "reset()")
+            logger.debug(Util.TAGCRT(TAG, coroutineContext), "reset()")
             stop()
             setPlayQueueAndNotify(listOf())
             reInitAllPlayers()
@@ -925,7 +928,7 @@ class AudioPlayer(
     }
 
     private suspend fun releaseAllPlayers() {
-        logger.debug(TAG, "releaseAllPlayers()")
+        logger.debug(Util.TAGCRT(TAG, coroutineContext), "releaseAllPlayers()")
         mediaPlayerFlip?.release()
         setState(mediaPlayerFlip, AudioPlayerState.END)
         mediaPlayerFlop?.release()
@@ -949,7 +952,7 @@ class AudioPlayer(
 
     suspend fun reInitAfterError() {
         withContext(dispatcher) {
-            logger.debug(TAG, "reInitAfterError()")
+            logger.debug(Util.TAGCRT(TAG, coroutineContext), "reInitAfterError()")
             delay(4000)
             isRecoveringFromIOError = true
             reInitAllPlayers()

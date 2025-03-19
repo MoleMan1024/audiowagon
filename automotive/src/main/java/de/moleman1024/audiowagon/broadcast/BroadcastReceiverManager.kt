@@ -33,6 +33,12 @@ class BroadcastReceiverManager(private val context: Context) {
             logger.warning(TAG, "Broadcast receiver already in list of registered receivers: $broadcastReceiver")
             return
         }
+        // We should only ever have one receiver for each class type in the list
+        if (registeredReceivers.any { it::class == broadcastReceiver::class }) {
+            logger.warning(TAG, "Will replace broadcast receiver in list for type: ${broadcastReceiver::class}")
+            registeredReceivers.removeIf { it::class == broadcastReceiver::class }
+        }
+        logger.debug(TAG, "register(broadcastReceiver=$broadcastReceiver)")
         try {
             context.registerReceiver(
                 broadcastReceiver, broadcastReceiver.getIntentFilter(), null, handler,
@@ -42,6 +48,16 @@ class BroadcastReceiverManager(private val context: Context) {
         } catch (exc: IllegalArgumentException) {
             logger.exception(TAG, "Receiver already registered: $broadcastReceiver", exc)
         }
+    }
+
+    fun unregister(broadcastReceiver: ManagedBroadcastReceiver) {
+        logger.debug(TAG, "unregister(broadcastReceiver=$broadcastReceiver)")
+        try {
+            context.unregisterReceiver(broadcastReceiver)
+        } catch (exc: IllegalArgumentException) {
+            logger.warning(TAG, "Could not unregister receiver $broadcastReceiver: " + exc.message.toString())
+        }
+        registeredReceivers.remove(broadcastReceiver)
     }
 
     fun unregisterAll() {

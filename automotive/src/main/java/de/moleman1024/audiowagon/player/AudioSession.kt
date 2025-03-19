@@ -38,7 +38,6 @@ import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyE
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyID
 import de.moleman1024.audiowagon.enums.ContentHierarchyType
 import de.moleman1024.audiowagon.enums.RepeatMode
-import de.moleman1024.audiowagon.medialibrary.contenthierarchy.DATABASE_ID_UNKNOWN
 import de.moleman1024.audiowagon.persistence.PersistentPlaybackState
 import de.moleman1024.audiowagon.persistence.PersistentStorage
 import de.moleman1024.audiowagon.player.data.AudioPlayerEvent
@@ -106,9 +105,6 @@ class AudioSession(
         AudioSessionNotifications(context, scope, crashReporting)
     private val audioFocusChangeListener: AudioFocusChangeCallback =
         AudioFocusChangeCallback(audioPlayer, scope, dispatcher, crashReporting)
-    private val resetSingletonCoroutine = SingletonCoroutine(
-        "reset", dispatcher, scope.coroutineContext, crashReporting
-    )
     private val playFromMediaIDSingletonCoroutine =
         SingletonCoroutine("PlayFromMedID", dispatcher, scope.coroutineContext, crashReporting)
     private val observePlaybackQueueSingletonCoroutine =
@@ -141,7 +137,7 @@ class AudioSession(
         val mediaButtonIntent = Intent(Intent.ACTION_MEDIA_BUTTON)
         mediaButtonIntent.setClass(context, MediaButtonReceiver::class.java)
         val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            PendingIntent.FLAG_MUTABLE
+            PendingIntent.FLAG_IMMUTABLE
         } else {
             0
         }
@@ -273,7 +269,7 @@ class AudioSession(
                             "blocked due to startup sound"
                 )
                 playSingletonCoroutine.launch {
-                    logger.info(TAG, "Will try audio playback start() again in 5 seconds")
+                    logger.info(Util.TAGCRT(TAG, coroutineContext), "Will try audio playback start() again in 5 seconds")
                     delay(5000)
                     audioPlayer.start()
                 }
@@ -367,7 +363,7 @@ class AudioSession(
                     try {
                         when (contentHierarchyID.type) {
                             ContentHierarchyType.TRACK -> {
-                                logger.debug(TAG, "getAudioItemForTrack($contentHierarchyID)")
+                                logger.debug(Util.TAGCRT(TAG, coroutineContext), "getAudioItemForTrack($contentHierarchyID)")
                                 audioItem = audioItemLibrary.getAudioItemForTrack(contentHierarchyID)
                             }
                             ContentHierarchyType.FILE -> {
@@ -398,7 +394,7 @@ class AudioSession(
                         )
                         setMediaSessionMetadata(metadata)
                     } catch (exc: FileNotFoundException) {
-                        logger.exception(TAG, "observePlaybackQueue(): ${exc.message.toString()}", exc)
+                        logger.exception(Util.TAGCRT(TAG, coroutineContext), "observePlaybackQueue(): ${exc.message.toString()}", exc)
                         var fileName: String = context.getString(R.string.error_unknown)
                         if (audioFile != null) {
                             fileName = audioFile.name
@@ -423,7 +419,7 @@ class AudioSession(
     private suspend fun extractAndSetReplayGain(audioItem: AudioItem) {
         try {
             replayGain.extractAndSetReplayGain(audioItem)
-        } catch (exc: MissingEffectsException) {
+        } catch (_: MissingEffectsException) {
             val replayGainName = context.getString(R.string.setting_enable_replaygain)
             showError(replayGainName)
         }
@@ -438,12 +434,12 @@ class AudioSession(
 
     // https://developer.android.com/reference/androidx/media/session/MediaButtonReceiver
     fun handleMediaButtonIntent(intent: Intent) {
-        logger.debug(TAG, "Handling media button intent")
+        logger.debug(TAG, "Handling media button intent: $intent")
         MediaButtonReceiver.handleIntent(mediaSession, intent)
     }
 
     private suspend fun clearSession() {
-        logger.debug(TAG, "clearSession()")
+        logger.debug(Util.TAGCRT(TAG, coroutineContext), "clearSession()")
         audioFocusChangeListener.cancelAudioFocusLossJob()
         setCurrentQueueItem(null)
         audioSessionNotifications.sendEmptyNotification()
@@ -535,7 +531,7 @@ class AudioSession(
                                 val audioItem = getAudioItemForContentHierarchyType(contentHierarchyID)
                                 extractAndSetReplayGain(audioItem)
                             } catch (exc: IllegalArgumentException) {
-                                logger.error(TAG, "Cannot handle type: $contentHierarchyID")
+                                logger.error(Util.TAGCRT(TAG, coroutineContext), "Cannot handle type: $contentHierarchyID")
                                 return@launchInScopeSafely
                             }
                         }
@@ -674,7 +670,7 @@ class AudioSession(
      * This is used by for playing items by voice input only.
      */
     private suspend fun playFromSearch(change: AudioSessionChange) {
-        logger.debug(TAG, "playFromSearch(audioSessionChange=$change)")
+        logger.debug(Util.TAGCRT(TAG, coroutineContext), "playFromSearch(audioSessionChange=$change)")
         var audioItems: MutableList<AudioItem> = mutableListOf()
         // We show the search query to the user so that hopefully they will adjust their voice input if something does
         // not work
@@ -755,7 +751,7 @@ class AudioSession(
                 delay(delayBeforeVoiceSearchPopupMS)
                 showPopup(context.getString(R.string.searching_voice_input, searchQueryForGUI))
             } else {
-                logger.debug(TAG, "No results for voice search: $change")
+                logger.debug(Util.TAGCRT(TAG, coroutineContext), "No results for voice search: $change")
                 // There is no good PlaybackStateCompat error code that can indicate to Google Assistant that there are
                 // no results for the given query. Google says to use
                 // https://developer.android.com/media/implement/assistant#errors
@@ -778,7 +774,7 @@ class AudioSession(
 
     private suspend fun playFromContentHierarchyID(contentHierarchyIDStr: String, isShuffleRequested: Boolean = false) {
         val contentHierarchyID = ContentHierarchyElement.deserialize(contentHierarchyIDStr)
-        logger.debug(TAG, "playFromContentHierarchyID(contentHierarchyIDstr=$contentHierarchyID," +
+        logger.debug(Util.TAGCRT(TAG, coroutineContext), "playFromContentHierarchyID(contentHierarchyIDstr=$contentHierarchyID," +
                 "isShuffleRequested=$isShuffleRequested)")
         val audioItems: MutableList<AudioItem> =
             audioItemLibrary.getAudioItemsStartingFrom(contentHierarchyID).toMutableList()
@@ -811,7 +807,7 @@ class AudioSession(
                 // item to start from ( https://github.com/MoleMan1024/audiowagon/issues/83 ). This is done here
                 // using a random startIndex because startIndex=0 is never shuffled (see
                 // https://github.com/MoleMan1024/audiowagon/issues/120 )
-                if (isShuffling()) {
+                if (audioItems.isNotEmpty() && isShuffling()) {
                     startIndex = Random.nextInt(0, audioItems.size)
                 }
             }
@@ -826,7 +822,7 @@ class AudioSession(
     }
 
     suspend fun playAnything() {
-        logger.debug(TAG, "playAnything()")
+        logger.debug(Util.TAGCRT(TAG, coroutineContext), "playAnything()")
         if (currentQueueItem != null) {
             if (playbackState.isStopped) {
                 val queueIndex = audioPlayer.getPlaybackQueueIndex()
@@ -841,8 +837,11 @@ class AudioSession(
     }
 
     private suspend fun createQueueAndPlay(audioItems: List<AudioItem>, startIndex: Int = 0) {
-        logger.debug(TAG, "createQueueAndPlay(audioItems.size=${audioItems.size}, startIndex=$startIndex)")
-        // see https://developer.android.com/reference/android/media/session/MediaSession#setQueue(java.util.List%3Candroid.media.session.MediaSession.QueueItem%3E)
+        logger.debug(
+            Util.TAGCRT(TAG, coroutineContext),
+            "createQueueAndPlay(audioItems.size=${audioItems.size}, startIndex=$startIndex)"
+        )
+        // See https://developer.android.com/reference/android/media/session/MediaSession#setQueue(java.util.List%3Candroid.media.session.MediaSession.QueueItem%3E)
         // TODO: check how many is "too many" tracks and use sliding window instead
         val queue: MutableList<MediaSessionCompat.QueueItem> = mutableListOf()
         for ((queueIndex, audioItem) in audioItems.withIndex()) {
@@ -859,21 +858,21 @@ class AudioSession(
         setMediaSessionQueue(queue)
         try {
             audioPlayer.startPlayFromQueue()
-        } catch (exc: NoItemsInQueueException) {
+        } catch (_: NoItemsInQueueException) {
             logger.warning(TAG, "No items in play queue")
         }
     }
 
     suspend fun prepareFromPersistent(state: PersistentPlaybackState) {
-        logger.debug(TAG, "prepareFromPersistent($state)")
+        logger.debug(Util.TAGCRT(TAG, coroutineContext), "prepareFromPersistent($state)")
         val queue: MutableList<MediaSessionCompat.QueueItem> = mutableListOf()
         for ((index, contentHierarchyIDStr) in state.queueIDs.withIndex()) {
             if (isShuttingDown) {
-                logger.debug(TAG, "Stopping prepareFromPersistent() because of shutdown")
+                logger.debug(Util.TAGCRT(TAG, coroutineContext), "Stopping prepareFromPersistent() because of shutdown")
                 return
             }
             if (isSuspending) {
-                logger.debug(TAG, "Stopping prepareFromPersistent() because of suspend")
+                logger.debug(Util.TAGCRT(TAG, coroutineContext), "Stopping prepareFromPersistent() because of suspend")
                 return
             }
             try {
@@ -884,21 +883,24 @@ class AudioSession(
                 val queueItem = MediaSessionCompat.QueueItem(description, index.toLong())
                 queue.add(queueItem)
             } catch (exc: IllegalArgumentException) {
-                logger.warning(TAG, "Issue with persistent content hierarchy ID: $contentHierarchyIDStr: $exc")
-            } catch (exc: CancellationException) {
-                logger.warning(TAG, "Preparation from persistent has been cancelled")
+                logger.warning(
+                    Util.TAGCRT(TAG, coroutineContext),
+                    "Issue with persistent content hierarchy ID: $contentHierarchyIDStr: $exc"
+                )
+            } catch (_: CancellationException) {
+                logger.warning(Util.TAGCRT(TAG, coroutineContext), "Preparation from persistent has been cancelled")
                 return
             } catch (exc: RuntimeException) {
                 if (exc.message?.contains("No track for") == true) {
                     // If there is a mismatch for persistent data because new tracks have been added to USB drive,
                     // avoid to log an exception stacktrace for every item in persisted playback queue
-                    logger.error(TAG, "Issue with persistent data: ${exc.message}")
+                    logger.error(Util.TAGCRT(TAG, coroutineContext), "Issue with persistent data: ${exc.message}")
                 } else {
-                    logger.exception(TAG, "Issue with persistent data", exc)
+                    logger.exception(Util.TAGCRT(TAG, coroutineContext), "Issue with persistent data", exc)
                 }
             }
         }
-        if (queue.size <= 0) {
+        if (queue.isEmpty()) {
             return
         }
         if (state.lastContentHierarchyID.isNotBlank()) {
@@ -926,7 +928,7 @@ class AudioSession(
             // TODO: not nice (same player status might have been sent shortly before)
             audioPlayer.notifyPlayerStatusChange()
         } catch (exc: NoItemsInQueueException) {
-            logger.warning(TAG, "No items in play queue")
+            logger.warning(Util.TAGCRT(TAG, coroutineContext), "No items in play queue")
         } catch (exc: FileNotFoundException) {
             logger.exception(TAG, "prepareFromPersistent(): ${exc.message.toString()}", exc)
             return
@@ -939,7 +941,7 @@ class AudioSession(
     }
 
     suspend fun cleanPersistent() {
-        logger.debug(TAG, "cleanPersistent()")
+        logger.debug(Util.TAGCRT(TAG, coroutineContext), "cleanPersistent()")
         persistentStorage.clean()
     }
 
@@ -955,7 +957,7 @@ class AudioSession(
     }
 
     private suspend fun setMediaSessionPlaybackState(state: PlaybackStateCompat) {
-        logger.verbose(TAG, "setMediaSessionPlaybackState(state=$state)")
+        logger.verbose(Util.TAGCRT(TAG, coroutineContext), "setMediaSessionPlaybackState(state=$state)")
         showPopupSingletonCoroutine.join()
         withContext(mediaSessionDispatcher) {
             mediaSession.setPlaybackState(state)
@@ -964,7 +966,7 @@ class AudioSession(
 
     private suspend fun setMediaSessionMetadata(metadata: MediaMetadataCompat?) {
         withContext(mediaSessionDispatcher) {
-            logger.debug(TAG, "Setting media session metadata: ${metadata?.descriptionForLog}")
+            logger.debug(Util.TAGCRT(TAG, coroutineContext), "Setting media session metadata: ${metadata?.descriptionForLog}")
             // TODO: does this scale the album art bitmap by itself?
             mediaSession.setMetadata(metadata)
         }
@@ -986,10 +988,10 @@ class AudioSession(
     }
 
     suspend fun storePlaybackState() {
-        logger.debug(TAG, "storePlaybackState()")
+        logger.debug(Util.TAGCRT(TAG, coroutineContext), "storePlaybackState()")
         val currentTrackID = getCurrentTrackID()
         if (currentTrackID.isBlank()) {
-            logger.debug(TAG, "No current track to store")
+            logger.debug(Util.TAGCRT(TAG, coroutineContext), "No current track to store")
             return
         }
         val currentTrackPosMS = getCurrentTrackPosMS()
@@ -1074,19 +1076,19 @@ class AudioSession(
 
     suspend fun showError(text: String) {
         val errorMsg = context.getString(R.string.error, text)
-        logger.warning(TAG, "Showing error: $errorMsg")
+        logger.warning(Util.TAGCRT(TAG, coroutineContext), "Showing error: $errorMsg")
         showPopup(errorMsg)
     }
 
     private suspend fun showPopup(text: String) {
-        logger.debug(TAG, "Showing popup: $text")
+        logger.debug(Util.TAGCRT(TAG, coroutineContext), "Showing popup: $text")
         // this is not ideal, other clients might look at the error message even when error code is 0 (= OK)
         val state = PlaybackStateCompat.Builder(playbackState).apply {
             setErrorMessage(PlaybackStateCompat.ERROR_CODE_APP_ERROR, text)
         }.build()
         showPopupSingletonCoroutine.launch {
             playbackState = state
-            logger.verbose(TAG, "Setting media session playback state for popup: $state")
+            logger.verbose(Util.TAGCRT(TAG, coroutineContext), "Setting media session playback state for popup: $state")
             mediaSession.setPlaybackState(state)
             // In best case this is the time the popup is shown for. However other media session playback state updates
             // might cancel it early
@@ -1099,7 +1101,7 @@ class AudioSession(
             handleException("$message ($coroutineContext threw ${exc.message})", exc)
         }
         logger.verbose(TAG, "Launching coroutine safely for: $message")
-        return scope.launch(exceptionHandler + dispatcher) {
+        return scope.launch(exceptionHandler + dispatcher + CoroutineName(message.replace(" ", "-"))) {
             try {
                 func(this)
             } catch (exc: Exception) {
@@ -1160,26 +1162,30 @@ class AudioSession(
         return audioSessionNotifications.getNotification()
     }
 
-    fun stopPlayer() {
+    fun stopPlayerBlocking() {
         logger.debug(TAG, "stopPlayer()")
         runBlocking(dispatcher) {
             audioPlayer.stop()
         }
     }
 
+    suspend fun stopPlayer() {
+        logger.debug(TAG, "stopPlayer()")
+        audioPlayer.stop()
+    }
+
     suspend fun shutdown() {
-        logger.debug(TAG, "shutdown()")
+        logger.debug(Util.TAGCRT(TAG, coroutineContext), "shutdown()")
         if (isShuttingDown) {
-            logger.debug(TAG, "Already shutting down")
+            logger.debug(Util.TAGCRT(TAG, coroutineContext), "Already shutting down")
             return
         }
         isShuttingDown = true
         suspendSingletonCoroutine.cancel()
-        resetSingletonCoroutine.join()
-        clearSession()
         playFromMediaIDSingletonCoroutine.cancel()
+        playSingletonCoroutine.cancel()
         observePlaybackQueueSingletonCoroutine.cancel()
-        audioFocusChangeListener.cancelAudioFocusLossJob()
+        clearSession()
         audioPlayer.shutdown()
         audioFocus.release()
         releaseMediaSession()
@@ -1187,14 +1193,14 @@ class AudioSession(
     }
 
     suspend fun suspend() {
-        logger.debug(TAG, "suspend()")
+        logger.debug(Util.TAGCRT(TAG, coroutineContext), "suspend()")
         isSuspending = true
-        resetSingletonCoroutine.join()
-        audioPlayer.pause()
-        audioFocus.release()
         playFromMediaIDSingletonCoroutine.cancel()
+        playSingletonCoroutine.cancel()
         observePlaybackQueueSingletonCoroutine.cancel()
         audioFocusChangeListener.cancelAudioFocusLossJob()
+        audioPlayer.pause()
+        audioFocus.release()
         setCurrentQueueItem(null)
         audioSessionNotifications.sendEmptyNotification()
         clearPlaybackState()
@@ -1203,13 +1209,11 @@ class AudioSession(
         isSuspending = false
     }
 
-    fun reset() {
-        logger.debug(TAG, "reset()")
+    suspend fun reset() {
+        logger.debug(Util.TAGCRT(TAG, coroutineContext), "reset()")
         isFirstOnPlayEventAfterReset = true
-        resetSingletonCoroutine.launch {
-            audioPlayer.reset()
-            clearSession()
-        }
+        audioPlayer.reset()
+        clearSession()
     }
 
     private fun notifyObservers(event: Any) {

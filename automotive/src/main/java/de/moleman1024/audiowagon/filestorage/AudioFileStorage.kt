@@ -151,7 +151,7 @@ open class AudioFileStorage(
             }
         } else if (BuildConfig.BUILD_TYPE == Util.BUILD_VARIANT_EMULATOR_SD_CARD) {
             logger.debug(TAG, "Loading SD card for testing in emulator")
-            val sdCardMediaDevice = SDCardMediaDevice(SD_CARD_ID, "/many_files")
+            val sdCardMediaDevice = SDCardMediaDevice(context, SD_CARD_ID, "/many_files")
             mediaDevicesForTest.add(sdCardMediaDevice)
         }
     }
@@ -206,12 +206,12 @@ open class AudioFileStorage(
     private suspend fun removeDevice(device: MediaDevice) {
         var storageLocations: List<AudioFileStorageLocation> = listOf()
         audioFileStorageLocationMutex.withLock {
-            logger.debug(TAG, "Removing device from storage: ${device.getName()}")
+            logger.debug(Util.TAGCRT(TAG, coroutineContext), "Removing device from storage: ${device.getName()}")
             storageLocations = audioFileStorageLocations.filter { it.device == device }
-            logger.debug(TAG, "audioFileStorageLocations at start of removeDevice(): $audioFileStorageLocations")
+            logger.debug(Util.TAGCRT(TAG, coroutineContext), "audioFileStorageLocations at start of removeDevice(): $audioFileStorageLocations")
         }
         if (storageLocations.isEmpty()) {
-            logger.warning(TAG, "Device ${device.getID()} is not in storage (storage is empty)")
+            logger.warning(Util.TAGCRT(TAG, coroutineContext), "Device ${device.getID()} is not in storage (storage is empty)")
             val storageChange = StorageChange(id = "", StorageAction.REMOVE)
             notifyObservers(storageChange)
             return
@@ -224,13 +224,16 @@ open class AudioFileStorage(
             // TODO: the initial design of the app allowed for multiple audio file storage locations in parallel, I
             //  gave up on that midway, should re-design the classes a bit
             audioFileStorageLocations.clear()
-            logger.debug(TAG, "audioFileStorageLocations cleared at end of removeDevice()")
+            logger.debug(
+                Util.TAGCRT(TAG, coroutineContext),
+                "audioFileStorageLocations cleared at end of removeDevice()"
+            )
         }
     }
 
     private suspend fun detachStorageForDevice(device: MediaDevice) {
         audioFileStorageLocationMutex.withLock {
-            logger.debug(TAG, "Setting storage location for device as already detached: ${device.getName()}")
+            logger.debug(Util.TAGCRT(TAG, coroutineContext), "Setting storage location for device as already detached: ${device.getName()}")
             val storageLocations: List<AudioFileStorageLocation> =
                 audioFileStorageLocations.filter { it.device == device }
             if (storageLocations.isEmpty()) {
@@ -434,7 +437,7 @@ open class AudioFileStorage(
     }
 
     suspend fun shutdown() {
-        logger.debug(TAG, "shutdown()")
+        logger.debug(Util.TAGCRT(TAG, coroutineContext), "shutdown()")
         usbDeviceConnections.cancelCoroutines()
         closeDataSources()
         disableLogToUSB()
@@ -449,7 +452,7 @@ open class AudioFileStorage(
     }
 
     suspend fun suspend() {
-        logger.debug(TAG, "suspend()")
+        logger.debug(Util.TAGCRT(TAG, coroutineContext), "suspend()")
         usbDeviceConnections.cancelCoroutines()
         closeDataSources()
         disableLogToUSB()
@@ -559,10 +562,10 @@ open class AudioFileStorage(
 
     suspend fun getAlbumArtFileInDirectoryForURI(uri: Uri): FileLike? {
         val directory = Util.getParentPath(AudioFile(uri).path)
-        logger.debug(TAG, "Looking for album art in directory: $directory")
+        logger.debug(Util.TAGCRT(TAG, coroutineContext), "Looking for album art in directory: $directory")
         if (recentDirToAlbumArtMap.containsKey(directory)) {
             val albumArtInCache = recentDirToAlbumArtMap[directory]
-            logger.verbose(TAG, "Returning album art for $directory from cache: ${albumArtInCache?.uri}")
+            logger.verbose(Util.TAGCRT(TAG, coroutineContext), "Returning album art for $directory from cache: ${albumArtInCache?.uri}")
             return albumArtInCache
         }
         val storageLocation = getStorageLocationForURI(uri)

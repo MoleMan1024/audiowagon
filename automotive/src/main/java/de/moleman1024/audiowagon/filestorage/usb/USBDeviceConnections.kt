@@ -32,6 +32,7 @@ import kotlinx.coroutines.delay
 import java.io.IOException
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.coroutines.coroutineContext
 
 private const val TAG = "USBDevConn"
 private val logger = Logger
@@ -83,19 +84,30 @@ class USBDeviceConnections(
     fun onBroadcastUSBDeviceAttached(usbMediaDevice: USBMediaDevice) {
         isAnyDeviceAttached.set(true)
         usbAttachedDelayedSingletonCoroutine.launch {
+            if (isUpdatingDevices.get()) {
+                logger.debug(TAG, "Cancelling onBroadcastUSBDeviceAttached($usbMediaDevice), " +
+                        "USB devices already updating")
+                return@launch
+            }
             isUpdatingDevices.set(true)
             notifyObservers(DeviceChange(null, DeviceAction.REFRESH))
             // wait a bit to for the USB driver to settle down in case of issues and to give
             // USBDummyActivity a chance to catch this instead and send ACTION_USB_ATTACHED
             val delayTimeMS = 4000L
+            val now = Util.getLocalDateTimeNowInstant()
             logger.debug(
-                TAG,
+                Util.TAGCRT(TAG, coroutineContext),
                 "Delaying to process USB device attached intent until ${
                     Util.getLocalDateTimeNowInstant().plusMillis(delayTimeMS)
                 }"
             )
             delay(delayTimeMS)
+            logger.debug(
+                Util.TAGCRT(TAG, coroutineContext),
+                "Handling USB device attached event that was delayed at $now"
+            )
             onAttachedUSBMassStorageDeviceFound(usbMediaDevice)
+            // isUpdatingDevices will be updated somewhere inside above method
         }
     }
 
@@ -120,7 +132,10 @@ class USBDeviceConnections(
     fun onBroadcastUSBPermissionChange(intent: Intent, usbMediaDevice: USBMediaDevice) {
         usbPermissionSingletonCoroutine.launch {
             if (!isDeviceAttached(usbMediaDevice)) {
-                logger.warning(TAG, "Received permission change for USB device that is not attached")
+                logger.warning(
+                    Util.TAGCRT(TAG, coroutineContext),
+                    "Received permission change for USB device that is not attached"
+                )
                 return@launch
             }
             usbDevicePermissions.onUSBPermissionChanged(intent, usbMediaDevice)
@@ -129,6 +144,10 @@ class USBDeviceConnections(
     }
 
     fun updateAttachedDevices() {
+        if (isUpdatingDevices.get()) {
+            logger.debug(TAG, "Ignoring updateAttachedDevices(), USB devices already updating")
+            return
+        }
         updateAttachedDevicesSingletonCoroutine.launch {
             isUpdatingDevices.set(true)
             for (usbMediaDevice in getAttachedUSBMassStorageDevices()) {
@@ -184,7 +203,7 @@ class USBDeviceConnections(
             }
             val usbDeviceProxy = AndroidUSBDeviceProxy(androidUSBDevice, getUSBManager())
             USBMediaDevice(context, usbDeviceProxy)
-        } catch (exc: Exception) {
+        } catch (_: Exception) {
             val mockUSBDevice: USBDevice = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 intent.getParcelableExtra(UsbManager.EXTRA_DEVICE, USBDevice::class.java)
                     ?: throw NoSuchDeviceException("Cannot extract mock USB device for test")
@@ -207,16 +226,19 @@ class USBDeviceConnections(
     }
 
     private suspend fun onAttachedUSBMassStorageDeviceFound(device: USBMediaDevice) {
-        logger.debug(TAG, "onAttachedUSBMassStorageDeviceFound(device=$device)")
+        logger.debug(Util.TAGCRT(TAG, coroutineContext), "onAttachedUSBMassStorageDeviceFound(device=$device)")
         val permission: USBPermission = usbDevicePermissions.getCurrentPermissionForDevice(device)
         if (permission == USBPermission.UNKNOWN) {
             updateUSBStatusInSettings(R.string.setting_USB_status_connected_no_permission)
             if (isSuspended) {
-                logger.warning(TAG, "Still suspended, can not show permission popup to user when screen is off")
+                logger.warning(
+                    Util.TAGCRT(TAG, coroutineContext),
+                    "Still suspended, can not show permission popup to user when screen is off"
+                )
                 return
             }
             usbDevicePermissions.requestPermissionForDevice(device)
-            logger.debug(TAG, "Waiting for user to grant permission")
+            logger.debug(Util.TAGCRT(TAG, coroutineContext), "Waiting for user to grant permission")
             return
         }
         onUSBDeviceWithPermissionAttached(device)
@@ -241,13 +263,16 @@ class USBDeviceConnections(
             appendAttachedPermittedDevice(device)
         } else {
             attachedPermittedDevice = getAttachedPermittedDevice(device)
-            logger.debug(TAG, "Device already attached and permitted: $attachedPermittedDevice")
+            logger.debug(
+                Util.TAGCRT(TAG, coroutineContext),
+                "Device already attached and permitted: $attachedPermittedDevice"
+            )
         }
         // TODO: improve this, does not look nice with so many catch statements
         try {
             attachedPermittedDevice.initFilesystem()
         } catch (exc: IOException) {
-            logger.exception(TAG, "I/O exception when attaching USB drive", exc)
+            logger.exception(Util.TAGCRT(TAG, coroutineContext), "I/O exception when attaching USB drive", exc)
             updateUSBStatusInSettings(R.string.setting_USB_status_error)
             val deviceChange = if (exc.message != null) {
                 DeviceChange(error = exc.message!!)
@@ -259,21 +284,25 @@ class USBDeviceConnections(
             return
         } catch (exc: NoPartitionsException) {
             // libaums library only supports FAT32 (4 GB file size limit per file)
-            logger.exception(TAG, "No (supported) partitions on USB drive", exc)
+            logger.exception(Util.TAGCRT(TAG, coroutineContext), "No (supported) partitions on USB drive", exc)
             val deviceChange = DeviceChange(error = context.getString(R.string.error_no_filesystem))
             updateUSBStatusInSettings(R.string.setting_USB_status_not_compatible)
             notifyObservers(deviceChange)
             crashReporting.logLastMessagesAndRecordException(exc)
             return
         } catch (exc: IllegalStateException) {
-            logger.exception(TAG, "Illegal state when initiating filesystem, missing permission?", exc)
+            logger.exception(
+                Util.TAGCRT(TAG, coroutineContext),
+                "Illegal state when initiating filesystem, missing permission?",
+                exc
+            )
             notifyUSBInitError()
             crashReporting.logLastMessagesAndRecordException(exc)
             return
         } catch (exc: IndexOutOfBoundsException) {
             // I saw this once in Google Play Console, came from
             // com.github.mjdev.libaums.fs.fat32.FAT.getChain$libaums_release (FAT.kt:132)
-            logger.exception(TAG, exc.message.toString(), exc)
+            logger.exception(Util.TAGCRT(TAG, coroutineContext), exc.message.toString(), exc)
             notifyUSBInitError()
             crashReporting.logLastMessagesAndRecordException(exc)
             return
@@ -282,15 +311,15 @@ class USBDeviceConnections(
             try {
                 attachedPermittedDevice.enableLogging()
             } catch (exc: DriveAlmostFullException) {
-                logger.exceptionLogcatOnly(TAG, exc.message.toString(), exc)
+                logger.exceptionLogcatOnly(Util.TAGCRT(TAG, coroutineContext), exc.message.toString(), exc)
             } catch (exc: RuntimeException) {
-                logger.exception(TAG, exc.message.toString(), exc)
+                logger.exception(Util.TAGCRT(TAG, coroutineContext), exc.message.toString(), exc)
             }
         }
         updateUSBStatusInSettings(R.string.setting_USB_status_ok)
         isUpdatingDevices.set(false)
         logger.info(
-            TAG,
+            Util.TAGCRT(TAG, coroutineContext),
             "Successfully initialized filesystem at: ${Util.getLocalDateTimeStringNow()} (${Util.getUptimeString()})"
         )
         val deviceChange = DeviceChange(attachedPermittedDevice, DeviceAction.CONNECT)
@@ -308,7 +337,7 @@ class USBDeviceConnections(
     private suspend fun onUSBDeviceDetached(device: USBMediaDevice) {
         try {
             device.preventLoggingToDetachedDevice()
-            logger.debug(TAG, "onUSBDeviceDetached: $device")
+            logger.debug(Util.TAGCRT(TAG, coroutineContext), "onUSBDeviceDetached: $device")
             val deviceChange = DeviceChange(device, DeviceAction.DISCONNECT)
             notifyObservers(deviceChange)
         } catch (exc: IOException) {
@@ -369,13 +398,13 @@ class USBDeviceConnections(
     private suspend fun onUSBPermissionChanged(device: USBMediaDevice) {
         val permission: USBPermission = usbDevicePermissions.getCurrentPermissionForDevice(device)
         if (permission == USBPermission.DENIED) {
-            logger.info(TAG, "User has denied access to: ${device.getName()}")
+            logger.info(Util.TAGCRT(TAG, coroutineContext), "User has denied access to: ${device.getName()}")
             isUpdatingDevices.set(false)
             isAnyDevicePermitted.set(false)
             notifyObservers(DeviceChange(null, DeviceAction.REFRESH))
             return
         } else if (permission == USBPermission.UNKNOWN) {
-            logger.error(TAG, "Permission has not been updated for: ${device.getName()}")
+            logger.error(Util.TAGCRT(TAG, coroutineContext), "Permission has not been updated for: ${device.getName()}")
             isUpdatingDevices.set(false)
             isAnyDevicePermitted.set(false)
             notifyObservers(DeviceChange(null, DeviceAction.REFRESH))
@@ -408,9 +437,9 @@ class USBDeviceConnections(
     }
 
     private suspend fun enableLogToUSB() {
-        logger.verbose(TAG, "enableLogToUSB()")
-        if (attachedAndPermittedDevices.size <= 0) {
-            logger.warning(TAG, "No USB device, cannot create logfile")
+        logger.verbose(Util.TAGCRT(TAG, coroutineContext), "enableLogToUSB()")
+        if (attachedAndPermittedDevices.isEmpty()) {
+            logger.warning(Util.TAGCRT(TAG, coroutineContext), "No USB device, cannot create logfile")
             return
         }
         try {
@@ -418,7 +447,7 @@ class USBDeviceConnections(
         } catch (exc: DriveAlmostFullException) {
             throw exc
         } catch (exc: RuntimeException) {
-            logger.exception(TAG, exc.message.toString(), exc)
+            logger.exception(Util.TAGCRT(TAG, coroutineContext), exc.message.toString(), exc)
         }
     }
 
@@ -429,7 +458,7 @@ class USBDeviceConnections(
 
     fun disableLogToUSB() {
         logger.verbose(TAG, "disableLogToUSB()")
-        if (attachedAndPermittedDevices.size <= 0) {
+        if (attachedAndPermittedDevices.isEmpty()) {
             logger.warning(TAG, "No USB device, cannot use a log file")
             return
         }
@@ -437,6 +466,10 @@ class USBDeviceConnections(
     }
 
     fun requestUSBPermissionIfMissing() {
+        if (isUpdatingDevices.get()) {
+            logger.debug(TAG, "Cancelling requestUSBPermissionIfMissing(), USB devices already updating")
+            return
+        }
         val attachedDevices = getAttachedUSBMassStorageDevices()
         if (attachedDevices.isEmpty()) {
             logger.warning(TAG, "No USB device attached, cannot ask for permission")

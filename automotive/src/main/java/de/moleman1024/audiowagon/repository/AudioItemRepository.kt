@@ -26,6 +26,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.time.temporal.ChronoUnit
+import java.util.concurrent.Executors
 
 const val MAX_DATABASE_SEARCH_ROWS = 10
 const val AUDIOITEM_REPO_DB_PREFIX = "audioItemRepo_"
@@ -48,12 +49,6 @@ class AudioItemRepository(
     // The database file is created in internal storage only after the first row has been added to it
     // TODO: this is not ideal, I would rather like to store the database on the USB flash drive to reduce wear on
     //  the internal flash memory, but found no way to do that in Room
-    // SQL query logging can be added via setQueryCallback():
-    /*
-        dbBuilder.setQueryCallback({ sqlQuery, bindArgs ->
-            logger.verbose(TAG, "SQL Query: $sqlQuery SQL Args: $bindArgs")
-        }, Executors.newSingleThreadExecutor())
-    */
     // TODO: https://developer.android.com/training/data-storage/app-specific#query-free-space
     //  I tried with 160 GB of music which resulted in a database of ~15 megabytes (version 1.1.2)
     private var database: AudioItemDatabase? = null
@@ -71,6 +66,7 @@ class AudioItemRepository(
             databaseMutex.withLock {
                 // TODO: some duplicate queries when I turn on logging, check that
                 database = dbBuilder.build()
+                Logger.debug(TAG, "Created database: $database")
                 isClosed = false
             }
         }
@@ -434,7 +430,7 @@ class AudioItemRepository(
         runBlocking(dispatcher) {
             databaseMutex.withLock {
                 if (database?.isOpen == true) {
-                    logger.debug(TAG, "Closing database")
+                    logger.debug(TAG, "Closing database: $database")
                     database?.close()
                 }
                 database = null

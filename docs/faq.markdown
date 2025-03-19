@@ -16,15 +16,12 @@ nav_order: 2
 
 ![Permission popup](/img/allow_access.jpg)
 
-Sorry, I cannot change that. It works fine on the mobile phone that I use for development, however *Volvo/Polestar*
-probably put some extra security in the car that will always trigger this permission dialog popup and they likely would
-[need to add some code from
-Google](https://android.googlesource.com/platform/packages/services/Car/+/refs/heads/android11-platform-release/car-usb-handler/)
-to improve this. This would allow the user to select *AudioWagon* to be the default app for USB storage devices (it
-should not interfere with wired CarPlay). I would provide help on how to integrate this code if *Volvo/Polestar* decides
-to use it.
+**UPDATE 2025-03-19:** It looks like after 4 years Volvo/Polestar have finally integrated the [car-usb-handler]
+(https://android.googlesource.com/platform/packages/services/Car/+/refs/heads/android11-platform-release/car-usb-handler/)
+in their recent car software update. For Volvo XC40 or Polestar 2 cars, please update to *car version 3.4.4* and
+*AudioWagon version 2.8.7 or higher* and you should no longer need to give permission for AudioWagon for USB each time.
 
-Some more details in [Github](https://github.com/MoleMan1024/audiowagon/issues/133).
+Some more historic details in [Github](https://github.com/MoleMan1024/audiowagon/issues/133).
 
 
 ### Why is there a popup saying "Unavailable for your safety" when I want to open AudioWagon settings?

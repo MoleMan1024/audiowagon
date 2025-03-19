@@ -31,9 +31,6 @@ SPDX-License-Identifier: GPL-3.0-or-later
         <item name="android:layout">@layout/preference_widget_seekbar_eq</item>
         <item name="adjustable">true</item>
         <item name="showSeekBarValue">true</item>
-        <item name="allowDividerAbove">true</item>
-        <item name="allowDividerBelow">true</item>
-        <item name="iconSpaceReserved">true</item>
     </style>
 
     <style name="PreferenceSummaryTextStyleEQ">

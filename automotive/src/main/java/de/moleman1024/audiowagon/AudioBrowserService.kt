@@ -31,7 +31,6 @@ package de.moleman1024.audiowagon
 import android.app.ForegroundServiceStartNotAllowedException
 import android.app.KeyguardManager
 import android.app.Notification
-import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
@@ -114,6 +113,7 @@ import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.collections.mutableSetOf
 import kotlin.coroutines.coroutineContext
 import kotlin.system.exitProcess
 
@@ -142,12 +142,6 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         var servicePriority: ServicePriority = ServicePriority.BACKGROUND
         val origDefaultUncaughtExceptionhandler: Thread.UncaughtExceptionHandler? =
             Thread.getDefaultUncaughtExceptionHandler()
-
-        private var instance: AudioBrowserService? = null
-
-        @VisibleForTesting(otherwise = VisibleForTesting.NONE)
-        @JvmStatic
-        fun getInstance(): AudioBrowserService = instance!!
     }
 
     private var lifecycleRegistry: LifecycleRegistry = LifecycleRegistry(this)
@@ -197,14 +191,19 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         ContentHierarchyElement.serialize(ContentHierarchyID(ContentHierarchyType.ROOT))
     // needs to be public for accessing logging from testcases
     val logger = Logger
-    private val binder = LocalBinder()
+    private val localBinder = LocalBinder()
     private val lifecycleObserversMap = mutableMapOf<String, (event: LifecycleEvent) -> Unit>()
     private val isUSBNotRecoverable = AtomicBoolean()
+    private var usbExternalBroadcastReceiver: USBExternalBroadcastReceiver? = null
+    private var usbInternalBroadcastReceiver: USBInternalBroadcastReceiver? = null
+    // list of clients to reject during instrumented tests
+    private val clientPackagesToReject = mutableListOf<String>()
+    private val binderClients = mutableSetOf<Int>()
+    private val systemBroadcastReceiver = SystemBroadcastReceiver()
 
     init {
         isShuttingDown.set(false)
         lifecycleRegistry.currentState = Lifecycle.State.INITIALIZED
-        instance = this
         logger.init(lifecycleScope)
         logger.info(TAG, "init (instance=${this})")
         setUncaughtExceptionHandler()
@@ -242,7 +241,6 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             SingletonCoroutine("Clean", dispatcher, lifecycleScope.coroutineContext, crashReporting)
         cleanSingletonCoroutine.behaviour = SingletonCoroutineBehaviour.PREFER_FINISH
         broadcastReceiverManager = BroadcastReceiverManager(applicationContext)
-        val systemBroadcastReceiver = SystemBroadcastReceiver()
         systemBroadcastReceiver.audioBrowserService = this
         broadcastReceiverManager.register(systemBroadcastReceiver)
         startup()
@@ -260,12 +258,6 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         usbDevicePermissions = USBDevicePermissions(this)
         audioFileStorage =
             AudioFileStorage(this, lifecycleScope, dispatcher, usbDevicePermissions, sharedPrefs, crashReporting)
-        val usbExternalBroadcastReceiver = USBExternalBroadcastReceiver()
-        usbExternalBroadcastReceiver.usbDeviceConnections = audioFileStorage.usbDeviceConnections
-        broadcastReceiverManager.register(usbExternalBroadcastReceiver)
-        val usbInternalBroadcastReceiver = USBInternalBroadcastReceiver()
-        usbInternalBroadcastReceiver.usbDeviceConnections = audioFileStorage.usbDeviceConnections
-        broadcastReceiverManager.register(usbInternalBroadcastReceiver)
         audioItemLibrary = AudioItemLibrary(this, audioFileStorage, lifecycleScope, dispatcher, gui, sharedPrefs)
         audioItemLibrary.libraryExceptionObservers.clear()
         audioItemLibrary.libraryExceptionObservers.add { exc ->
@@ -324,12 +316,12 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
 
     private fun isScreenOn(): Boolean {
         return try {
-            val powerManager = this.getSystemService(Context.POWER_SERVICE) as PowerManager
+            val powerManager = this.getSystemService(POWER_SERVICE) as PowerManager
             if (!powerManager.isInteractive) {
                 logger.debug(TAG, "System is not interactive")
                 return false
             }
-            val displayManager = this.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
+            val displayManager = this.getSystemService(DISPLAY_SERVICE) as DisplayManager
             displayManager.displays.any {
                 val anyScreenIsOn = it.state == Display.STATE_ON
                 logger.debug(TAG, "Display ${it.displayId} has state: ${it.state}")
@@ -344,10 +336,15 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     private fun updateDevicesAfterUnlock() {
         logger.debug(TAG, "updateDevicesAfterUnlock()")
         updateDevicesSingletonCoroutine.launch {
+            // We need to avoid overlapping attached device updates, because requesting e.g. permission twice for the
+            // same device (when popup not yet visible) will cancel showing of the permission popup
+            if (audioFileStorage.isUpdatingDevices()) {
+                logger.debug(TAG, "Cancelling updateDevicesAfterUnlock(), USB devices already updating")
+                return@launch
+            }
             suspendSingletonCoroutine.join()
-            audioFileStorage.setIsUpdatingDevices(true)
             logger.debug(
-                TAG,
+                Util.TAGCRT(TAG, coroutineContext),
                 "Delaying to update attached devices until ${
                     Util.getLocalDateTimeNowInstant().plusMillis(UPDATE_ATTACHED_DEVICES_AFTER_UNLOCK_DELAY_MS)
                 }"
@@ -369,7 +366,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                         audioSession.showError(getString(R.string.error_USB, storageChange.error))
                     }
                 }
-                audioSession.stopPlayer()
+                audioSession.stopPlayerBlocking()
                 allStorageIDs.forEach { onStorageLocationRemoved(it) }
                 onStorageLocationRefresh()
                 return@add
@@ -385,7 +382,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    suspend fun updateAttachedDevices() {
+    fun updateAttachedDevices() {
         logger.debug(TAG, "updateAttachedDevices()")
         try {
             audioFileStorage.updateAttachedDevices()
@@ -542,9 +539,9 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                     return
                 }
                 notifyIdleSingletonCoroutine.launch {
-                    logger.debug(TAG, "Stop callback was called, will notify idle state in: ${IDLE_TIMEOUT_MS}ms")
+                    logger.debug(Util.TAGCRT(TAG, coroutineContext), "Stop callback was called, will notify idle state in: ${IDLE_TIMEOUT_MS}ms")
                     delay(IDLE_TIMEOUT_MS)
-                    logger.debug(TAG, "Player is stopped and service is idle")
+                    logger.debug(Util.TAGCRT(TAG, coroutineContext), "Player is stopped and service is idle")
                     // notify the AlbumArtContentProvider so it will unbind, so Android can free resources if nothing
                     // else is bound either
                     notifyLifecycleObservers(LifecycleEvent.IDLE)
@@ -727,7 +724,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
 
     private suspend fun createLibraryFromStorage(storageIDs: List<String>) {
         // TODO: remove multiple storage IDs
-        logger.debug(TAG, "createLibraryFromStorages(storageIDs=${storageIDs})")
+        logger.debug(Util.TAGCRT(TAG, coroutineContext), "createLibraryFromStorages(storageIDs=${storageIDs})")
         val storageLocations: List<AudioFileStorageLocation> = storageIDs.map {
             audioFileStorage.getStorageLocationForID(it)
         }
@@ -765,32 +762,32 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
 
     private suspend fun restoreFromPersistent(state: PersistentPlaybackState) {
         if (state.trackID.isBlank()) {
-            logger.debug(TAG, "No recent content hierarchy ID to restore from")
+            logger.debug(Util.TAGCRT(TAG, coroutineContext), "No recent content hierarchy ID to restore from")
             return
         }
         val contentHierarchyID = ContentHierarchyElement.deserialize(state.trackID)
         when (contentHierarchyID.type) {
             ContentHierarchyType.TRACK -> {
                 if (audioItemLibrary.getRepoForContentHierarchyID(contentHierarchyID) == null) {
-                    logger.warning(TAG, "Cannot restore recent track, storage repository mismatch")
+                    logger.warning(Util.TAGCRT(TAG, coroutineContext), "Cannot restore recent track, storage repository mismatch")
                     return
                 }
             }
 
             ContentHierarchyType.FILE -> {
                 if (audioFileStorage.getPrimaryStorageLocation().storageID != contentHierarchyID.storageID) {
-                    logger.warning(TAG, "Cannot restore recent file, storage id mismatch")
+                    logger.warning(Util.TAGCRT(TAG, coroutineContext), "Cannot restore recent file, storage id mismatch")
                     return
                 }
             }
 
             else -> {
-                logger.error(TAG, "Not supported to restore from type: $contentHierarchyID")
+                logger.error(Util.TAGCRT(TAG, coroutineContext), "Not supported to restore from type: $contentHierarchyID")
                 return
             }
         }
         if (state.queueIDs.isEmpty()) {
-            logger.warning(TAG, "Found persistent recent track, but no queue items")
+            logger.warning(Util.TAGCRT(TAG, coroutineContext), "Found persistent recent track, but no queue items")
             return
         }
         audioSession.prepareFromPersistent(state)
@@ -814,6 +811,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         }
         cancelMostJobs()
         audioSessionCloseSingletonCoroutine.launch {
+            audioSession.stopPlayer()
             audioSession.storePlaybackState()
             audioSession.reset()
         }
@@ -867,6 +865,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             // our local USB broadcast receiver
             logger.debug(TAG, "Service was started from USBDummyActivity, forwarding broadcast")
             cancelUpdateDevicesCoroutine()
+            maybeRegisterUSBBroadcastReceivers()
             val usbAttachedIntent = Intent(ACTION_USB_ATTACHED)
             val usbDevice: UsbDevice? = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE)
             usbDevice?.let {
@@ -884,16 +883,14 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                     audioSession.playAnything()
                 }
             }
-
             ACTION_MEDIA_BUTTON -> {
                 audioSession.handleMediaButtonIntent(intent)
             }
-
             else -> {
                 // ignore
             }
         }
-        return Service.START_STICKY
+        return START_STICKY
     }
 
     /**
@@ -901,15 +898,43 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
      */
     override fun onBind(intent: Intent?): IBinder? {
         logger.debug(TAG, "onBind(intent=$intent)")
-        return if (intent?.action == AudioBrowserService::class.java.name) {
-            binder
-        } else {
-            super.onBind(intent)
+        // TODO: security: allow only my package to bind to LocalBinder?
+        val binder =
+            if (intent?.action in listOf(ACTION_BIND_ALBUM_ART_CONTENT_PROVIDER, ACTION_BIND_FROM_TEST_FIXTURE)) {
+                localBinder
+            } else {
+                super.onBind(intent)
+            }
+        if (intent != null) {
+            val binderID = Util.createHashFromIntent(intent)
+            logger.debug(TAG, "Returning binder ID for action ${intent.action}: $binderID")
+            binderClients.add(binderID)
+            logger.debug(TAG, "Current binder clients: $binderClients")
         }
+        return binder
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
         logger.debug(TAG, "onUnbind(intent=$intent)")
+        if (intent?.action in listOf(ACTION_BIND_ALBUM_ART_CONTENT_PROVIDER, ACTION_BIND_FROM_TEST_FIXTURE)
+            && servicePriority == ServicePriority.FOREGROUND_REQUESTED
+        ) {
+            // In this case we need to wait until the service priority has changed, otherwise we will see a
+            // crash with a RemoteServiceException
+            logger.debug(TAG, "Pending foreground service start, will wait before unbinding")
+            runBlocking {
+                deferredUntilServiceInForeground.await()
+                logger.debug(TAG, "Pending foreground service start has completed in onUnbind()")
+                moveServiceToBackground()
+                stopSelf()
+                lastServiceStartReason.set(ServiceStartStopReason.UNKNOWN)
+                isServiceStarted.set(false)
+            }
+        }
+        if (intent != null) {
+            binderClients.remove(Util.createHashFromIntent(intent))
+            logger.debug(TAG, "Remaining binder clients: $binderClients")
+        }
         return super.onUnbind(intent)
     }
 
@@ -1006,7 +1031,6 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         logger.debug(TAG, "onDestroy()")
         shutdownAndDestroy()
         broadcastReceiverManager.unregisterAll()
-        instance = null
         super.onDestroy()
     }
 
@@ -1022,6 +1046,8 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             logger.verbose(TAG, "Lifecycle already destroyed")
             return
         }
+        // notify AlbumArtContentProvider observer so that it will unbind from this service already
+        notifyLifecycleObservers(LifecycleEvent.IDLE)
         cancelMostJobs()
         suspendSingletonCoroutine.cancel()
         cancelUpdateDevicesCoroutine()
@@ -1056,8 +1082,8 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                 stopService(ServiceStartStopReason.LIFECYCLE)
                 audioFileStorage.shutdown()
                 isUSBNotRecoverable.set(false)
-                logger.debug(TAG, "shutdown() (instance=${this}) is done at: ${Util.getLocalDateTimeStringNow()}")
             }
+            logger.debug(TAG, "shutdown() (instance=${this}) is done at: ${Util.getLocalDateTimeStringNow()}")
         } catch (exc: CancellationException) {
             logger.exception(TAG, "A blocking coroutine in shutdown was cancelled", exc)
         }
@@ -1082,6 +1108,10 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
 
     fun suspend() {
         logger.info(TAG, "suspend()")
+        if (lifecycleRegistry.currentState == Lifecycle.State.INITIALIZED) {
+            logger.warning(TAG, "Can not suspend when not yet created")
+            return
+        }
         isSuspended.set(true)
         cancelMostJobs()
         cancelUpdateDevicesCoroutine()
@@ -1094,23 +1124,37 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             gui.suspend()
             audioItemLibrary.suspend()
             audioFileStorage.suspend()
+            usbExternalBroadcastReceiver?.let {
+                broadcastReceiverManager.unregister(it)
+                usbExternalBroadcastReceiver = null
+            }
+            usbInternalBroadcastReceiver?.let {
+                broadcastReceiverManager.unregister(it)
+                usbInternalBroadcastReceiver = null
+            }
             stopService(ServiceStartStopReason.LIFECYCLE)
             notifyLifecycleObservers(LifecycleEvent.SUSPEND)
             logger.info(TAG, "end of suspend() reached at: ${Util.getLocalDateTimeStringNow()}")
         }
     }
 
+    // This will happen during initial boot and every time the car wakes of from suspend
     fun wakeup() {
         logger.info(TAG, "wakeup() at: ${Util.getLocalDateTimeStringNow()}")
+        if (lifecycleRegistry.currentState == Lifecycle.State.INITIALIZED) {
+            logger.warning(TAG, "Can not wake up when not yet created")
+            return
+        }
         audioSession.setLastWakeupTimeMillis(Util.getMillisNow())
         if (!isScreenOn()) {
-            logger.info(TAG, "Screen is still off, cannot update attached devices")
+            logger.info(TAG, "Screen is still off, will not wake up")
             return
         }
         if (isScreenLocked()) {
-            logger.info(TAG, "Screen is still locked, cannot update attached devices")
+            logger.info(TAG, "Screen is still locked, will not wake up")
             return
         }
+        maybeRegisterUSBBroadcastReceivers()
         if (!isSuspended.get()) {
             logger.warning(TAG, "System is not suspended, ignoring wakeup()")
             return
@@ -1118,6 +1162,23 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         isSuspended.set(false)
         audioFileStorage.wakeup()
         updateDevicesAfterUnlock()
+    }
+
+    private fun maybeRegisterUSBBroadcastReceivers() {
+        // We don't really want to use these broadcast receivers for USB because it will prevent the desired
+        // implementation in the manifest from working. So we try to register these as late as possible. However we
+        // must register these at some point because the approach with USB intents in manifest does not work for
+        // Polestar/Volvo cars
+        if (usbExternalBroadcastReceiver == null) {
+            usbExternalBroadcastReceiver = USBExternalBroadcastReceiver()
+            usbExternalBroadcastReceiver?.usbDeviceConnections = audioFileStorage.usbDeviceConnections
+            broadcastReceiverManager.register(usbExternalBroadcastReceiver!!)
+        }
+        if (usbInternalBroadcastReceiver == null) {
+            usbInternalBroadcastReceiver = USBInternalBroadcastReceiver()
+            usbInternalBroadcastReceiver?.usbDeviceConnections = audioFileStorage.usbDeviceConnections
+            broadcastReceiverManager.register(usbInternalBroadcastReceiver!!)
+        }
     }
 
     private fun destroyLifecycleScope() {
@@ -1154,10 +1215,15 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
      */
     override fun onGetRoot(clientPackageName: String, clientUid: Int, rootHints: Bundle?): BrowserRoot? {
         logger.debug(TAG, "onGetRoot(clientPackageName=$clientPackageName, rootHints=$rootHints)")
+        if (clientPackagesToReject.contains(clientPackageName)){
+            logger.warning(TAG, "Rejecting client package during testing: $clientPackageName")
+            return null
+        }
         if (!packageValidation.isClientValid(clientPackageName, clientUid)) {
             logger.warning(TAG, "Client ${clientPackageName}(${clientUid}) could not be validated for browsing")
             return null
         }
+        maybeRegisterUSBBroadcastReceivers()
         if (clientPackageName == "com.android.car.media"
             && lastAudioPlayerState == AudioPlayerState.STOPPED
             && !libraryCreationSingletonCoroutine.isInProgress()
@@ -1177,6 +1243,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             MediaConstants.BROWSER_ROOT_HINTS_KEY_ROOT_CHILDREN_SUPPORTED_FLAGS,
             MediaItem.FLAG_BROWSABLE
         )
+        logger.debug(TAG, "supportedRootChildFlags=$supportedRootChildFlags")
         val albumArtNumPixels = rootHints?.getInt(MediaConstants.BROWSER_ROOT_HINTS_KEY_MEDIA_ART_SIZE_PIXELS, -1)
         if (albumArtNumPixels != null && albumArtNumPixels > ALBUM_ART_MIN_NUM_PIXELS) {
             logger.debug(TAG, "Setting album art size: $albumArtNumPixels")
@@ -1185,7 +1252,8 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         // Implementing EXTRA_RECENT here would likely not work as we won't have permission to access USB drive yet
         // when this is called during boot phase
         // ( https://developer.android.com/guide/topics/media/media-controls )
-        logger.debug(TAG, "supportedRootChildFlags=$supportedRootChildFlags")
+        val containsExtraRecent = rootHints?.getBoolean(BrowserRoot.EXTRA_RECENT) == true
+        logger.debug(TAG, "containsExtraRecent=$containsExtraRecent")
         val hints = Bundle().apply {
             putBoolean(CONTENT_STYLE_SUPPORTED, true)
             putInt(
@@ -1344,25 +1412,25 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     }
 
     suspend fun getAlbumArtForURI(uri: Uri): ByteArray? {
-        logger.debug(TAG, "getAlbumArtForURI($uri)")
+        logger.debug(Util.TAGCRT(TAG, coroutineContext), "getAlbumArtForURI($uri)")
         if (lifecycleRegistry.currentState == Lifecycle.State.DESTROYED) {
-            logger.warning(TAG, "No album art because lifecycle destroyed")
+            logger.warning(Util.TAGCRT(TAG, coroutineContext), "No album art because lifecycle destroyed")
             return null
         }
         if (!audioFileStorage.areAnyStoragesAvail()) {
-            logger.debug(TAG, "No album art because no storages available")
+            logger.debug(Util.TAGCRT(TAG, coroutineContext), "No album art because no storages available")
             return null
         }
         try {
             return audioItemLibrary.getAlbumArtForArtURI(uri)
         } catch (exc: FileNotFoundException) {
-            logger.warning(TAG, exc.message.toString())
+            logger.warning(Util.TAGCRT(TAG, coroutineContext), exc.message.toString())
         } catch (exc: RuntimeException) {
             if (!exc.message.toString().contains("Unknown storage id")) {
-                logger.exception(TAG, exc.message.toString(), exc)
+                logger.exception(Util.TAGCRT(TAG, coroutineContext), exc.message.toString(), exc)
             }
         } catch (exc: IOException) {
-            logger.exception(TAG, exc.message.toString(), exc)
+            logger.exception(Util.TAGCRT(TAG, coroutineContext), exc.message.toString(), exc)
         }
         return null
     }
@@ -1482,6 +1550,11 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     @VisibleForTesting(otherwise = VisibleForTesting.NONE)
     fun setLastWakeupTimeMillis(lastWakeupTimeMillis: Long) {
         audioSession.setLastWakeupTimeMillis(lastWakeupTimeMillis)
+    }
+
+    @VisibleForTesting(otherwise = VisibleForTesting.NONE)
+    fun addClientPackageToReject(packageName: String) {
+        clientPackagesToReject.add(packageName)
     }
 
 }

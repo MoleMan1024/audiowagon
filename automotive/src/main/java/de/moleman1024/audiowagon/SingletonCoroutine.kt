@@ -34,46 +34,48 @@ class SingletonCoroutine(
 ) {
     private val tag = "SglCoRt|${name}"
     private val instancesMap = ConcurrentHashMap<String, Job>()
+    private var tagWithID = ""
     var exceptionHandler: CoroutineExceptionHandler = createExceptionHandler()
     var behaviour: SingletonCoroutineBehaviour = SingletonCoroutineBehaviour.CANCEL_OTHER_ON_LAUNCH
 
     fun launch(func: suspend (CoroutineScope) -> Unit) {
         val currentID = UUID.randomUUID().toString()
+        tagWithID = "${tag}-${truncateUUID(currentID)}"
         if (behaviour == SingletonCoroutineBehaviour.CANCEL_OTHER_ON_LAUNCH) {
             cancel()
         } else if (behaviour == SingletonCoroutineBehaviour.PREFER_FINISH) {
             if (instancesMap.isNotEmpty()) {
-                logger.debug(tag, "Ignoring new coroutine, prefer to finish running coroutine")
+                logger.debug(tagWithID, "Ignoring new coroutine, prefer to finish running coroutine")
                 return
             }
         }
-        var coRtContext = exceptionHandler + dispatcher
+        var coRtContext = exceptionHandler + dispatcher + CoroutineName(truncateUUID(currentID))
         coroutineContext?.let { coRtContext = it + coRtContext }
-        logger.debug(tag, "Launching $currentID")
+        logger.debug(tagWithID, "Launching ${truncateUUID(currentID)}")
         val job =
             CoroutineScope(coRtContext).launch(start = CoroutineStart.LAZY) {
             try {
-                logger.debug(tag, "Launched $currentID")
+                logger.debug(tagWithID, "Launched ${truncateUUID(currentID)}")
                 if (behaviour == SingletonCoroutineBehaviour.CANCEL_OTHER_ON_LAUNCH) {
                     // wait for all previous instances to finish cancellation
                     instancesMap.keys.filter { it != currentID }.forEach {
-                        logger.debug(tag, "Waiting for cancellation of $it (instancesMap=$instancesMap)")
+                        logger.debug(tagWithID, "Waiting for cancellation of $it (instancesMap=$instancesMap)")
                         instancesMap[it]?.join()
                         instancesMap.remove(it)
-                        logger.debug(tag, "Cancelled $it (instancesMap=$instancesMap)")
+                        logger.debug(tagWithID, "Cancelled $it (instancesMap=$instancesMap)")
                     }
                 }
                 func(this)
             } catch (exc: NoAudioItemException) {
-                logger.exception(tag, exc.message.toString(), exc)
+                logger.exception(tagWithID, exc.message.toString(), exc)
             } catch (exc: CancellationException) {
-                logger.warning(tag, "CancellationException $currentID (exc=$exc)")
+                logger.warning(tagWithID, "CancellationException ${truncateUUID(currentID)} (exc=$exc)")
             } catch (exc: Exception) {
                 crashReporting?.logLastMessagesAndRecordException(exc)
-                logger.exception(tag, exc.message.toString(), exc)
+                logger.exception(tagWithID, exc.message.toString(), exc)
             } finally {
                 instancesMap.remove(currentID)
-                logger.debug(tag, "Ended $currentID (instancesMap=$instancesMap)")
+                logger.debug(tagWithID, "Ended ${truncateUUID(currentID)} (instancesMap=$instancesMap)")
             }
         }
         instancesMap[currentID] = job
@@ -87,14 +89,14 @@ class SingletonCoroutine(
                 is NoAudioItemException -> {
                     // this happens often when persistent data does not match USB drive contents, do not report this
                     // exception in crashlytics
-                    logger.exception(tag, msg, exc)
+                    logger.exception(tagWithID, msg, exc)
                 }
                 is CancellationException -> {
                     // cancelling suspending jobs is not an error
-                    logger.warning(tag, "CancellationException (msg=$msg)")
+                    logger.warning(tagWithID, "CancellationException (msg=$msg)")
                 }
                 else -> {
-                    logger.exception(tag, msg, exc)
+                    logger.exception(tagWithID, msg, exc)
                     crashReporting?.logMessage(msg)
                     crashReporting?.logLastMessagesAndRecordException(exc)
                 }
@@ -104,14 +106,14 @@ class SingletonCoroutine(
 
     fun cancel() {
         instancesMap.forEach { (id, job) ->
-            logger.debug(tag, "Cancelling $id")
+            logger.debug(tagWithID, "Cancelling ${truncateUUID(id)}")
             job.cancel()
         }
     }
 
     suspend fun join() {
         instancesMap.forEach { (id, job) ->
-            logger.debug(tag, "Joining $id")
+            logger.debug(tagWithID, "Joining $id")
             if (job.isActive) {
                 job.join()
             }
@@ -120,5 +122,9 @@ class SingletonCoroutine(
 
     fun isInProgress(): Boolean {
         return instancesMap.isNotEmpty()
+    }
+
+    private fun truncateUUID(uuid: String): String {
+        return uuid.take(7)
     }
 }

@@ -39,12 +39,16 @@ class USBDevicePermissions(private val context: Context) {
      */
     fun requestPermissionForDevice(device: USBMediaDevice) {
         val requestCode = 0
+        // The intent must be mutable so the USB device can be added by Android as extra.
+        // For Android 14 we must set the package also for security reasons
+        // https://developer.android.com/about/versions/14/behavior-changes-14#safer-intents
         val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             PendingIntent.FLAG_MUTABLE
         } else {
             0
         }
         val intent = Intent(ACTION_USB_PERMISSION_CHANGE)
+        intent.setPackage("de.moleman1024.audiowagon")
         val intentBroadcast = PendingIntent.getBroadcast(context, requestCode, intent, flags)
         logger.debug(TAG, "Requesting permission to access device: $device")
         device.requestPermission(intentBroadcast)
