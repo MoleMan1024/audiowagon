@@ -18,7 +18,7 @@ and this project loosely follows [Semantic Versioning](https://semver.org/spec/v
 ### Fixed
 
 - After 4 years Polestar/Volvo have finally changed something regarding the [USB permission popup](https://moleman1024.github.io/audiowagon/faq.html#why-does-the-permission-popup-appear-each-time-the-always-open-audiowagon--checkbox-does-not-do-anything). The USB permission popup should no longer appear constantly if you
-  upgrade to car software version 3.4.4 or higher (the one with wired Android Auto) and the most recent AudioWagon
+  upgrade to car software version 3.3.16 or higher (the one with wired Android Auto) and the most recent AudioWagon
   release [#133](https://github.com/MoleMan1024/audiowagon/issues/133)
 - avoid to trigger multiple attached USB device updates at the same time that could cause overlapping permission popup
   calls which would cancel the previous permission popup and make the next one possibly not appear at all

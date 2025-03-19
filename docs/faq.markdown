@@ -17,7 +17,7 @@ nav_order: 2
 ![Permission popup](/img/allow_access.jpg)
 
 **UPDATE 2025-03-19:** It looks like after 4 years Volvo/Polestar have finally integrated the [car-usb-handler](https://android.googlesource.com/platform/packages/services/Car/+/refs/heads/android11-platform-release/car-usb-handler/)
-in their recent car software update. For Volvo XC40 or Polestar 2 cars, please update to *car version 3.4.4 (the one
+in their recent car software update. For Volvo XC40 or Polestar 2 cars, please update to *car version 3.3.16 (the one
 with wired Android Auto included)* and *AudioWagon version 2.8.7 or higher* and you should no longer need to give
 permission for AudioWagon for USB each time.
 
