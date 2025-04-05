@@ -9,6 +9,6 @@ source "https://rubygems.org"
 # Happy Jekylling!
 
 gem "github-pages", "~> 228", group: :jekyll_plugins
-gem "wdm", ">= 0.1.0" if Gem.win_platform?
-gem "webrick", ">= 1.8"
+gem "wdm", ">= 0.2.0" if Gem.win_platform?
+gem "webrick", ">= 1.9.1"
 

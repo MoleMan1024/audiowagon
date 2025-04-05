@@ -110,7 +110,8 @@ at my email (see below, or you can use [GitHub](https://github.com/MoleMan1024/a
 - What did you expect to happen?
 - At what date/time did the issue happen? (so I can align with the timestamps in the log files)
 - Which *version of AudioWagon* were you using? (version number can be found in the settings screen)
-- Which version is your car's software? (e.g. P2124 on a Polestar 2)
+- Which car are you using? Which version is your car's software? (e.g. P2124 on a Polestar 2). The issue might
+  come from the car maker's software and not AudioWagon
 - *Log files* are being created continously on your USB drive (if this is enabled in the settings). Please attach these
   log files from around the date/time when the issue happened. If unsure about the date, just provide everything. If you
   can reproduce the issue easily, turn on logging in the settings, do whatever you need to trigger the issue, then turn

@@ -23,6 +23,9 @@ permission for AudioWagon for USB each time.
 
 Some more historic details in [Github](https://github.com/MoleMan1024/audiowagon/issues/133).
 
+For other car models I do not have enough information and I do not have a car for testing. You could send [a log file]({{ site.baseurl }}{% link index.markdown %}#how-do-i-report-an-issue) 
+and I will have a look.
+
 
 ### Why is there a popup saying "Unavailable for your safety" when I want to open AudioWagon settings?
 
