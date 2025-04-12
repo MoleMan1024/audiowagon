@@ -45,6 +45,7 @@ object Logger : LoggerInterface {
     private var usbFileHasError: Boolean = false
     private var chunkSize: Int = 32768
     private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")
+    // isStoreLogs is used for testing only
     private var isStoreLogs = false
     private val observers = mutableListOf<(String) -> Unit>()
     private val buffer = LogBuffer()

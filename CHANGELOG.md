@@ -12,6 +12,18 @@ Google's review process which can take a couple of days.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project loosely follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.10] - 2025-04-12
+
+### Fixed
+
+- Avoid `ConcurrentModificationException` for list of broadcast receivers
+- Playlist files that have URL encoded paths (e.g. created by VLC) were not working in AudioWagon. This has been
+  fixed [#170](https://github.com/MoleMan1024/audiowagon/issues/170)
+
+### Changed
+
+- small optimizations for USB broadcast receivers based on Crashlytics logs, for first onPlay() event after startup and
+  for foreground service usage
 
 ## [2.8.7] - 2025-03-19
 

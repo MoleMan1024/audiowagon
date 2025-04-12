@@ -1,13 +1,29 @@
 # Privacy Policy
 
-This document explains about personal data that the AudioWagon app collects and how it is processed.
+This document explains about personal and user-provided data that the AudioWagon app collects and how it is processed.
+
+## Media data
+
+The app's purpose is to provide access to audio files given by the user on a USB flash drive. This includes metadata
+embedded in audio files e.g. *mp3 tags* regarding artist, album, track name or album art image files. The media data is
+accesssible to other *system-installed apps* (e.g. *preinstalled* Android media related apps, Google Voice Assistant)
+for the following purposes:
+
+- playback of audio files
+- showing audio file metadata to the user (e.g. showing artist, album, track name, play time, etc. on the screen)
+
+Access is also allowed to the [Google Media Controller Test app](https://github.com/googlesamples/android-media-controller)
+for testing purposes.
+
+Album art is currently accessible to preinstalled apps as well as third party apps (but no third party app has any
+reason to access it and I do not consider this harmful).
 
 
 ## Log files
 
 The app has a *setting to collect log files*. These log files will be written to the attached USB drive. This
 setting is *off by default*. The user of the app may voluntarily provide this log file to the developer for debugging
-purposes, it is *not transferred automatically*.
+purposes, it is *not transferred automatically via internet*.
 
 The log file contains the following personal data that could be used to identify a person:
 

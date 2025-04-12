@@ -13,6 +13,7 @@ import com.mpatric.mp3agic.Mp3File
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.mocks.InMemoryFileSystem
 import de.moleman1024.audiowagon.mocks.MockUSBDevice
+import java.io.File
 
 private const val TAG = "MockUSBDeviceFixture"
 private const val TEMPLATE_MP3_NAME = "test.mp3"

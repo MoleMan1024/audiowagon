@@ -89,7 +89,6 @@ class USBDeviceConnections(
                         "USB devices already updating")
                 return@launch
             }
-            isUpdatingDevices.set(true)
             notifyObservers(DeviceChange(null, DeviceAction.REFRESH))
             // wait a bit to for the USB driver to settle down in case of issues and to give
             // USBDummyActivity a chance to catch this instead and send ACTION_USB_ATTACHED
@@ -102,6 +101,12 @@ class USBDeviceConnections(
                 }"
             )
             delay(delayTimeMS)
+            if (isUpdatingDevices.get()) {
+                logger.debug(TAG, "Cancelling onBroadcastUSBDeviceAttached($usbMediaDevice) after delay, " +
+                        "USB devices already updating")
+                return@launch
+            }
+            isUpdatingDevices.set(true)
             logger.debug(
                 Util.TAGCRT(TAG, coroutineContext),
                 "Handling USB device attached event that was delayed at $now"

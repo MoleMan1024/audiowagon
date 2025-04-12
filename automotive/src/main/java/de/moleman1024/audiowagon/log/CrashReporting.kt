@@ -6,7 +6,6 @@ SPDX-License-Identifier: GPL-3.0-or-later
 package de.moleman1024.audiowagon.log
 
 import android.content.Context
-import com.google.firebase.FirebaseApp
 import com.google.firebase.crashlytics.ktx.crashlytics
 import com.google.firebase.ktx.Firebase
 import de.moleman1024.audiowagon.SharedPrefs
@@ -66,7 +65,7 @@ class CrashReporting(
         }
         logger.debug(TAG, "enable()")
         if (!isDebugBuild) {
-            crashlytics.setCrashlyticsCollectionEnabled(true)
+            crashlytics.isCrashlyticsCollectionEnabled = true
         }
         isEnabled = true
     }
@@ -75,7 +74,7 @@ class CrashReporting(
         logger.debug(TAG, "disable()")
         if (!isDebugBuild) {
             crashlytics.deleteUnsentReports()
-            crashlytics.setCrashlyticsCollectionEnabled(false)
+            crashlytics.isCrashlyticsCollectionEnabled = false
         }
         isEnabled = false
     }
@@ -92,22 +91,10 @@ class CrashReporting(
             if (!isDebugBuild) {
                 crashlytics.recordException(exc)
             } else {
+                messages.forEach {
+                    logger.verbose(TAG, "Logging: $it")
+                }
                 logger.verbose(TAG, "Recording exception: $exc")
-            }
-        }
-    }
-
-    fun logLastMessages() {
-        if (!isEnabled) {
-            return
-        }
-        launchInScopeSafely {
-            val messages = logger.getLogsForCrashReporting()
-            messages.forEach {
-                crashlytics.log(it)
-            }
-            if (isDebugBuild) {
-                logger.verbose(TAG, "Collected logs for debugging")
             }
         }
     }

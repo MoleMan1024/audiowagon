@@ -30,7 +30,7 @@ class MediaBrowserTraversal(private val browser: MediaBrowserCompat) {
                     browsableNodes.push(it.mediaId)
                 }
             }
-            Logger.debug(TAG, "hiearchy[${parentId}]=${hierarchy[parentId]}")
+            Logger.debug(TAG, "hierarchy[${parentId}]=${hierarchy[parentId]}")
             Logger.debug(TAG, "browseableNodes=$browsableNodes")
             if (!browsableNodes.empty()) {
                 var node = ""

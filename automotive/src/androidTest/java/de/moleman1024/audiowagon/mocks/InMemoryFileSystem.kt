@@ -54,11 +54,17 @@ class InMemoryFileSystem : FileSystem {
         filesystem.close()
     }
 
+    fun writeTextToFile(toFilePath: String, text: String) {
+        Logger.debug(TAG, "writeText(toFilePath=$toFilePath)")
+        val outFilePath = filesystem.getPath(toFilePath)
+        createDirectoriesForFile(outFilePath)
+        outFilePath.writeText(text)
+    }
+
     fun copyToFile(inputStream: InputStream, toFilePath: String) {
         Logger.debug(TAG, "copyToFile(toFilePath=$toFilePath)")
         val outFilePath = filesystem.getPath(toFilePath)
-        val parentDir = outFilePath.parent
-        createDirectories(parentDir.absolutePathString())
+        createDirectoriesForFile(outFilePath)
         val outStream = Files.newOutputStream(outFilePath, StandardOpenOption.CREATE)
         val buffer = ByteArray(1024)
         var read: Int
@@ -66,6 +72,11 @@ class InMemoryFileSystem : FileSystem {
             outStream.write(buffer, 0, read)
         }
         outStream.close()
+    }
+
+    private fun createDirectoriesForFile(outFilePath: Path) {
+        val parentDir = outFilePath.parent
+        createDirectories(parentDir.absolutePathString())
     }
 
     private fun getRoot(): USBFile {

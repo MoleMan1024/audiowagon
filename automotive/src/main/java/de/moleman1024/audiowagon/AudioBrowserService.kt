@@ -951,7 +951,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     }
 
     private fun stopService(reason: ServiceStartStopReason) {
-        logger.debug(TAG, "stopService(), servicePriority=${servicePriority}")
+        logger.debug(TAG, "stopService(reason=$reason), servicePriority=${servicePriority}")
         if (!isServiceStarted.get()) {
             logger.debug(TAG, "Service is not running, cannot stop")
             return
@@ -1472,17 +1472,16 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 try {
                     moveServiceToForeground(notification)
-                    deferredUntilServiceInForeground.complete(Unit)
                 } catch (exc: ForegroundServiceStartNotAllowedException) {
                     logger.exception(TAG, exc.message.toString(), exc)
                 }
             } else {
                 moveServiceToForeground(notification)
-                deferredUntilServiceInForeground.complete(Unit)
             }
         } else {
             logger.warning(TAG, "Can not move service to foreground, missing audioSessionNotification")
         }
+        deferredUntilServiceInForeground.complete(Unit)
     }
 
     private fun moveServiceToForeground(notification: Notification) {

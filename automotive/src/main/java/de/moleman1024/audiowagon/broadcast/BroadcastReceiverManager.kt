@@ -28,14 +28,24 @@ class BroadcastReceiverManager(private val context: Context) {
         handler = Handler(handlerThread!!.looper)
     }
 
+    @Synchronized
     fun register(broadcastReceiver: ManagedBroadcastReceiver) {
         if (registeredReceivers.contains(broadcastReceiver)) {
             logger.warning(TAG, "Broadcast receiver already in list of registered receivers: $broadcastReceiver")
             return
         }
         // We should only ever have one receiver for each class type in the list
-        if (registeredReceivers.any { it::class == broadcastReceiver::class }) {
+        val existingReceivers = registeredReceivers.filter { it::class == broadcastReceiver::class }
+        if (existingReceivers.isNotEmpty()) {
             logger.warning(TAG, "Will replace broadcast receiver in list for type: ${broadcastReceiver::class}")
+            existingReceivers.forEach {
+                try {
+                    logger.debug(TAG, "Will unregister: $it")
+                    context.unregisterReceiver(it)
+                } catch (exc: IllegalArgumentException) {
+                    logger.warning(TAG, "Could not unregister receiver $broadcastReceiver: " + exc.message.toString())
+                }
+            }
             registeredReceivers.removeIf { it::class == broadcastReceiver::class }
         }
         logger.debug(TAG, "register(broadcastReceiver=$broadcastReceiver)")
@@ -50,6 +60,7 @@ class BroadcastReceiverManager(private val context: Context) {
         }
     }
 
+    @Synchronized
     fun unregister(broadcastReceiver: ManagedBroadcastReceiver) {
         logger.debug(TAG, "unregister(broadcastReceiver=$broadcastReceiver)")
         try {
@@ -60,9 +71,11 @@ class BroadcastReceiverManager(private val context: Context) {
         registeredReceivers.remove(broadcastReceiver)
     }
 
+    @Synchronized
     fun unregisterAll() {
         registeredReceivers.forEach {
             try {
+                logger.debug(TAG, "unregisterAll(): $it)")
                 context.unregisterReceiver(it)
             } catch (exc: IllegalArgumentException) {
                 logger.warning(TAG, "Could not unregister receiver $it: " + exc.message.toString())

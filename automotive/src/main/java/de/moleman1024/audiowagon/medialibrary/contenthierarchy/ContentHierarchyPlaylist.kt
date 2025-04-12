@@ -16,7 +16,7 @@ import de.moleman1024.audiowagon.medialibrary.PlaylistFileResolver
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 /**
- * A file in the browse view
+ * A playlist file in the browse view
  */
 @ExperimentalCoroutinesApi
 class ContentHierarchyPlaylist(

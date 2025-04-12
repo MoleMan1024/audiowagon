@@ -8,13 +8,16 @@ package de.moleman1024.audiowagon
 import android.content.res.AssetManager
 import android.os.ParcelFileDescriptor
 import android.support.v4.media.MediaBrowserCompat
+import android.util.Log
 import androidx.test.platform.app.InstrumentationRegistry
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.util.MediaBrowserTraversal
 import de.moleman1024.audiowagon.util.MockUSBDeviceFixture
 import de.moleman1024.audiowagon.util.ServiceFixture
 import de.moleman1024.audiowagon.util.TestUtils
+import junit.framework.TestCase.assertEquals
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before

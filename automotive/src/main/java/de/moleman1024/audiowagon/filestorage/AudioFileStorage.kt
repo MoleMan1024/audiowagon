@@ -233,7 +233,10 @@ open class AudioFileStorage(
 
     private suspend fun detachStorageForDevice(device: MediaDevice) {
         audioFileStorageLocationMutex.withLock {
-            logger.debug(Util.TAGCRT(TAG, coroutineContext), "Setting storage location for device as already detached: ${device.getName()}")
+            logger.debug(
+                Util.TAGCRT(TAG, coroutineContext), "Setting storage location for device as already " +
+                        "detached: ${device.getName()}"
+            )
             val storageLocations: List<AudioFileStorageLocation> =
                 audioFileStorageLocations.filter { it.device == device }
             if (storageLocations.isEmpty()) {
@@ -248,6 +251,7 @@ open class AudioFileStorage(
         val isInEmulator = Util.isRunningInEmulator()
         usbDeviceConnections.updateAttachedDevices()
         if (isDebugBuild) {
+            // TODO: remove
             val sdCardDevicePermissions = SDCardDevicePermissions(context)
             if (!sdCardDevicePermissions.isPermitted()) {
                 logger.warning(TAG, "We do not yet have permission to access an SD card")

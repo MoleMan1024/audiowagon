@@ -116,7 +116,7 @@ class AudioSession(
     private val showPopupSingletonCoroutine =
         SingletonCoroutine("ShowMedSessPopup", mediaSessionDispatcher, scope.coroutineContext, crashReporting)
     private val playSingletonCoroutine = SingletonCoroutine("Play", dispatcher, scope.coroutineContext, crashReporting)
-    private var isFirstOnPlayEventAfterReset: Boolean = true
+    private var isFirstOnPlayEventAfterStarting: Boolean = true
     private var onPlayCalledBeforeUSBReady: Boolean = false
     private var isShuttingDown: Boolean = false
     private var isSuspending: Boolean = false
@@ -628,8 +628,8 @@ class AudioSession(
 
     fun handleOnPlay() {
         playSingletonCoroutine.launch {
-            if (isFirstOnPlayEventAfterReset) {
-                isFirstOnPlayEventAfterReset = false
+            if (isFirstOnPlayEventAfterStarting) {
+                isFirstOnPlayEventAfterStarting = false
                 if (audioPlayer.isIdle() || audioPlayer.isPlaybackQueueEmpty()) {
                     // The user probably just started the car and the car is trying to resume playback. This
                     // is a feature of e.g. Polestar 2 with software >= P2127. However this event will come too
@@ -1206,12 +1206,13 @@ class AudioSession(
         clearPlaybackState()
         setMediaSessionQueue(listOf())
         setMediaSessionPlaybackState(playbackState)
+        isFirstOnPlayEventAfterStarting = true
         isSuspending = false
     }
 
     suspend fun reset() {
         logger.debug(Util.TAGCRT(TAG, coroutineContext), "reset()")
-        isFirstOnPlayEventAfterReset = true
+        isFirstOnPlayEventAfterStarting = true
         audioPlayer.reset()
         clearSession()
     }

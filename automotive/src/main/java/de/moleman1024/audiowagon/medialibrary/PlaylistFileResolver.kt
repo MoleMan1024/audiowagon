@@ -28,7 +28,7 @@ private const val UTF8_BOM = "\uFEFF"
 private val WINDOWS_ROOT_BACKSLASH_REGEX = Regex("^([A-Za-z]:)?\\\\")
 private val WINDOWS_SEPARATORS_REGEX = Regex("\\\\(?=\\S)")
 private val PLS_FILE_PREFIX = Regex("^File\\d+=")
-private val XSPF_PREFIX = Regex("^file:///[A-Za-z]:")
+private val FILE_PROTOCOL_PREFIX = Regex("^file:///[A-Za-z]:")
 private val IP_PREFIX = Regex("^(https?|rtsp)://")
 
 @ExperimentalCoroutinesApi
@@ -74,7 +74,7 @@ class PlaylistFileResolver(
             if (lineSanitized.startsWith("#") || IP_PREFIX.find(lineSanitized) != null) {
                 continue
             }
-            lineSanitized = convertWindowsPathToLinuxPath(lineSanitized)
+            lineSanitized = convertWindowsPathToLinuxPath(decodeURI(lineSanitized))
             val pathInPlaylist = Paths.get(lineSanitized)
             val audioItem: AudioItem = if (pathInPlaylist.isAbsolute) {
                 convertPathToAudioItem(pathInPlaylist.toString())
@@ -96,7 +96,7 @@ class PlaylistFileResolver(
                 continue
             }
             lineSanitized = lineSanitized.replace(PLS_FILE_PREFIX, "")
-            lineSanitized = convertWindowsPathToLinuxPath(lineSanitized)
+            lineSanitized = convertWindowsPathToLinuxPath(decodeURI(lineSanitized))
             val pathInPlaylist = Paths.get(lineSanitized)
             val audioItem = convertPathToAudioItem(pathInPlaylist.toString())
             audioItems.add(audioItem)
@@ -123,7 +123,7 @@ class PlaylistFileResolver(
                     }
                     XmlPullParser.END_TAG -> {
                         if (tag == "location") {
-                            val filePath = XSPF_PREFIX.replace(Uri.decode(text), "")
+                            val filePath = decodeURI(text)
                             val pathInPlaylist = Paths.get(filePath)
                             val audioItem = convertPathToAudioItem(pathInPlaylist.toString())
                             audioItems.add(audioItem)
@@ -150,6 +150,10 @@ class PlaylistFileResolver(
             return line.substring(1)
         }
         return line
+    }
+
+    private fun decodeURI(line: String): String {
+        return FILE_PROTOCOL_PREFIX.replace(Uri.decode(line), "")
     }
 
     private fun convertWindowsPathToLinuxPath(path: String): String {
