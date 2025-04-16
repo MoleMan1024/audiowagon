@@ -32,6 +32,10 @@ class USBExternalBroadcastReceiver : ManagedBroadcastReceiver() {
         return getExportedFlags()
     }
 
+    override fun getType(): BroadcastReceiverType {
+        return BroadcastReceiverType.USB_EXTERNAL
+    }
+
     override fun onReceive(context: Context?, intent: Intent?) {
         if (intent == null) {
             return
@@ -71,4 +75,10 @@ class USBExternalBroadcastReceiver : ManagedBroadcastReceiver() {
             logger.exception(TAG, exc.message.toString(), exc)
         }
     }
+
+    override fun toString(): String {
+        return "${USBExternalBroadcastReceiver::class.simpleName}{type=${getType()}, " +
+                "hashCode=${Integer.toHexString(hashCode())}}"
+    }
+
 }

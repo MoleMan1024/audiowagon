@@ -32,6 +32,10 @@ class SystemBroadcastReceiver : ManagedBroadcastReceiver() {
         return getExportedFlags()
     }
 
+    override fun getType(): BroadcastReceiverType {
+        return BroadcastReceiverType.SYSTEM
+    }
+
     override fun onReceive(context: Context?, intent: Intent?) {
         if (intent == null) {
             return
@@ -52,4 +56,10 @@ class SystemBroadcastReceiver : ManagedBroadcastReceiver() {
             }
         }
     }
+
+    override fun toString(): String {
+        return "${SystemBroadcastReceiver::class.simpleName}{type=${getType()}, " +
+                "hashCode=${Integer.toHexString(hashCode())}}"
+    }
+
 }

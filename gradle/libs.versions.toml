@@ -46,7 +46,6 @@ google-android-material = { group = "com.google.android.material", name = "mater
 jetbrains-kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "ver-kotlinx-serialization" }
 junit = { group = "junit", name = "junit", version.ref = "ver-junit" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "ver-kotlinx-coroutines-test" }
-kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "ver-kotlin" }
 mockito-core = { group = "org.mockito", name = "mockito-core", version.ref = "ver-mockito-core" }
 
 [plugins]

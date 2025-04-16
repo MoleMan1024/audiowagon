@@ -10,7 +10,7 @@ import android.os.Handler
 import android.os.HandlerThread
 import de.moleman1024.audiowagon.log.Logger
 
-private const val TAG = "BCRecvWrapper"
+private const val TAG = "BCRecvMgr"
 private val logger = Logger
 
 /**
@@ -23,21 +23,32 @@ class BroadcastReceiverManager(private val context: Context) {
     private val registeredReceivers: MutableSet<ManagedBroadcastReceiver> = mutableSetOf()
 
     init {
-        handlerThread = HandlerThread("BCRecvMgrThread")
-        handlerThread!!.start()
-        handler = Handler(handlerThread!!.looper)
+        initHandlers()
+    }
+
+    fun initHandlers() {
+        if (handlerThread == null) {
+            logger.debug(TAG, "Starting HandlerThread")
+            handlerThread = HandlerThread("BCRecvMgrThread")
+            handlerThread!!.start()
+        }
+        if (handler == null) {
+            logger.debug(TAG, "Setting Handler")
+            handler = Handler(handlerThread!!.looper)
+        }
     }
 
     @Synchronized
     fun register(broadcastReceiver: ManagedBroadcastReceiver) {
+        initHandlers()
         if (registeredReceivers.contains(broadcastReceiver)) {
             logger.warning(TAG, "Broadcast receiver already in list of registered receivers: $broadcastReceiver")
             return
         }
         // We should only ever have one receiver for each class type in the list
-        val existingReceivers = registeredReceivers.filter { it::class == broadcastReceiver::class }
+        val existingReceivers = registeredReceivers.filter { it.getType() == broadcastReceiver.getType() }
         if (existingReceivers.isNotEmpty()) {
-            logger.warning(TAG, "Will replace broadcast receiver in list for type: ${broadcastReceiver::class}")
+            logger.warning(TAG, "Will replace broadcast receiver in list for type: ${broadcastReceiver.getType()}")
             existingReceivers.forEach {
                 try {
                     logger.debug(TAG, "Will unregister: $it")
@@ -46,7 +57,7 @@ class BroadcastReceiverManager(private val context: Context) {
                     logger.warning(TAG, "Could not unregister receiver $broadcastReceiver: " + exc.message.toString())
                 }
             }
-            registeredReceivers.removeIf { it::class == broadcastReceiver::class }
+            registeredReceivers.removeIf { it.getType() == broadcastReceiver.getType() }
         }
         logger.debug(TAG, "register(broadcastReceiver=$broadcastReceiver)")
         try {
@@ -72,15 +83,21 @@ class BroadcastReceiverManager(private val context: Context) {
     }
 
     @Synchronized
-    fun unregisterAll() {
+    fun shutdown() {
         registeredReceivers.forEach {
             try {
-                logger.debug(TAG, "unregisterAll(): $it)")
+                logger.debug(TAG, "shutdown(): $it")
                 context.unregisterReceiver(it)
             } catch (exc: IllegalArgumentException) {
                 logger.warning(TAG, "Could not unregister receiver $it: " + exc.message.toString())
             }
         }
+        registeredReceivers.clear()
+        deinitHandlers()
+    }
+
+    fun deinitHandlers() {
+        logger.debug(TAG, "deinitHandlers()")
         handlerThread?.quitSafely()
         handlerThread = null
         handler = null

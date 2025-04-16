@@ -154,7 +154,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     private lateinit var audioSession: AudioSession
     private lateinit var gui: GUI
     private lateinit var persistentStorage: PersistentStorage
-    private lateinit var broadcastReceiverManager: BroadcastReceiverManager
+    private var broadcastReceiverManager: BroadcastReceiverManager? = null
     private lateinit var crashReporting: CrashReporting
     private lateinit var sharedPrefs: SharedPrefs
     private var dispatcher: CoroutineDispatcher = Dispatchers.IO
@@ -240,9 +240,13 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         cleanSingletonCoroutine =
             SingletonCoroutine("Clean", dispatcher, lifecycleScope.coroutineContext, crashReporting)
         cleanSingletonCoroutine.behaviour = SingletonCoroutineBehaviour.PREFER_FINISH
+        if (broadcastReceiverManager != null) {
+            logger.error(TAG, "broadcastReceiverManager is not null in onCreate()")
+            broadcastReceiverManager?.shutdown()
+        }
         broadcastReceiverManager = BroadcastReceiverManager(applicationContext)
         systemBroadcastReceiver.audioBrowserService = this
-        broadcastReceiverManager.register(systemBroadcastReceiver)
+        broadcastReceiverManager?.register(systemBroadcastReceiver)
         startup()
         if (!isScreenOn()) {
             logger.debug(TAG, "onCreate() called while screen was off, suspending again")
@@ -282,7 +286,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             audioSessionNotification = audioSession.getNotification()
             val mediaBroadcastReceiver = MediaBroadcastReceiver()
             mediaBroadcastReceiver.audioPlayer = audioSession.audioPlayer
-            broadcastReceiverManager.register(mediaBroadcastReceiver)
+            broadcastReceiverManager?.register(mediaBroadcastReceiver)
             audioSession.setLastWakeupTimeMillis(Util.getMillisNow())
         }
         // We should try to move the service to foreground here during creation already, because it is not
@@ -300,6 +304,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         if (isScreenOn() && !isScreenLocked()) {
             updateDevicesAfterUnlock()
         }
+        logger.debug(TAG, "startup() ended")
     }
 
     private fun isScreenLocked(): Boolean {
@@ -1030,7 +1035,8 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     override fun onDestroy() {
         logger.debug(TAG, "onDestroy()")
         shutdownAndDestroy()
-        broadcastReceiverManager.unregisterAll()
+        broadcastReceiverManager?.shutdown()
+        broadcastReceiverManager = null
         super.onDestroy()
     }
 
@@ -1124,17 +1130,22 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             gui.suspend()
             audioItemLibrary.suspend()
             audioFileStorage.suspend()
-            usbExternalBroadcastReceiver?.let {
-                broadcastReceiverManager.unregister(it)
-                usbExternalBroadcastReceiver = null
-            }
-            usbInternalBroadcastReceiver?.let {
-                broadcastReceiverManager.unregister(it)
-                usbInternalBroadcastReceiver = null
-            }
+            maybeUnregisterUSBBroadcastReceivers()
             stopService(ServiceStartStopReason.LIFECYCLE)
             notifyLifecycleObservers(LifecycleEvent.SUSPEND)
             logger.info(TAG, "end of suspend() reached at: ${Util.getLocalDateTimeStringNow()}")
+        }
+    }
+
+    @Synchronized
+    private fun maybeUnregisterUSBBroadcastReceivers() {
+        usbExternalBroadcastReceiver?.let {
+            broadcastReceiverManager?.unregister(it)
+            usbExternalBroadcastReceiver = null
+        }
+        usbInternalBroadcastReceiver?.let {
+            broadcastReceiverManager?.unregister(it)
+            usbInternalBroadcastReceiver = null
         }
     }
 
@@ -1164,6 +1175,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         updateDevicesAfterUnlock()
     }
 
+    @Synchronized
     private fun maybeRegisterUSBBroadcastReceivers() {
         // We don't really want to use these broadcast receivers for USB because it will prevent the desired
         // implementation in the manifest from working. So we try to register these as late as possible. However we
@@ -1172,12 +1184,12 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         if (usbExternalBroadcastReceiver == null) {
             usbExternalBroadcastReceiver = USBExternalBroadcastReceiver()
             usbExternalBroadcastReceiver?.usbDeviceConnections = audioFileStorage.usbDeviceConnections
-            broadcastReceiverManager.register(usbExternalBroadcastReceiver!!)
+            broadcastReceiverManager?.register(usbExternalBroadcastReceiver!!)
         }
         if (usbInternalBroadcastReceiver == null) {
             usbInternalBroadcastReceiver = USBInternalBroadcastReceiver()
             usbInternalBroadcastReceiver?.usbDeviceConnections = audioFileStorage.usbDeviceConnections
-            broadcastReceiverManager.register(usbInternalBroadcastReceiver!!)
+            broadcastReceiverManager?.register(usbInternalBroadcastReceiver!!)
         }
     }
 

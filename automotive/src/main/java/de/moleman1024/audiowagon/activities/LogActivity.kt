@@ -17,7 +17,7 @@ import androidx.lifecycle.lifecycleScope
 
 private const val TAG = "LogActivity"
 private val logger = Logger
-private const val NUM_LOG_BYTES_TO_SHOW = 65536
+private const val NUM_LOG_BYTES_TO_SHOW = 1048576
 
 /**
  * "Hidden" activity that shows contents of log file on screen (for quick inspection inside the car without computer)
@@ -58,7 +58,7 @@ class LogActivity : AppCompatActivity() {
     private fun initTextViewWithLastLogLines() {
         Util.launchInScopeSafely(lifecycleScope, Dispatchers.Main, logger, TAG, crashReporting = null) {
             val logTextView = findViewById<TextView>(R.id.logText)
-            logTextView.text = ""
+            logTextView.append("--- INIT TEXTVIEW ---\n")
             val logLines = logger.getLogs(NUM_LOG_BYTES_TO_SHOW)
             logLines.forEach {
                 logTextView.append(it)

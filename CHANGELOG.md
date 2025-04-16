@@ -12,6 +12,19 @@ Google's review process which can take a couple of days.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project loosely follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.13] - 2025-04-16
+
+### Fixed
+
+- A combination of changes done in the last two app versions caused an error where the USB device handle was not
+  properly released when the screen was turned off (e.g. when parking the car). This sometimes caused the USB device to
+  not be detected properly during next startup. Errors like `Could not send data to OUT endpoint: error 19 (No such
+  device)` would show in the log and the user would need to re-plug the USB device. It looks like the *kotlin-reflect
+  library* does not work properly with AAOS used in Polestar/Volvo cars which caused the broadcast receiver that
+  notifies when the screen turns on or off to not work anymore. The kotlin-reflect library has been replaced with a
+  different approach [#172](https://github.com/MoleMan1024/audiowagon/issues/172)
+
+
 ## [2.8.10] - 2025-04-12
 
 ### Fixed
@@ -24,6 +37,7 @@ and this project loosely follows [Semantic Versioning](https://semver.org/spec/v
 
 - small optimizations for USB broadcast receivers based on Crashlytics logs, for first onPlay() event after startup and
   for foreground service usage
+
 
 ## [2.8.7] - 2025-03-19
 

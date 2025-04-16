@@ -36,6 +36,10 @@ class MediaBroadcastReceiver : ManagedBroadcastReceiver() {
         return getNotExportedFlags()
     }
 
+    override fun getType(): BroadcastReceiverType {
+        return BroadcastReceiverType.MEDIA
+    }
+
     override fun onReceive(context: Context?, intent: Intent?) {
         if (intent == null) {
             return
@@ -58,6 +62,11 @@ class MediaBroadcastReceiver : ManagedBroadcastReceiver() {
                 logger.warning(TAG, "Ignoring unhandled action: ${intent.action}")
             }
         }
+    }
+
+    override fun toString(): String {
+        return "${MediaBroadcastReceiver::class.simpleName}{type=${getType()}, " +
+                "hashCode=${Integer.toHexString(hashCode())}}"
     }
 
 }

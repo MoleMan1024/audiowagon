@@ -13,6 +13,7 @@ import android.os.Build
 abstract class ManagedBroadcastReceiver : BroadcastReceiver() {
     abstract fun getIntentFilter(): IntentFilter
     abstract fun getFlags(): Int
+    abstract fun getType(): BroadcastReceiverType
 
     fun getExportedFlags(): Int {
         var flags = 0
@@ -28,5 +29,9 @@ abstract class ManagedBroadcastReceiver : BroadcastReceiver() {
             flags = Context.RECEIVER_NOT_EXPORTED
         }
         return flags
+    }
+
+    override fun toString(): String {
+        return "${ManagedBroadcastReceiver::class.simpleName}{type=${getType()}, hashCode=${hashCode()}}"
     }
 }

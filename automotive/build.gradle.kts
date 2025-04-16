@@ -20,9 +20,9 @@ android {
         compileSdk = 34
         //noinspection OldTargetApi
         targetSdk = 34
-        versionName = "2.8.10"
+        versionName = "2.8.13"
         // major * 10000 + minor * 100 + patch
-        versionCode = 20810
+        versionCode = 20813
         resValue("string", "VERSION_NAME", versionName as String)
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -97,8 +97,6 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.room.runtime)
     ksp(libs.androidx.room.compiler)
-    // kotlin reflection to be able to use ::class
-    implementation(libs.kotlin.reflect)
 
     // junit testing framework
     testImplementation(libs.junit)
