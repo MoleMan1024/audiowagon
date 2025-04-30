@@ -12,6 +12,15 @@ Google's review process which can take a couple of days.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project loosely follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.14] - 2025-04-30
+
+### Fixed
+
+- Playlist files that have file paths containing invalid characters (e.g. NUL character) would throw an exception and
+the whole playlist file could not start playback. This has been improved so that such file paths will be ignored and the
+rest of the playlist file will be parsed properly [#173](https://github.com/MoleMan1024/audiowagon/issues/173)
+
+
 ## [2.8.13] - 2025-04-16
 
 ### Fixed

@@ -5,6 +5,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 package de.moleman1024.audiowagon.activities
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -14,10 +15,11 @@ import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.Dispatchers
 import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.yield
 
 private const val TAG = "LogActivity"
 private val logger = Logger
-private const val NUM_LOG_BYTES_TO_SHOW = 1048576
+private const val NUM_LOG_BYTES_TO_SHOW = 262144
 
 /**
  * "Hidden" activity that shows contents of log file on screen (for quick inspection inside the car without computer)
@@ -55,13 +57,15 @@ class LogActivity : AppCompatActivity() {
         logger.addObserver(showLineCallback)
     }
 
+    @SuppressLint("SetTextI18n")
     private fun initTextViewWithLastLogLines() {
         Util.launchInScopeSafely(lifecycleScope, Dispatchers.Main, logger, TAG, crashReporting = null) {
             val logTextView = findViewById<TextView>(R.id.logText)
-            logTextView.append("--- INIT TEXTVIEW ---\n")
+            logTextView.text = "--- INIT TEXTVIEW ---\n"
             val logLines = logger.getLogs(NUM_LOG_BYTES_TO_SHOW)
             logLines.forEach {
                 logTextView.append(it)
+                yield()
             }
         }
     }

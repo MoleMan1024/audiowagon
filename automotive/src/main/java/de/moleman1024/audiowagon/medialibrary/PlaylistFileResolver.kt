@@ -20,6 +20,7 @@ import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserException
 import org.xmlpull.v1.XmlPullParserFactory
 import java.io.*
+import java.nio.file.InvalidPathException
 import java.nio.file.Paths
 
 private val logger = Logger
@@ -70,19 +71,23 @@ class PlaylistFileResolver(
         logger.debug(TAG, "Parsing .m3u playlist file")
         val audioItems = mutableListOf<AudioItem>()
         for (line in getLines()) {
-            var lineSanitized = line
-            if (lineSanitized.startsWith("#") || IP_PREFIX.find(lineSanitized) != null) {
-                continue
+            try {
+                var lineSanitized = line
+                if (lineSanitized.startsWith("#") || IP_PREFIX.find(lineSanitized) != null) {
+                    continue
+                }
+                lineSanitized = convertWindowsPathToLinuxPath(decodeURI(lineSanitized))
+                val pathInPlaylist = Paths.get(lineSanitized)
+                val audioItem: AudioItem = if (pathInPlaylist.isAbsolute) {
+                    convertPathToAudioItem(pathInPlaylist.toString())
+                } else {
+                    val parentDir = Util.getParentPath(GeneralFile(playlistFileUri).path)
+                    convertPathToAudioItem(Paths.get("$parentDir/$pathInPlaylist").normalize().toString())
+                }
+                audioItems.add(audioItem)
+            } catch (exc: InvalidPathException) {
+                logger.error(TAG, "Error when parsing line: $line Exception: " + exc.message.toString())
             }
-            lineSanitized = convertWindowsPathToLinuxPath(decodeURI(lineSanitized))
-            val pathInPlaylist = Paths.get(lineSanitized)
-            val audioItem: AudioItem = if (pathInPlaylist.isAbsolute) {
-                convertPathToAudioItem(pathInPlaylist.toString())
-            } else {
-                val parentDir = Util.getParentPath(GeneralFile(playlistFileUri).path)
-                convertPathToAudioItem(Paths.get("$parentDir/$pathInPlaylist").normalize().toString())
-            }
-            audioItems.add(audioItem)
         }
         return audioItems
     }
@@ -91,15 +96,19 @@ class PlaylistFileResolver(
         logger.debug(TAG, "Parsing .pls playlist file")
         val audioItems = mutableListOf<AudioItem>()
         for (line in getLines()) {
-            var lineSanitized = removeBOM(line.trim())
-            if (PLS_FILE_PREFIX.find(lineSanitized) == null) {
-                continue
+            try {
+                var lineSanitized = removeBOM(line.trim())
+                if (PLS_FILE_PREFIX.find(lineSanitized) == null) {
+                    continue
+                }
+                lineSanitized = lineSanitized.replace(PLS_FILE_PREFIX, "")
+                lineSanitized = convertWindowsPathToLinuxPath(decodeURI(lineSanitized))
+                val pathInPlaylist = Paths.get(lineSanitized)
+                val audioItem = convertPathToAudioItem(pathInPlaylist.toString())
+                audioItems.add(audioItem)
+            } catch (exc: InvalidPathException) {
+                logger.error(TAG, "Error when parsing line: $line Exception: " + exc.message.toString())
             }
-            lineSanitized = lineSanitized.replace(PLS_FILE_PREFIX, "")
-            lineSanitized = convertWindowsPathToLinuxPath(decodeURI(lineSanitized))
-            val pathInPlaylist = Paths.get(lineSanitized)
-            val audioItem = convertPathToAudioItem(pathInPlaylist.toString())
-            audioItems.add(audioItem)
         }
         return audioItems
     }
@@ -123,10 +132,17 @@ class PlaylistFileResolver(
                     }
                     XmlPullParser.END_TAG -> {
                         if (tag == "location") {
-                            val filePath = decodeURI(text)
-                            val pathInPlaylist = Paths.get(filePath)
-                            val audioItem = convertPathToAudioItem(pathInPlaylist.toString())
-                            audioItems.add(audioItem)
+                            try {
+                                val filePath = decodeURI(text)
+                                val pathInPlaylist = Paths.get(filePath)
+                                val audioItem = convertPathToAudioItem(pathInPlaylist.toString())
+                                audioItems.add(audioItem)
+                            } catch (exc: InvalidPathException) {
+                                logger.error(
+                                    TAG,
+                                    "Error when parsing tag with text: $text Exception: " + exc.message.toString()
+                                )
+                            }
                         }
                     }
                 }
@@ -193,7 +209,7 @@ class PlaylistFileResolver(
         val playlistType: PlaylistType?
         try {
             playlistType = PlaylistType.fromMimeType(guessedContentType)
-        } catch(exc: IllegalArgumentException) {
+        } catch (exc: IllegalArgumentException) {
             logger.exception(TAG, exc.message.toString(), exc)
             return null
         }
