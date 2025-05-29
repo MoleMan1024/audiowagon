@@ -136,6 +136,9 @@ internal constructor(
         }
         // now we can proceed reading the clusters without an offset in the cluster
         while (length > 0) {
+            if (chainIndex >= chain.size) {
+                break
+            }
             // we always read one cluster at a time, or if remaining size is
             // less than the cluster size, only "size" bytes
             val size = min(clusterSize, length.toLong()).toInt()

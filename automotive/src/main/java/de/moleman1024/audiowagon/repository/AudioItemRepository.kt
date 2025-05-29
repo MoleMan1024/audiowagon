@@ -26,7 +26,6 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.time.temporal.ChronoUnit
-import java.util.concurrent.Executors
 
 const val MAX_DATABASE_SEARCH_ROWS = 10
 const val AUDIOITEM_REPO_DB_PREFIX = "audioItemRepo_"

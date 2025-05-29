@@ -363,7 +363,10 @@ class AudioSession(
                     try {
                         when (contentHierarchyID.type) {
                             ContentHierarchyType.TRACK -> {
-                                logger.debug(Util.TAGCRT(TAG, coroutineContext), "getAudioItemForTrack($contentHierarchyID)")
+                                logger.debug(
+                                    Util.TAGCRT(TAG, coroutineContext),
+                                    "getAudioItemForTrack($contentHierarchyID)"
+                                )
                                 audioItem = audioItemLibrary.getAudioItemForTrack(contentHierarchyID)
                             }
                             ContentHierarchyType.FILE -> {
@@ -374,8 +377,8 @@ class AudioSession(
                                 contentHierarchyID.storageID = storageID
                                 audioFile = AudioFile(Util.createURIForPath(storageID, contentHierarchyID.path))
                                 // If we are playing files directly, extract the metadata here. This will slow down the
-                                // start of playback but without it we will not be able to show the duration of file,
-                                // album art etc.
+                                // start of playback but without it we will not be able to show the duration of file.
+                                // We could get the duration from the player afterwards, but it is more complex...
                                 audioItem = audioItemLibrary.extractMetadataFrom(audioFile)
                                 audioItem.id = ContentHierarchyElement.serialize(contentHierarchyID)
                                 audioItem.uri = audioFile.uri
@@ -387,14 +390,17 @@ class AudioSession(
                         }
                         it.ensureActive()
                         val metadata: MediaMetadataCompat = audioItemLibrary.createMetadataForItem(audioItem)
-                        it.ensureActive()
                         extractAndSetReplayGain(audioItem)
                         setCurrentQueueItem(
                             MediaSessionCompat.QueueItem(metadata.description, queueChange.currentItem.queueId)
                         )
                         setMediaSessionMetadata(metadata)
                     } catch (exc: FileNotFoundException) {
-                        logger.exception(Util.TAGCRT(TAG, coroutineContext), "observePlaybackQueue(): ${exc.message.toString()}", exc)
+                        logger.exception(
+                            Util.TAGCRT(TAG, coroutineContext),
+                            "observePlaybackQueue(): ${exc.message.toString()}",
+                            exc
+                        )
                         var fileName: String = context.getString(R.string.error_unknown)
                         if (audioFile != null) {
                             fileName = audioFile.name
@@ -530,8 +536,11 @@ class AudioSession(
                             try {
                                 val audioItem = getAudioItemForContentHierarchyType(contentHierarchyID)
                                 extractAndSetReplayGain(audioItem)
-                            } catch (exc: IllegalArgumentException) {
-                                logger.error(Util.TAGCRT(TAG, coroutineContext), "Cannot handle type: $contentHierarchyID")
+                            } catch (_: IllegalArgumentException) {
+                                logger.error(
+                                    Util.TAGCRT(TAG, coroutineContext),
+                                    "Cannot handle type: $contentHierarchyID"
+                                )
                                 return@launchInScopeSafely
                             }
                         }
@@ -549,6 +558,12 @@ class AudioSession(
                     launchInScopeSafely(audioSessionChange.type.name) {
                         audioPlayer.disableReplayGain()
                     }
+                }
+                AudioSessionChangeType.ON_ENABLE_SHOW_ALBUM_ART -> {
+                    notifyObservers(SettingChangeEvent(SettingKey.SHOW_ALBUM_ART_SETTING, true))
+                }
+                AudioSessionChangeType.ON_DISABLE_SHOW_ALBUM_ART -> {
+                    notifyObservers(SettingChangeEvent(SettingKey.SHOW_ALBUM_ART_SETTING, false))
                 }
                 AudioSessionChangeType.ON_SET_EQUALIZER_PRESET -> {
                     launchInScopeSafely(audioSessionChange.type.name) {
@@ -927,7 +942,7 @@ class AudioSession(
             audioPlayer.preparePlayFromQueue(state.queueIndex, state.trackPositionMS.toInt())
             // TODO: not nice (same player status might have been sent shortly before)
             audioPlayer.notifyPlayerStatusChange()
-        } catch (exc: NoItemsInQueueException) {
+        } catch (_: NoItemsInQueueException) {
             logger.warning(Util.TAGCRT(TAG, coroutineContext), "No items in play queue")
         } catch (exc: FileNotFoundException) {
             logger.exception(TAG, "prepareFromPersistent(): ${exc.message.toString()}", exc)
@@ -966,7 +981,10 @@ class AudioSession(
 
     private suspend fun setMediaSessionMetadata(metadata: MediaMetadataCompat?) {
         withContext(mediaSessionDispatcher) {
-            logger.debug(Util.TAGCRT(TAG, coroutineContext), "Setting media session metadata: ${metadata?.descriptionForLog}")
+            logger.debug(
+                Util.TAGCRT(TAG, coroutineContext),
+                "Setting media session metadata: ${metadata?.descriptionForLog}"
+            )
             // TODO: does this scale the album art bitmap by itself?
             mediaSession.setMetadata(metadata)
         }

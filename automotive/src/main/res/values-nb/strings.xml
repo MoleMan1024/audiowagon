@@ -115,7 +115,8 @@ Google\n&#x2013; Firebase Crashlytics\n\nLisenstekster:\nwww.apache.org/licenses
     <string name="browse_tree_category_files">Filer</string>
     <string name="setting_library_category_title">Media</string>
     <string name="setting_read_metadata">Lese metadata</string>
-    <string name="setting_delete_databases">Slette databaser</string>
+    <string name="setting_manage_storage">Slette databaser / hurtigbuffer</string>
+    <string name="setting_manage_storage_summary">(metadata og albumgrafikk)</string>
     <string name="setting_database_status_title">Database</string>
     <string name="setting_enable_replaygain">ReplayGain</string>
     <string name="searching_voice_input">Stemmesøk: \"%1$s\"</string>
@@ -149,4 +150,5 @@ forbedre appen (krever internettforbindelse).</string>
     <string name="browse_tree_please_wait">Vent litt …</string>
     <string name="setting_equalizer_enable">Aktivert</string>
     <string name="equalizer_preset_custom">Tilpasset</string>
+    <string name="setting_show_album_art">Vis albumgrafikk</string>
 </resources>

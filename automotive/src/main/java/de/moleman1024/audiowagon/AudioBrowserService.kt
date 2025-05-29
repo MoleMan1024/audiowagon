@@ -200,6 +200,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     private val clientPackagesToReject = mutableListOf<String>()
     private val binderClients = mutableSetOf<Int>()
     private val systemBroadcastReceiver = SystemBroadcastReceiver()
+    private var isShowAlbumArtEnabled = true
 
     init {
         isShuttingDown.set(false)
@@ -216,6 +217,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         isShuttingDown.set(false)
         super.onCreate()
         sharedPrefs = SharedPrefs()
+        isShowAlbumArtEnabled = sharedPrefs.isShowAlbumArtEnabled(this)
         crashReporting = CrashReporting(applicationContext, lifecycleScope, dispatcher, sharedPrefs)
         storePlaybackStateSingletonCoroutine =
             SingletonCoroutine("StorePlaybState", dispatcher, lifecycleScope.coroutineContext, crashReporting)
@@ -257,12 +259,19 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     @ExperimentalCoroutinesApi
     fun startup() {
         logger.debug(TAG, "startup()")
-        persistentStorage = PersistentStorage(this, dispatcher)
+        persistentStorage = PersistentStorage(applicationContext, dispatcher)
         gui = GUI(lifecycleScope, applicationContext, crashReporting)
-        usbDevicePermissions = USBDevicePermissions(this)
-        audioFileStorage =
-            AudioFileStorage(this, lifecycleScope, dispatcher, usbDevicePermissions, sharedPrefs, crashReporting)
-        audioItemLibrary = AudioItemLibrary(this, audioFileStorage, lifecycleScope, dispatcher, gui, sharedPrefs)
+        usbDevicePermissions = USBDevicePermissions(applicationContext)
+        audioFileStorage = AudioFileStorage(
+            applicationContext,
+            lifecycleScope,
+            dispatcher,
+            usbDevicePermissions,
+            sharedPrefs,
+            crashReporting
+        )
+        audioItemLibrary =
+            AudioItemLibrary(applicationContext, audioFileStorage, lifecycleScope, dispatcher, gui, sharedPrefs)
         audioItemLibrary.libraryExceptionObservers.clear()
         audioItemLibrary.libraryExceptionObservers.add { exc ->
             when (exc) {
@@ -494,11 +503,9 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                     AlbumStyleSetting.GRID.name -> {
                         audioItemLibrary.albumArtStyleSetting = AlbumStyleSetting.GRID
                     }
-
                     AlbumStyleSetting.LIST.name -> {
                         audioItemLibrary.albumArtStyleSetting = AlbumStyleSetting.LIST
                     }
-
                     else -> {
                         throw RuntimeException("Invalid album style setting: ${event.value}")
                     }
@@ -509,6 +516,13 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                 val viewTabs = event.value as? List<ViewTabSetting>
                     ?: throw RuntimeException("Invalid view tabs setting: ${event.value}")
                 audioItemLibrary.setViewTabs(viewTabs)
+                notifyBrowserChildrenChangedAllLevels()
+            }
+            SettingKey.SHOW_ALBUM_ART_SETTING -> {
+                val isShowAlbumArt = event.value as? Boolean ?: throw RuntimeException("Invalid show album art " +
+                        "setting: ${event.value}")
+                isShowAlbumArtEnabled = isShowAlbumArt
+                audioItemLibrary.isShowAlbumArtEnabled = isShowAlbumArt
                 notifyBrowserChildrenChangedAllLevels()
             }
         }
@@ -523,6 +537,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                 requestPermissionSingletonCoroutine.launch {
                     try {
                         audioFileStorage.requestUSBPermissionIfMissing()
+                        notifyBrowserChildrenChangedAllLevels()
                     } catch (exc: Exception) {
                         logger.exception(TAG, exc.message.toString(), exc)
                     }
@@ -653,9 +668,9 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         if (metadataReadSetting == MetadataReadSetting.OFF) {
             logger.info(TAG, "Metadata extraction is disabled in settings")
             launchRestoreFromPersistentJob()
-            notifyBrowserChildrenChangedAllLevels()
             return
         }
+        notifyBrowserChildrenChangedAllLevels()
         createLibraryForStorage(storageID)
     }
 
@@ -701,11 +716,9 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                 AudioPlayerState.STARTED -> {
                     // do not change service status when indexing finishes while playback is ongoing
                 }
-
                 AudioPlayerState.PAUSED -> {
                     delayedMoveServiceToBackground()
                 }
-
                 else -> {
                     // player is currently in state STOPPED or ERROR
                     stopService(ServiceStartStopReason.INDEXING)
@@ -835,6 +848,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     }
 
     private fun notifyBrowserChildrenChangedAllLevels() {
+        logger.debug(TAG, "notifyBrowserChildrenChangedAllLevels()")
         notifyChildrenChanged(contentHierarchyFilesRoot)
         notifyChildrenChanged(contentHierarchyTracksRoot)
         notifyChildrenChanged(contentHierarchyAlbumsRoot)
@@ -1431,6 +1445,9 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         }
         if (!audioFileStorage.areAnyStoragesAvail()) {
             logger.debug(Util.TAGCRT(TAG, coroutineContext), "No album art because no storages available")
+            return null
+        }
+        if (!isShowAlbumArtEnabled) {
             return null
         }
         try {

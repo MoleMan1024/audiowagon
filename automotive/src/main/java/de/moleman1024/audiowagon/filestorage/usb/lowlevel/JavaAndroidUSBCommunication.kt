@@ -35,7 +35,7 @@ class JavaAndroidUSBCommunication(
     private val androidInterface: UsbInterface = usbDevice.getInterface(usbInterface.interfaceIndex)
     private val androidInEndpoint: UsbEndpoint = androidInterface.getEndpoint(inEndpoint.index)
     private val androidOutEndpoint: UsbEndpoint = androidInterface.getEndpoint(outEndpoint.index)
-    private val lock = ReentrantLock(true)
+    private val lock = ReentrantLock(false)
     private var isClosed = false
     private var isNativeInitialized = false
 
@@ -121,7 +121,8 @@ class JavaAndroidUSBCommunication(
                     if (errorMessage.contains("Broken pipe")) {
                         throw PipeException()
                     } else {
-                        throw IOException("Could not send data to $directionString endpoint: error $errorNumber ($errorMessage)")
+                        throw IOException("Could not send data to $directionString endpoint: " +
+                                "error $errorNumber ($errorMessage)")
                     }
                 }
             }

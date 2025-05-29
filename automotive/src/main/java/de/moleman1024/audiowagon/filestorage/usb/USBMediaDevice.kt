@@ -12,14 +12,12 @@ import android.hardware.usb.UsbConstants.USB_CLASS_MASS_STORAGE
 import android.hardware.usb.UsbDevice
 import android.media.MediaDataSource
 import android.net.Uri
-import android.os.Build
 import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.exceptions.DriveAlmostFullException
-import de.moleman1024.audiowagon.exceptions.NoAudioItemException
 import de.moleman1024.audiowagon.exceptions.NoFileSystemException
-import de.moleman1024.audiowagon.filestorage.data.AudioFile
 import de.moleman1024.audiowagon.filestorage.FileSystem
 import de.moleman1024.audiowagon.filestorage.MediaDevice
+import de.moleman1024.audiowagon.filestorage.data.AudioFile
 import de.moleman1024.audiowagon.filestorage.usb.lowlevel.USBFile
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.*
@@ -39,7 +37,8 @@ private const val DEFAULT_FILESYSTEM_CHUNK_SIZE = 32768
 // used in a hash map during indexing to improve speed
 private const val MAX_NUM_FILEPATHS_TO_CACHE = 20
 
-class USBMediaDevice(private val context: Context, private val usbDevice: USBDevice) : MediaDevice {
+class USBMediaDevice(private val context: Context, private val usbDevice: USBDevice
+) : MediaDevice {
     override val TAG = "USBMediaDevice"
     override val logger = Logger
     private var fileSystem: FileSystem? = null
@@ -117,7 +116,8 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
                     return@withContext
                 }
                 volumeLabel = fileSystem?.volumeLabel?.trim() ?: ""
-                logger.debug(TAG, "Initialized filesystem with volume label: $volumeLabel")
+                val chunkSize = fileSystem?.chunkSize
+                logger.debug(TAG, "Initialized filesystem with volume label: $volumeLabel and chunkSize: $chunkSize")
             }
         } catch (exc: Exception) {
             throw exc
@@ -185,6 +185,7 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
 
     fun preventLoggingToDetachedDevice() {
         logger.setUSBFileStreamToNull()
+        logger.cancelLogFileWriteJob()
         logFile = null
     }
 
@@ -327,7 +328,9 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
             throw IOException("No filesystem for data source")
         }
         val usbFile: USBFile = getUSBFileFromURI(uri)
-        return USBMetaDataSource(usbFile, getChunkSize())
+        val dataSource = USBMetaDataSource(usbFile, getChunkSize())
+        logger.debug(TAG, "Created data source for: $dataSource for file $usbFile")
+        return dataSource
     }
 
     override suspend fun getBufferedDataSourceForURI(uri: Uri): MediaDataSource {
@@ -335,7 +338,9 @@ class USBMediaDevice(private val context: Context, private val usbDevice: USBDev
             throw IOException("No filesystem for data source")
         }
         val usbFile: USBFile = getUSBFileFromURI(uri)
-        return USBAudioCachedDataSource(usbFile, getChunkSize())
+        val dataSource = USBAudioCachedDataSource(usbFile, getChunkSize())
+        logger.debug(TAG, "Created buffered data source for: $dataSource for file $usbFile")
+        return dataSource
     }
 
     override fun getFileFromURI(uri: Uri): Any {

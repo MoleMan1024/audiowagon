@@ -406,9 +406,6 @@ class AudioPlayer(
                 notifyPlayerStatus(endOfQueueStatus)
                 return@withContext
             }
-            // TODO: there sometimes is a small audio glitch when skipping, need to do sth with media data source to
-            //  skip more nicely? Don't know why MediaPlayer does not do that internally, would expect that it e.g. only
-            //  skips near zero crossings
             playerStatus.playbackState = PlaybackStateCompat.STATE_SKIPPING_TO_NEXT
             notifyPlayerStatusChange()
             playQueueAtIndex(nextQueueIndex)
@@ -635,7 +632,7 @@ class AudioPlayer(
             logger.debug(Util.TAGCRT(TAG, coroutineContext), "startPlayFromQueue()")
             try {
                 stopCurrentPlayer()
-            } catch (exc: AlreadyStoppedException) {
+            } catch (_: AlreadyStoppedException) {
                 logger.debug(Util.TAGCRT(TAG, coroutineContext), ALREADY_STOPPED)
             } catch (exc: IllegalStateException) {
                 logger.warning(Util.TAGCRT(TAG, coroutineContext), exc.message.toString())
@@ -651,14 +648,14 @@ class AudioPlayer(
                 try {
                     prepare()
                     numFilesNotFound = 0
-                } catch (exc: IOException) {
+                } catch (_: IOException) {
                     val audioFile = AudioFile(uri)
                     throw CannotReadFileException(audioFile.name)
                 }
                 onPreparedPlayFromQueue(currentMediaPlayer)
-            } catch (exc: UnsupportedOperationException) {
+            } catch (_: UnsupportedOperationException) {
                 return@withContext
-            } catch (exc: FileNotFoundException) {
+            } catch (_: FileNotFoundException) {
                 // If file is missing, try next file in queue. This can happen if audio item library does not match
                 // the USB filesystem (e.g. due to manual indexing)
                 val status = AudioPlayerStatus(PlaybackStateCompat.STATE_BUFFERING)
@@ -688,7 +685,7 @@ class AudioPlayer(
         launchInScopeSafely {
             logger.debug(TAG, "onPreparedListener(mediaPlayer=$mediaPlayer)")
             setState(mediaPlayer, AudioPlayerState.PREPARED)
-            // first start the current player so the user can already listen to music, prepare next player in
+            // First start the current player so the user can already listen to music, prepare next player in
             // the background afterwards while music is playing
             start()
             // TODO: this can make skipping tracks slow (maybe wait setting up next player until some seconds into

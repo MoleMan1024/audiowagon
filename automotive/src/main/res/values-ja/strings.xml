@@ -106,7 +106,8 @@ FAT32ファイルシステムを使用してUSBドライブをフォーマット
     <string name="browse_tree_category_files">ファイル</string>
     <string name="setting_library_category_title">メディア</string>
     <string name="setting_read_metadata">メタデータ読み込み</string>
-    <string name="setting_delete_databases">データベース削除</string>
+    <string name="setting_manage_storage">データベース/キャッシュを削除</string>
+    <string name="setting_manage_storage_summary">(メタデータとアルバムアート)</string>
     <string name="setting_database_status_title">データベース</string>
     <string name="setting_enable_replaygain">ReplayGain</string>
     <string name="searching_voice_input">音声検索: \"%1$s\"</string>
@@ -139,4 +140,5 @@ FAT32ファイルシステムを使用してUSBドライブをフォーマット
     <string name="browse_tree_please_wait">お待ちください …</string>
     <string name="setting_equalizer_enable">有効</string>
     <string name="equalizer_preset_custom">カスタムフィ</string>
+    <string name="setting_show_album_art">アルバムアートを表示</string>
 </resources>

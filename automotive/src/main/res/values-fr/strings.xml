@@ -114,7 +114,8 @@ sont créées par Google\n&#x2013; Firebase Crashlytics\n\nTextes de licence:\nw
     <string name="setting_read_metadata">Lire les métadonnées</string>
     <string name="browse_tree_category_files">Fichiers</string>
     <string name="setting_library_category_title">Médias</string>
-    <string name="setting_delete_databases">Supprimer des bibliothèques</string>
+    <string name="setting_manage_storage">Supprimer bibliothèques / cache</string>
+    <string name="setting_manage_storage_summary">(métadonnées et pochettes d\'album)</string>
     <string name="setting_database_status_title">Bibliothèque</string>
     <string name="setting_enable_replaygain">ReplayGain</string>
     <string name="searching_voice_input">Recherche vocale: \"%1$s\"</string>
@@ -148,4 +149,5 @@ de l\'application \"Media Center\")</string>
     <string name="browse_tree_please_wait">Veuillez patienter …</string>
     <string name="setting_equalizer_enable">Activé</string>
     <string name="equalizer_preset_custom">Personnalisé</string>
+    <string name="setting_show_album_art">Afficher pochette d\'album</string>
 </resources>

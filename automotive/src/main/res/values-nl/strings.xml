@@ -116,7 +116,8 @@ zijn gemaakt door Google\n&#x2013; Firebase Crashlytics\n\nLicentie teksten:\nww
     <string name="browse_tree_category_files">Bestanden</string>
     <string name="setting_library_category_title">Media</string>
     <string name="setting_read_metadata">Lees metadata</string>
-    <string name="setting_delete_databases">Verzamelingen verwijderen</string>
+    <string name="setting_manage_storage">Database / cache verwijderen</string>
+    <string name="setting_manage_storage_summary">(metadata en albumhoezen)</string>
     <string name="setting_database_status_title">Database</string>
     <string name="setting_enable_replaygain">ReplayGain</string>
     <string name="searching_voice_input">Spraak het zoeken: \"%1$s\"</string>
@@ -150,4 +151,5 @@ verbeteren (vereist een internetverbinding).</string>
     <string name="browse_tree_please_wait">Een ogenblik geduld …</string>
     <string name="setting_equalizer_enable">Ingeschakeld</string>
     <string name="equalizer_preset_custom">Aangepast</string>
+    <string name="setting_show_album_art">Albumhoes weergeven</string>
 </resources>

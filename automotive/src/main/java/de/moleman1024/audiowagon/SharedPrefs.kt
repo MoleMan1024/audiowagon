@@ -31,6 +31,7 @@ const val SHARED_PREF_AUDIOFOCUS = "audioFocus"
 const val SHARED_PREF_ALBUM_STYLE = "albumStyle"
 const val SHARED_PREF_CRASH_REPORTING = "crashReporting"
 const val SHARED_PREF_VIEW_TAB_PREFIX = "viewTab"
+const val SHARED_PREF_SHOW_ALBUM_ART = "showAlbumArt"
 val SHARED_PREF_EQUALIZER_PRESET_DEFAULT = EqualizerPreset.LESS_BASS.name
 
 private const val TAG = "SharedPrefs"
@@ -174,6 +175,27 @@ open class SharedPrefs {
         sharedPreferences?.edit()?.putBoolean(SHARED_PREF_ENABLE_REPLAYGAIN, isEnabled)?.apply()
     }
 
+    fun isShowAlbumArtEnabled(context: Context): Boolean {
+        return try {
+            isShowAlbumArtEnabled(getDefaultSharedPreferences(context))
+        } catch (exc: IllegalStateException) {
+            logger.exception(TAG, exc.message.toString(), exc)
+            true
+        }
+    }
+
+    fun isShowAlbumArtEnabled(sharedPreferences: SharedPreferences?): Boolean {
+        return sharedPreferences?.getBoolean(SHARED_PREF_SHOW_ALBUM_ART, true) == true
+    }
+
+    fun setShowAlbumArtEnabled(context: Context, isEnabled: Boolean) {
+        setShowAlbumArtEnabled(getDefaultSharedPreferences(context), isEnabled)
+    }
+
+    fun setShowAlbumArtEnabled(sharedPreferences: SharedPreferences?, isEnabled: Boolean) {
+        sharedPreferences?.edit()?.putBoolean(SHARED_PREF_SHOW_ALBUM_ART, isEnabled)?.apply()
+    }
+
     private fun getMetadataReadSetting(context: Context): String {
         return try {
             getMetadataReadSetting(getDefaultSharedPreferences(context))
@@ -264,19 +286,15 @@ open class SharedPrefs {
             0 -> {
                 defaultValue = ViewTabSetting.TRACKS.name
             }
-
             1 -> {
                 defaultValue = ViewTabSetting.ALBUMS.name
             }
-
             2 -> {
                 defaultValue = ViewTabSetting.ARTISTS.name
             }
-
             3 -> {
                 defaultValue = ViewTabSetting.FILES.name
             }
-
             else -> {
                 throw AssertionError("Invalid view tab number: $tabNum")
             }
@@ -326,6 +344,8 @@ open class SharedPrefs {
     fun isCrashReportingEnabled(sharedPreferences: SharedPreferences?): Boolean {
         return sharedPreferences?.getBoolean(SHARED_PREF_CRASH_REPORTING, false) == true
     }
+
+    // TODO: add setting to disable album art
 
     fun getUSBStatusResID(context: Context): Int {
         return try {

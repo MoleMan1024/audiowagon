@@ -12,6 +12,30 @@ Google's review process which can take a couple of days.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project loosely follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.1] - 2025-05-29
+
+### Added
+
+- Some Polestar 4 and Volvo XC60 2026 drivers reported that audio playback was stuttering a lot, especially noticeable
+  with large FLAC files. Such errors were not seen in Polestar 2 and other older Volvo models. Possibly the new
+  Snapdragon-CPU based headunit has different USB chipsets and drivers that look like they perform worse than previous
+  headunit generations. Some changes were made in AudioWagon to try to reduce the I/O stress on the USB device during
+  playback:
+    - Album art thumbnails will now be cached onto the car's flash disk during indexing (previously they were read from
+      USB drive on-demand). This increases the flash disk space required by AudioWagon quite a bit. The database
+      deletion option in AudioWagon settings was hence modified to delete both the metadata database and any cached
+      album art from the car's disk. A checksum of the album art thumbnail is also written to disk, to avoid unnecessary
+      writes to the car's flash disk which could wear it out. In case no cached album art is found on disk, the old
+      mechanism is used as fallback. **To use this feature you must delete the database and re-index metadata.**
+      [#174](https://github.com/MoleMan1024/audiowagon/issues/174)
+    - Album art can now be disabled via the settings
+
+### Changed
+
+- Some changes were made in AudioWagon to try to reduce the I/O stress on the USB device during playback:
+    - Number of cached blocks of USB data was increased and lock usage was modified
+
+
 ## [2.8.14] - 2025-04-30
 
 ### Fixed

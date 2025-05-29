@@ -53,7 +53,7 @@ class AndroidUSBMassStorageDevice(
         }.mapNotNull { blockDevice ->
             try {
                 blockDevice.init()
-            } catch (exc: MediaNotInserted) {
+            } catch (_: MediaNotInserted) {
                 // This LUN does not have media inserted. Ignore it.
                 return@mapNotNull null
             } catch (exc: Exception) {
@@ -81,7 +81,7 @@ class AndroidUSBMassStorageDevice(
      * to the partitions returned by [.getPartitions].
      */
     override fun close() {
-        Logger.debug(TAG, "close()")
+        logger.debug(TAG, "close()")
         usbCommunication.close()
     }
 

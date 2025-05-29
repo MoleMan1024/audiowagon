@@ -18,7 +18,7 @@ private val logger = Logger
  *
  * When too many chunks are cached we clear the cache.
  */
-private const val MAX_BYTES_TO_CACHE = 1200 * 1024
+private const val MAX_BYTES_TO_CACHE = 1024 * 1024 * 2
 
 class USBMetaDataSource(
     usbFile: USBFile?,

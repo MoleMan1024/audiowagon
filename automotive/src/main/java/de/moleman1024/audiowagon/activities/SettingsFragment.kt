@@ -9,12 +9,14 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.text.format.Formatter.formatShortFileSize
+import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.*
 import de.moleman1024.audiowagon.*
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.enums.MetadataReadSetting
+import de.moleman1024.audiowagon.medialibrary.AlbumArtLibrary.Companion.getStorageRootDir
 import de.moleman1024.audiowagon.repository.AUDIOITEM_REPO_DB_PREFIX
 import kotlinx.coroutines.*
 import java.io.File
@@ -27,11 +29,10 @@ private const val TAG = "SettingsFragm"
 private val logger = Logger
 private const val PREF_EJECT = "eject"
 private const val PREF_DATABASE_STATUS = "databaseStatus"
-private const val PREF_DELETE_DATABASES = "deleteDatabases"
+private const val PREF_MANAGE_STORAGE = "manageStorage"
 private const val PREF_LEGAL_DISCLAIMER = "legalDisclaimer"
 private const val PREF_READ_METADATA_NOW = "readMetaDataNow"
 private const val PREF_VERSION = "version"
-private const val PREF_GOTO_EQUALIZER_PREFERENCES_SCREEN = "gotoEqualizerPreferencesScreen"
 
 @ExperimentalCoroutinesApi
 class SettingsFragment : PreferenceFragmentCompat() {
@@ -53,6 +54,9 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 }
                 SHARED_PREF_ENABLE_REPLAYGAIN -> {
                     updateReplayGainSwitch(sharedPreferences)
+                }
+                SHARED_PREF_SHOW_ALBUM_ART -> {
+                    updateShowAlbumArtSwitch(sharedPreferences)
                 }
                 SHARED_PREF_READ_METADATA -> {
                     updateReadMetadataList(sharedPreferences)
@@ -85,17 +89,12 @@ class SettingsFragment : PreferenceFragmentCompat() {
             }
         }
     }
-    private val databaseDeleteListener = Preference.OnPreferenceChangeListener { _, newValue ->
+    private val manageStorageListener = Preference.OnPreferenceChangeListener { _, newValue ->
         val entriesToDelete = newValue as HashSet<*>
         logger.debug(TAG, entriesToDelete.toString())
         entriesToDelete.forEach {
-            logger.debug(TAG, "User marked database file for deletion: $it")
             val databaseFile = File(it as String)
-            try {
-                deleteFile(databaseFile)
-            } catch (exc: IOException) {
-                logger.exception(TAG, exc.message.toString(), exc)
-            }
+            deleteDatabaseAndAlbumArt(databaseFile)
         }
         // return false to not store the checked entries
         false
@@ -105,8 +104,8 @@ class SettingsFragment : PreferenceFragmentCompat() {
         logger.debug(TAG, "onCreate()")
         super.onCreate(savedInstanceState)
         preferenceManager.sharedPreferences?.registerOnSharedPreferenceChangeListener(listener)
-        val multiListPref = findPreference<MultiSelectListPreference>(PREF_DELETE_DATABASES)
-        multiListPref?.onPreferenceChangeListener = databaseDeleteListener
+        val multiListPref = findPreference<MultiSelectListPreference>(PREF_MANAGE_STORAGE)
+        multiListPref?.onPreferenceChangeListener = manageStorageListener
     }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
@@ -115,7 +114,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         setSummaryProviderDisplayAlbumSetting()
         updateFromSharedPrefs(preferenceManager.sharedPreferences)
         updateDatabaseStatus()
-        updateDatabaseFiles()
+        updateDatabaseFilesAndCachedAlbumArt()
     }
 
     private fun setSummaryProviderDisplayAlbumSetting() {
@@ -131,6 +130,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         updateReplayGainSwitch(sharedPreferences)
         updateAudioFocusList(sharedPreferences)
         updateAlbumStyleList(sharedPreferences)
+        updateShowAlbumArtSwitch(sharedPreferences)
         updateViewTabs(sharedPreferences)
         updateReadMetadataList(sharedPreferences)
         updateReadMetadataNowButton(sharedPreferences)
@@ -155,6 +155,12 @@ class SettingsFragment : PreferenceFragmentCompat() {
         val value = getSharedPrefs().isReplayGainEnabled(sharedPreferences)
         findPreference<SwitchPreferenceCompat>(SHARED_PREF_ENABLE_REPLAYGAIN)?.isChecked = value
         logger.debug(TAG, "${SHARED_PREF_ENABLE_REPLAYGAIN}=${value}")
+    }
+
+    private fun updateShowAlbumArtSwitch(sharedPreferences: SharedPreferences?) {
+        val value = getSharedPrefs().isShowAlbumArtEnabled(sharedPreferences)
+        findPreference<SwitchPreferenceCompat>(SHARED_PREF_SHOW_ALBUM_ART)?.isChecked = value
+        logger.debug(TAG, "${SHARED_PREF_SHOW_ALBUM_ART}=${value}")
     }
 
     private fun updateReadMetadataList(sharedPreferences: SharedPreferences?) {
@@ -246,9 +252,9 @@ class SettingsFragment : PreferenceFragmentCompat() {
         readMetadataNowPref?.isEnabled = false
     }
 
-    private fun updateDatabaseFiles() {
-        logger.debug(TAG, "updateDatabaseFiles()")
-        val multiListPref = findPreference<MultiSelectListPreference>(PREF_DELETE_DATABASES)
+    private fun updateDatabaseFilesAndCachedAlbumArt() {
+        logger.debug(TAG, "updateDatabaseFilesAndCachedAlbumArt()")
+        val multiListPref = findPreference<MultiSelectListPreference>(PREF_MANAGE_STORAGE)
         val entries = mutableListOf<Pair<String, String>>()
         var databaseFiles: List<File> = listOf()
         try {
@@ -259,35 +265,44 @@ class SettingsFragment : PreferenceFragmentCompat() {
             logger.exception(TAG, exc.message.toString(), exc)
         }
         databaseFiles.forEach {
-            entries.add(Pair(it.absolutePath, createGUIListEntryFromFile(it)))
+            val albumArtCacheDir: File? = getAlbumArtCacheDirForDatabaseFile(it)
+            entries.add(Pair(it.absolutePath, createManageStorageGUIListEntry(it, albumArtCacheDir)))
         }
         multiListPref?.entryValues = entries.map { it.first }.toTypedArray()
         multiListPref?.entries = entries.map { it.second }.toTypedArray()
     }
 
-    private fun createGUIListEntryFromFile(file: File): String {
-        var fileName = file.name
-        try {
-            fileName = shortenDatabaseName(fileName)
-        } catch (exc: Exception) {
-            logger.exception(TAG, exc.message.toString(), exc)
+    private fun getAlbumArtCacheDirForDatabaseFile(databaseFile: File): File? {
+        val fileStorageID = shortenDatabaseName(databaseFile.name)
+        var storageRootDir = context?.applicationContext?.let { getStorageRootDir(it, fileStorageID) }
+        if (storageRootDir == null || !storageRootDir.exists()) {
+            return null
         }
+        return storageRootDir
+    }
+
+    private fun createManageStorageGUIListEntry(databaseFile: File, albumArtRootDir: File?): String {
+        val fileStorageID = shortenDatabaseName(databaseFile.name)
         var fileSizeStr = "???"
         var lastModifiedDateStr = "???"
         try {
-            val sizeBytes = file.length()
-            fileSizeStr = formatShortFileSize(context, sizeBytes)
+            var totalSizeBytes = databaseFile.length()
+            logger.debug(TAG, "Database file $databaseFile size: $totalSizeBytes bytes")
+            val albumArtDirSize = albumArtRootDir?.walkTopDown()?.filter { it.isFile }?.map { it.length() }?.sum() ?: 0
+            logger.debug(TAG, "Album art directory $albumArtRootDir size: $albumArtDirSize bytes")
+            totalSizeBytes += albumArtDirSize
+            fileSizeStr = formatShortFileSize(context, totalSizeBytes)
         } catch (exc: Exception) {
             logger.exception(TAG, exc.message.toString(), exc)
         }
         try {
-            val lastModifiedMS = file.lastModified()
+            val lastModifiedMS = databaseFile.lastModified()
             val lastModifiedDate = Date(lastModifiedMS)
             lastModifiedDateStr = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(lastModifiedDate)
         } catch (exc: Exception) {
             logger.exception(TAG, exc.message.toString(), exc)
         }
-        return "\u26C3 ${fileName}\n     $fileSizeStr \u2014 $lastModifiedDateStr"
+        return "\u26C3 ${fileStorageID}\n     $fileSizeStr \u2014 $lastModifiedDateStr"
     }
 
     private fun deleteFile(file: File) {
@@ -318,9 +333,15 @@ class SettingsFragment : PreferenceFragmentCompat() {
         return shortenDatabaseName(databasesInUse.first().name)
     }
 
+    // Shortens the metadata database name .sqlite filename for showing on GUI. Is equal to FileStorage ID
     private fun shortenDatabaseName(fileName: String): String {
-        val shortName = fileName.replace("^${AUDIOITEM_REPO_DB_PREFIX}(aw-)?".toRegex(), "")
-        return shortName.replace("\\.sqlite.*$".toRegex(), "")
+        try {
+            val shortName = fileName.replace("^${AUDIOITEM_REPO_DB_PREFIX}(aw-)?".toRegex(), "")
+            return shortName.replace("\\.sqlite.*$".toRegex(), "")
+        } catch (exc: Exception) {
+            logger.exception(TAG, exc.message.toString(), exc)
+            return fileName
+        }
     }
 
     private fun getDatabasesFiles(): List<File> {
@@ -345,6 +366,21 @@ class SettingsFragment : PreferenceFragmentCompat() {
             logger.exception(TAG, exc.message.toString(), exc)
         } catch (exc: IOException) {
             logger.exception(TAG, exc.message.toString(), exc)
+        }
+    }
+
+    @VisibleForTesting(otherwise = VisibleForTesting.Companion.PRIVATE)
+    fun deleteDatabaseAndAlbumArt(databaseFile: File) {
+        logger.debug(TAG, "User marked database file for deletion: $databaseFile")
+        try {
+            deleteFile(databaseFile)
+        } catch (exc: IOException) {
+            logger.exception(TAG, exc.message.toString(), exc)
+        }
+        val albumArtCacheDir: File? = getAlbumArtCacheDirForDatabaseFile(databaseFile)
+        if (albumArtCacheDir != null && albumArtCacheDir.exists()) {
+            logger.debug(TAG, "User marked album art cache directory for deletion: $albumArtCacheDir")
+            albumArtCacheDir.deleteRecursively()
         }
     }
 
@@ -405,8 +441,15 @@ class SettingsFragment : PreferenceFragmentCompat() {
                         settingsActivity.disableReplayGain()
                     }
                 }
-                PREF_DELETE_DATABASES -> {
-                    updateDatabaseFiles()
+                SHARED_PREF_SHOW_ALBUM_ART -> {
+                    if ((preference as SwitchPreferenceCompat).isChecked) {
+                        settingsActivity.enableShowAlbumArt()
+                    } else {
+                        settingsActivity.disableShowAlbumArt()
+                    }
+                }
+                PREF_MANAGE_STORAGE -> {
+                    updateDatabaseFilesAndCachedAlbumArt()
                 }
                 PREF_VERSION -> {
                     settingsActivity.showLog()

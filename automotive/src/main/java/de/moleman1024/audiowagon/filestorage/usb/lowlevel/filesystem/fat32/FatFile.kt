@@ -46,7 +46,7 @@ internal constructor(
     private val entry: FatLfnDirectoryEntry,
     override var parent: FatDirectory?
 ) : AbstractUsbFile() {
-    private val lock: ReentrantLock = ReentrantLock(true)
+    private val lock: ReentrantLock = ReentrantLock(false)
     private lateinit var chain: ClusterChain
     private var parentDirNeedsWrite = false
 

@@ -50,14 +50,20 @@ class MockUSBFile : USBFile {
 
     override fun read(offset: Long, outBuf: ByteBuffer) {
         Logger.debug("MockUSBFile",
-            "read(offset=$offset, destination=$outBuf " +
-                    "[content: destination=${outBuf.array().contentToString()}])")
+            "read(offset=$offset, outBuf=$outBuf " +
+                    "[content: outBuf=${outBuf.array().contentToString()}])")
         val destOffset = 0
         byteBuf.position(offset.toInt())
-        byteBuf.get(outBuf.array(), destOffset, outBuf.limit() - outBuf.position())
-        outBuf.position(outBuf.limit())
+        var lengthToRead = outBuf.limit() - outBuf.position()
+        if (lengthToRead > byteBuf.remaining()) {
+            lengthToRead = byteBuf.remaining()
+            Logger.warning("MockUSBFile", "Only $lengthToRead bytes remaining in file, can not fill buffer")
+        }
+        byteBuf.get(outBuf.array(), destOffset, lengthToRead)
+        outBuf.position(lengthToRead)
+        outBuf.limit(lengthToRead)
         byteBuf.rewind()
-        Logger.debug("MockUSBFile", "destination=${outBuf.array().contentToString()})")
+        Logger.debug("MockUSBFile", "At end of read() outBuf=${outBuf.array().contentToString()})")
     }
 
     override fun search(path: String): USBFile? {

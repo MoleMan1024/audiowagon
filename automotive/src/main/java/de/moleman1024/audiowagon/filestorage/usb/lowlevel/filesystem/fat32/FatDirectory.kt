@@ -62,7 +62,7 @@ internal constructor(
      */
     override var parent: FatDirectory?
 ) : AbstractUsbFile() {
-    private val lock = ReentrantLock(true)
+    private val lock = ReentrantLock(false)
     private lateinit var chain: ClusterChain
 
     /**

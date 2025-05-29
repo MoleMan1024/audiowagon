@@ -49,8 +49,9 @@ SPDX-License-Identifier: GPL-3.0-or-later
                 app:selectable="false"
                 app:title="@string/setting_database_status_title" />
         <MultiSelectListPreference
-                app:key="deleteDatabases"
-                app:title="@string/setting_delete_databases"
+                app:key="manageStorage"
+                app:title="@string/setting_manage_storage"
+                app:summary="@string/setting_manage_storage_summary"
                 app:persistent="false" />
         <Preference
                 app:key="usbStatusResID"
@@ -74,6 +75,11 @@ SPDX-License-Identifier: GPL-3.0-or-later
                 app:useSimpleSummaryProvider="false"
                 app:entries="@array/album_display_settings"
                 app:entryValues="@array/album_display_settings_values" />
+        <SwitchPreferenceCompat
+                app:key="showAlbumArt"
+                app:title="@string/setting_show_album_art"
+                app:persistent="true"
+                app:defaultValue="true" />
         <ListPreference
                 app:key="viewTab0"
                 app:title="@string/setting_view_tab_1"

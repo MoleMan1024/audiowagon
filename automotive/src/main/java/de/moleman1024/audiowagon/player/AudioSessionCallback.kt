@@ -133,6 +133,12 @@ class AudioSessionCallback(
             CMD_DISABLE_REPLAYGAIN -> {
                 notifyObservers(AudioSessionChange(AudioSessionChangeType.ON_DISABLE_REPLAYGAIN))
             }
+            CMD_ENABLE_SHOW_ALBUM_ART -> {
+                notifyObservers(AudioSessionChange(AudioSessionChangeType.ON_ENABLE_SHOW_ALBUM_ART))
+            }
+            CMD_DISABLE_SHOW_ALBUM_ART -> {
+                notifyObservers(AudioSessionChange(AudioSessionChangeType.ON_DISABLE_SHOW_ALBUM_ART))
+            }
             CMD_SET_AUDIOFOCUS_SETTING -> {
                 val audioSessionChange = AudioSessionChange(AudioSessionChangeType.ON_SET_AUDIOFOCUS_SETTING)
                 audioSessionChange.audioFocusSetting =

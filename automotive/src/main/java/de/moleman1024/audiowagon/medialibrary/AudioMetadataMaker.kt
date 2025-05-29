@@ -224,12 +224,6 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
         return getAlbumArtFromMediaDataSource(mediaDataSource)
     }
 
-    suspend fun hasEmbeddedAlbumArt(audioItem: AudioItem): Boolean {
-        logger.verbose(TAG, "hasAlbumArt(audioItem=$audioItem)")
-        val mediaDataSource = audioFileStorage.getDataSourceForURI(audioItem.uri)
-        return getAlbumArtFromMediaDataSource(mediaDataSource) != null
-    }
-
     private fun getAlbumArtFromMediaDataSource(mediaDataSource: MediaDataSource): ByteArray? {
         val metadataRetriever = MediaMetadataRetriever()
         if (mediaDataSource.size <= 0) {
@@ -251,58 +245,6 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
         return null
     }
 
-    fun resizeAlbumArt(albumArtBytes: ByteArray): ByteArray? {
-        val resizedBitmap: Bitmap
-        try {
-            logger.verbose(TAG, "Decoding image")
-            // https://developer.android.com/topic/performance/graphics/load-bitmap
-            val bitmapOptions = BitmapFactory.Options().apply {
-                inJustDecodeBounds = true
-            }
-            BitmapFactory.decodeByteArray(albumArtBytes, 0, albumArtBytes.size, bitmapOptions)
-            logger.verbose(
-                TAG,
-                "Got original bitmap bounds: width=${bitmapOptions.outWidth},height=${bitmapOptions.outHeight}"
-            )
-            val widthHeightForResize = AlbumArtContentProvider.getAlbumArtSizePixels()
-            bitmapOptions.inSampleSize = calculateBitmapInSampleSize(
-                bitmapOptions.outWidth,
-                bitmapOptions.outHeight,
-                widthHeightForResize,
-                widthHeightForResize
-            )
-            logger.verbose(TAG, "Using bitmap inSampleSize: ${bitmapOptions.inSampleSize}")
-            bitmapOptions.inJustDecodeBounds = false
-            logger.verbose(TAG, "Scaling image to square with pixels: $widthHeightForResize")
-            resizedBitmap =
-                BitmapFactory.decodeByteArray(albumArtBytes, 0, albumArtBytes.size, bitmapOptions) ?: return null
-        } catch (exc: NullPointerException) {
-            logger.exception(TAG, "Exception when decoding image", exc)
-            return null
-        }
-        val stream = ByteArrayOutputStream()
-        logger.verbose(TAG, "Compressing resized image")
-        val quality = DEFAULT_JPEG_QUALITY_PERCENTAGE
-        // TODO: I am getting some warnings in log on Pixel 3 XL AAOS that this takes some time
-        resizedBitmap.compress(Bitmap.CompressFormat.JPEG, quality, stream)
-        return stream.toByteArray()
-    }
-
-    // https://developer.android.com/topic/performance/graphics/load-bitmap
-    private fun calculateBitmapInSampleSize(width: Int, height: Int, reqWidth: Int, reqHeight: Int): Int {
-        var inSampleSize = 1
-        if (height > reqHeight || width > reqWidth) {
-            val halfHeight: Int = height / 2
-            val halfWidth: Int = width / 2
-            // Calculate the largest inSampleSize value that is a power of 2 and keeps both
-            // height and width larger than the requested height and width.
-            while (halfHeight / inSampleSize >= reqHeight && halfWidth / inSampleSize >= reqWidth) {
-                inSampleSize *= 2
-            }
-        }
-        return inSampleSize
-    }
-
     companion object {
         fun createURIForAlbumArtForAlbum(id: Int): Uri {
             return Uri.parse("content://$AUTHORITY/$ART_URI_PART/$ART_URI_PART_ALBUM/${id}")
@@ -315,6 +257,58 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
         fun createURIForAlbumArtForFile(path: String): Uri {
             val pathEncoded = Uri.encode(path)
             return Uri.parse("content://$AUTHORITY/$ART_URI_PART/$ART_URI_PART_FILE${pathEncoded}")
+        }
+
+        fun resizeAlbumArt(albumArtBytes: ByteArray): ByteArray? {
+            val resizedBitmap: Bitmap
+            try {
+                logger.verbose(TAG, "Decoding image")
+                // https://developer.android.com/topic/performance/graphics/load-bitmap
+                val bitmapOptions = BitmapFactory.Options().apply {
+                    inJustDecodeBounds = true
+                }
+                BitmapFactory.decodeByteArray(albumArtBytes, 0, albumArtBytes.size, bitmapOptions)
+                logger.verbose(
+                    TAG,
+                    "Got original bitmap bounds: width=${bitmapOptions.outWidth},height=${bitmapOptions.outHeight}"
+                )
+                val widthHeightForResize = AlbumArtContentProvider.getAlbumArtSizePixels()
+                bitmapOptions.inSampleSize = calculateBitmapInSampleSize(
+                    bitmapOptions.outWidth,
+                    bitmapOptions.outHeight,
+                    widthHeightForResize,
+                    widthHeightForResize
+                )
+                logger.verbose(TAG, "Using bitmap inSampleSize: ${bitmapOptions.inSampleSize}")
+                bitmapOptions.inJustDecodeBounds = false
+                logger.verbose(TAG, "Scaling image to square with pixels: $widthHeightForResize")
+                resizedBitmap =
+                    BitmapFactory.decodeByteArray(albumArtBytes, 0, albumArtBytes.size, bitmapOptions) ?: return null
+            } catch (exc: NullPointerException) {
+                logger.exception(TAG, "Exception when decoding image", exc)
+                return null
+            }
+            val stream = ByteArrayOutputStream()
+            logger.verbose(TAG, "Compressing resized image")
+            val quality = DEFAULT_JPEG_QUALITY_PERCENTAGE
+            // TODO: I am getting some warnings in log on Pixel 3 XL AAOS that this takes some time
+            resizedBitmap.compress(Bitmap.CompressFormat.JPEG, quality, stream)
+            return stream.toByteArray()
+        }
+
+        // https://developer.android.com/topic/performance/graphics/load-bitmap
+        private fun calculateBitmapInSampleSize(width: Int, height: Int, reqWidth: Int, reqHeight: Int): Int {
+            var inSampleSize = 1
+            if (height > reqHeight || width > reqWidth) {
+                val halfHeight: Int = height / 2
+                val halfWidth: Int = width / 2
+                // Calculate the largest inSampleSize value that is a power of 2 and keeps both
+                // height and width larger than the requested height and width.
+                while (halfHeight / inSampleSize >= reqHeight && halfWidth / inSampleSize >= reqWidth) {
+                    inSampleSize *= 2
+                }
+            }
+            return inSampleSize
         }
     }
 

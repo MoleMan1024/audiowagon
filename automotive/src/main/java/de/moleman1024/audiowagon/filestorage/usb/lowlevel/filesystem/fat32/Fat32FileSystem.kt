@@ -53,7 +53,7 @@ private constructor(blockDevice: BlockDeviceDriver, first512Bytes: ByteBuffer) :
     private val fat: FAT
     private val fsInfoStructure: FsInfoStructure
     override val rootDirectory: FatDirectory
-    private val lock = ReentrantLock(true)
+    private val lock = ReentrantLock(false)
 
     /**
      * Caches UsbFile instances returned by list files method. If we do not do that we will get a new instance
@@ -63,7 +63,7 @@ private constructor(blockDevice: BlockDeviceDriver, first512Bytes: ByteBuffer) :
      * See also issue https://github.com/magnusja/libaums/issues/125
      */
     private val fileCache = WeakHashMap<String, UsbFile>()
-    private val fileCacheLock = ReentrantLock(true)
+    private val fileCacheLock = ReentrantLock(false)
 
     // this is confied to single thread externally
     override val volumeLabel: String

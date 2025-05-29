@@ -112,7 +112,8 @@ Firebase Crashlytics\n\nPełne teksty licencji:\nwww.apache.org/licenses/LICENSE
     <string name="browse_tree_category_files">Pliki</string>
     <string name="setting_library_category_title">Media</string>
     <string name="setting_read_metadata">Odczyt metadanych</string>
-    <string name="setting_delete_databases">Usuń biblioteki</string>
+    <string name="setting_manage_storage">Usuń biblioteki / pamięć podręczną</string>
+    <string name="setting_manage_storage_summary">(metadane i okładki albumów)</string>
     <string name="setting_database_status_title">Biblioteka metadanych</string>
     <string name="setting_enable_replaygain">ReplayGain</string>
     <string name="searching_voice_input">Szukanie głosowe: \"%1$s\"</string>
@@ -146,4 +147,5 @@ to w ulepszeniu aplikacji (funkcja wymaga połączenia z internetem).</string>
     <string name="browse_tree_please_wait">Proszę czekać …</string>
     <string name="setting_equalizer_enable">Włączony</string>
     <string name="equalizer_preset_custom">Niestandardowe</string>
+    <string name="setting_show_album_art">Pokaż okładkę albumu</string>
 </resources>

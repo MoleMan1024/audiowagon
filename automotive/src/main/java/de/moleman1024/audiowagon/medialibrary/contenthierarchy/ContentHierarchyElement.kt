@@ -270,17 +270,14 @@ abstract class ContentHierarchyElement(
                     val description = audioFileStorage.createDirectoryDescription(fileOrDir)
                     MediaItem(description, MediaItem.FLAG_BROWSABLE)
                 }
-
                 is AudioFile -> {
                     val description = audioFileStorage.createAudioFileDescription(fileOrDir)
                     MediaItem(description, MediaItem.FLAG_PLAYABLE)
                 }
-
                 is PlaylistFile -> {
                     val description = audioFileStorage.createPlaylistFileDescription(fileOrDir)
                     MediaItem(description, MediaItem.FLAG_PLAYABLE)
                 }
-
                 else -> {
                     throw AssertionError("Invalid type: $fileOrDir")
                 }

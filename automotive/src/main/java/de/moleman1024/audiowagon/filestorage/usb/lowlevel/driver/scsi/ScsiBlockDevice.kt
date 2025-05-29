@@ -44,7 +44,6 @@ class ScsiBlockDevice(private val usbCommunication: USBCommunication, private va
     private val cswBuffer: ByteBuffer = Util.allocateByteBuffer(CommandStatusWrapper.SIZE)
 
     override var blockSize: Int = 0
-        private set
     private var lastBlockAddress: Int = 0
 
     private val writeCommand = ScsiWrite10(lun = lun)
@@ -74,7 +73,7 @@ class ScsiBlockDevice(private val usbCommunication: USBCommunication, private va
      * @see ScsiReadCapacityResponse
      */
     override fun init() {
-        for (i in 0..MAX_INIT_ATTEMPTS) {
+        (0..MAX_INIT_ATTEMPTS).forEach { i ->
             try {
                 initAttempt()
                 return
@@ -93,7 +92,7 @@ class ScsiBlockDevice(private val usbCommunication: USBCommunication, private va
     }
 
     private fun initAttempt() {
-        logger.debug(TAG, "initAttempt()")
+        logger.debug(TAG, "initAttempt() (instance=$this)")
         val allocationSize = 36
         val inBuffer = Util.allocateByteBuffer(allocationSize)
         val inquiry = ScsiInquiry(allocationSize.toByte(), lun = lun)
@@ -173,11 +172,14 @@ class ScsiBlockDevice(private val usbCommunication: USBCommunication, private va
                 logger.warning(TAG, (e.message ?: "PipeException") + ", try bulk storage reset and retry")
                 bulkOnlyMassStorageReset()
             } catch (e: IOException) {
-                logger.warning(TAG, (e.message ?: "IOException") + ", attempt: $i")
+                logger.warning(TAG, (e.message ?: "IOException") + ", attempt: $i (instance: $this)")
                 logAttempts = true
                 val nowMS: Long = System.currentTimeMillis()
                 if (nowMS - startTimeMS > 10000) {
                     throw IOException("MAX_RECOVERY_ATTEMPTS exceeded, device timeout")
+                }
+                if (i >= MAX_RECOVERY_ATTEMPTS) {
+                    break
                 }
             }
             if (!usbCommunication.isClosed()) {

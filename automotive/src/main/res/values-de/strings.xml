@@ -117,7 +117,8 @@ Vektorgrafiken, entwickelt von Google\n&#x2013; Firebase Crashlytics\n\nLizenzve
     <string name="browse_tree_category_files">Dateien</string>
     <string name="setting_library_category_title">Medien</string>
     <string name="setting_read_metadata">Metadaten auslesen</string>
-    <string name="setting_delete_databases">Datenbanken löschen</string>
+    <string name="setting_manage_storage">Datenbank / Cache löschen</string>
+    <string name="setting_manage_storage_summary">(Metadaten und Alben-Cover)</string>
     <string name="setting_database_status_title">Datenbank</string>
     <string name="setting_enable_replaygain">ReplayGain</string>
     <string name="searching_voice_input">Sprachsuche: \"%1$s\"</string>
@@ -150,4 +151,5 @@ verbessern (benötigt Internetverbindung).</string>
     <string name="browse_tree_please_wait">Bitte warten …</string>
     <string name="setting_equalizer_enable">Aktiviert</string>
     <string name="equalizer_preset_custom">Benutzerdefiniert</string>
+    <string name="setting_show_album_art">Alben-Cover anzeigen</string>
 </resources>

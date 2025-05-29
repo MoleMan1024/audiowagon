@@ -26,12 +26,13 @@ private val logger = Logger
  */
 open class USBAudioDataSource(
     protected var usbFile: USBFile?,
-    private val chunkSize: Int
+    private val chunkSize: Int,
 ) : MediaDataSource() {
     var isClosed = false
     var hasError = false
     private var fileSize: Long = -1L
     private val lastUSBReadTimings: MutableList<Long> = mutableListOf()
+    private var numReads = 0
 
     init {
         logger.verbose(
@@ -84,7 +85,7 @@ open class USBAudioDataSource(
         while (numBytesToReadRemain > 0) {
             try {
                 numBytesInChunk = readFromUSBFileSystem(startPos, tempBuffer)
-            } catch (exc: IOException) {
+            } catch (_: IOException) {
                 return -1
             }
             if (isClosed) {
@@ -138,10 +139,15 @@ open class USBAudioDataSource(
             throw exc
         }
         val toc = Util.getMillisNow()
+        numReads += 1
+        if (numReads >= 100) {
+            logReadTime(outBuffer.array().size)
+            numReads = 0
+        }
         val readDurationMilliSec = toc - tic
         if (readDurationMilliSec > MIN_READ_DURATION_MILLISEC_CONSIDERED_SLOW
             && lastUSBReadTimings.size == NUM_MAX_USB_READ_TIMINGS_TO_KEEP) {
-            logSlowReadTime(readDurationMilliSec)
+            logSlowReadTime(readDurationMilliSec, outBuffer.array().size, position)
         }
         lastUSBReadTimings.add(readDurationMilliSec)
         if (lastUSBReadTimings.size > NUM_MAX_USB_READ_TIMINGS_TO_KEEP) {
@@ -149,11 +155,17 @@ open class USBAudioDataSource(
         }
     }
 
-    private fun logSlowReadTime(lastReadDurationMilliSec: Long) {
+    private fun logSlowReadTime(lastReadDurationMilliSec: Long, size: Int, position: Long) {
         val avgReadDurationMilliSec = lastUSBReadTimings.average()
-        logger.warning(TAG, "Last read of up to $chunkSize bytes from USB was slow: $lastReadDurationMilliSec ms " +
-                "compared to average: $avgReadDurationMilliSec ms"
+        logger.warning(TAG, "Last read of $size bytes (chunkSize=$chunkSize) at position $position for USB file " +
+                "'${usbFile?.name}' was slow: " +
+                "$lastReadDurationMilliSec ms compared to average: $avgReadDurationMilliSec ms"
         )
+    }
+
+    private fun logReadTime(size: Int) {
+        logger.debug(TAG, "Average read time of $size bytes (chunkSize=$chunkSize) for USB file " +
+                "'${usbFile?.name}': ${lastUSBReadTimings.average()} ms")
     }
 
 }

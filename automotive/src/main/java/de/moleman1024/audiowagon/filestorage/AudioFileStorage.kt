@@ -569,7 +569,10 @@ open class AudioFileStorage(
         logger.debug(Util.TAGCRT(TAG, coroutineContext), "Looking for album art in directory: $directory")
         if (recentDirToAlbumArtMap.containsKey(directory)) {
             val albumArtInCache = recentDirToAlbumArtMap[directory]
-            logger.verbose(Util.TAGCRT(TAG, coroutineContext), "Returning album art for $directory from cache: ${albumArtInCache?.uri}")
+            logger.verbose(
+                Util.TAGCRT(TAG, coroutineContext),
+                "Returning album art for $directory from cache: ${albumArtInCache?.uri}"
+            )
             return albumArtInCache
         }
         val storageLocation = getStorageLocationForURI(uri)

@@ -141,6 +141,7 @@ class USBDeviceConnections(
                     Util.TAGCRT(TAG, coroutineContext),
                     "Received permission change for USB device that is not attached"
                 )
+                notifyObservers(DeviceChange(null, DeviceAction.REFRESH))
                 return@launch
             }
             usbDevicePermissions.onUSBPermissionChanged(intent, usbMediaDevice)

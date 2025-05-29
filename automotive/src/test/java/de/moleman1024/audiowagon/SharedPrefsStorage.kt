@@ -73,6 +73,14 @@ open class SharedPrefsStorage {
             }
 
             override fun getBoolean(key: String?, value: Boolean): Boolean {
+                if (key !in mockPreferencesMap) {
+                    Logger.debug(TAG, "returning default value $value for getBoolean($key)")
+                    return value
+                }
+                if (mockPreferencesMap[key] == null) {
+                    Logger.debug(TAG, "returning default value $value instead of null for getBoolean($key)")
+                    return value
+                }
                 return mockPreferencesMap[key] as Boolean
             }
 

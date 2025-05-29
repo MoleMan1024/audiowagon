@@ -115,7 +115,8 @@ udviklet af Google\n&#x2013; Firebase Crashlytics\n\nLicenstekster:\nwww.apache.
     <string name="browse_tree_category_files">Filer</string>
     <string name="setting_library_category_title">Medier</string>
     <string name="setting_read_metadata">Læs metadata</string>
-    <string name="setting_delete_databases">Slette databaser</string>
+    <string name="setting_manage_storage">Slette database / cache</string>
+    <string name="setting_manage_storage_summary">(metadata og albumcover)</string>
     <string name="setting_database_status_title">Database</string>
     <string name="setting_enable_replaygain">ReplayGain</string>
     <string name="searching_voice_input">Stemmesøgning: "%1$s"</string>
@@ -149,4 +150,5 @@ forbedre appen (kræver internetforbindelse).</string>
     <string name="browse_tree_please_wait">Vent …</string>
     <string name="setting_equalizer_enable">Aktiveret</string>
     <string name="equalizer_preset_custom">Brugerdefineret</string>
+    <string name="setting_show_album_art">Vis albumcover</string>
 </resources>

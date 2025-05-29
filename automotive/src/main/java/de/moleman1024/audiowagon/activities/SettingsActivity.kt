@@ -149,6 +149,16 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
         mediaController.sendCommand(CMD_DISABLE_REPLAYGAIN, null, null)
     }
 
+    fun enableShowAlbumArt() {
+        assertMediaControllerInitialized()
+        mediaController.sendCommand(CMD_ENABLE_SHOW_ALBUM_ART, null, null)
+    }
+
+    fun disableShowAlbumArt() {
+        assertMediaControllerInitialized()
+        mediaController.sendCommand(CMD_DISABLE_SHOW_ALBUM_ART, null, null)
+    }
+
     fun updateEqualizerPreset(presetValue: String) {
         assertMediaControllerInitialized()
         val bundle = Bundle()

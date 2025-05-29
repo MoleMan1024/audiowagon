@@ -15,8 +15,10 @@ import androidx.annotation.VisibleForTesting
 import de.moleman1024.audiowagon.BuildConfig
 import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.enums.LogLevel
+import de.moleman1024.audiowagon.exceptions.NoAudioItemException
 import de.moleman1024.audiowagon.filestorage.usb.lowlevel.USBFile
 import de.moleman1024.audiowagon.filestorage.usb.lowlevel.USBFileOutputStream
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -67,7 +69,7 @@ object Logger : LoggerInterface {
         this.chunkSize = chunkSize
         usbFile = usbFileForLogging
         try {
-            // do not use a a BufferedOutputStream here, libaums has issues with that
+            // do not use a BufferedOutputStream here, libaums has issues with that
             outStream = usbFileForLogging.getOutputStream()
             val logLines = buffer.getNewestEntriesForLogFile()
             if (logLines.isNotEmpty()) {
@@ -223,9 +225,8 @@ object Logger : LoggerInterface {
             if (outStream == null) {
                 return
             }
-            verbose(TAG, "Writing ${logLines.size} log lines to USB")
             try {
-                // we yield to other coroutines that want to read from, but we use a mutex to prevent interleaved
+                // We yield to other coroutines that want to read from, but we use a mutex to prevent interleaved
                 // writing to logfile on USB
                 writeToFileMutex.withLock {
                     logLines.forEachIndexed { index, line ->
@@ -253,15 +254,28 @@ object Logger : LoggerInterface {
 
     fun launchLogFileWriteJob() {
         usbLogFileWriteJob?.cancel()
-        usbLogFileWriteJob = scope?.launch(Dispatchers.IO) {
-            while (true) {
-                writeBufferedLogToUSBFile()
-                delay(USB_LOGFILE_WRITE_PERIOD_MS)
+        val exceptionHandler = CoroutineExceptionHandler { coroutineContext, exc ->
+            val msg = "$coroutineContext threw $exc"
+            when (exc) {
+                is CancellationException -> {
+                    Log.w(TAG, "CancellationException (msg=$msg)")
+                }
+                else -> {
+                    Log.e(TAG, msg, exc)
+                }
             }
+        }
+        usbLogFileWriteJob = scope?.launch(exceptionHandler + Dispatchers.IO) {
+            while (!usbFileHasError && usbFile != null) {
+                delay(USB_LOGFILE_WRITE_PERIOD_MS)
+                writeBufferedLogToUSBFile()
+            }
+            Log.d(TAG, "usbLogFileWriteJob has ended")
         }
     }
 
     fun cancelLogFileWriteJob() {
+        Log.d(TAG, "Cancelling log file write job: $usbLogFileWriteJob")
         usbLogFileWriteJob?.cancel()
         usbLogFileWriteJob = null
     }

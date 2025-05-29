@@ -105,7 +105,8 @@ Project\n&#x2013; libaums 程序库作者为 Magnus Jahnen\n&#x2013; 矢量图�
     <string name="browse_tree_category_files">文档</string>
     <string name="setting_library_category_title">存储介质</string>
     <string name="setting_read_metadata">读取元数据</string>
-    <string name="setting_delete_databases">删除数据库</string>
+    <string name="setting_manage_storage">删除数据库/缓存</string>
+    <string name="setting_manage_storage_summary">(元数据和专辑封面)</string>
     <string name="setting_database_status_title">数据库</string>
     <string name="setting_enable_replaygain">自动音量 - ReplayGain</string>
     <string name="searching_voice_input">语音搜索: \"%1$s\"</string>
@@ -137,4 +138,5 @@ Project\n&#x2013; libaums 程序库作者为 Magnus Jahnen\n&#x2013; 矢量图�
     <string name="browse_tree_please_wait">请稍等 …</string>
     <string name="setting_equalizer_enable">激活</string>
     <string name="equalizer_preset_custom">个性化</string>
+    <string name="setting_show_album_art">显示专辑封面</string>
 </resources>

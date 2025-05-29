@@ -72,28 +72,28 @@ class AudioItemLibrary(
     private val gui: GUI,
     private val sharedPrefs: SharedPrefs
 ) {
-    private val metadataMaker = AudioMetadataMaker(audioFileStorage)
     val storageToRepoMap = mutableMapOf<String, AudioItemRepository>()
-    private val libraryMutex = Mutex()
     var isBuildingLibrary = false
     var numFileDirsSeenWhenBuildingLibrary = 0
     var libraryExceptionObservers = mutableListOf<(Exception) -> Unit>()
-    private var isBuildLibraryCancelled: Boolean = false
-    private val recentAudioItemToAlbumArtMap: AudioItemToAlbumArtMapCache = AudioItemToAlbumArtMapCache()
-
     // The order of tabs at the top of the browse view
     // Configurable as per https://github.com/MoleMan1024/audiowagon/issues/124
     val viewTabs: MutableList<ViewTabSetting> = mutableListOf()
+    var albumArtStyleSetting: AlbumStyleSetting = sharedPrefs.getAlbumStyleSettingEnum(context, logger, TAG)
+    var isShowAlbumArtEnabled = sharedPrefs.isShowAlbumArtEnabled(context)
+    var useInMemoryDatabase: Boolean = false
+    private val metadataMaker = AudioMetadataMaker(audioFileStorage)
+    private val libraryMutex = Mutex()
+    private val buildLibraryJobs = ConcurrentLinkedQueue<Job>()
+    private val recentAudioItemToAlbumArtMap: AudioItemToAlbumArtMapCache = AudioItemToAlbumArtMapCache()
+    private var isBuildLibraryCancelled: Boolean = false
+    private var albumArtLibrary: AlbumArtLibrary? = null
 
     private class AudioItemToAlbumArtMapCache : LinkedHashMap<String, ByteArray>() {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, ByteArray>?): Boolean {
             return size > MAX_NUM_ALBUM_ART_TO_CACHE
         }
     }
-
-    var albumArtStyleSetting: AlbumStyleSetting = sharedPrefs.getAlbumStyleSettingEnum(context, logger, TAG)
-    var useInMemoryDatabase: Boolean = false
-    private val buildLibraryJobs = ConcurrentLinkedQueue<Job>()
 
     init {
         val viewTabsFromSettings = sharedPrefs.getViewTabSettings(context, logger, TAG)
@@ -116,6 +116,7 @@ class AudioItemLibrary(
             }
             val repo = AudioItemRepository(storageID, context, dispatcher, dbBuilder)
             storageToRepoMap[storageID] = repo
+            albumArtLibrary = AlbumArtLibrary(context, storageID, audioFileStorage)
         }
     }
 
@@ -128,6 +129,7 @@ class AudioItemLibrary(
             val repo = storageToRepoMap[storageID] ?: return
             repo.close()
             storageToRepoMap.remove(storageID)
+            albumArtLibrary = null
         }
     }
 
@@ -304,18 +306,29 @@ class AudioItemLibrary(
             val dataSource = audioFileStorage.getDataSourceForAudioFile(audioFile)
             val metadataRetriever = metadataMaker.setupMetadataRetrieverWithDataSource(dataSource)
             if (isBuildLibraryCancelled) {
+                metadataMaker.cleanMetadataRetriever(metadataRetriever, dataSource)
                 return
             }
             val metadata: AudioItem = extractMetadataFrom(audioFile, metadataRetriever)
-            val albumArtSourceURI: FileLike? = findAlbumArtFor(audioFile, metadataRetriever)
-            metadataMaker.cleanMetadataRetriever(metadataRetriever, dataSource)
+            val albumArtSourceURI: FileLike? = findAlbumArtSourceFor(audioFile, metadataRetriever)
             if (isBuildLibraryCancelled) {
+                metadataMaker.cleanMetadataRetriever(metadataRetriever, dataSource)
                 return
             }
             val endTime = System.nanoTime()
             val timeTakenMS = (endTime - startTime) / 1000000L
             logger.debug(TAG, "Extracted metadata in ${timeTakenMS}ms: $metadata")
             repo.populateDatabaseFrom(audioFile, metadata, albumArtSourceURI)
+            if (albumArtSourceURI != null) {
+                if (albumArtSourceURI is GeneralFile) {
+                    val albumArtID = Util.createIDForAlbumArtForFile(albumArtSourceURI.path)
+                    albumArtLibrary?.copyAlbumArtFromFileStorageToDisk(albumArtSourceURI, albumArtID)
+                } else {
+                    val albumArtID = Util.createIDForAlbumArtForFile(audioFile.path)
+                    albumArtLibrary?.storeEmbeddedAlbumArtBytesOnDisk(metadataRetriever.embeddedPicture, albumArtID)
+                }
+            }
+            metadataMaker.cleanMetadataRetriever(metadataRetriever, dataSource)
         } catch (exc: IOException) {
             // this can happen for example for files with strange filenames, the file will be ignored
             logger.exception(TAG, "I/O exception when processing file: $audioFile", exc)
@@ -527,7 +540,7 @@ class AudioItemLibrary(
                             }
                         }
                     }
-                    if (audioItem.albumArtURI != Uri.EMPTY) {
+                    if (audioItem.albumArtURI != Uri.EMPTY && isShowAlbumArtEnabled) {
                         setIconUri(audioItem.albumArtURI)
                     } else {
                         setIconUri(
@@ -545,7 +558,7 @@ class AudioItemLibrary(
                     } else {
                         setSubtitle(context.getString(R.string.browse_tree_unknown_artist))
                     }
-                    if (audioItem.albumArtURI != Uri.EMPTY) {
+                    if (audioItem.albumArtURI != Uri.EMPTY && isShowAlbumArtEnabled) {
                         setIconUri(audioItem.albumArtURI)
                     } else {
                         setIconUri(
@@ -785,45 +798,6 @@ class AudioItemLibrary(
         return metadataMaker.createMetadataForItem(audioItem)
     }
 
-    private suspend fun getAlbumArtForFile(file: FileLike): ByteArray? {
-        val byteArrayFromCache: ByteArray? = recentAudioItemToAlbumArtMap[file.uri.toString()]
-        if (byteArrayFromCache != null) {
-            logger.debug(TAG, "Returning album art from cache for: $file")
-            return byteArrayFromCache
-        }
-        if (!areAnyReposAvail()) {
-            logger.warning(TAG, "No repositories available, can not retrieve album art for file: $file")
-            return null
-        }
-        val albumArtBytes: ByteArray?
-        when (file) {
-            is AudioFile -> {
-                val audioItem = createAudioItemForFile(file)
-                albumArtBytes = metadataMaker.getEmbeddedAlbumArtForAudioItem(audioItem)
-                if (albumArtBytes != null) {
-                    val albumArtResized = metadataMaker.resizeAlbumArt(albumArtBytes)
-                    if (albumArtResized != null) {
-                        logger.debug(TAG, "Got album art with size ${albumArtResized.size} for: ${audioItem.uri}")
-                        recentAudioItemToAlbumArtMap[file.uri.toString()] = albumArtResized
-                    }
-                    return albumArtResized
-                }
-            }
-
-            is GeneralFile -> {
-                albumArtBytes = audioFileStorage.getByteArrayForURI(file.uri)
-                val albumArtResized = metadataMaker.resizeAlbumArt(albumArtBytes)
-                if (albumArtResized != null) {
-                    logger.debug(TAG, "Found album art in directory with size ${albumArtResized.size} for: ${file.uri}")
-                    recentAudioItemToAlbumArtMap[file.uri.toString()] = albumArtResized
-                }
-                return albumArtResized
-            }
-        }
-        logger.warning(TAG, "Could not retrieve any album art for: ${file.uri}")
-        return null
-    }
-
     suspend fun getAlbumArtForArtURI(uri: Uri): ByteArray? {
         val uriString = uri.toString()
         if (!uriString.contains("$ART_URI_PART/$ART_URI_PART_FILE")) {
@@ -867,19 +841,73 @@ class AudioItemLibrary(
             val pathInURI = uri.path?.replace("^/$ART_URI_PART/$ART_URI_PART_FILE".toRegex(), "") ?: return null
             val audioFile =
                 AudioFile(Util.createURIForPath(audioFileStorage.getPrimaryStorageLocation().storageID, pathInURI))
-            val albumArtFile = findAlbumArtFor(audioFile) ?: return null
+            val albumArtID = Util.createIDForAlbumArtForFile(audioFile.path)
+            val albumArtBytes = albumArtLibrary?.findResizedAlbumArtOnDisk(albumArtID)
+            if (albumArtBytes != null) {
+                return albumArtBytes
+            }
+            val albumArtFile = findAlbumArtSourceFor(audioFile) ?: return null
             return getAlbumArtForFile(albumArtFile)
         }
     }
 
-    private suspend fun findAlbumArtFor(
+    private suspend fun getAlbumArtForFile(file: FileLike): ByteArray? {
+        val byteArrayFromCache: ByteArray? = recentAudioItemToAlbumArtMap[file.uri.toString()]
+        if (byteArrayFromCache != null) {
+            logger.debug(TAG, "Returning album art from cache for: $file")
+            return byteArrayFromCache
+        }
+        if (!areAnyReposAvail()) {
+            logger.warning(TAG, "No repositories available, can not retrieve album art for file: $file")
+            return null
+        }
+        var albumArtBytes: ByteArray?
+        when (file) {
+            is AudioFile -> {
+                val audioItem = createAudioItemForFile(file)
+                val albumArtID = Util.createIDForAlbumArtForFile(file.path)
+                albumArtBytes = albumArtLibrary?.findResizedAlbumArtOnDisk(albumArtID)
+                if (albumArtBytes != null) {
+                    return albumArtBytes
+                }
+                albumArtBytes = metadataMaker.getEmbeddedAlbumArtForAudioItem(audioItem)
+                if (albumArtBytes != null) {
+                    val albumArtResized = AudioMetadataMaker.resizeAlbumArt(albumArtBytes)
+                    if (albumArtResized != null) {
+                        logger.debug(TAG, "Got album art with size ${albumArtResized.size} for: ${audioItem.uri}")
+                        recentAudioItemToAlbumArtMap[file.uri.toString()] = albumArtResized
+                    }
+                    return albumArtResized
+                }
+            }
+            // This means file is a path to a cover.jpg or similar
+            is GeneralFile -> {
+                val albumArtID = Util.createIDForAlbumArtForFile(file.path)
+                albumArtBytes = albumArtLibrary?.findResizedAlbumArtOnDisk(albumArtID)
+                if (albumArtBytes != null) {
+                    return albumArtBytes
+                }
+                albumArtBytes = audioFileStorage.getByteArrayForURI(file.uri)
+                val albumArtResized = AudioMetadataMaker.resizeAlbumArt(albumArtBytes)
+                if (albumArtResized != null) {
+                    logger.debug(TAG, "Found album art in directory with size ${albumArtResized.size} for: ${file.uri}")
+                    recentAudioItemToAlbumArtMap[file.uri.toString()] = albumArtResized
+                }
+                return albumArtResized
+            }
+        }
+        logger.warning(TAG, "Could not retrieve any album art for: ${file.uri}")
+        return null
+    }
+
+    private suspend fun findAlbumArtSourceFor(
         audioFile: AudioFile, metadataRetriever: MediaMetadataRetriever? = null
     ): FileLike? {
         val audioItem = createAudioItemForFile(audioFile)
         val hasEmbeddedAlbumArt = if (metadataRetriever != null) {
             metadataMaker.getAlbumArtFromMetadataRetriever(metadataRetriever) != null
         } else {
-            metadataMaker.hasEmbeddedAlbumArt(audioItem)
+            metadataMaker.getEmbeddedAlbumArtForAudioItem(audioItem) != null
         }
         if (hasEmbeddedAlbumArt) {
             logger.debug(TAG, "Found embedded album art for: ${audioFile.name}")
@@ -968,6 +996,7 @@ class AudioItemLibrary(
             val audioItem = AudioItem()
             val contentHierarchyID = ContentHierarchyID(ContentHierarchyType.FILE)
             contentHierarchyID.path = file.path
+            contentHierarchyID.storageID = file.storageID
             audioItem.id = ContentHierarchyElement.serialize(contentHierarchyID)
             audioItem.uri = file.uri
             audioItem.title = file.name

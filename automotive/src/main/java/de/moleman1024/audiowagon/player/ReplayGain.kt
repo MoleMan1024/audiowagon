@@ -105,7 +105,7 @@ class ReplayGain(
             val replayGainStr = replayGainMatch.groupValues[1].trim()
             try {
                 replayGain = replayGainStr.toFloat()
-            } catch (exc: NumberFormatException) {
+            } catch (_: NumberFormatException) {
                 return REPLAYGAIN_NOT_FOUND
             }
         }
@@ -125,7 +125,7 @@ class ReplayGain(
                 // opus replay gain is stored as 8-bit signed integer
                 val replayGainQ78 = replayGainStr.toInt()
                 replayGain = replayGainQ78.toFloat() / 256f
-            } catch (exc: java.lang.NumberFormatException) {
+            } catch (_: java.lang.NumberFormatException) {
                 return REPLAYGAIN_NOT_FOUND
             }
         }

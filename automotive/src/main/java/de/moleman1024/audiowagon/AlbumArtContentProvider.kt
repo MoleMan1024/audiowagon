@@ -24,6 +24,9 @@ import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.lang.Integer.min
 import java.time.Instant
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.thread
 
 private const val TAG = "AlbumArtContentProv"
@@ -35,6 +38,7 @@ private const val PIPE_CHUNK_SIZE_BYTES = 16384
 // When AudioBrowserService binder connection is unbound, this is usually because we are shutting down or going to
 // sleep. To avoid that the media GUI re-binds immediately to fetch more album art, we block re-binding for some seconds
 private const val SECONDS_TO_BLOCK_AFTER_UNBIND: Long = 4
+private const val MILLISECONDS_TO_WAIT_FOR_AUDIOBROWSERSERVICE_BIND: Long = 200
 
 /**
  * A content provider so that media browser GUI can retrieve album art.
@@ -50,6 +54,9 @@ class AlbumArtContentProvider : ContentProvider() {
     private var binderStatus: BinderStatus = BinderStatus.UNKNOWN
     private val uuid = Util.generateUUID()
     private var lastUnbindTimestamp: Instant? = null
+    private val urisInLookup = HashMap<Uri, CountDownLatch>()
+    private val urisInLookupMutex = ReentrantLock(false)
+    private var audioBrowserServiceConnectedLatch = CountDownLatch(1)
     private val audioBrowserLifecycleObserver: ((event: LifecycleEvent) -> Unit) = {
         when (it) {
             LifecycleEvent.DESTROY, LifecycleEvent.SUSPEND, LifecycleEvent.IDLE -> {
@@ -59,7 +66,6 @@ class AlbumArtContentProvider : ContentProvider() {
             }
         }
     }
-
     // We use a local binder connection to access the album art via AudioBrowserService. Because it is local in the
     // same process the binder RPC size restrictions do not apply
     private val connection = object : ServiceConnection {
@@ -73,6 +79,7 @@ class AlbumArtContentProvider : ContentProvider() {
             val binder = service as AudioBrowserService.LocalBinder
             audioBrowserService = binder.getService()
             binderStatus = BinderStatus.BOUND
+            audioBrowserServiceConnectedLatch.countDown()
             logger.debug(TAG, "Add lifecycle observer: $uuid")
             audioBrowserService?.addLifecycleObserver(uuid, audioBrowserLifecycleObserver)
         }
@@ -83,6 +90,7 @@ class AlbumArtContentProvider : ContentProvider() {
             logger.debug(TAG, "onServiceDisconnected(name=$name)")
             audioBrowserService = null
             binderStatus = BinderStatus.UNBOUND
+            audioBrowserServiceConnectedLatch = CountDownLatch(1)
         }
     }
 
@@ -121,6 +129,7 @@ class AlbumArtContentProvider : ContentProvider() {
             audioBrowserService = null
             binderStatus = BinderStatus.UNBOUND
             lastUnbindTimestamp = Util.getLocalDateTimeNowInstant()
+            audioBrowserServiceConnectedLatch = CountDownLatch(1)
         }
     }
 
@@ -128,10 +137,35 @@ class AlbumArtContentProvider : ContentProvider() {
         if (context == null) {
             return null
         }
-        logger.verbose(TAG, "openFile(uri=$uri, mode=$mode)")
+        logger.debug(TAG, "openFile(uri=$uri, mode=$mode) for client: $callingPackage")
+        urisInLookupMutex.lock()
+        var latch: CountDownLatch? = null
+        try {
+            if (!urisInLookup.contains(uri)) {
+                urisInLookup.put(uri, CountDownLatch(1))
+            } else {
+                latch = urisInLookup[uri]
+            }
+        } finally {
+            urisInLookupMutex.unlock()
+        }
+        if (latch != null) {
+            // If multiple clients request the same album art at the same time, we want to avoid reading it from
+            // USB in parallel multiple times. We wait here for the first client to read it from USB first ,
+            // which will cache the album art in memory, so we can provide it more quickly to other clients
+            logger.debug(TAG, "Waiting for parallel album art request to finish for: $uri")
+            latch.await()
+        }
         init()
         val parcelFileDescriptor = createParcelFileDescriptor(uri)
-        logger.verbose(TAG, "Got parcel file descriptor for: $uri")
+        logger.debug(TAG, "Got parcel file descriptor for: $uri for client: $callingPackage")
+        urisInLookupMutex.lock()
+        try {
+            urisInLookup[uri]?.countDown()
+            urisInLookup.remove(uri)
+        } finally {
+            urisInLookupMutex.unlock()
+        }
         return parcelFileDescriptor
     }
 
@@ -184,15 +218,14 @@ class AlbumArtContentProvider : ContentProvider() {
 
     @Synchronized
     private fun init() {
-        logger.verbose(TAG, "init(binderStatus=$binderStatus)")
         if (binderStatus == BinderStatus.UNBOUND) {
             val lastUnbindTime = lastUnbindTimestamp
             if (lastUnbindTime == null) {
-                bindAudioBrowserService()
+                bindAndWaitForAudioBrowserService()
             } else {
                 val now = Util.getLocalDateTimeNowInstant()
                 if (Util.getDifferenceInSecondsForInstants(lastUnbindTime, now) > SECONDS_TO_BLOCK_AFTER_UNBIND) {
-                    bindAudioBrowserService()
+                    bindAndWaitForAudioBrowserService()
                 } else {
                     logger.verbose(
                         TAG, "Binder connection to AudioBrowserService was recently unbound, will not re-bind for " +
@@ -217,12 +250,20 @@ class AlbumArtContentProvider : ContentProvider() {
         }
     }
 
-    private fun bindAudioBrowserService() {
+    private fun bindAndWaitForAudioBrowserService() {
         val intent =
             Intent(ACTION_BIND_ALBUM_ART_CONTENT_PROVIDER, Uri.EMPTY, context, AudioBrowserService::class.java)
         logger.debug(TAG, "bindService(intent=$intent, connection=$connection)")
         context?.bindService(intent, connection, Context.BIND_AUTO_CREATE)
         binderStatus = BinderStatus.BIND_REQUESTED
+        logger.debug(TAG, "Waiting for AudioBrowserService to be bound")
+        val latchResult = audioBrowserServiceConnectedLatch.await(
+            MILLISECONDS_TO_WAIT_FOR_AUDIOBROWSERSERVICE_BIND,
+            TimeUnit.MILLISECONDS
+        )
+        if (!latchResult) {
+            logger.warning(TAG, "Could not bind to AudioBrowserService yet")
+        }
     }
 
     /**

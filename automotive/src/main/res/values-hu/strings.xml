@@ -114,7 +114,8 @@ Firebase Crashlytics\n\nLicenc leírások:\nwww.apache.org/licenses/LICENSE-2.0\
     <string name="browse_tree_category_files">Fájlok</string>
     <string name="setting_library_category_title">Média</string>
     <string name="setting_read_metadata">Metaadatok olvasása</string>
-    <string name="setting_delete_databases">Adatbázis törlése</string>
+    <string name="setting_manage_storage">Adatbázis / gyorsítótár törlése</string>
+    <string name="setting_manage_storage_summary">(metaadatok és albumborítók)</string>
     <string name="setting_database_status_title">Adatbázis</string>
     <string name="setting_enable_replaygain">ReplayGain hangerőkiegyenlítés</string>
     <string name="searching_voice_input">Hangalapú keresés: \"%1$s\"</string>
@@ -147,4 +148,5 @@ továbbfejlesztése céljából (internetkapcsolat szükséges).</string>
     <string name="browse_tree_please_wait">Kérjük, várjon …</string>
     <string name="setting_equalizer_enable">Engedélyezve</string>
     <string name="equalizer_preset_custom">Egyéni</string>
+    <string name="setting_show_album_art">Albumborító megjelenítése</string>
 </resources>

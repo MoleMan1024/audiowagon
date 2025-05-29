@@ -82,6 +82,8 @@ class Util {
             Pair(1240, 223),
             // Samsung Galaxy (MTP mode)
             Pair(1256, 26720),
+            // Apple Watch charger
+            Pair(1452, 1283),
             // Apple iPod
             Pair(1452, 4766),
             // Apple iPhone 5/5C/5S/6/SE/7/8/X/XR
@@ -311,6 +313,7 @@ class Util {
         }
 
         fun createIDForAlbumArtForFile(path: String): Int {
+            // We want positive integers only
             return path.hashCode() and 0xFFFFFFF
         }
 
@@ -481,6 +484,19 @@ class Util {
 
         fun createHashFromIntent(intent: Intent): Int {
             return abs(abs(intent.action.hashCode()) + abs(intent.component.hashCode()))
+        }
+
+        /**
+         * Calculate the smallest value of x that is closest to given number n
+         */
+        fun closestMultiple(n: Int, x: Int): Int {
+            var n2 = n
+            if (x > n) {
+                return x
+            }
+            n2 = n2 + x / 2
+            n2 = n2 - (n2 % x)
+            return n2
         }
 
     }

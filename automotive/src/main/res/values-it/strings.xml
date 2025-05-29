@@ -113,7 +113,8 @@ Crashlytics\n\nLicense texts:\nwww.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/
     <string name="browse_tree_category_files">File</string>
     <string name="setting_library_category_title">Media</string>
     <string name="setting_read_metadata">Leggi metadati</string>
-    <string name="setting_delete_databases">Cancella database</string>
+    <string name="setting_manage_storage">Cancella database / cache</string>
+    <string name="setting_manage_storage_summary">(metadati e copertina dell\'album)</string>
     <string name="setting_database_status_title">Database</string>
     <string name="setting_enable_replaygain">ReplayGain</string>
     <string name="searching_voice_input">Ricerca vocale: \"%1$s\"</string>
@@ -147,5 +148,6 @@ Center\")</string>
     <string name="browse_tree_please_wait">Attendere …</string>
     <string name="setting_equalizer_enable">Abilitato</string>
     <string name="equalizer_preset_custom">Personalizzato</string>
+    <string name="setting_show_album_art">Mostra la copertina dell\'album</string>
 </resources>
 

@@ -6,7 +6,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 package de.moleman1024.audiowagon.filestorage
 
 import android.media.MediaDataSource
-import android.os.Build
+import de.moleman1024.audiowagon.filestorage.usb.USBAudioCachedDataSource
 import de.moleman1024.audiowagon.filestorage.usb.USBAudioDataSource
 import de.moleman1024.audiowagon.filestorage.usb.USBMetaDataSource
 import de.moleman1024.audiowagon.log.Logger
@@ -73,7 +73,8 @@ class MediaDataSourceTest(
     @Test
     fun usbAudioCachedDataSourceReadAt_multipleConfigs_readsData() {
         val mockUSBFile = createMockUSBFile(100)
-        testMediaDataSource(USBAudioDataSource(mockUSBFile, chunkSize), mockUSBFile.bytes)
+        val dataSource = USBAudioCachedDataSource(mockUSBFile, chunkSize)
+        testMediaDataSource(dataSource, mockUSBFile.bytes)
     }
 
     @Test

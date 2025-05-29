@@ -156,7 +156,8 @@ Project\n&#x2013; the libaums library created by Magnus Jahnen\n&#x2013; Materia
     longer used) to save some space -->
     <string name="setting_library_category_title">Media</string>
     <string name="setting_read_metadata">Read metadata</string>
-    <string name="setting_delete_databases">Delete databases</string>
+    <string name="setting_manage_storage">Delete database / cache</string>
+    <string name="setting_manage_storage_summary">(metadata and album art)</string>
     <string name="setting_database_status_title">Database</string>
     <!-- ReplayGain is a technology to make audio files of different genres play back in a similar volume level
     ( https://en.wikipedia.org/wiki/ReplayGain ) -->
@@ -200,4 +201,5 @@ improve the app (requires internet connection).</string>
     <string name="browse_tree_please_wait">Please wait …</string>
     <string name="setting_equalizer_enable">Enabled</string>
     <string name="equalizer_preset_custom">Customized</string>
+    <string name="setting_show_album_art">Show album art</string>
 </resources>

@@ -115,7 +115,8 @@ Firebase Crashlytics\n\nLicense texts: www.apache.org/licenses/LICENSE-2.0\nwww.
     <string name="browse_tree_category_files">Файлы</string>
     <string name="setting_library_category_title">Медиафайл</string>
     <string name="setting_read_metadata">Прочесть мета-данные</string>
-    <string name="setting_delete_databases">Удалить базу данных</string>
+    <string name="setting_manage_storage">Удалить базу данных / кэш</string>
+    <string name="setting_manage_storage_summary">(мета-данных и обложка альбома)</string>
     <string name="setting_database_status_title">База данных</string>
     <string name="setting_enable_replaygain">ReplayGain</string>
     <string name="searching_voice_input">Голосовой поиск: \"%1$s\"</string>
@@ -149,4 +150,5 @@ Firebase Crashlytics\n\nLicense texts: www.apache.org/licenses/LICENSE-2.0\nwww.
     <string name="browse_tree_please_wait">Подождите …</string>
     <string name="setting_equalizer_enable">Включено</string>
     <string name="equalizer_preset_custom">Настраиваемое</string>
+    <string name="setting_show_album_art">Показать обложку альбома</string>
 </resources>

@@ -65,7 +65,7 @@ class PlaybackQueue(private val dispatcher: CoroutineDispatcher) {
             if (repeatMode == RepeatMode.OFF && isLastTrack()) {
                 return@withContext -1
             }
-            if (playbackQueue.size <= 0) {
+            if (playbackQueue.isEmpty()) {
                 return@withContext -1
             }
             return@withContext (currentIndex + 1) % playbackQueue.size
@@ -102,10 +102,7 @@ class PlaybackQueue(private val dispatcher: CoroutineDispatcher) {
      */
     suspend fun isLastTrack(): Boolean {
         return withContext(dispatcher) {
-            if (currentIndex == playbackQueue.size - 1) {
-                return@withContext true
-            }
-            return@withContext false
+            return@withContext currentIndex == playbackQueue.size - 1
         }
     }
 
@@ -133,7 +130,7 @@ class PlaybackQueue(private val dispatcher: CoroutineDispatcher) {
 
     suspend fun getCurrentItem(): MediaSessionCompat.QueueItem? {
         return withContext(dispatcher) {
-            if (currentIndex <= -1 || playbackQueue.size <= 0) {
+            if (currentIndex <= -1 || playbackQueue.isEmpty()) {
                 return@withContext null
             }
             if (currentIndex >= playbackQueue.size) {
@@ -146,7 +143,7 @@ class PlaybackQueue(private val dispatcher: CoroutineDispatcher) {
     suspend fun getNextItem(): MediaSessionCompat.QueueItem? {
         return withContext(dispatcher) {
             val nextIndex = getNextIndex()
-            if (nextIndex <= -1 || playbackQueue.size <= 0) {
+            if (nextIndex <= -1 || playbackQueue.isEmpty()) {
                 return@withContext null
             }
             if (nextIndex >= playbackQueue.size) {
@@ -158,10 +155,7 @@ class PlaybackQueue(private val dispatcher: CoroutineDispatcher) {
 
     suspend fun hasEnded(): Boolean {
         return withContext(dispatcher) {
-            if (repeatMode == RepeatMode.OFF && isLastTrack()) {
-                return@withContext true
-            }
-            return@withContext false
+            return@withContext repeatMode == RepeatMode.OFF && isLastTrack()
         }
     }
 
@@ -225,7 +219,7 @@ class PlaybackQueue(private val dispatcher: CoroutineDispatcher) {
 
     suspend fun notifyQueueChanged() {
         val currentQueueItem: MediaSessionCompat.QueueItem? = getCurrentItem()
-        // create a deep copy of the playback queue here to avoid any ConcurrentModificationException while the Android
+        // Create a deep copy of the playback queue here to avoid any ConcurrentModificationException while the Android
         // MediaSession iterates over it
         val playbackQueueClone = mutableListOf<MediaSessionCompat.QueueItem>()
         playbackQueue.forEach {

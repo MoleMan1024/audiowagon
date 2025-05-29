@@ -7,11 +7,15 @@ package de.moleman1024.audiowagon.filestorage.usb
 
 import de.moleman1024.audiowagon.log.Logger
 import android.media.MediaDataSource
+import androidx.annotation.VisibleForTesting
+import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.filestorage.usb.lowlevel.USBFile
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.util.*
 import kotlin.NoSuchElementException
+import kotlin.math.abs
+import kotlin.math.max
 import kotlin.math.min
 
 private const val TAG = "USBAudCachedDataSrc"
@@ -21,20 +25,22 @@ private val logger = Logger
  * Creates a [MediaDataSource] for playback. This class includes an in-memory cache to avoid audio glitches during
  * playback.
  *
- * Whenever a block of bytes from the underlying USB file should be read, we read two chunks from the filesystem
- * around that read position instead and store those in memory. Since the filesystem chunks are usually bigger than the
- * blocks requested by media player, the next bytes will already be in memory when the next read is requested by media
- * player. This makes the next read faster and thus avoids audio glitches that happen when you try to randomly
- * access positions in the USB file directly.
+ * Whenever a block of bytes from the underlying USB file should be read, we read X chunks from the filesystem
+ * starting from that read position instead and store those in memory. The next bytes will already be in memory when
+ * the next read is requested by media player. This makes the next read faster and thus avoids audio glitches that
+ * happen when you try to randomly access positions in the USB file directly.
  * If a cached chunk is not accessed after a couple of reads, it is discarded to free the memory (the media player
  * reads files sequentially for most of the time, older cached chunks are not required usually).
  */
 open class USBAudioCachedDataSource(
     usbFile: USBFile?,
-    chunkSize: Int
+    chunkSize: Int,
 ) : USBAudioDataSource(usbFile, chunkSize) {
-    protected val cacheMap: TreeMap<Long, AgingCache> = TreeMap<Long, AgingCache>()
-    private val bufSize: Int = chunkSize
+    @VisibleForTesting(otherwise = VisibleForTesting.Companion.PROTECTED)
+    val cacheMap: TreeMap<Long, AgingCache> = TreeMap<Long, AgingCache>()
+    @VisibleForTesting(otherwise = VisibleForTesting.Companion.PRIVATE)
+    // Usually we want to read blocks of 64 kB at minimum which should be larger or equal than most FAT32 chunk sizes
+    var bufSize: Int = Util.closestMultiple(1024 * 64, chunkSize)
 
     inner class AgingCache {
         // do not use ByteBuffer.allocateDirect() here, it causes errors to appear randomly in MediaPlayer
@@ -78,9 +84,9 @@ open class USBAudioCachedDataSource(
         if (cacheStartPos <= -1) {
             try {
                 cacheStartPos = createCachesAround(position, numBytesToRead)
-            } catch (exc: IOException) {
+            } catch (_: IOException) {
                 return -1
-            } catch (exc: NoSuchElementException) {
+            } catch (_: NoSuchElementException) {
                 return -1
             }
         }
@@ -99,7 +105,7 @@ open class USBAudioCachedDataSource(
     }
 
     protected open fun freeCache() {
-        cacheMap.values.removeIf { it.age > 2 }
+        cacheMap.values.removeIf { it.age > 6 }
     }
 
     private fun getCacheMapKeyFor(position: Long, numBytesToRead: Int): Long {
@@ -133,19 +139,23 @@ open class USBAudioCachedDataSource(
                 cacheKey = cacheBeforeStartPos
             }
         }
-        val cacheAfterStartPos: Long = (position + bufSize) - (position % bufSize)
-        val cacheAfter: AgingCache
-        if (cacheAfterStartPos < fileLength) {
-            if (cacheAfterStartPos !in cacheMap) {
-                cacheAfter = AgingCache()
-                read(cacheAfterStartPos, cacheAfter.buffer)
-                cacheAfter.buffer.flip()
-                cacheMap[cacheAfterStartPos] = cacheAfter
+        for (i in 1 .. 4) {
+            val cacheAfterStartPos: Long = (position + bufSize * i) - (position % bufSize)
+            val cacheAfter: AgingCache
+            if (cacheAfterStartPos < fileLength) {
+                if (cacheAfterStartPos !in cacheMap) {
+                    cacheAfter = AgingCache()
+                    read(cacheAfterStartPos, cacheAfter.buffer)
+                    cacheAfter.buffer.flip()
+                    cacheMap[cacheAfterStartPos] = cacheAfter
+                } else {
+                    cacheAfter = cacheMap.getValue(cacheAfterStartPos)
+                }
+                if (position >= cacheAfterStartPos && numBytesToRead <= cacheAfter.buffer.limit()) {
+                    cacheKey = cacheAfterStartPos
+                }
             } else {
-                cacheAfter = cacheMap.getValue(cacheAfterStartPos)
-            }
-            if (position >= cacheAfterStartPos && numBytesToRead <= cacheAfter.buffer.limit()) {
-                cacheKey = cacheAfterStartPos
+                break
             }
         }
         if (cacheKey < 0) {

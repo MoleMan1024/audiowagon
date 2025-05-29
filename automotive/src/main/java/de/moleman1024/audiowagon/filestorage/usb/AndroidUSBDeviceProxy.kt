@@ -166,7 +166,7 @@ class AndroidUSBDeviceProxy(
                 logger.debug(TAG, "Found mass storage devices: $massStorageDevices")
                 massStorageDevice = massStorageDevices.first()
                 logger.debug(TAG, "Created mass storage device for: $this")
-            } catch (exc: NoSuchElementException) {
+            } catch (_: NoSuchElementException) {
                 throw RuntimeException("No mass storage device: $androidUSBDevice")
             }
             try {
@@ -371,7 +371,7 @@ class AndroidUSBDeviceProxy(
                 }
 
                 override fun toString(): String {
-                    return "wrappedUSBFile($libaumsUSBFile)"
+                    return "wrappedUSBFile{$libaumsUSBFile})"
                 }
             }
         }
