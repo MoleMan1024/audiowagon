@@ -54,7 +54,8 @@ Please see Github for a [list of changes for each version of the app](https://gi
 ![Permission popup](/img/allow_access.jpg)
 
 - If you have installed the app for the first time, you have to do the following 3 extra steps: you get a warning that
-  you need to accept the legal disclaimer in the settings. Open the AudioWagon settings using the gear icon.
+  you need to accept the legal disclaimer in the settings. Open the AudioWagon settings using the respective icon (looks
+  like a gear or some horizontal sliders).
 
 ![Legal disclaimer not agreed](/img/legal_disclaimer_not_agreed.jpg)
 

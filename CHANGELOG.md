@@ -12,6 +12,17 @@ Google's review process which can take a couple of days.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project loosely follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.10.0] - 2025-06-14
+
+### Added
+
+- translations for Spanish
+
+### Changed
+
+- ignore another USB hub device
+
+
 ## [2.9.1] - 2025-05-29
 
 ### Added

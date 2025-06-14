@@ -118,6 +118,8 @@ class Util {
             Pair(11336, 306),
             // Microchip USB2 Controller Hub
             Pair(18752, 1060),
+            // Microchip USB2 Controller Hub (Chevy Equinox EV 2025)
+            Pair(18848, 1060),
         )
 
         fun convertStringToShort(numberAsString: String): Short {
