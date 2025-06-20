@@ -16,15 +16,39 @@ nav_order: 2
 
 ![Permission popup](/img/allow_access.jpg)
 
-**UPDATE 2025-03-19:** It looks like after 4 years Volvo/Polestar have finally integrated the [car-usb-handler](https://android.googlesource.com/platform/packages/services/Car/+/refs/heads/android11-platform-release/car-usb-handler/)
-in their recent car software update. For Volvo XC40 or Polestar 2 cars, please update to *car version 3.3.16 (the one
-with wired Android Auto included)* and *AudioWagon version 2.8.7 or higher* and you should no longer need to give
-permission for AudioWagon for USB each time.
+Depending on the car's software, a 3rd party app like AudioWagon is not allowed set itself as the default handler for
+USB, even when this popup comes and you tick the checkbox. The result is that you need to provide permission every
+single time you use the USB device. This is usually a flaw in the car maker's implementation of Android Automotive.
+Google provides a piece of software that can fix this:
+[car-usb-handler](https://android.googlesource.com/platform/packages/services/Car/+/refs/heads/main/car-usb-handler/).
+This problem can usually only be fixed by the car maker.
 
 Some more historic details in [Github](https://github.com/MoleMan1024/audiowagon/issues/133).
 
-For other car models I do not have enough information and I do not have a car for testing. You could send [a log file]({{ site.baseurl }}{% link index.markdown %}#how-do-i-report-an-issue) 
-and I will have a look.
+#### Volvo / Polestar
+
+**UPDATE 2025-03-19:** It looks like after 4 years **Volvo/Polestar** have finally integrated the *car-usb-handler* in
+their recent car software update. For Volvo XC40 or Polestar 2 cars, please update to *car version 3.4.4 (the one
+with wired Android Auto included)* and *AudioWagon version 2.8.7 or higher* and you should no longer need to give
+permission for AudioWagon for USB each time.
+
+#### Ford
+
+The 2025 Lincoln Nautilus has this issue, please complain to Ford to integrate the *car-usb-handler* properly.
+
+#### General Motors
+
+The 2025 Chevrolet Equinox EV has this issue, please complain to General Motors to integrate the *car-usb-handler*
+properly.
+
+#### Renault
+
+This problem should *not* appear in Renault cars using the *OpenR Link* system.
+
+#### Other
+
+For other car models I do not have enough information (and I can only test on a Polestar 2). You could send [a log
+file]({{ site.baseurl }}{% link index.markdown %}#how-do-i-report-an-issue) and I will have a look.
 
 
 ### Why is there a popup saying "Unavailable for your safety" when I want to open AudioWagon settings?
@@ -48,7 +72,7 @@ Some more details in [Github](https://github.com/MoleMan1024/audiowagon/issues/1
 **UPDATE 2023-12-11:** It looks like *Volvo/Polestar* have fixed this invalid popup, it no longer appears with car
 version *P2.13.1*.
 
-As far as I know, this issue does not appear when using the app on *Renault* and *GMC* cars.
+As far as I know, this issue does not appear when using the app on *Renault* and *General Motors* cars.
 
 
 ### Why is my USB drive not recognized?
