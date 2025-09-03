@@ -12,6 +12,27 @@ Google's review process which can take a couple of days.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project loosely follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.10.4] - 2025-09-02
+
+### Fixed
+
+- minor translation improvements in Polish and Spanish
+
+### Changed
+
+- wait 10 seconds before updating attached USB devices and requesting USB permission so that `USBDummyActivity` has
+  sufficient time to hopefully be started (increased from 2 seconds)
+- reduce amount of characters used in group titles in General Motors headunits because they use a horizontal
+  layout that leaves little room for text
+- add some emoji/icons as subtitles with numbers of items in groups to make it more clear those entries are groups
+- change icon of file groups to make it more clear it is a group
+- reworked `AssetStorageLocation` related classes to be more generic (for quick local tests)
+- log manufacturer, brand and model during startup
+- check `isInitialized` in many more places where `lateinit` variables are used in case methods are called are
+  unexpected times during startup
+- bump `compileSDK` to Android 35
+- use latest NDK to comply with Google's 16 kB page size requirement
+
 ## [2.10.0] - 2025-06-14
 
 ### Added

@@ -59,11 +59,11 @@ class LocalFileStorageLocation(override val device: LocalFileMediaDevice) : Audi
     }
 
     override fun close() {
-        // no op
+        // can not close local file storage
     }
 
     override fun setDetached() {
-        // no op
+        // can not detach local file storage
     }
 
     override suspend fun getDirectoryContents(directory: Directory): List<FileLike> {

@@ -13,6 +13,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.PersistableBundle
+import android.os.UserManager
 import android.view.View
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
@@ -35,7 +36,7 @@ private val logger = Logger
  * https://www.sdgsystems.com/post/android-usb-permissions
  * https://stackoverflow.com/questions/12388914/usb-device-access-pop-up-suppression
  *
- * This works in AAOS in Polestar 2 with car version 3.4.4 only. Lower versions probably do not integrated the
+ * This works in AAOS in Polestar 2 with car version 3.4.4 or higher only. Lower versions probably do not integrated the
  * car-usb-handler ( https://android.googlesource.com/platform/packages/services/Car/+/refs/tags/android-10.0.0_r40/car-usb-handler/ ).
  * Works fine on Pixel 3 XL with default AAOS.
  */
@@ -43,18 +44,18 @@ private val logger = Logger
 class USBDummyActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?, persistentState: PersistableBundle?) {
-        logger.debug(TAG, "onCreate()")
+        logger.debug(TAG, "onCreate(savedInstance=$savedInstanceState, persistentState=$persistentState)")
         super.onCreate(savedInstanceState, persistentState)
         makeTransparent()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        logger.debug(TAG, "onCreate()")
+        logger.debug(TAG, "onCreate(savedInstanceState=$savedInstanceState)")
         super.onCreate(savedInstanceState)
         makeTransparent()
     }
 
-    // we don't want this view to be visible to the user nor catch any touch events
+    // We don't want this view to be visible to the user nor catch any touch events
     private fun makeTransparent() {
         window.decorView.rootView.visibility = View.GONE
         window.addFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE)
@@ -67,7 +68,7 @@ class USBDummyActivity : AppCompatActivity() {
         // We must not call to shared preferences in here, as this may happen during direct boot where accessing
         // preferences might not be allowed yet (protected storage).
         rebroadcastUSBDeviceAttached()
-        // close this activity again immediately so it does not block the GUI
+        // Close this activity again immediately so it does not block the GUI
         finish()
     }
 
@@ -85,11 +86,16 @@ class USBDummyActivity : AppCompatActivity() {
 
     private fun rebroadcastUSBDeviceAttached() {
         if (intent?.action != UsbManager.ACTION_USB_DEVICE_ATTACHED) {
-            // we do not need to re-broadcast DETACHED and other events, they will be caught by the broadcast
+            // We do not need to re-broadcast DETACHED and other events, they will be caught by the broadcast
             // receiver in USBDeviceConnections
             return
         }
-        val usbDevice: UsbDevice? = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE)
+        val usbDevice: UsbDevice? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            intent.getParcelableExtra(UsbManager.EXTRA_DEVICE, UsbDevice::class.java)
+        } else {
+            @Suppress("DEPRECATION")
+            intent.getParcelableExtra(UsbManager.EXTRA_DEVICE)
+        }
         usbDevice?.let {
             logger.debug(TAG, "Re-broadcasting USB_DEVICE_ATTACHED intent")
             val startServiceIntent = Intent(ACTION_START_SERVICE_WITH_USB_DEVICE, Uri.EMPTY, this,

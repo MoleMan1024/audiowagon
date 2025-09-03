@@ -90,7 +90,7 @@ class USBDeviceConnections(
                 return@launch
             }
             notifyObservers(DeviceChange(null, DeviceAction.REFRESH))
-            // wait a bit to for the USB driver to settle down in case of issues and to give
+            // Wait a bit to for the USB driver to settle down in case of issues and to give
             // USBDummyActivity a chance to catch this instead and send ACTION_USB_ATTACHED
             val delayTimeMS = 4000L
             val now = Util.getLocalDateTimeNowInstant()

@@ -145,14 +145,14 @@ class PackageValidation(context: Context, @XmlRes xmlResId: Int) {
      */
     private fun buildCallerInfo(callingPackage: String): CallerPackageInfo? {
         val packageInfo = getPackageInfo(callingPackage) ?: return null
-        val appName = packageInfo.applicationInfo.loadLabel(packageManager).toString()
-        val uid = packageInfo.applicationInfo.uid
+        val appName = packageInfo.applicationInfo?.loadLabel(packageManager).toString()
+        val uid = packageInfo.applicationInfo?.uid
         val signature = getSignature(packageInfo)
         val requestedPermissions = packageInfo.requestedPermissions
         val permissionFlags = packageInfo.requestedPermissionsFlags
         val activePermissions = mutableSetOf<String>()
         requestedPermissions?.forEachIndexed { index, permission ->
-            if (permissionFlags[index] and REQUESTED_PERMISSION_GRANTED != 0) {
+            if (permissionFlags?.get(index)?.and(REQUESTED_PERMISSION_GRANTED) != 0) {
                 activePermissions += permission
             }
         }
@@ -183,13 +183,13 @@ class PackageValidation(context: Context, @XmlRes xmlResId: Int) {
     private fun getSignature(packageInfo: PackageInfo): String? {
         logger.debug(TAG, "getSignature(${packageInfo.packageName})")
         return if (packageInfo.signingInfo == null
-            || packageInfo.signingInfo.signingCertificateHistory == null
-            || packageInfo.signingInfo.signingCertificateHistory.size != 1) {
+            || packageInfo.signingInfo!!.signingCertificateHistory == null
+            || packageInfo.signingInfo!!.signingCertificateHistory.size != 1) {
             // Security best practices dictate that an app should be signed with exactly one (1)
             // signature. Because of this, if there are multiple signatures, reject it.
             null
         } else {
-            val certificate = packageInfo.signingInfo.signingCertificateHistory[0].toByteArray()
+            val certificate = packageInfo.signingInfo!!.signingCertificateHistory[0].toByteArray()
             getSignatureSha256(certificate)
         }
     }
@@ -286,7 +286,7 @@ class PackageValidation(context: Context, @XmlRes xmlResId: Int) {
     private data class CallerPackageInfo(
         val name: String,
         val packageName: String,
-        val uid: Int,
+        val uid: Int?,
         val signature: String?,
         val permissions: Set<String>
     )

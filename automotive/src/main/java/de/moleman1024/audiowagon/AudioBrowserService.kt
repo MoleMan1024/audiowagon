@@ -113,7 +113,6 @@ import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
-import kotlin.collections.mutableSetOf
 import kotlin.coroutines.coroutineContext
 import kotlin.system.exitProcess
 
@@ -363,7 +362,11 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                     Util.getLocalDateTimeNowInstant().plusMillis(UPDATE_ATTACHED_DEVICES_AFTER_UNLOCK_DELAY_MS)
                 }"
             )
-            delay(UPDATE_ATTACHED_DEVICES_AFTER_UNLOCK_DELAY_MS)
+            if (!Util.isRunningInEmulator()) {
+                // We delay for quite some time here to give USBDummyActivity sufficient time to trigger after car
+                // power-on so that we do not see the USB permission popup.
+                delay(UPDATE_ATTACHED_DEVICES_AFTER_UNLOCK_DELAY_MS)
+            }
             updateAttachedDevices()
         }
     }
@@ -648,6 +651,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
 
     private fun onStorageLocationAdded(storageID: String) {
         logger.info(TAG, "onStorageLocationAdded(storageID=$storageID)")
+        cancelUpdateDevicesCoroutine()
         cancelMostJobs()
         isUSBNotRecoverable.set(false)
         if (!sharedPrefs.isLegalDisclaimerAgreed(this)) {
@@ -886,7 +890,12 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             cancelUpdateDevicesCoroutine()
             maybeRegisterUSBBroadcastReceivers()
             val usbAttachedIntent = Intent(ACTION_USB_ATTACHED)
-            val usbDevice: UsbDevice? = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE)
+            val usbDevice: UsbDevice? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                intent.getParcelableExtra(UsbManager.EXTRA_DEVICE, UsbDevice::class.java)
+            } else {
+                @Suppress("DEPRECATION")
+                intent.getParcelableExtra(UsbManager.EXTRA_DEVICE)
+            }
             usbDevice?.let {
                 usbAttachedIntent.putExtra(UsbManager.EXTRA_DEVICE, usbDevice)
                 sendBroadcast(usbAttachedIntent)
@@ -1069,19 +1078,28 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         // notify AlbumArtContentProvider observer so that it will unbind from this service already
         notifyLifecycleObservers(LifecycleEvent.IDLE)
         cancelMostJobs()
-        suspendSingletonCoroutine.cancel()
+        if (this::suspendSingletonCoroutine.isInitialized) {
+            suspendSingletonCoroutine.cancel()
+        }
         cancelUpdateDevicesCoroutine()
         // before removing audio session notification the service must be in background
         stopForeground(STOP_FOREGROUND_REMOVE)
-        audioSessionCloseSingletonCoroutine.launch {
-            audioSession.storePlaybackState()
-            audioSession.shutdown()
+        if (this::audioSessionCloseSingletonCoroutine.isInitialized) {
+            audioSessionCloseSingletonCoroutine.launch {
+                if (this::audioSession.isInitialized) {
+                    audioSession.storePlaybackState()
+                    audioSession.shutdown()
+                }
+            }
         }
         try {
             // runBlocking() can not attach a CoroutineExceptionHandler, use regular try-catch instead
+            val self = this
             runBlocking(lifecycleScope.coroutineContext + dispatcher) {
                 withTimeout(3000) {
-                    audioSessionCloseSingletonCoroutine.join()
+                    if (self::audioSessionCloseSingletonCoroutine.isInitialized) {
+                        audioSessionCloseSingletonCoroutine.join()
+                    }
                 }
             }
         } catch (exc: TimeoutCancellationException) {
@@ -1090,17 +1108,24 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             logger.exception(TAG, "Audio session close was cancelled", exc)
         }
         try {
+            val self = this
             runBlocking(lifecycleScope.coroutineContext + dispatcher) {
                 try {
-                    audioItemLibrary.removeRepository(audioFileStorage.getPrimaryStorageLocation().storageID)
+                    if (self::audioItemLibrary.isInitialized && self::audioFileStorage.isInitialized) {
+                        audioItemLibrary.removeRepository(audioFileStorage.getPrimaryStorageLocation().storageID)
+                    }
                 } catch (exc: (NoSuchElementException)) {
                     logger.warning(TAG, exc.toString())
                 } catch (exc: (IllegalArgumentException)) {
                     logger.warning(TAG, exc.toString())
                 }
-                gui.shutdown()
+                if (self::gui.isInitialized) {
+                    gui.shutdown()
+                }
                 stopService(ServiceStartStopReason.LIFECYCLE)
-                audioFileStorage.shutdown()
+                if (self::audioFileStorage.isInitialized) {
+                    audioFileStorage.shutdown()
+                }
                 isUSBNotRecoverable.set(false)
             }
             logger.debug(TAG, "shutdown() (instance=${this}) is done at: ${Util.getLocalDateTimeStringNow()}")
@@ -1110,12 +1135,24 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     }
 
     private fun cancelMostJobs() {
-        audioFileStorage.cancelIndexing()
-        audioItemLibrary.cancelBuildLibrary()
-        restoreFromPersistentSingletonCoroutine.cancel()
-        cleanPersistentSingletonCoroutine.cancel()
-        storePlaybackStateSingletonCoroutine.cancel()
-        audioSessionCloseSingletonCoroutine.cancel()
+        if (this::audioFileStorage.isInitialized) {
+            audioFileStorage.cancelIndexing()
+        }
+        if (this::audioItemLibrary.isInitialized) {
+            audioItemLibrary.cancelBuildLibrary()
+        }
+        if (this::restoreFromPersistentSingletonCoroutine.isInitialized) {
+            restoreFromPersistentSingletonCoroutine.cancel()
+        }
+        if (this::cleanPersistentSingletonCoroutine.isInitialized) {
+            cleanPersistentSingletonCoroutine.cancel()
+        }
+        if (this::storePlaybackStateSingletonCoroutine.isInitialized) {
+            storePlaybackStateSingletonCoroutine.cancel()
+        }
+        if (this::audioSessionCloseSingletonCoroutine.isInitialized) {
+            audioSessionCloseSingletonCoroutine.cancel()
+        }
         cancelLibraryCreation()
         cancelLoadChildren()
     }
@@ -1197,12 +1234,16 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         // Polestar/Volvo cars
         if (usbExternalBroadcastReceiver == null) {
             usbExternalBroadcastReceiver = USBExternalBroadcastReceiver()
-            usbExternalBroadcastReceiver?.usbDeviceConnections = audioFileStorage.usbDeviceConnections
+            if (this::audioFileStorage.isInitialized) {
+                usbExternalBroadcastReceiver?.usbDeviceConnections = audioFileStorage.usbDeviceConnections
+            }
             broadcastReceiverManager?.register(usbExternalBroadcastReceiver!!)
         }
         if (usbInternalBroadcastReceiver == null) {
             usbInternalBroadcastReceiver = USBInternalBroadcastReceiver()
-            usbInternalBroadcastReceiver?.usbDeviceConnections = audioFileStorage.usbDeviceConnections
+            if (this::audioFileStorage.isInitialized) {
+                usbInternalBroadcastReceiver?.usbDeviceConnections = audioFileStorage.usbDeviceConnections
+            }
             broadcastReceiverManager?.register(usbInternalBroadcastReceiver!!)
         }
     }
@@ -1211,6 +1252,10 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         logger.debug(TAG, "destroyLifecycleScope()")
         // since we use lifecycle scope almost everywhere, this should cancel all pending coroutines
         notifyLifecycleObservers(LifecycleEvent.DESTROY)
+        if (lifecycleRegistry.currentState == Lifecycle.State.INITIALIZED) {
+            logger.warning(TAG, "Lifecycle can not be destroyed when it has not been created yet")
+            return
+        }
         if (Looper.myLooper() == Looper.getMainLooper()) {
             lifecycleRegistry.currentState = Lifecycle.State.DESTROYED
         } else {
@@ -1221,7 +1266,9 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
 
     private fun cancelLibraryCreation() {
         logger.debug(TAG, "Cancelling audio library creation")
-        libraryCreationSingletonCoroutine.cancel()
+        if (this::libraryCreationSingletonCoroutine.isInitialized) {
+            libraryCreationSingletonCoroutine.cancel()
+        }
         logger.debug(TAG, "Cancelled audio library creation")
     }
 
@@ -1466,9 +1513,15 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
 
     override fun onTrimMemory(level: Int) {
         logger.debug(TAG, "onTrimMemory(level=$level)")
-        cleanSingletonCoroutine.launch {
-            audioItemLibrary.clearAlbumArtCache()
-            audioFileStorage.cleanAlbumArtCache()
+        if (this::cleanSingletonCoroutine.isInitialized) {
+            cleanSingletonCoroutine.launch {
+                if (this::audioItemLibrary.isInitialized) {
+                    audioItemLibrary.clearAlbumArtCache()
+                }
+                if (this::audioFileStorage.isInitialized) {
+                    audioFileStorage.cleanAlbumArtCache()
+                }
+            }
         }
         super.onTrimMemory(level)
     }
@@ -1534,8 +1587,12 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     fun cancelUpdateDevicesCoroutine() {
-        updateDevicesSingletonCoroutine.cancel()
-        audioFileStorage.setIsUpdatingDevices(false)
+        if (this::updateDevicesSingletonCoroutine.isInitialized) {
+            updateDevicesSingletonCoroutine.cancel()
+        }
+        if (this::audioFileStorage.isInitialized) {
+            audioFileStorage.setIsUpdatingDevices(false)
+        }
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.NONE)

@@ -17,12 +17,12 @@ android {
     defaultConfig {
         applicationId = "de.moleman1024.audiowagon"
         minSdk = 29
-        compileSdk = 34
+        compileSdk = 35
         //noinspection OldTargetApi
         targetSdk = 34
-        versionName = "2.10.0"
+        versionName = "2.10.4"
         // major * 10000 + minor * 100 + patch
-        versionCode = 21000
+        versionCode = 21004
         resValue("string", "VERSION_NAME", versionName as String)
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -45,7 +45,7 @@ android {
     }
     packaging {
         resources {
-            listOf(
+            excludes += listOf(
                 "META-INF/spring.factories",
                 "META-INF/spring.handlers",
                 "META-INF/spring.schemas",
@@ -53,16 +53,14 @@ android {
                 "META-INF/license.txt",
                 "META-INF/notice.txt",
                 "DebugProbesKt.bin"
-            ).forEach {
-                excludes += it
-            }
+            )
         }
     }
     externalNativeBuild {
         cmake {
             path = file("CMakeLists.txt")
         }
-        ndkVersion = "27.2.12479018"
+        ndkVersion = "28.2.13676358"
     }
     kotlin {
         jvmToolchain(11)

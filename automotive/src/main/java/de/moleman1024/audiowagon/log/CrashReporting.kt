@@ -6,8 +6,8 @@ SPDX-License-Identifier: GPL-3.0-or-later
 package de.moleman1024.audiowagon.log
 
 import android.content.Context
-import com.google.firebase.crashlytics.ktx.crashlytics
-import com.google.firebase.ktx.Firebase
+import com.google.firebase.Firebase
+import com.google.firebase.crashlytics.crashlytics
 import de.moleman1024.audiowagon.SharedPrefs
 import de.moleman1024.audiowagon.Util
 import kotlinx.coroutines.CoroutineDispatcher

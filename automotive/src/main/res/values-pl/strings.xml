@@ -54,11 +54,11 @@ SPDX-License-Identifier: GPL-3.0-or-later
     <string name="notif_indexing_text_in_progress">W toku…</string>
     <string name="notif_indexing_text_in_progress_num_items">Znaleziono: %1$d …</string>
     <string name="notif_indexing_text_completed">Zakończono</string>
-    <string name="action_shuffle_turn_on">Losowe wł.</string>
-    <string name="action_shuffle_turn_off">Losowe wył.</string>
-    <string name="action_repeat_turn_on">Powtarzanie wł.</string>
-    <string name="action_repeat_one_turn_on">Powtarzanie jeden wł.</string>
-    <string name="action_repeat_turn_off">Powtarzanie wył.</string>
+    <string name="action_shuffle_turn_on">Losowe wł</string>
+    <string name="action_shuffle_turn_off">Losowe wył</string>
+    <string name="action_repeat_turn_on">Powtarzanie wł</string>
+    <string name="action_repeat_one_turn_on">Powtarzanie jeden wł</string>
+    <string name="action_repeat_turn_off">Powtarzanie wył</string>
     <string name="action_eject">Odłącz dysk USB</string>
     <string name="action_rewind">Przewijanie do tyłu</string>
     <string name="settings_title">Ustawienia</string>

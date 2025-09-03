@@ -34,7 +34,7 @@ class LocalFileMediaDevice(private val context: Context) : MediaDevice {
     }
 
     override fun getName(): String {
-        return "LocalFiles"
+        return "localfiles"
     }
 
     override fun getFileFromURI(uri: Uri): File {

@@ -10,15 +10,24 @@ import android.media.MediaDataSource
 import android.net.Uri
 import android.support.v4.media.MediaDescriptionCompat
 import androidx.annotation.VisibleForTesting
-import de.moleman1024.audiowagon.*
+import androidx.core.net.toUri
+import de.moleman1024.audiowagon.BuildConfig
+import de.moleman1024.audiowagon.R
+import de.moleman1024.audiowagon.SharedPrefs
+import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.authorization.SDCardDevicePermissions
 import de.moleman1024.audiowagon.authorization.USBDevicePermissions
+import de.moleman1024.audiowagon.enums.ContentHierarchyType
 import de.moleman1024.audiowagon.enums.DeviceAction
 import de.moleman1024.audiowagon.enums.IndexingStatus
 import de.moleman1024.audiowagon.enums.StorageAction
 import de.moleman1024.audiowagon.exceptions.NoSuchDeviceException
 import de.moleman1024.audiowagon.filestorage.asset.AssetMediaDevice
 import de.moleman1024.audiowagon.filestorage.asset.AssetStorageLocation
+import de.moleman1024.audiowagon.filestorage.data.AudioFile
+import de.moleman1024.audiowagon.filestorage.data.Directory
+import de.moleman1024.audiowagon.filestorage.data.PlaylistFile
+import de.moleman1024.audiowagon.filestorage.data.StorageChange
 import de.moleman1024.audiowagon.filestorage.sd.SDCardAudioDataSource
 import de.moleman1024.audiowagon.filestorage.sd.SDCardMediaDevice
 import de.moleman1024.audiowagon.filestorage.sd.SDCardStorageLocation
@@ -31,17 +40,19 @@ import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.medialibrary.RESOURCE_ROOT_URI
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyElement
 import de.moleman1024.audiowagon.medialibrary.contenthierarchy.ContentHierarchyID
-import de.moleman1024.audiowagon.enums.ContentHierarchyType
-import de.moleman1024.audiowagon.filestorage.data.AudioFile
-import de.moleman1024.audiowagon.filestorage.data.Directory
-import de.moleman1024.audiowagon.filestorage.data.PlaylistFile
-import de.moleman1024.audiowagon.filestorage.data.StorageChange
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.channels.produce
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeout
 import java.io.InputStream
 import kotlin.coroutines.coroutineContext
 
@@ -188,15 +199,12 @@ open class AudioFileStorage(
             is USBMediaDevice -> {
                 USBDeviceStorageLocation(device)
             }
-
             is SDCardMediaDevice -> {
                 SDCardStorageLocation(device)
             }
-
             is AssetMediaDevice -> {
                 AssetStorageLocation(device)
             }
-
             else -> {
                 throw RuntimeException("Unhandled device type when creating storage location: $device")
             }
@@ -253,7 +261,7 @@ open class AudioFileStorage(
         if (isDebugBuild) {
             // TODO: remove
             val sdCardDevicePermissions = SDCardDevicePermissions(context)
-            if (!sdCardDevicePermissions.isPermitted()) {
+            if (mediaDevicesForTest.any { it is SDCardMediaDevice } && !sdCardDevicePermissions.isPermitted()) {
                 logger.warning(TAG, "We do not yet have permission to access an SD card")
                 return
             }
@@ -512,11 +520,7 @@ open class AudioFileStorage(
         contentHierarchyID.path = file.uri.path.toString()
         val builder = MediaDescriptionCompat.Builder().apply {
             setTitle(file.name)
-            setIconUri(
-                Uri.parse(
-                    RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.draft)
-                )
-            )
+            setIconUri((RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.draft)).toUri())
             setMediaId(ContentHierarchyElement.serialize(contentHierarchyID))
             setMediaUri(file.uri)
         }
@@ -531,11 +535,7 @@ open class AudioFileStorage(
         contentHierarchyID.path = directory.uri.path.toString()
         val builder = MediaDescriptionCompat.Builder().apply {
             setTitle(directory.name)
-            setIconUri(
-                Uri.parse(
-                    RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.folder)
-                )
-            )
+            setIconUri((RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.folder)).toUri())
             setMediaId(ContentHierarchyElement.serialize(contentHierarchyID))
             setMediaUri(directory.uri)
         }
@@ -547,11 +547,7 @@ open class AudioFileStorage(
         contentHierarchyID.path = file.uri.path.toString()
         val builder = MediaDescriptionCompat.Builder().apply {
             setTitle(file.name)
-            setIconUri(
-                Uri.parse(
-                    RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.description)
-                )
-            )
+            setIconUri((RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.description)).toUri())
             setMediaId(ContentHierarchyElement.serialize(contentHierarchyID))
             setMediaUri(file.uri)
         }

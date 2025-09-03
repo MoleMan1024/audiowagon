@@ -76,8 +76,8 @@ Please see Github for a [list of changes for each version of the app](https://gi
 
 ## Limitations
 
-- The app will *not* work with the *Volvo EX30* car, because the Android software in that car does not support *USB host
-  mode*
+- The app will *not* work with *Volvo EX30* and *Polestar 3* cars, because the Android software in those cars do not
+  support *USB host mode*. The Google Play Store will show the app as *not compatible*
 - The app will *not* work with Polestar/Volvo OTA car software version 2.0 nor 2.1. You will need the car software
   version 2.2 or higher that includes the CarPlay Update (or 1.9 or lower) which re-enables the USB data connection.
 - The app can *not* play back **.wma** files. Also Android does not support files encoded with "Apple Lossless Audio
@@ -126,8 +126,9 @@ at my email (see below, or you can use [GitHub](https://github.com/MoleMan1024/a
 ### Native speakers
 
 I am still looking for **volunteer native speakers to translate** the GUI texts in the app to all languages (already
-translated: German, English, Dutch, Swedish, Norwegian, Danish, French, Russian, Polish, Italian, Japanese, Hungarian).
-You can get the [English strings to translate here](https://github.com/MoleMan1024/audiowagon/blob/master/automotive/src/main/res/values/strings.xml).
+translated: German, English, Dutch, Swedish, Norwegian, Danish, French, Russian, Polish, Italian, Japanese, Hungarian,
+Spanish). You can get the
+[English strings to translate here](https://github.com/MoleMan1024/audiowagon/blob/master/automotive/src/main/res/values/strings.xml).
 
 
 ## Contact

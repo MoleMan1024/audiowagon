@@ -22,6 +22,7 @@ import de.moleman1024.audiowagon.filestorage.data.AudioFile
 import de.moleman1024.audiowagon.filestorage.data.Directory
 import de.moleman1024.audiowagon.medialibrary.RESOURCE_ROOT_URI
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import androidx.core.net.toUri
 
 private const val TAG = "CHDirectory"
 private val logger = Logger
@@ -101,6 +102,7 @@ class ContentHierarchyDirectory(
             if (offsetEnd >= directoryContents.size) {
                 break
             }
+            val numItemsInGroup = offsetEnd - offsetStart + 1
             val firstAudioFileInGroup = AudioFile(
                 Util.createURIForPath(storageLocation.storageID, directoryContents[offsetStart].path)
             )
@@ -115,8 +117,8 @@ class ContentHierarchyDirectory(
                     "${firstItemInGroup.title.take(numTitleCharsPerGroup)} " +
                             "… ${lastItemInGroup.title.take(numTitleCharsPerGroup)}"
                 )
-                setIconUri(Uri.parse(RESOURCE_ROOT_URI
-                        + context.resources.getResourceEntryName(R.drawable.summarize)))
+                setSubtitle(context.getString(R.string.browse_tree_group_subtitle_num_files, numItemsInGroup))
+                setIconUri((RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.stacks)).toUri())
                 setMediaId(serialize(groupContentHierarchyID))
             }.build()
             groups += MediaItem(description, MediaItem.FLAG_BROWSABLE)

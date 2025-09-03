@@ -40,6 +40,10 @@ SPDX-License-Identifier: GPL-3.0-or-later
     <!-- We use unicode symbols here to avoid the complex linguistic implications in multiple languages for the
     wordings "artists"/"tracks" together with numbers. No need to translate. -->
     <string name="browse_tree_num_albums_num_tracks" translatable="false">%1$d &#x1F4BF;&#x2007;&#x2007;%2$d &#x1F399;</string>
+    <string name="browse_tree_group_subtitle_num_tracks" translatable="false">%1$d &#x1F399;</string>
+    <string name="browse_tree_group_subtitle_num_albums" translatable="false">%1$d &#x1F4BF;</string>
+    <string name="browse_tree_group_subtitle_num_artists" translatable="false">%1$d &#x1F464;</string>
+    <string name="browse_tree_group_subtitle_num_files" translatable="false">%1$d &#x1F4C4;</string>
     <string name="toast_indexing_started">USB indexing started …</string>
     <string name="toast_indexing_completed">USB indexing completed</string>
     <!-- If there is no next/previous track in the current playlist that the user can skip forward/backward to -->

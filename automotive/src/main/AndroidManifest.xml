@@ -30,6 +30,7 @@
         <intent>
             <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
         </intent>
+        <package android:name="de.moleman1024.audiowagon" />
     </queries>
 
     <application
@@ -77,7 +78,9 @@
             https://developer.android.com/guide/topics/connectivity/usb/host#permission-d
             https://developer.android.com/guide/topics/connectivity/usb/host#using-intents
 
-            Does not work on AAOS in Polestar 2, works fine on Pixel 3 with AAOS.
+            Does not work on AAOS unless
+            https://android.googlesource.com/platform/packages/services/Car/+/refs/heads/main/car-usb-handler
+            is implemented in the car.
         -->
         <activity
                 android:name=".activities.USBDummyActivity"

@@ -120,8 +120,12 @@ object Logger : LoggerInterface {
                 "(code: ${packageInfo.longVersionCode}, variant: ${BuildConfig.BUILD_TYPE})")
         info(
             TAG, "Running on Android: ${Build.VERSION.CODENAME} " +
-                    "(release: ${Build.VERSION.RELEASE}, securityPatch: ${Build.VERSION.SECURITY_PATCH}, " +
-                    "incremental: ${Build.VERSION.INCREMENTAL})"
+                    "(release: ${Build.VERSION.RELEASE}, " +
+                    "securityPatch: ${Build.VERSION.SECURITY_PATCH}, " +
+                    "incremental: ${Build.VERSION.INCREMENTAL}, " +
+                    "manufacturer: ${Build.MANUFACTURER}, " +
+                    "brand: ${Build.BRAND}, " +
+                    "model: ${Build.MODEL})"
         )
     }
 

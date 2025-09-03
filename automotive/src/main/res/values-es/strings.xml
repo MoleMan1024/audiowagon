@@ -9,11 +9,11 @@ SPDX-License-Identifier: GPL-3.0-or-later
     <string name="queue_title">Nombre lista</string>
     <string name="search_group_tracks">Pistas</string>
     <string name="search_group_artists">Artistas</string>
-    <string name="search_group_albums">Álbums</string>
+    <string name="search_group_albums">Álbumes</string>
     <string name="search_group_files">Archivos</string>
     <string name="browse_tree_category_tracks">Pistas</string>
     <string name="browse_tree_category_artists">Artistas</string>
-    <string name="browse_tree_category_albums">Álbums</string>
+    <string name="browse_tree_category_albums">Álbumes</string>
     <string name="browse_tree_pseudo_track_shuffle_all">Aleatorio</string>
     <string name="browse_tree_pseudo_play_all">Reproducir todo</string>
     <string name="browse_tree_unknown_album">Álbum desconocido</string>
@@ -24,8 +24,8 @@ SPDX-License-Identifier: GPL-3.0-or-later
     <string name="browse_tree_usb_drive_ejected">Dispositivo USB extraido o no se puede leer</string>
     <string name="browse_tree_need_to_agree_legal_title">Sin aceptar el aviso legal</string>
     <string name="browse_tree_need_to_agree_legal_desc">Comprobar ajustes</string>
-    <string name="toast_indexing_started">Índice USB iniciado …</string>
-    <string name="toast_indexing_completed">Índice USB completado</string>
+    <string name="toast_indexing_started">Indice USB iniciado …</string>
+    <string name="toast_indexing_completed">Indice USB completado</string>
     <string name="no_next_track">No hay más pistas</string>
     <string name="no_prev_track">No hay pistas anteriores</string>
     <string name="eject_completed">Dispositivo USB extraido, es seguro desconectarlo</string>
@@ -54,11 +54,11 @@ SPDX-License-Identifier: GPL-3.0-or-later
     <string name="notif_indexing_text_in_progress">En ejecución …</string>
     <string name="notif_indexing_text_in_progress_num_items">Encontrados: %1$d …</string>
     <string name="notif_indexing_text_completed">Completado</string>
-    <string name="action_shuffle_turn_on">Aleatorio on</string>
-    <string name="action_shuffle_turn_off">Aleatorio off</string>
-    <string name="action_repeat_turn_on">Repetir on</string>
-    <string name="action_repeat_one_turn_on">Repetir uno on</string>
-    <string name="action_repeat_turn_off">Repetir off</string>
+    <string name="action_shuffle_turn_on">Activar aleatorio</string>
+    <string name="action_shuffle_turn_off">Desactivar aleatorio</string>
+    <string name="action_repeat_turn_on">Activar repetir</string>
+    <string name="action_repeat_one_turn_on">Activar repetir uno</string>
+    <string name="action_repeat_turn_off">Desactivar repetir</string>
     <string name="action_eject">Extraer</string>
     <string name="action_rewind">Rebobinar</string>
     <string name="settings_title">Ajustes</string>
@@ -117,11 +117,11 @@ Abierto\n&#x2013; la librería libaums creada por Magnus Jahnen\n&#x2013; Iconos
     <string name="setting_read_metadata_when_connected">Cuando esté conectado el dispositivo USB</string>
     <string name="setting_read_metadata_manual">Manualmente</string>
     <string name="setting_read_metadata_filepaths_only">Sólo rutas de archivo</string>
-    <string name="setting_read_metadata_off">Apagado</string>
+    <string name="setting_read_metadata_off">Desactivado</string>
     <string name="setting_read_metadata_start_now">Leer ahora metadatos</string>
     <string name="browse_tree_metadata_not_yet_indexed_title">Metadatos aun sin indexar</string>
     <string name="browse_tree_metadata_not_yet_indexed_desc">Compruebe los ajustes</string>
-    <string name="setting_audiofocus_behavior">Comportamiento durante la guía</string>
+    <string name="setting_audiofocus_behavior">Comportamiento mientras navega</string>
     <string name="setting_audiofocus_pause">Pausa</string>
     <string name="setting_audiofocus_duck">Bajar volumen</string>
     <string name="setting_crash_reporting_title">Enviar informes de fallo</string>
@@ -129,7 +129,7 @@ Abierto\n&#x2013; la librería libaums creada por Magnus Jahnen\n&#x2013; Iconos
 mejorar la app (requiere conexión a internet).</string>
     <string name="cannot_read_file">No se puede leer el archivo: %1$s</string>
     <string name="setting_website_title">Sitio web</string>
-    <string name="setting_album_display">Mostrar álbums como</string>
+    <string name="setting_album_display">Mostrar álbumes como</string>
     <string name="setting_album_display_grid">Parrilla</string>
     <string name="setting_album_display_list">Lista</string>
     <string name="setting_requires_media_center_restart">(cualquier cambio requiere reiniciar la app \"Media Center\")</string>
@@ -143,5 +143,5 @@ mejorar la app (requiere conexión a internet).</string>
     <string name="browse_tree_please_wait">Espere por favor …</string>
     <string name="setting_equalizer_enable">Activado</string>
     <string name="equalizer_preset_custom">Personalizado</string>
-    <string name="setting_show_album_art">Mostrar portada del álbum</string>
+    <string name="setting_show_album_art">Mostrar portada de álbum</string>
 </resources>

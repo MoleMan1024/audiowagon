@@ -9,11 +9,11 @@ import android.content.res.AssetFileDescriptor
 import android.content.res.AssetManager
 import android.media.MediaDataSource
 import android.net.Uri
-import de.moleman1024.audiowagon.filestorage.data.AudioFile
-import de.moleman1024.audiowagon.filestorage.data.Directory
 import de.moleman1024.audiowagon.filestorage.MediaDevice
 import de.moleman1024.audiowagon.log.Logger
-import java.io.File
+import java.io.IOException
+import androidx.core.net.toUri
+import java.io.InputStream
 
 
 /**
@@ -22,23 +22,8 @@ import java.io.File
 class AssetMediaDevice(private val assetManager: AssetManager) : MediaDevice {
     override val TAG = "AssetMediaDevice"
     override val logger = Logger
-    val id: String = "assets"
-    var isClosed: Boolean = false
-
-    fun getRoot(): String {
-        return "/"
-    }
-
-    fun getDirectoryContents(directoryURI: Uri): List<File> {
-        val audioFile = AudioFile(directoryURI)
-        val filePath = audioFile.path
-        val files = mutableListOf<File>()
-        assetManager.list(filePath)?.forEach {
-            files.add(File(it))
-        }
-        return files
-    }
-
+    val chunkSize = 32768
+    var isClosed = false
 
     override suspend fun getDataSourceForURI(uri: Uri): MediaDataSource {
         return AssetAudioDataSource(getFileDescriptorFromURI(uri))
@@ -48,28 +33,88 @@ class AssetMediaDevice(private val assetManager: AssetManager) : MediaDevice {
         return getDataSourceForURI(uri)
     }
 
-    @Synchronized
-    fun getFileDescriptorFromURI(uri: Uri): AssetFileDescriptor {
-        val audioFile = AudioFile(uri)
-        val filePath = audioFile.path.replace("^/".toRegex(), "")
-        return assetManager.openFd(filePath)
-    }
-
     override fun getID(): String {
-        return id
+        return getName()
     }
 
     override fun getName(): String {
-        return "AssetMediaDevice{id=$id}"
+        return "assets"
     }
 
-    override fun getFileFromURI(uri: Uri): Any {
-        // this is not used in AssetStorageLocation
-        return Directory(Uri.parse(getRoot()))
+    override fun getFileFromURI(uri: Uri): AssetFile {
+        logger.debug(TAG, "getFileFromURI(uri=$uri)")
+        val assetFile = AssetFile(uri, assetManager)
+        val filePath = removeLeadingSlash(assetFile.path)
+        if (filePath != "") {
+            if (!assetFile.path.matches(".*\\.[a-zA-Z0-9]+".toRegex())) {
+                // crude and incomplete way to see if this is a file or directory
+                assetFile.isDirectory = true
+            } else {
+                var fileDescriptor: AssetFileDescriptor? = null
+                try {
+                    fileDescriptor = assetManager.openFd(filePath)
+                } catch (_: IOException) {
+                    logger.warning(TAG, "Could not open file descriptor for: $filePath")
+                }
+                fileDescriptor?.close()
+            }
+        } else {
+            assetFile.isRoot = true
+            assetFile.isDirectory = true
+        }
+        logger.debug(TAG, "file=$assetFile")
+        return assetFile
+    }
+
+    fun getRoot(): String {
+        return ""
+    }
+
+    /**
+     * If this returns an empty list, the given URI either did not exists or it was a regular file
+     */
+    fun getDirectoryContents(assetFileOrDirectory: AssetFile): List<AssetFile> {
+        if (isClosed) {
+            throw IOException("Asset manager is already closed")
+        }
+        if (!assetFileOrDirectory.isDirectory) {
+            logger.debug(TAG, "Not a directory: $assetFileOrDirectory")
+            return emptyList()
+        }
+        val directoryPath = removeLeadingSlash(assetFileOrDirectory.path)
+        val files = mutableListOf<AssetFile>()
+        assetManager.list(directoryPath)?.forEach {
+            val filePath = "$directoryPath/$it"
+            val assetFileOrDir = getFileFromURI(filePath.toUri())
+            files.add(assetFileOrDir)
+        }
+        return files
+    }
+
+    fun getFileDescriptorFromURI(uri: Uri): AssetFileDescriptor {
+        if (isClosed) {
+            throw IOException("Asset manager is already closed")
+        }
+        val assetFile = AssetFile(uri, assetManager)
+        return assetManager.openFd(removeLeadingSlash(assetFile.path))
     }
 
     fun close() {
-        isClosed = true
+        if (!isClosed) {
+            assetManager.close()
+        }
+    }
+
+    fun getInputStreamForURI(uri: Uri): InputStream {
+        if (isClosed) {
+            throw IOException("Asset manager is already closed")
+        }
+        val assetFile = AssetFile(uri, assetManager)
+        return assetManager.open(removeLeadingSlash(assetFile.path))
+    }
+
+    private fun removeLeadingSlash(path: String): String {
+        return path.replace(Regex("^/"), "")
     }
 
 }

@@ -15,12 +15,14 @@ import android.net.Uri
 import android.os.Build
 import android.os.SystemClock
 import android.util.DisplayMetrics
+import android.util.Size
 import android.view.WindowInsets
 import android.view.WindowManager
 import android.view.WindowMetrics
 import de.moleman1024.audiowagon.enums.PlaylistType
 import de.moleman1024.audiowagon.exceptions.NoAudioItemException
 import de.moleman1024.audiowagon.filestorage.*
+import de.moleman1024.audiowagon.filestorage.asset.AssetFile
 import de.moleman1024.audiowagon.filestorage.data.AudioFile
 import de.moleman1024.audiowagon.filestorage.data.Directory
 import de.moleman1024.audiowagon.filestorage.data.PlaylistFile
@@ -236,8 +238,14 @@ class Util {
                     }
                     return determinePlayableFileType(file.name)
                 }
+                is AssetFile -> {
+                    if (file.isRoot || file.isDirectory) {
+                        return Directory()
+                    }
+                    return determinePlayableFileType(file.name)
+                }
                 else -> {
-                    throw RuntimeException("Cannot determine playable file type of: $file")
+                    throw RuntimeException("Cannot determine playable file type of: ${file.javaClass.name}")
                 }
             }
         }
@@ -387,25 +395,32 @@ class Util {
             return Build.BRAND == null && Build.DEVICE == null
         }
 
-        private fun getScreenWidthPixels(context: Context): Int {
+        private fun getScreenWidthHeightPixels(context: Context): Size {
             val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
             return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 val windowMetrics: WindowMetrics = windowManager.currentWindowMetrics
                 val insets: Insets =
                     windowMetrics.windowInsets.getInsetsIgnoringVisibility(WindowInsets.Type.systemBars())
-                windowMetrics.bounds.width() - insets.left - insets.right
+                val width = windowMetrics.bounds.width() - insets.left - insets.right
+                val height = windowMetrics.bounds.height() - insets.top - insets.bottom
+                Size(width, height)
             } else {
                 val displayMetrics = DisplayMetrics()
                 @Suppress("DEPRECATION")
                 windowManager.defaultDisplay.getMetrics(displayMetrics)
-                displayMetrics.widthPixels
+                Size(displayMetrics.widthPixels, displayMetrics.heightPixels)
             }
         }
 
         fun getMaxCharsForScreenWidth(context: Context): Int {
-            val screenWidthPixels = getScreenWidthPixels(context)
-            // only use a percentage of the screen since there are also icons/padding that will take up space etc.
-            val availablePixelsForText = floor(0.7 * screenWidthPixels).toInt()
+            val screenWidthHeightPixels = getScreenWidthHeightPixels(context)
+            // Only use a percentage of the screen since there are also icons/padding that will take up space etc.
+            // A value of 70% seems to work okay for Polestar 2 and Volvo XC40 vehicles with a portrait mode screen.
+            var reductionPercentage = 0.7
+            if (isLandscapeGeneralMotorsScreen(screenWidthHeightPixels)) {
+                reductionPercentage = 0.5
+            }
+            val availablePixelsForText = floor(reductionPercentage * screenWidthHeightPixels.width).toInt()
             val paint = Paint()
             val fontBodyPixels = context.resources.getDimension(R.dimen.car_body1_size)
             paint.textSize = fontBodyPixels
@@ -414,7 +429,14 @@ class Util {
             if (avgLetterWidth <= 0) {
                 return -1
             }
-            return floor(availablePixelsForText / avgLetterWidth).toInt()
+            return floor(availablePixelsForText.toFloat() / avgLetterWidth).toInt()
+        }
+
+        fun isLandscapeGeneralMotorsScreen(screenSize: Size): Boolean {
+            // General Motors AAOS implementations mostly use landscape screens, for example the Blazer EV.
+            // Most of the screen is taken up by the Now Playing widget, there is very little room to scroll through
+            // lists. We will have less characters to work with for media item titles in this case
+            return (Build.MANUFACTURER == "gm" || Build.BRAND == "gm") && (screenSize.width > screenSize.height)
         }
 
         private fun getAvailableMemory(context: Context): String {

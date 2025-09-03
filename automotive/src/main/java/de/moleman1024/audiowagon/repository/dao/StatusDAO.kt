@@ -17,7 +17,7 @@ interface StatusDAO {
     fun insert(status: Status)
 
     @Query("SELECT * FROM status WHERE storageID = :repositoryID")
-    fun queryStatus(repositoryID: String): Status
+    fun queryStatus(repositoryID: String): Status?
 
     @Query("DELETE FROM status WHERE storageID = :repositoryID")
     fun deleteStatus(repositoryID: String)

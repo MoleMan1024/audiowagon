@@ -6,28 +6,27 @@ SPDX-License-Identifier: GPL-3.0-or-later
 package de.moleman1024.audiowagon.medialibrary.contenthierarchy
 
 import android.content.Context
-import android.net.Uri
 import android.os.Bundle
 import android.support.v4.media.MediaBrowserCompat.MediaItem
 import android.support.v4.media.MediaDescriptionCompat
+import androidx.core.net.toUri
 import androidx.media.utils.MediaConstants
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.SharedPrefs
 import de.moleman1024.audiowagon.Util
-import de.moleman1024.audiowagon.enums.ContentHierarchyType
-import de.moleman1024.audiowagon.filestorage.*
-import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.enums.AlbumStyleSetting
-import de.moleman1024.audiowagon.medialibrary.AudioItem
-import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
+import de.moleman1024.audiowagon.enums.ContentHierarchyType
 import de.moleman1024.audiowagon.enums.MetadataReadSetting
+import de.moleman1024.audiowagon.filestorage.AudioFileStorage
+import de.moleman1024.audiowagon.filestorage.FileLike
 import de.moleman1024.audiowagon.filestorage.data.AudioFile
 import de.moleman1024.audiowagon.filestorage.data.Directory
 import de.moleman1024.audiowagon.filestorage.data.PlaylistFile
+import de.moleman1024.audiowagon.log.Logger
+import de.moleman1024.audiowagon.medialibrary.AudioItem
+import de.moleman1024.audiowagon.medialibrary.AudioItemLibrary
 import de.moleman1024.audiowagon.medialibrary.RESOURCE_ROOT_URI
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlin.math.floor
 
@@ -43,6 +42,8 @@ const val CONTENT_HIERARCHY_MAX_NUM_ITEMS = 400
 // A group starting at track "Another One Bites The Dust" until "Bullet With Butterfly Wings" will show as
 // "Another One Bite … Bullet With Butt"
 const val DEFAULT_NUM_TITLE_CHARS_FOR_GROUP = 24
+// Minimal number of characters used for group titles
+const val MIN_NUM_TITLE_CHARS_FOR_GROUP = 8
 
 /**
  * The root element that the media item content hierarchy is based on.
@@ -124,8 +125,8 @@ abstract class ContentHierarchyElement(
             numTitleCharsPerGroup = DEFAULT_NUM_TITLE_CHARS_FOR_GROUP
         } else {
             numTitleCharsPerGroup = floor((maxCharsForScreenWidth - 3) / 2.0).toInt()
-            if (numTitleCharsPerGroup < DEFAULT_NUM_TITLE_CHARS_FOR_GROUP) {
-                numTitleCharsPerGroup = DEFAULT_NUM_TITLE_CHARS_FOR_GROUP
+            if (numTitleCharsPerGroup < MIN_NUM_TITLE_CHARS_FOR_GROUP) {
+                numTitleCharsPerGroup = MIN_NUM_TITLE_CHARS_FOR_GROUP
             }
         }
         logger.debug(TAG, "numTitleCharsPerGroup=$numTitleCharsPerGroup")
@@ -139,11 +140,6 @@ abstract class ContentHierarchyElement(
         val groups = mutableListOf<MediaItem>()
         var offset = 0
         val repo = audioItemLibrary.getPrimaryRepository() ?: return groups
-        val extras: Bundle = if (audioItemLibrary.albumArtStyleSetting == AlbumStyleSetting.GRID) {
-            generateExtrasBrowsableCategoryGridItems()
-        } else {
-            generateExtrasBrowsableCategoryListItems()
-        }
         // TODO: partially duplicated code with createGroupsForType
         val numGroups = numItems / CONTENT_HIERARCHY_MAX_NUM_ITEMS
         for (groupIndex in 0..numGroups) {
@@ -218,25 +214,30 @@ abstract class ContentHierarchyElement(
             if (lastItemInGroup.isEmpty()) {
                 break
             }
+            val numItemsInGroup = offsetRows - offset + 1
             val firstItemTitle: String
             val lastItemTitle: String
+            val subtitle: String
             val iconID: Int
             when (groupContentHierarchyID.type) {
                 ContentHierarchyType.TRACK_GROUP -> {
                     firstItemTitle = firstItemInGroup[0].title
                     lastItemTitle = lastItemInGroup[0].title
+                    subtitle = context.getString(R.string.browse_tree_group_subtitle_num_tracks, numItemsInGroup)
                     iconID = R.drawable.library_music
                     groupContentHierarchyID.trackGroupIndex = groupIndex
                 }
                 ContentHierarchyType.ALBUM_GROUP -> {
                     firstItemTitle = firstItemInGroup[0].album
                     lastItemTitle = lastItemInGroup[0].album
+                    subtitle = context.getString(R.string.browse_tree_group_subtitle_num_albums, numItemsInGroup)
                     iconID = R.drawable.burst_mode
                     groupContentHierarchyID.albumGroupIndex = groupIndex
                 }
                 ContentHierarchyType.ARTIST_GROUP -> {
                     firstItemTitle = firstItemInGroup[0].albumArtist.ifBlank { firstItemInGroup[0].artist }
                     lastItemTitle = lastItemInGroup[0].albumArtist.ifBlank { lastItemInGroup[0].artist }
+                    subtitle = context.getString(R.string.browse_tree_group_subtitle_num_artists, numItemsInGroup)
                     iconID = R.drawable.recent_actors
                     groupContentHierarchyID.artistGroupIndex = groupIndex
                 }
@@ -244,15 +245,17 @@ abstract class ContentHierarchyElement(
                     throw AssertionError("createGroups() not supported for type: ${groupContentHierarchyID.type}")
                 }
             }
+            // We force a list view here irregardless of user setting because group titles need a lot of space to be
+            // shown. In grid view mode, there is less space available for item titles
+            val extras: Bundle = generateExtrasBrowsableCategoryListItems()
             val description = MediaDescriptionCompat.Builder().apply {
                 setTitle(
                     "${firstItemTitle.take(numTitleCharsPerGroup)} " + "… ${lastItemTitle.take(numTitleCharsPerGroup)}"
                 )
-                setIconUri(Uri.parse(RESOURCE_ROOT_URI + context.resources.getResourceEntryName(iconID)))
+                setSubtitle(subtitle)
+                setIconUri((RESOURCE_ROOT_URI + context.resources.getResourceEntryName(iconID)).toUri())
                 setMediaId(serialize(groupContentHierarchyID))
-                if (groupContentHierarchyID.type == ContentHierarchyType.ALBUM_GROUP) {
-                    setExtras(extras)
-                }
+                setExtras(extras)
             }.build()
             groups += MediaItem(description, MediaItem.FLAG_BROWSABLE)
             offset += CONTENT_HIERARCHY_MAX_NUM_ITEMS
@@ -295,9 +298,7 @@ abstract class ContentHierarchyElement(
             setMediaId(serialize(ContentHierarchyID(ContentHierarchyType.NONE)))
             setTitle(context.getString(R.string.notif_indexing_text_in_progress))
             setSubtitle(numItemsFoundText)
-            setIconUri(
-                Uri.parse(RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.directory_sync))
-            )
+            setIconUri((RESOURCE_ROOT_URI + context.resources.getResourceEntryName(R.drawable.directory_sync)).toUri())
         }.build()
         return MediaItem(description, MediaItem.FLAG_BROWSABLE)
     }
@@ -353,7 +354,7 @@ abstract class ContentHierarchyElement(
             setMediaId(serialize(ContentHierarchyID(ContentHierarchyType.NONE)))
             setTitle(title)
             setSubtitle(subtitle)
-            setIconUri(Uri.parse(RESOURCE_ROOT_URI + context.resources.getResourceEntryName(iconID)))
+            setIconUri((RESOURCE_ROOT_URI + context.resources.getResourceEntryName(iconID)).toUri())
         }.build()
         logger.debug(
             TAG, "Showing pseudo MediaItem 'No entries available': ${description.title} (${description.subtitle})'"
