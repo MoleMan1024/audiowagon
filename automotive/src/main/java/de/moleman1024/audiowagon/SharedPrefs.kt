@@ -13,6 +13,7 @@ import de.moleman1024.audiowagon.enums.AlbumStyleSetting
 import de.moleman1024.audiowagon.enums.MetadataReadSetting
 import de.moleman1024.audiowagon.enums.AudioFocusSetting
 import de.moleman1024.audiowagon.enums.EqualizerPreset
+import de.moleman1024.audiowagon.enums.IncreasedPlaybackSpeedSetting
 
 const val SHARED_PREF_LEGAL_DISCLAIMER_AGREED = "agreedLegalVersion"
 const val SHARED_PREF_LEGAL_DISCLAIMER_VERSION = "1.1"
@@ -32,6 +33,7 @@ const val SHARED_PREF_ALBUM_STYLE = "albumStyle"
 const val SHARED_PREF_CRASH_REPORTING = "crashReporting"
 const val SHARED_PREF_VIEW_TAB_PREFIX = "viewTab"
 const val SHARED_PREF_SHOW_ALBUM_ART = "showAlbumArt"
+const val SHARED_PREF_INCR_PLAYBACK_SPEED = "increasedPlaybackSpeed"
 val SHARED_PREF_EQUALIZER_PRESET_DEFAULT = EqualizerPreset.LESS_BASS.name
 
 private const val TAG = "SharedPrefs"
@@ -368,6 +370,23 @@ open class SharedPrefs {
 
     fun setUSBStatusResID(sharedPreferences: SharedPreferences?, resID: Int) {
         sharedPreferences?.edit()?.putInt(SHARED_PREF_USB_STATUS, resID)?.apply()
+    }
+
+    fun getIncreasedPlaybackSpeedSetting(context: Context): IncreasedPlaybackSpeedSetting {
+        return try {
+            getIncreasedPlaybackSpeedSetting(getDefaultSharedPreferences(context))
+        } catch (exc: IllegalStateException) {
+            // this might happen when user has not yet unlocked the device
+            logger.exception(TAG, exc.message.toString(), exc)
+            IncreasedPlaybackSpeedSetting.ONE_DOT_FIVE
+        }
+    }
+
+    fun getIncreasedPlaybackSpeedSetting(sharedPreferences: SharedPreferences?): IncreasedPlaybackSpeedSetting {
+        return sharedPreferences?.getString(
+            SHARED_PREF_INCR_PLAYBACK_SPEED,
+            IncreasedPlaybackSpeedSetting.ONE_DOT_FIVE.name
+        )?.let { IncreasedPlaybackSpeedSetting.valueOf(it) } ?: IncreasedPlaybackSpeedSetting.ONE_DOT_FIVE
     }
 
 }

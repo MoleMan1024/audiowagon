@@ -151,4 +151,5 @@ Firebase Crashlytics\n\nLicense texts: www.apache.org/licenses/LICENSE-2.0\nwww.
     <string name="setting_equalizer_enable">Включено</string>
     <string name="equalizer_preset_custom">Настраиваемое</string>
     <string name="setting_show_album_art">Показать обложку альбома</string>
+    <string name="setting_increased_playback_speed">Увеличенная скорость воспроизведения</string>
 </resources>

@@ -149,4 +149,5 @@ továbbfejlesztése céljából (internetkapcsolat szükséges).</string>
     <string name="setting_equalizer_enable">Engedélyezve</string>
     <string name="equalizer_preset_custom">Egyéni</string>
     <string name="setting_show_album_art">Albumborító megjelenítése</string>
+    <string name="setting_increased_playback_speed">Megnövelt lejátszási sebesség</string>
 </resources>

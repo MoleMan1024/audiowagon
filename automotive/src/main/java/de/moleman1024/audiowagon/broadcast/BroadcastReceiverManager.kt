@@ -59,7 +59,7 @@ class BroadcastReceiverManager(private val context: Context) {
             }
             registeredReceivers.removeIf { it.getType() == broadcastReceiver.getType() }
         }
-        logger.debug(TAG, "register(broadcastReceiver=$broadcastReceiver)")
+        logger.debug(TAG, "register(broadcastReceiver=$broadcastReceiver) with flags=${broadcastReceiver.getFlags()})")
         try {
             context.registerReceiver(
                 broadcastReceiver, broadcastReceiver.getIntentFilter(), null, handler,

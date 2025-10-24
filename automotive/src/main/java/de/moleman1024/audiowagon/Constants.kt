@@ -30,6 +30,8 @@ const val CMD_SET_EQUALIZER_PRESET = "de.moleman1024.audiowagon.CMD_SET_EQUALIZE
 const val CMD_SET_EQUALIZER_BAND = "de.moleman1024.audiowagon.CMD_SET_EQUALIZER_BAND"
 const val CMD_SET_METADATAREAD_SETTING = "de.moleman1024.audiowagon.CMD_SET_METADATAREAD_SETTING"
 const val CMD_SET_VIEW_TABS = "de.moleman1024.audiowagon.CMD_SET_VIEW_TABS"
+const val CMD_NOTIFY_INCREASED_PLAYBACK_SPEED_SETTING_CHANGED =
+    "de.moleman1024.audiowagon.CMD_SET_INCREASED_PLAYBACK_SPEED_SETTING"
 const val ALBUM_STYLE_KEY = "album_style"
 const val AUDIOFOCUS_SETTING_KEY = "audiofocus_setting"
 const val EQUALIZER_PRESET_KEY = "preset"
@@ -42,7 +44,11 @@ const val NOTIFICATION_ID: Int = 25575
 const val DEFAULT_JPEG_QUALITY_PERCENTAGE = 60
 const val POPUP_TIMEOUT_MS: Long = 4000L
 const val NUM_VIEW_TABS: Int = 4
-const val UPDATE_ATTACHED_DEVICES_AFTER_UNLOCK_DELAY_MS = 10 * 1000L
+// I have seen USBDummyActivity trigger after up to 5 minutes(!) after wakeup, make sure we have enough time before we
+// fall back to listing USB devices (and triggering permission popup). 20 seconds should be enough in most cases
+const val UPDATE_ATTACHED_DEVICES_AFTER_UNLOCK_DELAY_MS = 20 * 1000L
+const val DEFAULT_PLAYBACK_SPEED: Float = 1.0f
+const val USB_DEVICE_SERIALNUM_MAX_NUM_CHARS = 14
 
 val EQUALIZER_PRESET_VALUES_LESS_BASS = floatArrayOf(-3f, 0f, 0f, 0f, 0f)
 val EQUALIZER_PRESET_VALUES_MORE_BASS = floatArrayOf(3f, 0f, 0f, 0f, 0f)

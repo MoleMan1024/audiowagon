@@ -152,4 +152,5 @@ verbeteren (vereist een internetverbinding).</string>
     <string name="setting_equalizer_enable">Ingeschakeld</string>
     <string name="equalizer_preset_custom">Aangepast</string>
     <string name="setting_show_album_art">Albumhoes weergeven</string>
+    <string name="setting_increased_playback_speed">Verhoogde afspeelsnelheid</string>
 </resources>

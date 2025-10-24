@@ -27,6 +27,7 @@ open class SharedPrefsStorage {
         mockPreferencesMap[SHARED_PREF_LEGAL_DISCLAIMER_AGREED] = "1.1"
         mockPreferencesMap[SHARED_PREF_READ_METADATA] = "WHEN_USB_CONNECTED"
         mockPreferencesMap[SHARED_PREF_EQUALIZER_PRESET] = "LESS_BASS"
+        mockPreferencesMap[SHARED_PREF_INCR_PLAYBACK_SPEED] = "ONE_DOT_FIVE"
         mockPreferencesMap["${SHARED_PREF_VIEW_TAB_PREFIX}0"] = "TRACKS"
         mockPreferencesMap["${SHARED_PREF_VIEW_TAB_PREFIX}1"] = "ALBUMS"
         mockPreferencesMap["${SHARED_PREF_VIEW_TAB_PREFIX}2"] = "ARTISTS"

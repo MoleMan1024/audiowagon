@@ -15,7 +15,6 @@ import androidx.annotation.VisibleForTesting
 import de.moleman1024.audiowagon.BuildConfig
 import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.enums.LogLevel
-import de.moleman1024.audiowagon.exceptions.NoAudioItemException
 import de.moleman1024.audiowagon.filestorage.usb.lowlevel.USBFile
 import de.moleman1024.audiowagon.filestorage.usb.lowlevel.USBFileOutputStream
 import kotlinx.coroutines.CancellationException

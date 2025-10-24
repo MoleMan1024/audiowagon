@@ -16,6 +16,7 @@ data class AudioPlayerStatus(var playbackState: Int = PlaybackStateCompat.STATE_
     var queueItem: QueueItem? = null
     var isShuffling: Boolean = false
     var repeatMode: RepeatMode = RepeatMode.OFF
+    var playbackSpeed: Float = 1.0F
     // This will be set true only when playback queue naturally ends, not when e.g. skipped beyond end of queue
     var hasPlaybackQueueEnded: Boolean = false
 

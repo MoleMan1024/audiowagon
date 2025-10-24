@@ -66,4 +66,14 @@ SPDX-License-Identifier: GPL-3.0-or-later
         <item>FILES</item>
         <item>NONE</item>
     </string-array>
+    <string-array name="increased_playback_speed_settings">
+        <item>@string/setting_increased_playback_speed_1dot2</item>
+        <item>@string/setting_increased_playback_speed_1dot5</item>
+        <item>@string/setting_increased_playback_speed_2dot0</item>
+    </string-array>
+    <string-array name="increased_playback_speed_settings_values">
+        <item>ONE_DOT_TWO</item>
+        <item>ONE_DOT_FIVE</item>
+        <item>TWO_DOT_ZERO</item>
+    </string-array>
 </resources>

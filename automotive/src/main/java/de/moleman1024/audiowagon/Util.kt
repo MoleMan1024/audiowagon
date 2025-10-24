@@ -98,8 +98,12 @@ class Util {
             Pair(2578, 3),
             // ASIX Electronics Corp AX88179 Gigabit Ethernet 0xb95 / 0x1790
             Pair(2965, 6032),
+            // Realtek Semiconductor Corp. RTL8153 Gigabit Ethernet Adapter 0x0BDA / 0x8153
+            Pair(3034, 33107),
             // Android Open Accessory device 0x18D1 / 0x2D00
             Pair(6353, 11520),
+            // Google Inc. Nexus/Pixel Device (MTP) 0x18D1 / 0x4EE1
+            Pair(6353, 20193),
             // Linux xHCI Host Controller
             Pair(7531, 2),
             // Linux xHCI Host Controller
@@ -497,6 +501,7 @@ class Util {
             return "uptimeMillis=${SystemClock.uptimeMillis()} elapsedRealtime=${getMillisNow()}"
         }
 
+        @Suppress("FunctionName")
         fun TAGCRT(tag: String, coroutineContext: CoroutineContext): String {
             val coroutineName = coroutineContext[CoroutineName.Key]?.name
             return if (coroutineName == null) {

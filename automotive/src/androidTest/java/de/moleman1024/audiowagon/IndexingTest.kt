@@ -36,6 +36,7 @@ class IndexingTest {
         serviceFixture = ServiceFixture()
         browser = serviceFixture.createMediaBrowser()
         audioBrowserService = serviceFixture.getAudioBrowserService()
+        audioBrowserService.exposeUSBInternalBroadcastReceiver()
         mockUSBDeviceFixture = MockUSBDeviceFixture()
         mockUSBDeviceFixture.init()
     }

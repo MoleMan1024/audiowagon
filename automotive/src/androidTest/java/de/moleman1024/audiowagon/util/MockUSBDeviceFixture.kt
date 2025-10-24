@@ -38,7 +38,7 @@ class MockUSBDeviceFixture {
     fun attachUSBDevice() {
         val deviceAttachedIntent = Intent(ACTION_USB_ATTACHED)
         deviceAttachedIntent.putExtra(UsbManager.EXTRA_DEVICE, mockUSBDevice)
-        Logger.info(TAG, "Sending broadcast to attach USB device")
+        Logger.info(TAG, "Sending broadcast to attach USB device: $deviceAttachedIntent")
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         context.sendBroadcast(deviceAttachedIntent)
     }

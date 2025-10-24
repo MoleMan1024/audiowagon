@@ -149,5 +149,6 @@ Center\")</string>
     <string name="setting_equalizer_enable">Abilitato</string>
     <string name="equalizer_preset_custom">Personalizzato</string>
     <string name="setting_show_album_art">Mostra la copertina dell\'album</string>
+    <string name="setting_increased_playback_speed">Velocità di riproduzione aumentata</string>
 </resources>
 

@@ -69,6 +69,10 @@ class SettingsFragment : PreferenceFragmentCompat() {
                     val audioFocusSettingStr = getSharedPrefs().getAudioFocusSetting(sharedPreferences)
                     getParentSettingsActivity().setAudioFocusSetting(audioFocusSettingStr)
                 }
+                SHARED_PREF_INCR_PLAYBACK_SPEED -> {
+                    updateIncreasedPlaybackSpeed(sharedPreferences)
+                    getParentSettingsActivity().notifyIncreasedPlaybackSpeedSettingChanged()
+                }
                 SHARED_PREF_ALBUM_STYLE -> {
                     updateAlbumStyleList(sharedPreferences)
                     val albumStyleStr = getSharedPrefs().getAlbumStyleSetting(sharedPreferences)
@@ -129,6 +133,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         updateCrashReporting(sharedPreferences)
         updateReplayGainSwitch(sharedPreferences)
         updateAudioFocusList(sharedPreferences)
+        updateIncreasedPlaybackSpeed(sharedPreferences)
         updateAlbumStyleList(sharedPreferences)
         updateShowAlbumArtSwitch(sharedPreferences)
         updateViewTabs(sharedPreferences)
@@ -192,6 +197,12 @@ class SettingsFragment : PreferenceFragmentCompat() {
         val audioFocusSetting = getSharedPrefs().getAudioFocusSetting(sharedPreferences)
         findPreference<ListPreference>(SHARED_PREF_AUDIOFOCUS)?.value = audioFocusSetting
         logger.debug(TAG, "${SHARED_PREF_AUDIOFOCUS}=${audioFocusSetting}")
+    }
+
+    private fun updateIncreasedPlaybackSpeed(sharedPreferences: SharedPreferences?) {
+        val increasedPlaybackSpeedSetting = getSharedPrefs().getIncreasedPlaybackSpeedSetting(sharedPreferences)
+        findPreference<ListPreference>(SHARED_PREF_INCR_PLAYBACK_SPEED)?.value = increasedPlaybackSpeedSetting.name
+        logger.debug(TAG, "${SHARED_PREF_INCR_PLAYBACK_SPEED}=${increasedPlaybackSpeedSetting}")
     }
 
     private fun updateAlbumStyleList(sharedPreferences: SharedPreferences?) {
@@ -274,7 +285,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
     private fun getAlbumArtCacheDirForDatabaseFile(databaseFile: File): File? {
         val fileStorageID = shortenDatabaseName(databaseFile.name)
-        var storageRootDir = context?.applicationContext?.let { getStorageRootDir(it, fileStorageID) }
+        val storageRootDir = context?.applicationContext?.let { getStorageRootDir(it, fileStorageID) }
         if (storageRootDir == null || !storageRootDir.exists()) {
             return null
         }

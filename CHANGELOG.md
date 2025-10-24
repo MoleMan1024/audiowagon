@@ -12,6 +12,36 @@ Google's review process which can take a couple of days.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project loosely follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.11.1] - 2025-10-24
+
+### Added
+
+- on the playback view you can now enable "increased playback speed". This is especial useful when listening to podcasts
+  or audiobooks that are quite long. You can choose the increased playback speed via AudioWagon settings. Three settings
+  are supported: 1.2 times, 1.5 times or 2 times faster than regular playback speed, depending on your preference.
+
+### Fixed
+
+- reset audio player during suspend to avoid that early `onPlay()` callbacks during wakeup will try to read
+  data from USB drive when it is not yet available for reading
+- reset current playback queue item during suspend, to avoid a playback queue item is shown after wakeup that can not
+  yet be played back
+
+### Changed
+
+- update browse view earlier during wakeup after suspend
+- show "Please wait" instead of "USB drive ejected or could not be read" while still waiting for USB permission to be
+  granted automatically during startup
+- wait 20 seconds before updating attached USB devices and asking user for USB permission so that `USBDummyActivity` has
+  sufficient time to hopefully be started (increased from 10 seconds). You can always trigger the USB permission popup
+  manually by entering AudioWagon settings if you do not want to wait (in case permission was not yet granted)
+- try to access connected USB devices once directly after wakeup in case USB access permission is already
+  present (but do not show USB permission popup yet if permission is missing). This should avoid the 20 seconds waiting
+  time from previous bullet point, in case the USB permission was already granted
+- ignore some more unsupported USB devices
+- bumped some dependency versions
+
+
 ## [2.10.4] - 2025-09-02
 
 ### Fixed
@@ -28,9 +58,10 @@ and this project loosely follows [Semantic Versioning](https://semver.org/spec/v
 - change icon of file groups to make it more clear it is a group
 - reworked `AssetStorageLocation` related classes to be more generic (for quick local tests)
 - log manufacturer, brand and model during startup
-- check `isInitialized` in many more places where `lateinit` variables are used in case methods are called are
+- check `isInitialized` in many more places where `lateinit` variables are used in case methods are called at
   unexpected times during startup
 - bump `compileSDK` to Android 35
+- bump some library versions
 - use latest NDK to comply with Google's 16 kB page size requirement
 
 ## [2.10.0] - 2025-06-14

@@ -13,6 +13,7 @@ import android.os.PersistableBundle
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import androidx.annotation.VisibleForTesting
+import de.moleman1024.audiowagon.DEFAULT_PLAYBACK_SPEED
 import de.moleman1024.audiowagon.POPUP_TIMEOUT_MS
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.SharedPrefs
@@ -20,6 +21,7 @@ import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.enums.AudioFocusRequestResult
 import de.moleman1024.audiowagon.enums.AudioPlayerState
 import de.moleman1024.audiowagon.enums.EqualizerPreset
+import de.moleman1024.audiowagon.enums.IncreasedPlaybackSpeedSetting
 import de.moleman1024.audiowagon.enums.RepeatMode
 import de.moleman1024.audiowagon.exceptions.AlreadyStoppedException
 import de.moleman1024.audiowagon.exceptions.CannotReadFileException
@@ -67,14 +69,11 @@ class AudioPlayer(
 ) {
     // currentMediaPlayer shall point to currently playing media player
     private var currentMediaPlayer: MediaPlayer? = null
-
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     var playerStatus: AudioPlayerStatus = AudioPlayerStatus(PlaybackStateCompat.STATE_NONE)
-
     // TODO: turn this into another class with two instances?
     private var mediaPlayerFlip: MediaPlayer? = null
     private var mediaPlayerFlipState: AudioPlayerState = AudioPlayerState.IDLE
-
     // the other media player object is used when skipping to next track for seamless playback
     private var mediaPlayerFlop: MediaPlayer? = null
     private var mediaPlayerFlopState: AudioPlayerState = AudioPlayerState.IDLE
@@ -82,7 +81,6 @@ class AudioPlayer(
     private var effectsFlop: Effects? = null
     val playerStatusObservers = mutableListOf<suspend (AudioPlayerStatus) -> Unit>()
     private var isRecoveringFromIOError: Boolean = false
-
     // A single thread executor is used to confine access to queue and other shared state variables to a single
     // thread when called from coroutines. MediaPlayer is not thread-safe, must be accessed from a thread that has
     // a Looper.
@@ -93,6 +91,7 @@ class AudioPlayer(
     private var setupNextPlayerJob: Job? = null
     private var onCompletionJob: Job? = null
     private var numFilesNotFound: Int = 0
+    private var playbackSpeed: Float = DEFAULT_PLAYBACK_SPEED
 
     init {
         launchInScopeSafely {
@@ -212,7 +211,6 @@ class AudioPlayer(
                         setState(mediaPlayerWithInfo, AudioPlayerState.STARTED)
                     }
                 }
-
                 else -> {
                     // ignore
                 }
@@ -236,17 +234,13 @@ class AudioPlayer(
                     MEDIA_ERROR_INVALID_STATE -> playerStatus.errorMsg = context.getString(
                         R.string.error_invalid_state
                     )
-
                     MediaPlayer.MEDIA_ERROR_IO -> playerStatus.errorMsg = context.getString(R.string.error_IO)
                     MediaPlayer.MEDIA_ERROR_MALFORMED -> playerStatus.errorMsg =
                         context.getString(R.string.error_malformed_data)
-
                     MediaPlayer.MEDIA_ERROR_TIMED_OUT -> playerStatus.errorMsg =
                         context.getString(R.string.error_timeout)
-
                     MediaPlayer.MEDIA_ERROR_UNSUPPORTED -> playerStatus.errorMsg =
                         context.getString(R.string.error_not_supported)
-
                     else -> {
                         val numAvailableDevices = audioFileStorage.getNumAttachedPermittedDevices()
                         if (numAvailableDevices <= 0) {
@@ -334,6 +328,7 @@ class AudioPlayer(
         setState(player, AudioPlayerState.IDLE)
         playerStatus.hasPlaybackQueueEnded = false
         playerStatus.playbackState = PlaybackStateCompat.STATE_NONE
+        playerStatus.queueItem = null
         playerStatus.positionInMilliSec = PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN
         playerStatus.errorMsg = ""
         playerStatus.errorCode = 0
@@ -555,6 +550,7 @@ class AudioPlayer(
                 notifyPlayerStatus(audioFocusDeniedStatus)
                 return@withContext
             }
+            updatePlaybackSpeedInPlayer(currentMediaPlayer)
             currentMediaPlayer?.start()
             setState(currentMediaPlayer, AudioPlayerState.STARTED)
             playerStatus.hasPlaybackQueueEnded = false
@@ -609,6 +605,7 @@ class AudioPlayer(
         if (status == null) {
             playerStatus.positionInMilliSec = getCurrentPositionMilliSec()
             playerStatus.queueItem = playbackQueue.getCurrentItem()
+            playerStatus.playbackSpeed = playbackSpeed
             notifyPlayerStatus(playerStatus)
         } else {
             notifyPlayerStatus(status)
@@ -645,6 +642,7 @@ class AudioPlayer(
             try {
                 mediaDataSource = getDataSourceForURI(uri)
                 setDataSource(mediaDataSource)
+                updatePlaybackSpeedInPlayer(currentMediaPlayer)
                 try {
                     prepare()
                     numFilesNotFound = 0
@@ -725,6 +723,7 @@ class AudioPlayer(
                 return@withContext
             }
             setDataSource(mediaDataSource)
+            updatePlaybackSpeedInPlayer(currentMediaPlayer)
             prepare()
             onPreparePlayFromQueueReady(currentMediaPlayer, startPositionMS)
         }
@@ -766,6 +765,7 @@ class AudioPlayer(
                 return@launchInScopeSafely
             }
             nextMediaPlayer.setDataSource(nextMediaDataSource)
+            updatePlaybackSpeedInPlayer(nextMediaPlayer)
             logger.debug(TAG, "prepare() next player")
             nextMediaPlayer.prepare()
             onPreparedNextPlayer(nextMediaPlayer)
@@ -1103,6 +1103,70 @@ class AudioPlayer(
         }
     }
 
+    suspend fun onIncreasedPlaybackSpeedSettingChanged() {
+        withContext(dispatcher) {
+            if (playbackSpeed != DEFAULT_PLAYBACK_SPEED) {
+                updateIncreasedPlaybackSpeedFromSharedPrefs()
+                if (isPlaying()) {
+                    updatePlaybackSpeedInPlayer(currentMediaPlayer)
+                }
+                notifyPlayerStatusChange()
+            }
+        }
+    }
+
+    suspend fun increasePlaybackSpeed() {
+        withContext(dispatcher) {
+            updateIncreasedPlaybackSpeedFromSharedPrefs()
+            if (isPlaying()) {
+                updatePlaybackSpeedInPlayer(currentMediaPlayer)
+            }
+            notifyPlayerStatusChange()
+        }
+    }
+
+    private suspend fun updateIncreasedPlaybackSpeedFromSharedPrefs() {
+        val increasedPlaybackSpeedSetting = sharedPrefs.getIncreasedPlaybackSpeedSetting(context)
+        logger.debug(
+            Util.TAGCRT(TAG, coroutineContext),
+            "updateIncreasedPlaybackSpeedFromSharedPrefs(): $increasedPlaybackSpeedSetting"
+        )
+        playbackSpeed = when (increasedPlaybackSpeedSetting) {
+            IncreasedPlaybackSpeedSetting.ONE_DOT_TWO -> {
+                1.2F
+            }
+            IncreasedPlaybackSpeedSetting.ONE_DOT_FIVE -> {
+                1.5F
+            }
+            IncreasedPlaybackSpeedSetting.TWO_DOT_ZERO -> {
+                2.0F
+            }
+        }
+    }
+
+    suspend fun setNormalPlaybackSpeed() {
+        withContext(dispatcher) {
+            logger.debug(Util.TAGCRT(TAG, coroutineContext), "setNormalPlaybackSpeed()")
+            playbackSpeed = 1.0F
+            if (isPlaying()) {
+                updatePlaybackSpeedInPlayer(currentMediaPlayer)
+            }
+            notifyPlayerStatusChange()
+        }
+    }
+
+    private fun updatePlaybackSpeedInPlayer(mediaPlayer: MediaPlayer?) {
+        try {
+            // Must be called after setting datasource on player, otherwise will throw IllegalStateException.
+            // This will start the player in case it is paused.
+            mediaPlayer?.apply {
+                playbackParams = playbackParams.setSpeed(playbackSpeed)
+            }
+        } catch (exc: IllegalStateException) {
+            logger.exception(TAG, exc.message.toString(), exc)
+        }
+    }
+
     fun onBroadcastPlay() {
         launchInScopeSafely { start() }
     }
@@ -1135,6 +1199,10 @@ class AudioPlayer(
 
     suspend fun isIdle(): Boolean = withContext(dispatcher) {
         return@withContext getState(currentMediaPlayer) == AudioPlayerState.IDLE
+    }
+
+    suspend fun isPlaying(): Boolean = withContext(dispatcher) {
+        return@withContext getState(currentMediaPlayer) == AudioPlayerState.STARTED
     }
 
 }

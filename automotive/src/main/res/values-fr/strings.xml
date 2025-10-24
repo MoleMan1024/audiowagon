@@ -150,4 +150,5 @@ de l\'application \"Media Center\")</string>
     <string name="setting_equalizer_enable">Activé</string>
     <string name="equalizer_preset_custom">Personnalisé</string>
     <string name="setting_show_album_art">Afficher pochette d\'album</string>
+    <string name="setting_increased_playback_speed">Vitesse de lecture augmentée</string>
 </resources>

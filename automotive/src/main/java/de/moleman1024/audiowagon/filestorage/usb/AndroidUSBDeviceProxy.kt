@@ -10,6 +10,7 @@ import android.content.Context
 import android.hardware.usb.UsbConstants
 import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
+import de.moleman1024.audiowagon.USB_DEVICE_SERIALNUM_MAX_NUM_CHARS
 import de.moleman1024.audiowagon.exceptions.NoPartitionsException
 import de.moleman1024.audiowagon.filestorage.FileSystem
 import de.moleman1024.audiowagon.filestorage.usb.lowlevel.*
@@ -245,7 +246,7 @@ class AndroidUSBDeviceProxy(
 
     override fun toString(): String {
         return "USBDeviceProxy(deviceName='$deviceName', productId=$productId, vendorId=$vendorId, " +
-               "serialNumber=${serialNumber?.take(14)}, " +
+               "serialNumber=${serialNumber?.take(USB_DEVICE_SERIALNUM_MAX_NUM_CHARS)}, " +
                "massStorageDevice.hashCode=${massStorageDevice.hashCode()}, " +
                "androidUSBDevice.hashCode=${androidUSBDevice.hashCode()})"
     }

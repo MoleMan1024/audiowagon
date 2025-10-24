@@ -141,4 +141,5 @@ FAT32ファイルシステムを使用してUSBドライブをフォーマット
     <string name="setting_equalizer_enable">有効</string>
     <string name="equalizer_preset_custom">カスタムフィ</string>
     <string name="setting_show_album_art">アルバムアートを表示</string>
+    <string name="setting_increased_playback_speed">再生速度の向上</string>
 </resources>

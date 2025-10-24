@@ -30,7 +30,8 @@ Some more historic details in [Github](https://github.com/MoleMan1024/audiowagon
 **UPDATE 2025-03-19:** It looks like after 4 years **Volvo/Polestar** have finally integrated the *car-usb-handler* in
 their recent car software update. For Volvo XC40 or Polestar 2 cars, please update to *car version 3.4.4 (the one
 with wired Android Auto included)* and *AudioWagon version 2.8.7 or higher* and you should no longer need to give
-permission for AudioWagon for USB each time.
+permission for AudioWagon for USB each time. The permission popup might still appear rarely but most of the time the
+permission should be granted automatically without any popup showing.
 
 #### Ford
 
@@ -259,6 +260,21 @@ on your USB drive might be damaged.
 
 
 ## Supported features
+
+### Does the app support playlists?
+
+Yes, you can use `.m3u`, `.pls` or `.xspf` style playlist files. Filepaths must be either absolute to the root of the
+USB flash drive or relative to the directory the playlist file is in. Use the "Files" view in AudioWagon to start
+playback of the playlist file. Here is an example of a .m3u playlist file:
+
+```
+/Music/Car/Nick Lowe/Labour of Lust/07 Switch Board Susan.mp3
+/Music/Car/The Beatles/The Beatles (The White Album)/01 Back in the U.S.S.R..mp3
+/Music/Car/Bruce Springsteen/Greatest Hits/16 Murder Incorporated 1.mp3
+/Music/Car/Chuck Berry/20 Super Hits/02 Roll Over Beethoven.mp3
+/Music/Car/Electric Light Orchestra/1975 - Face The Music/05 - Poker.flac
+/Music/Car/Genesis/We Can't Dance/02 Jesus He Knows Me.mp3
+```
 
 ### Is there a limitation on the number of files the app can handle?
 

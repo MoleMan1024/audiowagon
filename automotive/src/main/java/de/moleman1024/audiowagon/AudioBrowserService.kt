@@ -57,6 +57,7 @@ import androidx.media.MediaBrowserServiceCompat
 import androidx.media.utils.MediaConstants
 import de.moleman1024.audiowagon.activities.LegalDisclaimerActivity
 import de.moleman1024.audiowagon.authorization.PackageValidation
+import de.moleman1024.audiowagon.authorization.PermissionBehaviour
 import de.moleman1024.audiowagon.authorization.USBDevicePermissions
 import de.moleman1024.audiowagon.broadcast.ACTION_USB_ATTACHED
 import de.moleman1024.audiowagon.broadcast.BroadcastReceiverManager
@@ -349,6 +350,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     private fun updateDevicesAfterUnlock() {
         logger.debug(TAG, "updateDevicesAfterUnlock()")
         updateDevicesSingletonCoroutine.launch {
+            audioFileStorage.setIsUpdateDevicesCoroutineStarted(true)
             // We need to avoid overlapping attached device updates, because requesting e.g. permission twice for the
             // same device (when popup not yet visible) will cancel showing of the permission popup
             if (audioFileStorage.isUpdatingDevices()) {
@@ -356,6 +358,10 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                 return@launch
             }
             suspendSingletonCoroutine.join()
+            // If we already have the permission after unlock, we do not want to wait, so we check here once without
+            // asking for missing permissions
+            updateAttachedDevices(PermissionBehaviour.DO_NOT_ASK_PERMISSION)
+            // If we do NOT have permission for USB devices yet, wait some seconds for USBDummyActivity to trigger
             logger.debug(
                 Util.TAGCRT(TAG, coroutineContext),
                 "Delaying to update attached devices until ${
@@ -367,6 +373,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                 // power-on so that we do not see the USB permission popup.
                 delay(UPDATE_ATTACHED_DEVICES_AFTER_UNLOCK_DELAY_MS)
             }
+            // If we still do not have permission for USB at this time, we will trigger the permission popup
             updateAttachedDevices()
         }
     }
@@ -399,10 +406,10 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    fun updateAttachedDevices() {
-        logger.debug(TAG, "updateAttachedDevices()")
+    fun updateAttachedDevices(permissionBehaviour: PermissionBehaviour = PermissionBehaviour.ASK_PERMISSION) {
+        logger.debug(TAG, "updateAttachedDevices(permissionBehaviour=$permissionBehaviour)")
         try {
-            audioFileStorage.updateAttachedDevices()
+            audioFileStorage.updateAttachedDevices(permissionBehaviour)
         } catch (exc: IOException) {
             logger.exception(TAG, "I/O Error during update of connected USB devices", exc)
             runBlocking(lifecycleScope.coroutineContext + dispatcher) {
@@ -831,6 +838,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             logger.debug(TAG, "Shutdown is in progress")
             return
         }
+        cancelUpdateDevicesCoroutine()
         cancelMostJobs()
         audioSessionCloseSingletonCoroutine.launch {
             audioSession.stopPlayer()
@@ -1223,6 +1231,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         }
         isSuspended.set(false)
         audioFileStorage.wakeup()
+        notifyBrowserChildrenChangedAllLevels()
         updateDevicesAfterUnlock()
     }
 
@@ -1230,8 +1239,8 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     private fun maybeRegisterUSBBroadcastReceivers() {
         // We don't really want to use these broadcast receivers for USB because it will prevent the desired
         // implementation in the manifest from working. So we try to register these as late as possible. However we
-        // must register these at some point because the approach with USB intents in manifest does not work for
-        // Polestar/Volvo cars
+        // must register these at some point because the approach with USB intents in manifest does not work
+        // always
         if (usbExternalBroadcastReceiver == null) {
             usbExternalBroadcastReceiver = USBExternalBroadcastReceiver()
             if (this::audioFileStorage.isInitialized) {
@@ -1640,6 +1649,16 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     @VisibleForTesting(otherwise = VisibleForTesting.NONE)
     fun addClientPackageToReject(packageName: String) {
         clientPackagesToReject.add(packageName)
+    }
+
+    @VisibleForTesting(otherwise = VisibleForTesting.NONE)
+    fun exposeUSBInternalBroadcastReceiver() {
+        logger.debug(TAG, "exposeUSBInternalBroadcastReceiver()")
+        usbInternalBroadcastReceiver?.let {
+            broadcastReceiverManager?.unregister(it)
+            it.isExported = true
+            broadcastReceiverManager?.register(it)
+        }
     }
 
 }

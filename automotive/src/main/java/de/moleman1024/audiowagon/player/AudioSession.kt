@@ -57,7 +57,6 @@ private const val TAG = "AudioSession"
 private val logger = Logger
 private const val IGNORE_AUDIO_FOCUS_ERROR_AFTER_WAKEUP_SECONDS = 15
 const val SESSION_TAG = "AudioSession"
-const val PLAYBACK_SPEED: Float = 1.0f
 
 // arbitrary number
 const val REQUEST_CODE: Int = 25573
@@ -68,6 +67,8 @@ const val ACTION_REPEAT_ONE_ON = "de.moleman1024.audiowagon.ACTION_REPEAT_ONE_ON
 const val ACTION_REPEAT_OFF = "de.moleman1024.audiowagon.ACTION_REPEAT_OFF"
 const val ACTION_EJECT = "de.moleman1024.audiowagon.ACTION_EJECT"
 const val ACTION_REWIND_10 = "de.moleman1024.audiowagon.ACTION_REWIND_10"
+const val ACTION_INCREASED_PLAYBACK_SPEED_ON = "de.moleman1024.audiowagon.ACTION_INCREASED_PLAYBACK_SPEED_ON"
+const val ACTION_INCREASED_PLAYBACK_SPEED_OFF = "de.moleman1024.audiowagon.ACTION_INCREASED_PLAYBACK_SPEED_OFF"
 
 /**
  * This class is used to handle the current high-level session state of the [AudioPlayer] and handle events from media
@@ -182,15 +183,17 @@ class AudioSession(
         val customActionRepeatOneOn = playbackStateActions.createCustomActionRepeatIsOff()
         val customActionEject = playbackStateActions.createCustomActionEject()
         val customActionRewind10 = playbackStateActions.createCustomActionRewind10()
+        val customActionIncreasedPlaybackSpeed = playbackStateActions.createCustomActionIncreasedPlaybackSpeedIsOff()
         playbackState = PlaybackStateCompat.Builder().setState(
             PlaybackStateCompat.STATE_NONE,
             PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN,
-            PLAYBACK_SPEED
+            DEFAULT_PLAYBACK_SPEED
         ).setActions(actions)
             .addCustomAction(customActionRewind10)
             .addCustomAction(customActionShuffleOn)
             .addCustomAction(customActionEject)
             .addCustomAction(customActionRepeatOneOn)
+            .addCustomAction(customActionIncreasedPlaybackSpeed)
             .build()
         runBlocking(dispatcher) {
             setMediaSessionPlaybackState(playbackState)
@@ -219,6 +222,11 @@ class AudioSession(
                     playbackStateActions.createCustomActionRepeatIsOff()
                 }
             }
+            val customActionIncreasedPlaybackSpeed = if (audioPlayerStatus.playbackSpeed == DEFAULT_PLAYBACK_SPEED) {
+                playbackStateActions.createCustomActionIncreasedPlaybackSpeedIsOff()
+            } else {
+                playbackStateActions.createCustomActionIncreasedPlaybackSpeedIsOn()
+            }
             // TODO: builders should be kept as members for performance reasons, expensive to build
             //  (see https://developer.android.com/guide/topics/media-apps/working-with-a-media-session )
             val playbackStateBuilder = PlaybackStateCompat.Builder().apply {
@@ -227,7 +235,12 @@ class AudioSession(
                 addCustomAction(customActionShuffle)
                 addCustomAction(playbackStateActions.createCustomActionEject())
                 addCustomAction(customActionRepeat)
-                setState(audioPlayerStatus.playbackState, audioPlayerStatus.positionInMilliSec, PLAYBACK_SPEED)
+                addCustomAction(customActionIncreasedPlaybackSpeed)
+                setState(
+                    audioPlayerStatus.playbackState,
+                    audioPlayerStatus.positionInMilliSec,
+                    audioPlayerStatus.playbackSpeed
+                )
                 audioPlayerStatus.queueItem?.queueId?.let { setActiveQueueItemId(it) }
                 audioPlayerStatus.queueItem?.description?.mediaId.let {
                     setExtras(Bundle().apply {
@@ -602,6 +615,11 @@ class AudioSession(
                     launchInScopeSafely(audioSessionChange.type.name) {
                         audioPlayer.pause()
                         audioFocus.setBehaviour(audioSessionChange.audioFocusSetting)
+                    }
+                }
+                AudioSessionChangeType.ON_INCREASED_PLAYBACK_SPEED_SETTING_CHANGED -> {
+                    launchInScopeSafely(audioSessionChange.type.name) {
+                        audioPlayer.onIncreasedPlaybackSpeedSettingChanged()
                     }
                 }
                 AudioSessionChangeType.ON_SET_ALBUM_STYLE -> {
@@ -1043,7 +1061,7 @@ class AudioSession(
         playbackState = PlaybackStateCompat.Builder().setState(
             PlaybackStateCompat.STATE_NONE,
             PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN,
-            PLAYBACK_SPEED
+            DEFAULT_PLAYBACK_SPEED
         ).build()
         audioFocusChangeListener.playbackState = playbackState.state
     }
@@ -1217,7 +1235,7 @@ class AudioSession(
         playSingletonCoroutine.cancel()
         observePlaybackQueueSingletonCoroutine.cancel()
         audioFocusChangeListener.cancelAudioFocusLossJob()
-        audioPlayer.pause()
+        audioPlayer.reset()
         audioFocus.release()
         setCurrentQueueItem(null)
         audioSessionNotifications.sendEmptyNotification()

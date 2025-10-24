@@ -310,7 +310,7 @@ abstract class ContentHierarchyElement(
         var subtitle: String
         subtitle = context.getString(R.string.browse_tree_no_usb_drive)
         var iconID: Int = R.drawable.usb_off
-        if (!audioFileStorage.isUpdatingDevices()) {
+        if (!audioFileStorage.isUpdatingDevices() && !audioFileStorage.isUpdateDevicesCoroutineStarted()) {
             val numAttachedPermittedDevices = audioFileStorage.getNumAttachedPermittedDevices()
             if (numAttachedPermittedDevices > 0) {
                 if (sharedPrefs.isLegalDisclaimerAgreed(context)) {

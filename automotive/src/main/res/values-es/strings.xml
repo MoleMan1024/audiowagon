@@ -144,4 +144,5 @@ mejorar la app (requiere conexión a internet).</string>
     <string name="setting_equalizer_enable">Activado</string>
     <string name="equalizer_preset_custom">Personalizado</string>
     <string name="setting_show_album_art">Mostrar portada de álbum</string>
+    <string name="setting_increased_playback_speed">Mayor velocidad de reproducción</string>
 </resources>

@@ -36,6 +36,7 @@ class RepositoryTest {
         serviceFixture = ServiceFixture()
         browser = serviceFixture.createMediaBrowser()
         audioBrowserService = serviceFixture.getAudioBrowserService()
+        audioBrowserService.exposeUSBInternalBroadcastReceiver()
         audioBrowserService.setUseInMemoryDatabase()
         mockUSBDeviceFixture = MockUSBDeviceFixture()
         mockUSBDeviceFixture.init()

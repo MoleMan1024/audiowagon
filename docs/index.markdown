@@ -30,6 +30,7 @@ This app will **play audio files** from an attached **USB flash drive** in cars 
 - [**gapless playback**](https://en.wikipedia.org/wiki/Gapless_playback) for FLAC files
 - support for **voice input**
 - **playlists** (**m3u**, **pls**, **xspf**) can be played back from file view
+- **increased playback speed** (1.2x / 1.5x / 2.0x) for downloaded podcasts or audio books
 
 ## Release notes
 
@@ -82,6 +83,8 @@ Please see Github for a [list of changes for each version of the app](https://gi
   version 2.2 or higher that includes the CarPlay Update (or 1.9 or lower) which re-enables the USB data connection.
 - The app can *not* play back **.wma** files. Also Android does not support files encoded with "Apple Lossless Audio
   (alac)" codec.
+- Android has problems reading metadata in **.wav** files. For best compatibility of metadata (e.g. showing album art,
+  artist info, etc.) **prefer .mp3 or .flac files** instead
 - The app does *not* work with music stored on *iPod*, *iPhone* nor *Android phone*, you need to use a *USB mass storage
   device* formatted as *FAT32* (for example a USB flash drive)
 - *SanDisk Extreme Portable SSD* is not supported, because it

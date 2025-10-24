@@ -115,6 +115,11 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
         mediaController.sendCommand(CMD_SET_AUDIOFOCUS_SETTING, bundle, null)
     }
 
+    fun notifyIncreasedPlaybackSpeedSettingChanged() {
+        assertMediaControllerInitialized()
+        mediaController.sendCommand(CMD_NOTIFY_INCREASED_PLAYBACK_SPEED_SETTING_CHANGED, null, null)
+    }
+
     fun setAlbumStyleSetting(albumStyleStr: String) {
         assertMediaControllerInitialized()
         val bundle = Bundle()

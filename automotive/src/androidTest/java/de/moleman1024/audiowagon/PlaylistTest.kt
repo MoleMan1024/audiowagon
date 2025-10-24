@@ -34,6 +34,7 @@ class PlaylistTest {
         serviceFixture = ServiceFixture()
         browser = serviceFixture.createMediaBrowser()
         audioBrowserService = serviceFixture.getAudioBrowserService()
+        audioBrowserService.exposeUSBInternalBroadcastReceiver()
         mockUSBDeviceFixture = MockUSBDeviceFixture()
         mockUSBDeviceFixture.init()
     }

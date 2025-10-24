@@ -31,6 +31,7 @@ class MediaSearchTest {
             serviceFixture = ServiceFixture()
             browser = serviceFixture.createMediaBrowser()
             val audioBrowserService = serviceFixture.getAudioBrowserService()
+            audioBrowserService.exposeUSBInternalBroadcastReceiver()
             mockUSBDeviceFixture = MockUSBDeviceFixture()
             mockUSBDeviceFixture.init()
             mockUSBDeviceFixture.createMP3().apply {

@@ -9,24 +9,51 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.ResultReceiver
 import android.provider.MediaStore
+import android.support.v4.media.session.MediaControllerCompat
 import android.support.v4.media.session.MediaSessionCompat
-import de.moleman1024.audiowagon.*
+import androidx.media.utils.MediaConstants
+import de.moleman1024.audiowagon.ALBUM_STYLE_KEY
+import de.moleman1024.audiowagon.AUDIOFOCUS_SETTING_KEY
+import de.moleman1024.audiowagon.CMD_DISABLE_CRASH_REPORTING
+import de.moleman1024.audiowagon.CMD_DISABLE_EQUALIZER
+import de.moleman1024.audiowagon.CMD_DISABLE_LOG_TO_USB
+import de.moleman1024.audiowagon.CMD_DISABLE_REPLAYGAIN
+import de.moleman1024.audiowagon.CMD_DISABLE_SHOW_ALBUM_ART
+import de.moleman1024.audiowagon.CMD_EJECT
+import de.moleman1024.audiowagon.CMD_ENABLE_CRASH_REPORTING
+import de.moleman1024.audiowagon.CMD_ENABLE_EQUALIZER
+import de.moleman1024.audiowagon.CMD_ENABLE_LOG_TO_USB
+import de.moleman1024.audiowagon.CMD_ENABLE_REPLAYGAIN
+import de.moleman1024.audiowagon.CMD_ENABLE_SHOW_ALBUM_ART
+import de.moleman1024.audiowagon.CMD_NOTIFY_INCREASED_PLAYBACK_SPEED_SETTING_CHANGED
+import de.moleman1024.audiowagon.CMD_READ_METADATA_NOW
+import de.moleman1024.audiowagon.CMD_REQUEST_USB_PERMISSION
+import de.moleman1024.audiowagon.CMD_SET_ALBUM_STYLE_SETTING
+import de.moleman1024.audiowagon.CMD_SET_AUDIOFOCUS_SETTING
+import de.moleman1024.audiowagon.CMD_SET_EQUALIZER_BAND
+import de.moleman1024.audiowagon.CMD_SET_EQUALIZER_PRESET
+import de.moleman1024.audiowagon.CMD_SET_METADATAREAD_SETTING
+import de.moleman1024.audiowagon.CMD_SET_VIEW_TABS
+import de.moleman1024.audiowagon.EQUALIZER_BAND_INDEX_KEY
+import de.moleman1024.audiowagon.EQUALIZER_BAND_VALUE_KEY
+import de.moleman1024.audiowagon.EQUALIZER_PRESET_KEY
+import de.moleman1024.audiowagon.METADATAREAD_SETTING_KEY
+import de.moleman1024.audiowagon.SingletonCoroutine
+import de.moleman1024.audiowagon.VIEW_TABS_SETTING_KEY
+import de.moleman1024.audiowagon.activities.SettingsActivity
+import de.moleman1024.audiowagon.enums.AlbumStyleSetting
+import de.moleman1024.audiowagon.enums.AudioFocusSetting
+import de.moleman1024.audiowagon.enums.AudioItemType
+import de.moleman1024.audiowagon.enums.AudioSessionChangeType
+import de.moleman1024.audiowagon.enums.EqualizerPreset
+import de.moleman1024.audiowagon.enums.MetadataReadSetting
+import de.moleman1024.audiowagon.enums.ViewTabSetting
 import de.moleman1024.audiowagon.log.CrashReporting
 import de.moleman1024.audiowagon.log.Logger
-import de.moleman1024.audiowagon.enums.AlbumStyleSetting
-import de.moleman1024.audiowagon.enums.AudioItemType
-import de.moleman1024.audiowagon.enums.MetadataReadSetting
+import de.moleman1024.audiowagon.player.data.AudioSessionChange
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import android.support.v4.media.session.MediaControllerCompat
-import androidx.media.utils.MediaConstants
-import de.moleman1024.audiowagon.activities.SettingsActivity
-import de.moleman1024.audiowagon.enums.AudioFocusSetting
-import de.moleman1024.audiowagon.enums.AudioSessionChangeType
-import de.moleman1024.audiowagon.enums.EqualizerPreset
-import de.moleman1024.audiowagon.enums.ViewTabSetting
-import de.moleman1024.audiowagon.player.data.AudioSessionChange
 
 private const val TAG = "AudioSessCB"
 private val logger = Logger
@@ -64,6 +91,8 @@ class AudioSessionCallback(
         SingletonCoroutine("eject", dispatcher, scope.coroutineContext, crashReporting)
     private val rewindSingletonCoroutine =
         SingletonCoroutine("rewind", dispatcher, scope.coroutineContext, crashReporting)
+    private val increasedPlaybackSpeedSingletonCoroutine =
+        SingletonCoroutine("incrPlaybSpeed", dispatcher, scope.coroutineContext, crashReporting)
 
     override fun onCommand(command: String, args: Bundle?, cb: ResultReceiver?) {
         logger.debug(TAG, "onCommand(command=$command,args=$args)")
@@ -145,6 +174,11 @@ class AudioSessionCallback(
                     args?.getString(AUDIOFOCUS_SETTING_KEY, AudioFocusSetting.PAUSE.name).toString()
                 notifyObservers(audioSessionChange)
             }
+            CMD_NOTIFY_INCREASED_PLAYBACK_SPEED_SETTING_CHANGED -> {
+                val audioSessionChange =
+                    AudioSessionChange(AudioSessionChangeType.ON_INCREASED_PLAYBACK_SPEED_SETTING_CHANGED)
+                notifyObservers(audioSessionChange)
+            }
             CMD_SET_ALBUM_STYLE_SETTING -> {
                 val audioSessionChange = AudioSessionChange(AudioSessionChangeType.ON_SET_ALBUM_STYLE)
                 audioSessionChange.albumStyleSetting =
@@ -210,6 +244,16 @@ class AudioSessionCallback(
             ACTION_REWIND_10 -> {
                 rewindSingletonCoroutine.launch {
                     audioPlayer.rewind(10000)
+                }
+            }
+            ACTION_INCREASED_PLAYBACK_SPEED_ON -> {
+                increasedPlaybackSpeedSingletonCoroutine.launch {
+                    audioPlayer.increasePlaybackSpeed()
+                }
+            }
+            ACTION_INCREASED_PLAYBACK_SPEED_OFF -> {
+                increasedPlaybackSpeedSingletonCoroutine.launch {
+                    audioPlayer.setNormalPlaybackSpeed()
                 }
             }
             else -> {

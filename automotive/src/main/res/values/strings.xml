@@ -207,4 +207,8 @@ improve the app (requires internet connection).</string>
     <string name="setting_equalizer_enable">Enabled</string>
     <string name="equalizer_preset_custom">Customized</string>
     <string name="setting_show_album_art">Show album art</string>
+    <string name="setting_increased_playback_speed">Increased playback speed</string>
+    <string name="setting_increased_playback_speed_1dot2" translatable="false">1.2</string>
+    <string name="setting_increased_playback_speed_1dot5" translatable="false">1.5</string>
+    <string name="setting_increased_playback_speed_2dot0" translatable="false">2.0</string>
 </resources>

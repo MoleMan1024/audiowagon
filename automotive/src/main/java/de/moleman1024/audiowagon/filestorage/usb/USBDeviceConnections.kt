@@ -13,8 +13,10 @@ import android.os.Build
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.SharedPrefs
 import de.moleman1024.audiowagon.SingletonCoroutine
+import de.moleman1024.audiowagon.USB_DEVICE_SERIALNUM_MAX_NUM_CHARS
 import de.moleman1024.audiowagon.Util
 import de.moleman1024.audiowagon.authorization.USBDevicePermissions
+import de.moleman1024.audiowagon.authorization.PermissionBehaviour
 import de.moleman1024.audiowagon.enums.DeviceAction
 import de.moleman1024.audiowagon.enums.USBPermission
 import de.moleman1024.audiowagon.exceptions.DeviceIgnoredException
@@ -57,6 +59,7 @@ class USBDeviceConnections(
     val isUpdatingDevices = AtomicBoolean()
     val isAnyDeviceAttached = AtomicBoolean()
     val isAnyDevicePermitted = AtomicBoolean()
+    val isUpdateDevicesCoroutineStarted = AtomicBoolean()
 
     // use a single thread here to avoid race conditions updating the USB attached/detached status from multiple threads
     private val singleThreadDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
@@ -74,6 +77,7 @@ class USBDeviceConnections(
     init {
         logger.debug(TAG, "Init USBDeviceConnections()")
         isUpdatingDevices.set(false)
+        isUpdateDevicesCoroutineStarted.set(false)
         val logToUSBPreference = sharedPrefs.isLogToUSBEnabled(context)
         if (logToUSBPreference) {
             isLogToUSBPreferenceSet = true
@@ -92,7 +96,7 @@ class USBDeviceConnections(
             notifyObservers(DeviceChange(null, DeviceAction.REFRESH))
             // Wait a bit to for the USB driver to settle down in case of issues and to give
             // USBDummyActivity a chance to catch this instead and send ACTION_USB_ATTACHED
-            val delayTimeMS = 4000L
+            val delayTimeMS = 6000L
             val now = Util.getLocalDateTimeNowInstant()
             logger.debug(
                 Util.TAGCRT(TAG, coroutineContext),
@@ -111,13 +115,14 @@ class USBDeviceConnections(
                 Util.TAGCRT(TAG, coroutineContext),
                 "Handling USB device attached event that was delayed at $now"
             )
-            onAttachedUSBMassStorageDeviceFound(usbMediaDevice)
+            onAttachedUSBMassStorageDeviceFound(usbMediaDevice, PermissionBehaviour.ASK_PERMISSION)
             // isUpdatingDevices will be updated somewhere inside above method
         }
     }
 
     fun onBroadcastUSBDeviceDetached(usbMediaDevice: USBMediaDevice) {
         isUpdatingDevices.set(false)
+        isUpdateDevicesCoroutineStarted.set(false)
         isAnyDeviceAttached.set(false)
         usbDetachedSingletonCoroutine.launch {
             usbAttachedDelayedSingletonCoroutine.cancel()
@@ -130,7 +135,7 @@ class USBDeviceConnections(
     fun onBroadcastUSBAttached(usbMediaDevice: USBMediaDevice) {
         usbAttachedSingletonCoroutine.launch {
             usbAttachedDelayedSingletonCoroutine.cancel()
-            onAttachedUSBMassStorageDeviceFound(usbMediaDevice)
+            onAttachedUSBMassStorageDeviceFound(usbMediaDevice, PermissionBehaviour.ASK_PERMISSION)
         }
     }
 
@@ -149,18 +154,30 @@ class USBDeviceConnections(
         }
     }
 
-    fun updateAttachedDevices() {
+    fun updateAttachedDevices(permissionBehaviour: PermissionBehaviour = PermissionBehaviour.ASK_PERMISSION) {
         if (isUpdatingDevices.get()) {
             logger.debug(TAG, "Ignoring updateAttachedDevices(), USB devices already updating")
             return
         }
         updateAttachedDevicesSingletonCoroutine.launch {
             isUpdatingDevices.set(true)
-            for (usbMediaDevice in getAttachedUSBMassStorageDevices()) {
-                onAttachedUSBMassStorageDeviceFound(usbMediaDevice)
+            var hasException = false
+            try {
+                for (usbMediaDevice in getAttachedUSBMassStorageDevices()) {
+                    onAttachedUSBMassStorageDeviceFound(usbMediaDevice, permissionBehaviour)
+                }
+            } catch (exc: SecurityException) {
+                logger.exception(Util.TAGCRT(TAG, coroutineContext), exc.message.toString(), exc)
+                crashReporting.logLastMessagesAndRecordException(exc)
+                hasException = true
             }
             isUpdatingDevices.set(false)
-            notifyObservers(DeviceChange(null, DeviceAction.REFRESH))
+            isUpdateDevicesCoroutineStarted.set(false)
+            if (hasException) {
+                notifyUSBInitError()
+            } else {
+                notifyObservers(DeviceChange(null, DeviceAction.REFRESH))
+            }
         }
     }
 
@@ -231,20 +248,28 @@ class USBDeviceConnections(
         return context.getSystemService(Context.USB_SERVICE) as UsbManager
     }
 
-    private suspend fun onAttachedUSBMassStorageDeviceFound(device: USBMediaDevice) {
-        logger.debug(Util.TAGCRT(TAG, coroutineContext), "onAttachedUSBMassStorageDeviceFound(device=$device)")
+    private suspend fun onAttachedUSBMassStorageDeviceFound(
+        device: USBMediaDevice,
+        permissionBehaviour: PermissionBehaviour
+    ) {
+        logger.debug(
+            Util.TAGCRT(TAG, coroutineContext),
+            "onAttachedUSBMassStorageDeviceFound(device=$device, permissionBehaviour=$permissionBehaviour)"
+        )
         val permission: USBPermission = usbDevicePermissions.getCurrentPermissionForDevice(device)
         if (permission == USBPermission.UNKNOWN) {
-            updateUSBStatusInSettings(R.string.setting_USB_status_connected_no_permission)
-            if (isSuspended) {
-                logger.warning(
-                    Util.TAGCRT(TAG, coroutineContext),
-                    "Still suspended, can not show permission popup to user when screen is off"
-                )
-                return
+            if (permissionBehaviour == PermissionBehaviour.ASK_PERMISSION) {
+                updateUSBStatusInSettings(R.string.setting_USB_status_connected_no_permission)
+                if (isSuspended) {
+                    logger.warning(
+                        Util.TAGCRT(TAG, coroutineContext),
+                        "Still suspended, can not show permission popup to user when screen is off"
+                    )
+                    return
+                }
+                usbDevicePermissions.requestPermissionForDevice(device)
+                logger.debug(Util.TAGCRT(TAG, coroutineContext), "Waiting for user to grant permission")
             }
-            usbDevicePermissions.requestPermissionForDevice(device)
-            logger.debug(Util.TAGCRT(TAG, coroutineContext), "Waiting for user to grant permission")
             return
         }
         onUSBDeviceWithPermissionAttached(device)
@@ -324,6 +349,7 @@ class USBDeviceConnections(
         }
         updateUSBStatusInSettings(R.string.setting_USB_status_ok)
         isUpdatingDevices.set(false)
+        isUpdateDevicesCoroutineStarted.set(false)
         logger.info(
             Util.TAGCRT(TAG, coroutineContext),
             "Successfully initialized filesystem at: ${Util.getLocalDateTimeStringNow()} (${Util.getUptimeString()})"
@@ -346,7 +372,7 @@ class USBDeviceConnections(
             logger.debug(Util.TAGCRT(TAG, coroutineContext), "onUSBDeviceDetached: $device")
             val deviceChange = DeviceChange(device, DeviceAction.DISCONNECT)
             notifyObservers(deviceChange)
-        } catch (exc: IOException) {
+        } catch (_: IOException) {
             val errorMsg = context.getString(R.string.error_IO)
             val deviceChange = DeviceChange(error = errorMsg)
             notifyObservers(deviceChange)
@@ -387,7 +413,7 @@ class USBDeviceConnections(
     private fun getAttachedFilteredDevicesFromUSBManager(): List<USBMediaDevice> {
         val filteredUSBDevices = mutableListOf<USBMediaDevice>()
         getUSBManager().deviceList.values.forEach { usbDevice ->
-            logger.debug(TAG, "USBManager.deviceList has device @${usbDevice.hashCode()}: $usbDevice")
+            logger.debug(TAG, "USBManager.deviceList has device @${usbDevice.hashCode()}: ${logUsbDevice(usbDevice)}")
             val deviceProxy = AndroidUSBDeviceProxy(usbDevice, getUSBManager())
             val usbMediaDevice = USBMediaDevice(context, deviceProxy)
             if (!usbMediaDevice.isToBeIgnored()) {
@@ -406,12 +432,14 @@ class USBDeviceConnections(
         if (permission == USBPermission.DENIED) {
             logger.info(Util.TAGCRT(TAG, coroutineContext), "User has denied access to: ${device.getName()}")
             isUpdatingDevices.set(false)
+            isUpdateDevicesCoroutineStarted.set(false)
             isAnyDevicePermitted.set(false)
             notifyObservers(DeviceChange(null, DeviceAction.REFRESH))
             return
         } else if (permission == USBPermission.UNKNOWN) {
             logger.error(Util.TAGCRT(TAG, coroutineContext), "Permission has not been updated for: ${device.getName()}")
             isUpdatingDevices.set(false)
+            isUpdateDevicesCoroutineStarted.set(false)
             isAnyDevicePermitted.set(false)
             notifyObservers(DeviceChange(null, DeviceAction.REFRESH))
             return
@@ -497,6 +525,18 @@ class USBDeviceConnections(
         usbAttachedDelayedSingletonCoroutine.cancel()
         usbDetachedSingletonCoroutine.cancel()
         usbPermissionSingletonCoroutine.cancel()
+    }
+
+    companion object {
+        fun logUsbDevice(usbDevice: UsbDevice): String {
+            return "UsbDevice[deviceName=${usbDevice.deviceName}," +
+                    "vendorId=${usbDevice.vendorId}," +
+                    "productId=${usbDevice.productId}," +
+                    "class=${usbDevice.deviceClass}," +
+                    "subclass=${usbDevice.deviceSubclass}," +
+                    "manufacturerName=${usbDevice.manufacturerName}," +
+                    "productName=${usbDevice.productName}]"
+        }
     }
 
 }

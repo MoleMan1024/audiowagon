@@ -70,4 +70,20 @@ class PlaybackStateActions(private val context: Context) {
         ).build()
     }
 
+    fun createCustomActionIncreasedPlaybackSpeedIsOff(): PlaybackStateCompat.CustomAction {
+        return PlaybackStateCompat.CustomAction.Builder(
+            ACTION_INCREASED_PLAYBACK_SPEED_ON,
+            context.getString(R.string.setting_increased_playback_speed),
+            R.drawable.increased_speed_off
+        ).build()
+    }
+
+    fun createCustomActionIncreasedPlaybackSpeedIsOn(): PlaybackStateCompat.CustomAction {
+        return PlaybackStateCompat.CustomAction.Builder(
+            ACTION_INCREASED_PLAYBACK_SPEED_OFF,
+            context.getString(R.string.setting_increased_playback_speed),
+            R.drawable.increased_speed_on
+        ).build()
+    }
+
 }

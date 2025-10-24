@@ -50,7 +50,6 @@ class SystemBroadcastReceiver : ManagedBroadcastReceiver() {
             Intent.ACTION_SHUTDOWN, Intent.ACTION_SCREEN_OFF -> audioBrowserService?.suspend()
             // SCREEN_ON and USER_PRESENT do not necessarily arrive in this order and may arrive multiple times
             Intent.ACTION_SCREEN_ON, Intent.ACTION_USER_PRESENT -> audioBrowserService?.wakeup()
-
             else -> {
                 // ignore
             }

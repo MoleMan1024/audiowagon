@@ -21,8 +21,9 @@ private val USB_ACTIONS_INTERNAL = listOf(
 )
 
 @ExperimentalCoroutinesApi
-class USBInternalBroadcastReceiver : ManagedBroadcastReceiver() {
+class USBInternalBroadcastReceiver() : ManagedBroadcastReceiver() {
     var usbDeviceConnections: USBDeviceConnections? = null
+    var isExported = false
 
     override fun getIntentFilter(): IntentFilter {
         return IntentFilter().apply {
@@ -33,7 +34,11 @@ class USBInternalBroadcastReceiver : ManagedBroadcastReceiver() {
     }
 
     override fun getFlags(): Int {
-        return getNotExportedFlags()
+        return if (!isExported) {
+            getNotExportedFlags()
+        } else {
+            getExportedFlags()
+        }
     }
 
     override fun getType(): BroadcastReceiverType {

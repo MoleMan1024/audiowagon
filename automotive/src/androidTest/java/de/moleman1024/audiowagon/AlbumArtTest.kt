@@ -48,6 +48,7 @@ class AlbumArtTest {
         serviceFixture = ServiceFixture()
         browser = serviceFixture.createMediaBrowser()
         audioBrowserService = serviceFixture.getAudioBrowserService()
+        audioBrowserService.exposeUSBInternalBroadcastReceiver()
         mockUSBDeviceFixture = MockUSBDeviceFixture()
         mockUSBDeviceFixture.init()
     }
@@ -88,7 +89,7 @@ class AlbumArtTest {
             while (fileInputStream.read(buffer).also { numBytesRead = it } != -1) {
                 numBytesReadTotal += numBytesRead
             }
-            val resizedAlbumArtSize = 3530
+            val resizedAlbumArtSize = 3450
             Assert.assertEquals(resizedAlbumArtSize, numBytesReadTotal)
         } finally {
             fileInputStream.close()

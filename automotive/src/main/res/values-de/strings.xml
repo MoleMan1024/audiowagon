@@ -152,4 +152,5 @@ verbessern (benötigt Internetverbindung).</string>
     <string name="setting_equalizer_enable">Aktiviert</string>
     <string name="equalizer_preset_custom">Benutzerdefiniert</string>
     <string name="setting_show_album_art">Alben-Cover anzeigen</string>
+    <string name="setting_increased_playback_speed">Erhöhte Wiedergabegeschwindigkeit</string>
 </resources>

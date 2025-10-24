@@ -151,4 +151,5 @@ forbedre appen (krever internettforbindelse).</string>
     <string name="setting_equalizer_enable">Aktivert</string>
     <string name="equalizer_preset_custom">Tilpasset</string>
     <string name="setting_show_album_art">Vis albumgrafikk</string>
+    <string name="setting_increased_playback_speed">Økt avspillingshastighet</string>
 </resources>

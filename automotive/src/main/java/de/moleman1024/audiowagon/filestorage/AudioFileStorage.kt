@@ -15,6 +15,7 @@ import de.moleman1024.audiowagon.BuildConfig
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.SharedPrefs
 import de.moleman1024.audiowagon.Util
+import de.moleman1024.audiowagon.authorization.PermissionBehaviour
 import de.moleman1024.audiowagon.authorization.SDCardDevicePermissions
 import de.moleman1024.audiowagon.authorization.USBDevicePermissions
 import de.moleman1024.audiowagon.enums.ContentHierarchyType
@@ -254,10 +255,10 @@ open class AudioFileStorage(
         }
     }
 
-    fun updateAttachedDevices() {
+    fun updateAttachedDevices(permissionBehaviour: PermissionBehaviour) {
         val isDebugBuild = Util.isDebugBuild(context)
         val isInEmulator = Util.isRunningInEmulator()
-        usbDeviceConnections.updateAttachedDevices()
+        usbDeviceConnections.updateAttachedDevices(permissionBehaviour)
         if (isDebugBuild) {
             // TODO: remove
             val sdCardDevicePermissions = SDCardDevicePermissions(context)
@@ -594,6 +595,14 @@ open class AudioFileStorage(
 
     fun setIsUpdatingDevices(value: Boolean) {
         usbDeviceConnections.isUpdatingDevices.set(value)
+    }
+
+    fun isUpdateDevicesCoroutineStarted(): Boolean {
+        return usbDeviceConnections.isUpdateDevicesCoroutineStarted.get()
+    }
+
+    fun setIsUpdateDevicesCoroutineStarted(value: Boolean) {
+        usbDeviceConnections.isUpdateDevicesCoroutineStarted.set(value)
     }
 
     fun isAnyDeviceAttached(): Boolean {

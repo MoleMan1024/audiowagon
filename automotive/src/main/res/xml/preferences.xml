@@ -26,6 +26,14 @@ SPDX-License-Identifier: GPL-3.0-or-later
                 app:useSimpleSummaryProvider="true"
                 app:entries="@array/audiofocus_settings"
                 app:entryValues="@array/audiofocus_settings_values" />
+        <ListPreference
+                app:key="increasedPlaybackSpeed"
+                app:title="@string/setting_increased_playback_speed"
+                app:persistent="true"
+                app:defaultValue="ONE_DOT_FIVE"
+                app:useSimpleSummaryProvider="true"
+                app:entries="@array/increased_playback_speed_settings"
+                app:entryValues="@array/increased_playback_speed_settings_values" />
     </PreferenceCategory>
     <PreferenceCategory
             app:title="@string/setting_library_category_title"

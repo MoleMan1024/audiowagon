@@ -39,6 +39,7 @@ class PlaybackTest {
         serviceFixture = ServiceFixture()
         browser = serviceFixture.createMediaBrowser()
         audioBrowserService = serviceFixture.getAudioBrowserService()
+        audioBrowserService.exposeUSBInternalBroadcastReceiver()
         mockUSBDeviceFixture = MockUSBDeviceFixture()
         mockUSBDeviceFixture.init()
     }
@@ -318,7 +319,7 @@ class PlaybackTest {
         // track list should have: "Shuffle all", "Track1", "Track2", "Track3", ...
         val startingTrack3 = traversal.hierarchy[tracksRoot]?.get(3)
         val thirdTrackMediaID = startingTrack3?.mediaId
-        for (tries in 0 until 2) {
+        (0 until 2).forEach { tries ->
             Logger.debug(TAG, "Start playback from track: $startingTrack3")
             serviceFixture.transportControls?.playFromMediaId(thirdTrackMediaID, null)
             TestUtils.waitForAudioPlayerState(PlaybackStateCompat.STATE_PLAYING, audioBrowserService)
@@ -333,6 +334,42 @@ class PlaybackTest {
             val currentTrackTitle = serviceFixture.metadata?.description?.title.toString()
             Assert.assertEquals(startingTrack3?.description?.title, currentTrackTitle)
         }
+    }
+
+    /**
+     * Increased playback speed feature
+     * https://github.com/MoleMan1024/audiowagon/issues/178
+     */
+    @Test
+    fun increasedPlaybackSpeed_speedIncreased_takesLessTimeToPlay() {
+        serviceFixture.transportControls?.sendCustomAction(
+            "de.moleman1024.audiowagon.ACTION_INCREASED_PLAYBACK_SPEED_OFF",
+            null
+        )
+        mockUSBDeviceFixture.createMP3().apply {
+            id3v2Tag.title = "Track"
+            id3v2Tag.album = "Album"
+        }.also { mockUSBDeviceFixture.storeMP3(it, "$MUSIC_ROOT/folder/track.mp3") }
+        mockUSBDeviceFixture.attachUSBDevice()
+        TestUtils.waitForIndexingCompleted(audioBrowserService)
+        Thread.sleep(1000)
+        serviceFixture.transportControls?.stop()
+        Thread.sleep(500)
+        val playAlbumID = "{\"type\":\"ALL_TRACKS_FOR_ALBUM\",\"alb\":1,$STORAGE_ID}"
+        serviceFixture.transportControls?.sendCustomAction(
+            "de.moleman1024.audiowagon.ACTION_INCREASED_PLAYBACK_SPEED_ON",
+            null
+        )
+        Thread.sleep(500)
+        val tic = System.currentTimeMillis()
+        serviceFixture.transportControls?.playFromMediaId(playAlbumID, null)
+        TestUtils.waitForAudioPlayerState(PlaybackStateCompat.STATE_PLAYING, audioBrowserService)
+        TestUtils.waitForAudioPlayerState(PlaybackStateCompat.STATE_STOPPED, audioBrowserService)
+        val toc = System.currentTimeMillis()
+        val playbackTimeTakenMillis = toc - tic
+        // The audio file is 2.7 seconds long, at lowest increased playback speed factor 1.2x it should be ~2.2 seconds
+        // long. At default increased playback factor 1.5x it should be even shorter.
+        Assert.assertTrue("Playback time was: $playbackTimeTakenMillis", playbackTimeTakenMillis < 2300)
     }
 
 }

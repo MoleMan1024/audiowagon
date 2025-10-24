@@ -150,4 +150,5 @@ förbättra appen (kräver internetanslutning).</string>
     <string name="setting_equalizer_enable">Aktiverad</string>
     <string name="equalizer_preset_custom">Anpassat</string>
     <string name="setting_show_album_art">Visa albumomslag</string>
+    <string name="setting_increased_playback_speed">Ökad uppspelningshastighet</string>
 </resources>

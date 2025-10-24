@@ -39,6 +39,7 @@ class MediaBrowserTest {
             serviceFixture = ServiceFixture()
             browser = serviceFixture.createMediaBrowser()
             audioBrowserService = serviceFixture.getAudioBrowserService()
+            audioBrowserService.exposeUSBInternalBroadcastReceiver()
             // use in-memory database to speed-up tests
             audioBrowserService.setUseInMemoryDatabase()
             mockUSBDeviceFixture = MockUSBDeviceFixture()
