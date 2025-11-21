@@ -2,30 +2,43 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 [versions]
-ver-agp = "8.12.0"
+# https://developer.android.com/build/releases/gradle-plugin
+# https://developer.android.com/build/releases/past-releases
+ver-agp = "8.12.2"
+# https://developer.android.com/jetpack/androidx/releases/appcompat
 ver-androidx-appcompat = "1.7.1"
-ver-androidx-media = "1.7.1"
+# https://github.com/androidx/media/releases
+ver-androidx-media = "1.7.0"
+# https://developer.android.com/jetpack/androidx/releases/preference
 ver-androidx-preference-ktx = "1.2.1"
+# https://developer.android.com/jetpack/androidx/releases/test
 ver-androidx-test-core = "1.7.0"
 ver-androidx-test-ext = "1.3.0"
 ver-androidx-test-rules = "1.7.0"
 # https://developer.android.com/jetpack/androidx/releases/core
 ver-core-ktx = "1.16.0"
+# https://firebase.google.com/support/release-notes/android
 ver-crashlytics = "3.0.6"
-ver-firebase-bom = "34.4.0"
+ver-firebase-bom = "34.6.0"
+# https://developer.android.com/jetpack/androidx/releases/fragment
 ver-fragment-testing = "1.8.9"
-ver-google-android-material = "1.12.0"
+# https://github.com/material-components/material-components-android/releases
+ver-google-android-material = "1.13.0"
 ver-google-services = "4.4.4"
 ver-jimfs = "1.3.1"
+# https://github.com/junit-team/junit4/releases
 ver-junit = "4.13.2"
+# https://kotlinlang.org/docs/releases.html#release-details
 ver-kotlin = "2.2.10"
 ver-kotlinx-coroutines-test = "1.10.2"
 ver-kotlinx-serialization = "1.9.0"
 # https://github.com/google/ksp/releases (must match Kotlin version)
 ver-ksp = "2.2.10-2.0.2"
-ver-lifecycle = "2.9.4"
+# https://developer.android.com/jetpack/androidx/releases/lifecycle
+ver-lifecycle = "2.10.0"
 ver-mockito-core = "5.20.0"
-ver-room = "2.8.2"
+# https://developer.android.com/jetpack/androidx/releases/room
+ver-room = "2.8.4"
 
 [libraries]
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "ver-androidx-appcompat" }

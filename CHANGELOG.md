@@ -12,13 +12,23 @@ Google's review process which can take a couple of days.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project loosely follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.11.2] - 2025-11-21
+
+### Changed
+
+- After waking up from suspend we receive an event that the previous USB device was detached. Wait 3 seconds after
+  waking up, so we do not try to access this old USB device instance (because it will fail in `initConnection()`)
+- bump some third-party library versions
+
+
 ## [2.11.1] - 2025-10-24
 
 ### Added
 
-- on the playback view you can now enable "increased playback speed". This is especial useful when listening to podcasts
-  or audiobooks that are quite long. You can choose the increased playback speed via AudioWagon settings. Three settings
-  are supported: 1.2 times, 1.5 times or 2 times faster than regular playback speed, depending on your preference.
+- on the playback view you can now enable "increased playback speed". This is especially useful when listening to
+  podcasts or audiobooks that are quite long. You can choose the increased playback speed via AudioWagon settings. Three
+  settings are supported: 1.2 times, 1.5 times or 2 times faster than regular playback speed, depending on your
+  preference.
 
 ### Fixed
 

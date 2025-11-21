@@ -358,6 +358,9 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                 return@launch
             }
             suspendSingletonCoroutine.join()
+            // After waking up from suspend we receive an event that the previous USB device was detached. We should
+            // wait for that here to not try to access it (because it will fail in initConnection())
+            delay(3000)
             // If we already have the permission after unlock, we do not want to wait, so we check here once without
             // asking for missing permissions
             updateAttachedDevices(PermissionBehaviour.DO_NOT_ASK_PERMISSION)

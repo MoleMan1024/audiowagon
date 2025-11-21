@@ -45,8 +45,8 @@ const val DEFAULT_JPEG_QUALITY_PERCENTAGE = 60
 const val POPUP_TIMEOUT_MS: Long = 4000L
 const val NUM_VIEW_TABS: Int = 4
 // I have seen USBDummyActivity trigger after up to 5 minutes(!) after wakeup, make sure we have enough time before we
-// fall back to listing USB devices (and triggering permission popup). 20 seconds should be enough in most cases
-const val UPDATE_ATTACHED_DEVICES_AFTER_UNLOCK_DELAY_MS = 20 * 1000L
+// fall back to listing USB devices (and triggering permission popup). 20 seconds total should be enough in most cases
+const val UPDATE_ATTACHED_DEVICES_AFTER_UNLOCK_DELAY_MS = 17 * 1000L
 const val DEFAULT_PLAYBACK_SPEED: Float = 1.0f
 const val USB_DEVICE_SERIALNUM_MAX_NUM_CHARS = 14
 

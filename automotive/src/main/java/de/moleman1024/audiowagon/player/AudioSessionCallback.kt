@@ -338,10 +338,8 @@ class AudioSessionCallback(
                     when (it) {
                         MediaStore.Audio.Artists.ENTRY_CONTENT_TYPE -> audioSessionChange.queryFocus =
                             AudioItemType.ARTIST
-
                         MediaStore.Audio.Albums.ENTRY_CONTENT_TYPE -> audioSessionChange.queryFocus =
                             AudioItemType.ALBUM
-
                         MediaStore.Audio.Media.ENTRY_CONTENT_TYPE -> audioSessionChange.queryFocus = AudioItemType.TRACK
                         else -> audioSessionChange.queryFocus = AudioItemType.UNSPECIFIC
                     }

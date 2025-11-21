@@ -14,7 +14,6 @@ import androidx.media.utils.MediaConstants
 import de.moleman1024.audiowagon.R
 import de.moleman1024.audiowagon.SharedPrefs
 import de.moleman1024.audiowagon.Util
-import de.moleman1024.audiowagon.enums.AlbumStyleSetting
 import de.moleman1024.audiowagon.enums.ContentHierarchyType
 import de.moleman1024.audiowagon.enums.MetadataReadSetting
 import de.moleman1024.audiowagon.filestorage.AudioFileStorage
@@ -89,15 +88,6 @@ abstract class ContentHierarchyElement(
                 putInt(
                     MediaConstants.DESCRIPTION_EXTRAS_KEY_CONTENT_STYLE_BROWSABLE,
                     MediaConstants.DESCRIPTION_EXTRAS_VALUE_CONTENT_STYLE_GRID_ITEM
-                )
-            }
-        }
-
-        fun generateExtrasBrowsableCategoryGridItems(): Bundle {
-            return Bundle().apply {
-                putInt(
-                    MediaConstants.DESCRIPTION_EXTRAS_KEY_CONTENT_STYLE_BROWSABLE,
-                    MediaConstants.DESCRIPTION_EXTRAS_VALUE_CONTENT_STYLE_CATEGORY_GRID_ITEM
                 )
             }
         }

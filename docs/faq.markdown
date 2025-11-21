@@ -354,6 +354,7 @@ to protect the environment (reforestation, solar power, right-to-repair, local p
 - Thank you Vasimo for donating to Vancouver Food Runners!
 - Thank you Trevor for donating to Northern India Flood Relief!
 - Thank you WPK for donating to CAIS, an organization that helps the homeless in Portugal!
+- Thank you Matthias for donating to Médecins sans Frontieres / Doctors Without Borders!
 
 
 ### Why don't you just use a streaming app? USB is so old-fashioned!

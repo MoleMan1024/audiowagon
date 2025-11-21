@@ -89,12 +89,10 @@ class AudioSession(
     private var mediaSession: MediaSessionCompat
     private var audioSessionCallback: AudioSessionCallback
     var sessionToken: MediaSessionCompat.Token
-
     // See https://developer.android.com/reference/android/support/v4/media/session/PlaybackStateCompat
     private lateinit var playbackState: PlaybackStateCompat
     private var currentQueueItem: MediaSessionCompat.QueueItem? = null
     private val observers = mutableListOf<(Any) -> Unit>()
-
     // media session must be accessed from same thread always
     private val mediaSessionDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
     private var lastContentHierarchyIDPlayed: String = ""
@@ -377,8 +375,7 @@ class AudioSession(
                         when (contentHierarchyID.type) {
                             ContentHierarchyType.TRACK -> {
                                 logger.debug(
-                                    Util.TAGCRT(TAG, coroutineContext),
-                                    "getAudioItemForTrack($contentHierarchyID)"
+                                    Util.TAGCRT(TAG, coroutineContext), "getAudioItemForTrack($contentHierarchyID)"
                                 )
                                 audioItem = audioItemLibrary.getAudioItemForTrack(contentHierarchyID)
                             }
@@ -410,9 +407,7 @@ class AudioSession(
                         setMediaSessionMetadata(metadata)
                     } catch (exc: FileNotFoundException) {
                         logger.exception(
-                            Util.TAGCRT(TAG, coroutineContext),
-                            "observePlaybackQueue(): ${exc.message.toString()}",
-                            exc
+                            Util.TAGCRT(TAG, coroutineContext), "observePlaybackQueue(): ${exc.message.toString()}", exc
                         )
                         var fileName: String = context.getString(R.string.error_unknown)
                         if (audioFile != null) {
@@ -807,8 +802,9 @@ class AudioSession(
 
     private suspend fun playFromContentHierarchyID(contentHierarchyIDStr: String, isShuffleRequested: Boolean = false) {
         val contentHierarchyID = ContentHierarchyElement.deserialize(contentHierarchyIDStr)
-        logger.debug(Util.TAGCRT(TAG, coroutineContext), "playFromContentHierarchyID(contentHierarchyIDstr=$contentHierarchyID," +
-                "isShuffleRequested=$isShuffleRequested)")
+        logger.debug(Util.TAGCRT(TAG, coroutineContext), "playFromContentHierarchyID(" +
+                "contentHierarchyIDstr=$contentHierarchyID, isShuffleRequested=$isShuffleRequested)"
+        )
         val audioItems: MutableList<AudioItem> =
             audioItemLibrary.getAudioItemsStartingFrom(contentHierarchyID).toMutableList()
         if (isShuffleRequested) {
