@@ -299,6 +299,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         try {
             var totalSizeBytes = databaseFile.length()
             logger.debug(TAG, "Database file $databaseFile size: $totalSizeBytes bytes")
+            // FIXME: this can lead to an ANR if it takes too long
             val albumArtDirSize = albumArtRootDir?.walkTopDown()?.filter { it.isFile }?.map { it.length() }?.sum() ?: 0
             logger.debug(TAG, "Album art directory $albumArtRootDir size: $albumArtDirSize bytes")
             totalSizeBytes += albumArtDirSize

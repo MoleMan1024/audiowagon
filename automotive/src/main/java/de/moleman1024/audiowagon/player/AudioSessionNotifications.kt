@@ -165,12 +165,6 @@ class AudioSessionNotifications(
         sendNotification(isPausedNotificationBuilder)
     }
 
-    fun sendEmptyNotification() {
-        logger.debug(TAG, "sendEmptyNotification()")
-        val notifBuilder = NotificationCompat.Builder(context, AUDIO_SESS_NOTIF_CHANNEL)
-        sendNotification(notifBuilder)
-    }
-
     private fun prepareNotification(notifBuilder: NotificationCompat.Builder): Notification {
         val style = androidx.media.app.NotificationCompat.MediaStyle()
         style.setMediaSession(mediaSession?.sessionToken)

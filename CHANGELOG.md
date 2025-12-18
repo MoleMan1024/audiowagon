@@ -12,6 +12,18 @@ Google's review process which can take a couple of days.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project loosely follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.11.5] - 2025-12-18
+
+### Fixed
+
+- The Android media session will now only be set as active when a playback queue has been loaded or playback is paused
+  or in progress. It will be set deactivated when the player is stopped and no "empty" notification will be used. 
+  This complies more closely to 
+  [Google's mediasession documentation](https://developer.android.com/media/legacy/audio/mediasession) and fixes a
+  problem in the Volvo media center that could get stuck showing an empty AudioWagon playback view, even when switching
+  to other media apps [#188](https://github.com/MoleMan1024/audiowagon/issues/188)
+
+
 ## [2.11.2] - 2025-11-21
 
 ### Changed

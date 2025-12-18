@@ -20,9 +20,9 @@ android {
         compileSdk = 35
         //noinspection OldTargetApi
         targetSdk = 34
-        versionName = "2.11.2"
+        versionName = "2.11.5"
         // major * 10000 + minor * 100 + patch
-        versionCode = 21102
+        versionCode = 21105
         resValue("string", "VERSION_NAME", versionName as String)
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
