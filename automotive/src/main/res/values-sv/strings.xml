@@ -151,4 +151,7 @@ förbättra appen (kräver internetanslutning).</string>
     <string name="equalizer_preset_custom">Anpassat</string>
     <string name="setting_show_album_art">Visa albumomslag</string>
     <string name="setting_increased_playback_speed">Ökad uppspelningshastighet</string>
+    <string name="setting_equalizer_and_balance_title">Equalizer &amp; Balans</string>
+    <string name="setting_balance_title">Balans</string>
+    <string name="setting_balance_reset_to_center">Återställ till mitten</string>
 </resources>

@@ -17,12 +17,12 @@ android {
     defaultConfig {
         applicationId = "de.moleman1024.audiowagon"
         minSdk = 29
-        compileSdk = 35
+        compileSdk = 36
         //noinspection OldTargetApi
         targetSdk = 34
-        versionName = "2.11.5"
+        versionName = "2.12.0"
         // major * 10000 + minor * 100 + patch
-        versionCode = 21105
+        versionCode = 21200
         resValue("string", "VERSION_NAME", versionName as String)
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

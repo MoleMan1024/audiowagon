@@ -150,5 +150,7 @@ Center\")</string>
     <string name="equalizer_preset_custom">Personalizzato</string>
     <string name="setting_show_album_art">Mostra la copertina dell\'album</string>
     <string name="setting_increased_playback_speed">Velocità di riproduzione aumentata</string>
+    <string name="setting_equalizer_and_balance_title">Equalizzatore &amp; Bilanica</string>
+    <string name="setting_balance_title">Bilanica</string>
+    <string name="setting_balance_reset_to_center">Ripristina al centro</string>
 </resources>
-

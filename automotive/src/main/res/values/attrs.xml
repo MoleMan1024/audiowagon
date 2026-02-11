@@ -1,27 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <attr name="seekBarPreferenceStyle" format="reference" />
+    <attr name="eqSeekBarPreferenceStyle" format="reference" />
+    <attr name="balanceSeekBarPreferenceStyle" format="reference" />
+    <attr name="min" format="integer"/>
+    <attr name="seekBarIncrement" format="integer" />
+    <attr name="adjustable" format="boolean" />
+    <attr name="showSeekBarValue" format="boolean" />
+    <attr name="updatesContinuously" format="boolean" />
 
     <declare-styleable name="EQSeekBarPreference">
-        <attr name="min" format="integer"/>
-        <attr name="android:max"/>
+        <attr name="eqSeekBarPreferenceStyle" />
+        <attr name="min" />
+        <attr name="android:max" />
         <attr name="android:layout" />
         <!-- Attribute controlling the amount to increment or decrement the seekbar when the user
         presses the arrow keys-->
-        <attr name="seekBarIncrement" format="integer" />
+        <attr name="seekBarIncrement" />
         <!-- Attribute indicating whether the slider within this preference can be adjusted, that is
         pressing left/right keys when this preference is focused will move the slider accordingly
         (e.g. inline adjustable preferences). False, if the slider within the preference is
         read-only and cannot be adjusted. By default, the seekbar is adjustable. -->
-        <attr name="adjustable" format="boolean" />
+        <attr name="adjustable" />
         <!-- Flag indicating whether the TextView next to the seekbar that shows the current seekbar
         value will be displayed. If true, the view is VISIBLE; if false, the view will be GONE.
         By default, this view is GONE. -->
-        <attr name="showSeekBarValue" format="boolean" />
+        <attr name="showSeekBarValue" />
         <!-- Flag indicating whether the SeekBarPreference should continuously save the Seekbar
         value while the Seekbar is being dragged. If true, the SeekBarPreference should continuously
         save the Seekbar value while it is being dragged. If false, the Seekbar value is only saved
         when released. By default, this boolean is false. -->
-        <attr name="updatesContinuously" format="boolean" />
+        <attr name="updatesContinuously" />
+    </declare-styleable>
+
+    <declare-styleable name="BalanceSeekBarPreference">
+        <attr name="balanceSeekBarPreferenceStyle" />
+        <attr name="min" />
+        <attr name="android:max" />
+        <attr name="android:layout" />
+        <attr name="seekBarIncrement" />
+        <attr name="adjustable" />
+        <attr name="showSeekBarValue" />
+        <attr name="updatesContinuously" />
     </declare-styleable>
 </resources>

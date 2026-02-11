@@ -27,17 +27,29 @@ import de.moleman1024.audiowagon.exceptions.AlreadyStoppedException
 import de.moleman1024.audiowagon.exceptions.CannotReadFileException
 import de.moleman1024.audiowagon.exceptions.MissingEffectsException
 import de.moleman1024.audiowagon.exceptions.NoItemsInQueueException
-import de.moleman1024.audiowagon.filestorage.data.AudioFile
 import de.moleman1024.audiowagon.filestorage.AudioFileStorage
+import de.moleman1024.audiowagon.filestorage.data.AudioFile
 import de.moleman1024.audiowagon.log.CrashReporting
 import de.moleman1024.audiowagon.log.Logger
 import de.moleman1024.audiowagon.player.data.AudioPlayerStatus
 import de.moleman1024.audiowagon.player.data.PlaybackQueueChange
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.yield
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.util.concurrent.Executors
-import kotlin.coroutines.coroutineContext
+import kotlin.math.abs
+import kotlin.math.log
 
 private const val TAG = "AudioPlayer"
 private val logger = Logger
@@ -98,16 +110,17 @@ class AudioPlayer(
             logger.debug(TAG, "Using single thread dispatcher for AudioPlayer: ${android.os.Process.myTid()}")
             initMediaPlayers()
             initEffects()
+            updateBalanceFromSharedPrefs()
         }
     }
 
     private suspend fun initMediaPlayers() {
         mediaPlayerFlip = MediaPlayer()
-        logger.debug(Util.TAGCRT(TAG, coroutineContext), "Init media player: $mediaPlayerFlip")
+        logger.debug(Util.TAGCRT(TAG, currentCoroutineContext()), "Init media player: $mediaPlayerFlip")
         setState(mediaPlayerFlip, AudioPlayerState.IDLE)
         currentMediaPlayer = mediaPlayerFlip
         mediaPlayerFlop = MediaPlayer()
-        logger.debug(Util.TAGCRT(TAG, coroutineContext), "Init next media player: $mediaPlayerFlop")
+        logger.debug(Util.TAGCRT(TAG, currentCoroutineContext()), "Init next media player: $mediaPlayerFlop")
         setState(mediaPlayerFlop, AudioPlayerState.IDLE)
         setCompletionListener(mediaPlayerFlip)
         setCompletionListener(mediaPlayerFlop)
@@ -304,11 +317,11 @@ class AudioPlayer(
     }
 
     private suspend fun prepare() {
-        logger.debug(Util.TAGCRT(TAG, coroutineContext), "prepare(currentMediaPlayer=$currentMediaPlayer)")
+        logger.debug(Util.TAGCRT(TAG, currentCoroutineContext()), "prepare(currentMediaPlayer=$currentMediaPlayer)")
         val validStates = listOf(AudioPlayerState.INITIALIZED, AudioPlayerState.STOPPED)
         val state = getState(currentMediaPlayer)
         if (state !in validStates) {
-            logger.warning(Util.TAGCRT(TAG, coroutineContext), "Invalid call to prepare() in state: $state")
+            logger.warning(Util.TAGCRT(TAG, currentCoroutineContext()), "Invalid call to prepare() in state: $state")
             return
         }
         playerStatus.hasPlaybackQueueEnded = false
@@ -318,10 +331,10 @@ class AudioPlayer(
     }
 
     private suspend fun reset(player: MediaPlayer?) {
-        logger.debug(Util.TAGCRT(TAG, coroutineContext), "reset(player=$player)")
+        logger.debug(Util.TAGCRT(TAG, currentCoroutineContext()), "reset(player=$player)")
         val state = getState(player)
         if (state == AudioPlayerState.IDLE) {
-            logger.debug(Util.TAGCRT(TAG, coroutineContext), "No reset necessary")
+            logger.debug(Util.TAGCRT(TAG, currentCoroutineContext()), "No reset necessary")
             return
         }
         player?.reset()
@@ -371,11 +384,11 @@ class AudioPlayer(
     }
 
     private suspend fun setDataSource(mediaDataSource: MediaDataSource) {
-        logger.debug(Util.TAGCRT(TAG, coroutineContext), "setDataSource(currentMediaPlayer=$currentMediaPlayer)")
+        logger.debug(Util.TAGCRT(TAG, currentCoroutineContext()), "setDataSource(currentMediaPlayer=$currentMediaPlayer)")
         val validStates = listOf(AudioPlayerState.IDLE)
         val state = getState(currentMediaPlayer)
         if (state !in validStates) {
-            logger.warning(Util.TAGCRT(TAG, coroutineContext), "Invalid call to setDataSource() in state: $state")
+            logger.warning(Util.TAGCRT(TAG, currentCoroutineContext()), "Invalid call to setDataSource() in state: $state")
             return
         }
         currentMediaPlayer?.setDataSource(mediaDataSource)
@@ -599,7 +612,7 @@ class AudioPlayer(
 
     suspend fun notifyPlayerStatusChange(status: AudioPlayerStatus? = null) {
         if (isRecoveringFromIOError) {
-            logger.warning(Util.TAGCRT(TAG, coroutineContext), "Error recovery is still in progress")
+            logger.warning(Util.TAGCRT(TAG, currentCoroutineContext()), "Error recovery is still in progress")
             return
         }
         if (status == null) {
@@ -618,7 +631,7 @@ class AudioPlayer(
         val exceptionHandler = CoroutineExceptionHandler { coroutineContext, exc ->
             logger.exception(Util.TAGCRT(TAG, coroutineContext), "$coroutineContext threw ${exc.message}", exc)
         }
-        logger.debug(Util.TAGCRT(TAG, coroutineContext), "notifyPlayerStatus(): $status")
+        logger.debug(Util.TAGCRT(TAG, currentCoroutineContext()), "notifyPlayerStatus(): $status")
         scope.launch(exceptionHandler + playerStatusDispatcher) {
             playerStatusObservers.forEach { it(status) }
         }
@@ -730,7 +743,7 @@ class AudioPlayer(
     }
 
     private suspend fun onPreparePlayFromQueueReady(mediaPlayer: MediaPlayer?, startPositionMS: Int) {
-        logger.debug(Util.TAGCRT(TAG, coroutineContext), "onPreparePlayFromQueueReady(mediaPlayer=$mediaPlayer)")
+        logger.debug(Util.TAGCRT(TAG, currentCoroutineContext()), "onPreparePlayFromQueueReady(mediaPlayer=$mediaPlayer)")
         setState(mediaPlayer, AudioPlayerState.PREPARED)
         if (startPositionMS > 0) {
             seekTo(startPositionMS)
@@ -776,7 +789,7 @@ class AudioPlayer(
         if (setupNextPlayerJob == null) {
             return
         }
-        logger.debug(Util.TAGCRT(TAG, coroutineContext), "cancelSetupNextPlayerJob()")
+        logger.debug(Util.TAGCRT(TAG, currentCoroutineContext()), "cancelSetupNextPlayerJob()")
         setupNextPlayerJob?.cancelAndJoin()
         setupNextPlayerJob = null
     }
@@ -785,24 +798,24 @@ class AudioPlayer(
         if (onCompletionJob == null) {
             return
         }
-        logger.debug(Util.TAGCRT(TAG, coroutineContext), "cancelOnCompletionJob()")
+        logger.debug(Util.TAGCRT(TAG, currentCoroutineContext()), "cancelOnCompletionJob()")
         onCompletionJob?.cancelAndJoin()
         onCompletionJob = null
     }
 
     private suspend fun onPreparedNextPlayer(mediaPlayer: MediaPlayer?) {
-        logger.debug(Util.TAGCRT(TAG, coroutineContext), "onPreparedListener(nextMediaPlayer=$mediaPlayer)")
+        logger.debug(Util.TAGCRT(TAG, currentCoroutineContext()), "onPreparedListener(nextMediaPlayer=$mediaPlayer)")
         setState(mediaPlayer, AudioPlayerState.PREPARED)
         val nextItem: MediaSessionCompat.QueueItem? = playbackQueue.getNextItem()
         if (nextItem == null) {
-            logger.debug(Util.TAGCRT(TAG, coroutineContext), "This is the last track, no next player necessary")
+            logger.debug(Util.TAGCRT(TAG, currentCoroutineContext()), "This is the last track, no next player necessary")
             return
         }
         try {
             currentMediaPlayer?.setNextMediaPlayer(mediaPlayer)
         } catch (exc: IllegalArgumentException) {
             logger.exception(
-                Util.TAGCRT(TAG, coroutineContext),
+                Util.TAGCRT(TAG, currentCoroutineContext()),
                 "Exception setting next media player $mediaPlayer for current media player: $currentMediaPlayer",
                 exc
             )
@@ -882,11 +895,11 @@ class AudioPlayer(
     }
 
     private suspend fun getDataSourceForURI(uri: Uri): MediaDataSource {
-        logger.debug(Util.TAGCRT(TAG, coroutineContext), "getDataSourceForURI($uri)")
+        logger.debug(Util.TAGCRT(TAG, currentCoroutineContext()), "getDataSourceForURI($uri)")
         try {
             return audioFileStorage.getBufferedDataSourceForURI(uri)
         } catch (exc: UnsupportedOperationException) {
-            logger.exception(Util.TAGCRT(TAG, coroutineContext), "Cannot get data source for URI: $uri", exc)
+            logger.exception(Util.TAGCRT(TAG, currentCoroutineContext()), "Cannot get data source for URI: $uri", exc)
             playerStatus.errorCode = PlaybackStateCompat.ERROR_CODE_UNKNOWN_ERROR
             playerStatus.errorMsg = "No datasource"
             playerStatus.playbackState = PlaybackStateCompat.STATE_ERROR
@@ -896,7 +909,7 @@ class AudioPlayer(
     }
 
     private suspend fun resetAllPlayers() {
-        logger.debug(Util.TAGCRT(TAG, coroutineContext), "resetAllPlayers()")
+        logger.debug(Util.TAGCRT(TAG, currentCoroutineContext()), "resetAllPlayers()")
         reset(mediaPlayerFlip)
         reset(mediaPlayerFlop)
         notifyPlayerStatusChange()
@@ -925,7 +938,7 @@ class AudioPlayer(
     }
 
     private suspend fun releaseAllPlayers() {
-        logger.debug(Util.TAGCRT(TAG, coroutineContext), "releaseAllPlayers()")
+        logger.debug(Util.TAGCRT(TAG, currentCoroutineContext()), "releaseAllPlayers()")
         mediaPlayerFlip?.release()
         setState(mediaPlayerFlip, AudioPlayerState.END)
         mediaPlayerFlop?.release()
@@ -967,6 +980,7 @@ class AudioPlayer(
             releaseAllPlayers()
             initMediaPlayers()
             initEffects()
+            updateBalanceFromSharedPrefs()
         }
     }
 
@@ -1103,6 +1117,63 @@ class AudioPlayer(
         }
     }
 
+    private suspend fun updateBalanceFromSharedPrefs() {
+        val balance = sharedPrefs.getBalance(context)
+        setBalance(balance)
+    }
+
+    suspend fun setBalance(balance: Int) {
+        withContext(dispatcher) {
+            val volumeLR = scaleIntegerBalanceAsExponentialVolume(balance)
+            logger.debug(
+                Util.TAGCRT(TAG, currentCoroutineContext()),
+                "setBalance(balance=${balance}) volumeLR=${volumeLR}"
+            )
+            // TODO: update value when modifying players also
+            if (mediaPlayerFlip != null) {
+                mediaPlayerFlip?.setVolume(volumeLR.first, volumeLR.second)
+            }
+            if (mediaPlayerFlop != null) {
+                mediaPlayerFlop?.setVolume(volumeLR.first, volumeLR.second)
+            }
+        }
+    }
+
+    /**
+     * The user will provide a balance between -100 (full left) to 0 (center) and +100 (full right). This should be
+     * scaled logarithmically when performing volume changes (the human ear does not work linearly, see
+     * https://www.dr-lex.be/info-stuff/volumecontrols.html for example)
+     * The more the user shifts balance to the right, the more we need to attenuate the left volume (and vice versa).
+     */
+    private fun scaleIntegerBalanceAsExponentialVolume(balance: Int): Pair<Float, Float> {
+        var volumeLeft = 1.0f
+        var volumeRight = 1.0f
+        if (balance == 0) {
+            return Pair(volumeLeft, volumeRight)
+        }
+        // https://www.wolframalpha.com/input?i=0.57*log10%28x%2F2%29+for+x+from+0+to+100+and+y+from+0+to+1
+        var attenuation = 0.57f * log(abs(balance).toFloat() / 2f, 10f)
+        if (attenuation > 1.0f) {
+            attenuation = 1.0f
+        } else if (attenuation < 0) {
+            attenuation = 0f
+        }
+        if (balance > 0) {
+            // need to lower left channel
+            volumeLeft -= attenuation
+        } else {
+            // need to lower right channel
+            volumeRight -= attenuation
+        }
+        if (volumeLeft < 0.032f) {
+            volumeLeft = 0f
+        }
+        if (volumeRight < 0.032f) {
+            volumeRight = 0f
+        }
+        return Pair(volumeLeft, volumeRight)
+    }
+
     suspend fun onIncreasedPlaybackSpeedSettingChanged() {
         withContext(dispatcher) {
             if (playbackSpeed != DEFAULT_PLAYBACK_SPEED) {
@@ -1128,7 +1199,7 @@ class AudioPlayer(
     private suspend fun updateIncreasedPlaybackSpeedFromSharedPrefs() {
         val increasedPlaybackSpeedSetting = sharedPrefs.getIncreasedPlaybackSpeedSetting(context)
         logger.debug(
-            Util.TAGCRT(TAG, coroutineContext),
+            Util.TAGCRT(TAG, currentCoroutineContext()),
             "updateIncreasedPlaybackSpeedFromSharedPrefs(): $increasedPlaybackSpeedSetting"
         )
         playbackSpeed = when (increasedPlaybackSpeedSetting) {

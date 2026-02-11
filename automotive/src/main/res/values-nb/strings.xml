@@ -152,4 +152,7 @@ forbedre appen (krever internettforbindelse).</string>
     <string name="equalizer_preset_custom">Tilpasset</string>
     <string name="setting_show_album_art">Vis albumgrafikk</string>
     <string name="setting_increased_playback_speed">Økt avspillingshastighet</string>
+    <string name="setting_equalizer_and_balance_title">Equalizer &amp; Balanse</string>
+    <string name="setting_balance_title">Balanse</string>
+    <string name="setting_balance_reset_to_center">Tilbakestill til sentrum</string>
 </resources>

@@ -9,7 +9,8 @@ SPDX-License-Identifier: GPL-3.0-or-later
         <!-- this color is used for seek bar during playback for example -->
         <item name="colorAccent">@color/colorAccent</item>
         <item name="android:textSize">@dimen/car_body1_size</item>
-        <item name="seekBarPreferenceStyle">@style/Preference.SeekBarPreference.EQ</item>
+        <item name="eqSeekBarPreferenceStyle">@style/Preference.SeekBarPreference.EQ</item>
+        <item name="balanceSeekBarPreferenceStyle">@style/Preference.SeekBarPreference.Balance</item>
     </style>
 
     <style name="MyToolbar" parent="Widget.MaterialComponents.Toolbar">
@@ -29,6 +30,12 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
     <style name="Preference.SeekBarPreference.EQ">
         <item name="android:layout">@layout/preference_widget_seekbar_eq</item>
+        <item name="adjustable">true</item>
+        <item name="showSeekBarValue">true</item>
+    </style>
+
+    <style name="Preference.SeekBarPreference.Balance">
+        <item name="android:layout">@layout/preference_widget_seekbar_balance</item>
         <item name="adjustable">true</item>
         <item name="showSeekBarValue">true</item>
     </style>

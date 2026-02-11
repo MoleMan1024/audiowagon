@@ -9,9 +9,9 @@ SPDX-License-Identifier: GPL-3.0-or-later
             app:title="@string/setting_sound_category_title"
             app:icon="@drawable/speaker">
         <Preference
-                app:key="gotoEqualizerPreferencesScreen"
-                app:title="@string/setting_equalizer_title"
-                app:fragment="de.moleman1024.audiowagon.activities.EqualizerSettingsFragment"
+                app:key="gotoEqBalancePreferencesScreen"
+                app:title="@string/setting_equalizer_and_balance_title"
+                app:fragment="de.moleman1024.audiowagon.activities.EqualizerAndBalanceSettingsFragment"
                 app:persistent="false" />
         <SwitchPreferenceCompat
                 app:key="enableReplayGain"

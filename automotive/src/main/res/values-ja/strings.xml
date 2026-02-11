@@ -142,4 +142,7 @@ FAT32ファイルシステムを使用してUSBドライブをフォーマット
     <string name="equalizer_preset_custom">カスタムフィ</string>
     <string name="setting_show_album_art">アルバムアートを表示</string>
     <string name="setting_increased_playback_speed">再生速度の向上</string>
+    <string name="setting_equalizer_and_balance_title">イコライザー &amp; バランス</string>
+    <string name="setting_balance_title">バランス</string>
+    <string name="setting_balance_reset_to_center">中央にリセット</string>
 </resources>

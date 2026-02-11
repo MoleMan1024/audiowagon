@@ -14,6 +14,7 @@ import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreferenceCompat
 import de.moleman1024.audiowagon.EQUALIZER_PRESET_MAPPING
 import de.moleman1024.audiowagon.R
+import de.moleman1024.audiowagon.SHARED_PREF_BALANCE
 import de.moleman1024.audiowagon.SHARED_PREF_ENABLE_EQUALIZER
 import de.moleman1024.audiowagon.SHARED_PREF_EQUALIZER_BAND14K
 import de.moleman1024.audiowagon.SHARED_PREF_EQUALIZER_BAND230
@@ -26,13 +27,14 @@ import de.moleman1024.audiowagon.enums.EqualizerPreset
 import de.moleman1024.audiowagon.log.Logger
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 
-private const val TAG = "EQSettingsFragm"
+private const val TAG = "EQBalSettingsFragm"
 private val logger = Logger
 private const val EQUALIZER_PRESET_NAME_CUSTOM = "CUSTOM"
+private const val PREF_RESET_BALANCE_TO_CENTER = "resetBalanceToCenter"
 
 @ExperimentalCoroutinesApi
 @Keep
-class EqualizerSettingsFragment : PreferenceFragmentCompat() {
+class EqualizerAndBalanceSettingsFragment : PreferenceFragmentCompat() {
     private val listener = SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
         run {
             logger.debug(TAG, "sharedPrefChanged(key=$key)")
@@ -41,37 +43,35 @@ class EqualizerSettingsFragment : PreferenceFragmentCompat() {
                     updateEqualizerSwitch(sharedPreferences)
                     updateEqualizerBands(sharedPreferences)
                 }
-
                 SHARED_PREF_EQUALIZER_PRESET -> {
                     updateEqualizerPreset(sharedPreferences)
                     updateEqualizerBands(sharedPreferences)
                     val eqPreset = getSharedPrefs().getEQPreset(sharedPreferences)
                     getParentSettingsActivity().updateEqualizerPreset(eqPreset)
                 }
-
                 SHARED_PREF_EQUALIZER_BAND60 -> {
                     val eqBandValue = getSharedPrefs().getEQBandValue60Float(sharedPreferences)
                     getParentSettingsActivity().updateEqualizerBandValue(0, eqBandValue)
                 }
-
                 SHARED_PREF_EQUALIZER_BAND230 -> {
                     val eqBandValue = getSharedPrefs().getEQBandValue230Float(sharedPreferences)
                     getParentSettingsActivity().updateEqualizerBandValue(1, eqBandValue)
                 }
-
                 SHARED_PREF_EQUALIZER_BAND910 -> {
                     val eqBandValue = getSharedPrefs().getEQBandValue910Float(sharedPreferences)
                     getParentSettingsActivity().updateEqualizerBandValue(2, eqBandValue)
                 }
-
                 SHARED_PREF_EQUALIZER_BAND3600 -> {
                     val eqBandValue = getSharedPrefs().getEQBandValue3600Float(sharedPreferences)
                     getParentSettingsActivity().updateEqualizerBandValue(3, eqBandValue)
                 }
-
                 SHARED_PREF_EQUALIZER_BAND14K -> {
                     val eqBandValue = getSharedPrefs().getEQBandValue14KFloat(sharedPreferences)
                     getParentSettingsActivity().updateEqualizerBandValue(4, eqBandValue)
+                }
+                SHARED_PREF_BALANCE -> {
+                    val balanceValue = getSharedPrefs().getBalance(sharedPreferences)
+                    getParentSettingsActivity().updateBalanceValue(balanceValue)
                 }
             }
         }
@@ -85,7 +85,7 @@ class EqualizerSettingsFragment : PreferenceFragmentCompat() {
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         logger.debug(TAG, "onCreatePreferences(rootKey=${rootKey})")
-        setPreferencesFromResource(R.xml.preferences_equalizer, rootKey)
+        setPreferencesFromResource(R.xml.preferences_eq_and_balance, rootKey)
         updateFromSharedPrefs(preferenceManager.sharedPreferences)
     }
 
@@ -119,6 +119,11 @@ class EqualizerSettingsFragment : PreferenceFragmentCompat() {
                     settingsActivity.disableEqualizer()
                 }
             }
+            PREF_RESET_BALANCE_TO_CENTER -> {
+                getSharedPrefs().setBalance(preferenceManager.sharedPreferences, 0)
+                updateBalance(preferenceManager.sharedPreferences)
+                getParentSettingsActivity().updateBalanceValue(0)
+            }
         }
         return super.onPreferenceTreeClick(preference)
     }
@@ -127,6 +132,7 @@ class EqualizerSettingsFragment : PreferenceFragmentCompat() {
         updateEqualizerSwitch(sharedPreferences)
         updateEqualizerPreset(sharedPreferences)
         updateEqualizerBands(sharedPreferences)
+        updateBalance(sharedPreferences)
     }
 
     private fun updateEqualizerSwitch(sharedPreferences: SharedPreferences?) {
@@ -191,6 +197,11 @@ class EqualizerSettingsFragment : PreferenceFragmentCompat() {
         ).forEachIndexed { index, band ->
             findPreference<EqualizerSeekbarPreference>(band)?.setValue(((equalizerValues[index] * 10f).toInt()))
         }
+    }
+
+    private fun updateBalance(sharedPreferences: SharedPreferences?) {
+        val value = getSharedPrefs().getBalance(sharedPreferences)
+        findPreference<BalanceSeekbarPreference>(SHARED_PREF_BALANCE)?.setValue(value)
     }
 
     private fun getParentSettingsActivity(): SettingsActivity {

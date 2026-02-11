@@ -14,6 +14,7 @@ import android.support.v4.media.session.MediaSessionCompat
 import androidx.media.utils.MediaConstants
 import de.moleman1024.audiowagon.ALBUM_STYLE_KEY
 import de.moleman1024.audiowagon.AUDIOFOCUS_SETTING_KEY
+import de.moleman1024.audiowagon.BALANCE_KEY
 import de.moleman1024.audiowagon.CMD_DISABLE_CRASH_REPORTING
 import de.moleman1024.audiowagon.CMD_DISABLE_EQUALIZER
 import de.moleman1024.audiowagon.CMD_DISABLE_LOG_TO_USB
@@ -30,6 +31,7 @@ import de.moleman1024.audiowagon.CMD_READ_METADATA_NOW
 import de.moleman1024.audiowagon.CMD_REQUEST_USB_PERMISSION
 import de.moleman1024.audiowagon.CMD_SET_ALBUM_STYLE_SETTING
 import de.moleman1024.audiowagon.CMD_SET_AUDIOFOCUS_SETTING
+import de.moleman1024.audiowagon.CMD_SET_BALANCE
 import de.moleman1024.audiowagon.CMD_SET_EQUALIZER_BAND
 import de.moleman1024.audiowagon.CMD_SET_EQUALIZER_PRESET
 import de.moleman1024.audiowagon.CMD_SET_METADATAREAD_SETTING
@@ -143,6 +145,11 @@ class AudioSessionCallback(
                         logger.error(TAG, "Invalid equalizer band index: $eqBandIndex")
                     }
                 }
+                notifyObservers(audioSessionChange)
+            }
+            CMD_SET_BALANCE -> {
+                val audioSessionChange = AudioSessionChange(AudioSessionChangeType.ON_SET_BALANCE)
+                audioSessionChange.balance = args?.getInt(BALANCE_KEY, 0) ?: 0
                 notifyObservers(audioSessionChange)
             }
             CMD_SET_METADATAREAD_SETTING -> {

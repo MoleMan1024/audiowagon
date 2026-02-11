@@ -28,6 +28,7 @@ const val CMD_SET_ALBUM_STYLE_SETTING = "de.moleman1024.audiowagon.CMD_SET_ALBUM
 const val CMD_SET_AUDIOFOCUS_SETTING = "de.moleman1024.audiowagon.CMD_SET_AUDIOFOCUS_SETTING"
 const val CMD_SET_EQUALIZER_PRESET = "de.moleman1024.audiowagon.CMD_SET_EQUALIZER_PRESET"
 const val CMD_SET_EQUALIZER_BAND = "de.moleman1024.audiowagon.CMD_SET_EQUALIZER_BAND"
+const val CMD_SET_BALANCE = "de.moleman1024.audiowagon.CMD_SET_BALANCE"
 const val CMD_SET_METADATAREAD_SETTING = "de.moleman1024.audiowagon.CMD_SET_METADATAREAD_SETTING"
 const val CMD_SET_VIEW_TABS = "de.moleman1024.audiowagon.CMD_SET_VIEW_TABS"
 const val CMD_NOTIFY_INCREASED_PLAYBACK_SPEED_SETTING_CHANGED =
@@ -39,6 +40,7 @@ const val EQUALIZER_BAND_INDEX_KEY = "eqBandIndex"
 const val EQUALIZER_BAND_VALUE_KEY = "eqBandValue"
 const val METADATAREAD_SETTING_KEY = "metadata_read_setting"
 const val VIEW_TABS_SETTING_KEY = "view_tabs"
+const val BALANCE_KEY = "balance"
 
 const val NOTIFICATION_ID: Int = 25575
 const val DEFAULT_JPEG_QUALITY_PERCENTAGE = 60

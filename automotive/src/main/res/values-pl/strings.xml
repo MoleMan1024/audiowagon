@@ -149,4 +149,7 @@ to w ulepszeniu aplikacji (funkcja wymaga połączenia z internetem).</string>
     <string name="equalizer_preset_custom">Niestandardowe</string>
     <string name="setting_show_album_art">Pokaż okładkę albumu</string>
     <string name="setting_increased_playback_speed">Zwiększona prędkość odtwarzania</string>
+    <string name="setting_equalizer_and_balance_title">Korektor dźwięku &amp; Balans</string>
+    <string name="setting_balance_title">Balans</string>
+    <string name="setting_balance_reset_to_center">Zresetuj do środka</string>
 </resources>

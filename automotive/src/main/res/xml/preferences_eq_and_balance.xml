@@ -78,4 +78,24 @@ SPDX-License-Identifier: GPL-3.0-or-later
                 app:updatesContinuously="true"
                 app:key="eqBand60" />
     </PreferenceCategory>
+    <PreferenceCategory
+        app:title="@string/setting_balance_title"
+        app:icon="@drawable/spatial_tracking">
+        <de.moleman1024.audiowagon.activities.BalanceSeekbarPreference
+            app:title="@string/setting_balance_title"
+            android:selectable="false"
+            app:persistent="true"
+            app:min="-100"
+            android:max="100"
+            app:defaultValue="0"
+            app:seekBarIncrement="1"
+            app:showSeekBarValue="true"
+            app:updatesContinuously="true"
+            app:key="balance" />
+        <Preference
+                app:key="resetBalanceToCenter"
+                app:persistent="false"
+                app:selectable="true"
+                app:title="@string/setting_balance_reset_to_center" />
+    </PreferenceCategory>
 </androidx.preference.PreferenceScreen>

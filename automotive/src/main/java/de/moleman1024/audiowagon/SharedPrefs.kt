@@ -34,6 +34,7 @@ const val SHARED_PREF_CRASH_REPORTING = "crashReporting"
 const val SHARED_PREF_VIEW_TAB_PREFIX = "viewTab"
 const val SHARED_PREF_SHOW_ALBUM_ART = "showAlbumArt"
 const val SHARED_PREF_INCR_PLAYBACK_SPEED = "increasedPlaybackSpeed"
+const val SHARED_PREF_BALANCE = "balance"
 val SHARED_PREF_EQUALIZER_PRESET_DEFAULT = EqualizerPreset.LESS_BASS.name
 
 private const val TAG = "SharedPrefs"
@@ -387,6 +388,28 @@ open class SharedPrefs {
             SHARED_PREF_INCR_PLAYBACK_SPEED,
             IncreasedPlaybackSpeedSetting.ONE_DOT_FIVE.name
         )?.let { IncreasedPlaybackSpeedSetting.valueOf(it) } ?: IncreasedPlaybackSpeedSetting.ONE_DOT_FIVE
+    }
+
+    fun getBalance(context: Context): Int {
+        return try {
+            getBalance(getDefaultSharedPreferences(context))
+        } catch (exc: IllegalStateException) {
+            // this might happen when user has not yet unlocked the device
+            logger.exception(TAG, exc.message.toString(), exc)
+            0
+        }
+    }
+
+    fun getBalance(sharedPreferences: SharedPreferences?): Int {
+        return sharedPreferences?.getInt(SHARED_PREF_BALANCE, 0) ?: 0
+    }
+
+    fun setBalance(context: Context, value: Int) {
+        setBalance(getDefaultSharedPreferences(context), value)
+    }
+
+    fun setBalance(sharedPreferences: SharedPreferences?, value: Int) {
+        sharedPreferences?.edit()?.putInt(SHARED_PREF_BALANCE, value)?.apply()
     }
 
 }

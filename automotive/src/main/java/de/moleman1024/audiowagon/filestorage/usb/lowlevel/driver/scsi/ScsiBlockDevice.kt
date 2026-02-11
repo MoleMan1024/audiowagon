@@ -73,14 +73,16 @@ class ScsiBlockDevice(private val usbCommunication: USBCommunication, private va
      * @see ScsiReadCapacityResponse
      */
     override fun init() {
-        (0..MAX_INIT_ATTEMPTS).forEach { i ->
+        (0..MAX_INIT_ATTEMPTS).forEach { attemptNum ->
             try {
-                initAttempt()
+                initAttempt(attemptNum)
                 return
             } catch (e: InitRequired) {
                 logger.verbose(TAG, e.message ?: "Reinitializing device")
             } catch (e: NotReadyTryAgain) {
                 logger.verbose(TAG, e.message ?: "Reinitializing device")
+            } catch (e: IOException) {
+                logger.exception(TAG, e.message.toString(), e)
             }
             if (!usbCommunication.isClosed()) {
                 Thread.sleep(100)
@@ -91,8 +93,8 @@ class ScsiBlockDevice(private val usbCommunication: USBCommunication, private va
         throw IOException("MAX_INIT_ATTEMPTS exceeded during communication init with USB device, re-attach device")
     }
 
-    private fun initAttempt() {
-        logger.debug(TAG, "initAttempt() (instance=$this)")
+    private fun initAttempt(attemptNum: Int) {
+        logger.debug(TAG, "initAttempt(attemptNum=$attemptNum) (instance=$this)")
         val allocationSize = 36
         val inBuffer = Util.allocateByteBuffer(allocationSize)
         val inquiry = ScsiInquiry(allocationSize.toByte(), lun = lun)

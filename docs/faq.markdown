@@ -16,7 +16,7 @@ nav_order: 2
 
 ![Permission popup](/img/allow_access.jpg)
 
-Depending on the car's software, a 3rd party app like AudioWagon is not allowed set itself as the default handler for
+Depending on the car's software, a 3rd party app like AudioWagon is not allowed to set itself as the default handler for
 USB, even when this popup comes and you tick the checkbox. The result is that you need to provide permission every
 single time you use the USB device. This is usually a flaw in the car maker's implementation of Android Automotive.
 Google provides a piece of software that can fix this:
@@ -366,7 +366,8 @@ Many people don't find streaming apps appealing for some of these reasons:
 - while some streaming providers have a large selection of music, you might want to listen to some obscure or
   independent artists, that are *not available on any streaming platform*. Music enthusiasts who prefer
   physical/downloaded music usually have a large library of music they have compiled over multiple decades from various
-  sources and have no need for streaming
+  sources and have no need for streaming. Some people have told me they use AudioWagon to listen to their own DJ mixes
+  or band rehearsal recordings that they recorded themselves
 - streaming platforms require a *monthly subscription*. If not subscribed, you will get ads. With physical/downloaded
   music, you only pay once and usually keep the music for your lifetime. Also in case the streaming provider ever
   *goes out of business*, you have nothing. With physical/downloaded music, you own the music data

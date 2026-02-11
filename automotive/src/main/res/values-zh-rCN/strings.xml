@@ -140,4 +140,7 @@ Project\n&#x2013; libaums 程序库作者为 Magnus Jahnen\n&#x2013; 矢量图�
     <string name="equalizer_preset_custom">个性化</string>
     <string name="setting_show_album_art">显示专辑封面</string>
     <string name="setting_increased_playback_speed">提高播放速度</string>
+    <string name="setting_equalizer_and_balance_title">均衡器 &amp; 平衡</string>
+    <string name="setting_balance_title">平衡</string>
+    <string name="setting_balance_reset_to_center">重置到中心</string>
 </resources>

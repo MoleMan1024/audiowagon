@@ -211,4 +211,7 @@ improve the app (requires internet connection).</string>
     <string name="setting_increased_playback_speed_1dot2" translatable="false">1.2</string>
     <string name="setting_increased_playback_speed_1dot5" translatable="false">1.5</string>
     <string name="setting_increased_playback_speed_2dot0" translatable="false">2.0</string>
+    <string name="setting_equalizer_and_balance_title">Equalizer &amp; Balance</string>
+    <string name="setting_balance_title">Balance</string>
+    <string name="setting_balance_reset_to_center">Reset to center</string>
 </resources>

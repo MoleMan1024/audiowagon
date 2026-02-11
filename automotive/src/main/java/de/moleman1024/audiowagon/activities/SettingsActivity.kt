@@ -179,6 +179,13 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
         mediaController.sendCommand(CMD_SET_EQUALIZER_BAND, bundle, null)
     }
 
+    fun updateBalanceValue(balance: Int) {
+        assertMediaControllerInitialized()
+        val bundle = Bundle()
+        bundle.putInt(BALANCE_KEY, balance)
+        mediaController.sendCommand(CMD_SET_BALANCE, bundle, null)
+    }
+
     fun eject() {
         assertMediaControllerInitialized()
         mediaController.sendCommand(CMD_EJECT, null, null)

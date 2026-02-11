@@ -29,6 +29,8 @@ import de.moleman1024.audiowagon.filestorage.data.AudioFile
 import de.moleman1024.audiowagon.filestorage.data.Directory
 import de.moleman1024.audiowagon.filestorage.data.PlaylistFile
 import de.moleman1024.audiowagon.filestorage.data.StorageChange
+import de.moleman1024.audiowagon.filestorage.local.LocalFileMediaDevice
+import de.moleman1024.audiowagon.filestorage.local.LocalFileStorageLocation
 import de.moleman1024.audiowagon.filestorage.sd.SDCardAudioDataSource
 import de.moleman1024.audiowagon.filestorage.sd.SDCardMediaDevice
 import de.moleman1024.audiowagon.filestorage.sd.SDCardStorageLocation
@@ -205,6 +207,9 @@ open class AudioFileStorage(
             }
             is AssetMediaDevice -> {
                 AssetStorageLocation(device)
+            }
+            is LocalFileMediaDevice -> {
+                LocalFileStorageLocation(device)
             }
             else -> {
                 throw RuntimeException("Unhandled device type when creating storage location: $device")

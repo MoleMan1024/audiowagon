@@ -26,6 +26,7 @@ data class AudioSessionChange(val type: AudioSessionChangeType) {
     var equalizerBand910: Float = EQUALIZER_BAND_VALUE_EMPTY
     var equalizerBand3600: Float = EQUALIZER_BAND_VALUE_EMPTY
     var equalizerBand14K: Float = EQUALIZER_BAND_VALUE_EMPTY
+    var balance: Int = 0
     var metadataReadSetting: String = ""
     var audioFocusSetting: String = ""
     var albumStyleSetting: String = ""
@@ -44,11 +45,12 @@ data class AudioSessionChange(val type: AudioSessionChangeType) {
                 "queryToPlay='$queryToPlay', " +
                 "queryFocus='$queryFocus' " +
                 "equalizerPreset='$equalizerPreset', " +
-                "equalizerBand60='$equalizerBand60', " +
-                "equalizerBand230='$equalizerBand230', " +
-                "equalizerBand910='$equalizerBand910', " +
-                "equalizerBand3600='$equalizerBand3600', " +
-                "equalizerBand14K='$equalizerBand14K', " +
+                "equalizerBand60=$equalizerBand60, " +
+                "equalizerBand230=$equalizerBand230, " +
+                "equalizerBand910=$equalizerBand910, " +
+                "equalizerBand3600=$equalizerBand3600, " +
+                "equalizerBand14K=$equalizerBand14K, " +
+                "balance=$balance, " +
                 "metadataReadSetting='$metadataReadSetting', " +
                 "audioFocusSetting='$audioFocusSetting', " +
                 "albumStyleSetting='$albumStyleSetting', " +

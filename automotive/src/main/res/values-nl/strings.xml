@@ -153,4 +153,7 @@ verbeteren (vereist een internetverbinding).</string>
     <string name="equalizer_preset_custom">Aangepast</string>
     <string name="setting_show_album_art">Albumhoes weergeven</string>
     <string name="setting_increased_playback_speed">Verhoogde afspeelsnelheid</string>
+    <string name="setting_equalizer_and_balance_title">Equalizer &amp; Balans</string>
+    <string name="setting_balance_title">Balans</string>
+    <string name="setting_balance_reset_to_center">Terugzetten naar het midden</string>
 </resources>

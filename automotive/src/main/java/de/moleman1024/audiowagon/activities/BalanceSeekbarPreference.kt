@@ -39,9 +39,9 @@ import de.moleman1024.audiowagon.R
 import kotlin.math.abs
 import kotlin.math.min
 
-private const val TAG = "EQSeekBarPreference"
+private const val TAG = "BalanceSeekBarPreference"
 
-class EqualizerSeekbarPreference(context: Context, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes: Int) :
+class BalanceSeekbarPreference(context: Context, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes: Int) :
     Preference(context, attrs, defStyleAttr, defStyleRes) {
     var mSeekBarValue: Int = 0
     var mMin: Int = 0
@@ -60,22 +60,22 @@ class EqualizerSeekbarPreference(context: Context, attrs: AttributeSet?, defStyl
 
     init {
         val a = context.obtainStyledAttributes(
-            attrs, R.styleable.EQSeekBarPreference, defStyleAttr, defStyleRes
+            attrs, R.styleable.BalanceSeekBarPreference, defStyleAttr, defStyleRes
         )
         // The ordering of these two statements are important. If we want to set max first, we need
         // to perform the same steps by changing min/max to max/min as following:
         // mMax = a.getInt(...) and setMin(...).
-        mMin = a.getInt(R.styleable.EQSeekBarPreference_min, 0)
-        setMax(a.getInt(R.styleable.EQSeekBarPreference_android_max, 100))
-        setSeekBarIncrement(a.getInt(R.styleable.EQSeekBarPreference_seekBarIncrement, 0))
-        mShowSeekBarValue = a.getBoolean(R.styleable.EQSeekBarPreference_showSeekBarValue, false)
-        mUpdatesContinuously = a.getBoolean(R.styleable.EQSeekBarPreference_updatesContinuously, false)
+        mMin = a.getInt(R.styleable.BalanceSeekBarPreference_min, 0)
+        setMax(a.getInt(R.styleable.BalanceSeekBarPreference_android_max, 100))
+        setSeekBarIncrement(a.getInt(R.styleable.BalanceSeekBarPreference_seekBarIncrement, 0))
+        mShowSeekBarValue = a.getBoolean(R.styleable.BalanceSeekBarPreference_showSeekBarValue, false)
+        mUpdatesContinuously = a.getBoolean(R.styleable.BalanceSeekBarPreference_updatesContinuously, false)
         a.recycle()
     }
 
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : this(context, attrs, defStyleAttr, 0)
 
-    constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, R.attr.eqSeekBarPreferenceStyle)
+    constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, R.attr.balanceSeekBarPreferenceStyle)
 
     @Suppress("unused")
     constructor(context: Context) : this(context, null)
@@ -280,14 +280,13 @@ class EqualizerSeekbarPreference(context: Context, attrs: AttributeSet?, defStyl
      */
     fun updateLabelValue(value: Int) {
         if (mSeekBarValueTextView != null) {
-            val floatValue = value.toFloat() / 10f
-            var textToShow = "0"
-            if (value > 0) {
-                textToShow = "+%.1f".format(floatValue)
-            } else if (value < 0) {
-                textToShow = "%.1f".format(floatValue)
+            var prefix = ""
+            if (value < 0) {
+                prefix = "L "
+            } else if (value > 0) {
+                prefix = "R "
             }
-            mSeekBarValueTextView?.text = "$textToShow dB"
+            mSeekBarValueTextView?.text = "$prefix$value"
         }
     }
 

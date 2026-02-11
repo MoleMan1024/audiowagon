@@ -150,4 +150,7 @@ továbbfejlesztése céljából (internetkapcsolat szükséges).</string>
     <string name="equalizer_preset_custom">Egyéni</string>
     <string name="setting_show_album_art">Albumborító megjelenítése</string>
     <string name="setting_increased_playback_speed">Megnövelt lejátszási sebesség</string>
+    <string name="setting_equalizer_and_balance_title">Equalizer &amp; Egyensúly</string>
+    <string name="setting_balance_title">Egyensúly</string>
+    <string name="setting_balance_reset_to_center">Visszaállítás középre</string>
 </resources>

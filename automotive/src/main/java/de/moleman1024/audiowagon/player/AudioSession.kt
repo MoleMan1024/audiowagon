@@ -601,6 +601,11 @@ class AudioSession(
                         }
                     }
                 }
+                AudioSessionChangeType.ON_SET_BALANCE -> {
+                    launchInScopeSafely(audioSessionChange.type.name) {
+                        audioPlayer.setBalance(audioSessionChange.balance)
+                    }
+                }
                 AudioSessionChangeType.ON_SET_METADATAREAD_SETTING -> {
                     launchInScopeSafely(audioSessionChange.type.name) {
                         notifyObservers(
