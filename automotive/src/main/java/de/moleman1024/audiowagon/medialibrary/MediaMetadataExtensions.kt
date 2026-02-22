@@ -12,9 +12,9 @@ inline val MediaMetadataCompat.descriptionForLog
         val stringBuilder = StringBuilder()
         stringBuilder.append("{\"mediaID\":\"" + getString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID) + "\", ")
         stringBuilder.append("\"mediaURI\":\"" + getString(MediaMetadataCompat.METADATA_KEY_MEDIA_URI) + "\", ")
-        stringBuilder.append("\"artist\":\"" + getString(MediaMetadataCompat.METADATA_KEY_ARTIST) + "\" ,")
-        stringBuilder.append("\"album\":\"" + getString(MediaMetadataCompat.METADATA_KEY_ALBUM) + "\" ,")
-        stringBuilder.append("\"title\":\"" + getString(MediaMetadataCompat.METADATA_KEY_TITLE) + "\" ,")
+        stringBuilder.append("\"artist\":\"" + getString(MediaMetadataCompat.METADATA_KEY_ARTIST) + "\", ")
+        stringBuilder.append("\"album\":\"" + getString(MediaMetadataCompat.METADATA_KEY_ALBUM) + "\", ")
+        stringBuilder.append("\"title\":\"" + getString(MediaMetadataCompat.METADATA_KEY_TITLE) + "\", ")
         stringBuilder.append("\"trackNum\":" + getLong(MediaMetadataCompat.METADATA_KEY_TRACK_NUMBER) + ", ")
         stringBuilder.append("\"discNum\":" + getLong(MediaMetadataCompat.METADATA_KEY_DISC_NUMBER) + ", ")
         stringBuilder.append("\"year\":" + getLong(MediaMetadataCompat.METADATA_KEY_YEAR) + ", ")
@@ -22,6 +22,9 @@ inline val MediaMetadataCompat.descriptionForLog
         stringBuilder.append("\"displayTitle\":\"" + getString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE) + "\", ")
         stringBuilder.append(
             "\"displaySubtitle\":\"" + getString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE) + "\", "
+        )
+        stringBuilder.append(
+            "\"displayDescription\":\"" + getString(MediaMetadataCompat.METADATA_KEY_DISPLAY_DESCRIPTION) + "\", "
         )
         stringBuilder.append("\"artURI\":\"" + getString(MediaMetadataCompat.METADATA_KEY_ART_URI) + "\", ")
         stringBuilder.append("\"iconURI\":\"" + getString(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON_URI) + "\"}")

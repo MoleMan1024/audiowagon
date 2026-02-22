@@ -187,26 +187,34 @@ class AudioMetadataMaker(private val audioFileStorage: AudioFileStorage) {
                 putLong(MediaMetadataCompat.METADATA_KEY_YEAR, audioItem.year.toLong())
             }
             putLong(MediaMetadataCompat.METADATA_KEY_DURATION, audioItem.durationMS.toLong())
+            // https://github.com/MoleMan1024/audiowagon/issues/195
+            // In Android 13 it seems the DISPLAY_XXX entries are preferred over the ARTIST, ALBUM, TITLE keys above
+            // which seem to be ignored now.
+            // Default mapping seems to be
+            // TITLE -> DISPLAY_TITLE,
+            // ARTIST -> DISPLAY_SUBTITLE,
+            // ALBUM -> DISPLAY_DESCRIPTION
+            // found here
+            // https://cs.android.com/android/platform/superproject/+/android-latest-release:packages/modules/Bluetooth/android/app/src/com/android/bluetooth/audio_util/helpers/Metadata.java;drc=e42fa3707c46307e2b4537abeb7996b961fc324b;l=231
             when (contentHierarchyID.type) {
                 ContentHierarchyType.ARTIST -> {
-                    putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, audioItem.artist)
+                    putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, audioItem.artist)
                 }
                 ContentHierarchyType.ALBUM,
                 ContentHierarchyType.UNKNOWN_ALBUM,
                 ContentHierarchyType.COMPILATION -> {
-                    putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, audioItem.album)
+                    putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_DESCRIPTION, audioItem.album)
                     putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, audioItem.artist)
                 }
                 ContentHierarchyType.TRACK,
                 ContentHierarchyType.ALL_TRACKS_FOR_ARTIST,
                 ContentHierarchyType.ALL_TRACKS_FOR_UNKN_ALBUM,
                 ContentHierarchyType.ALL_TRACKS_FOR_ALBUM,
-                ContentHierarchyType.ALL_TRACKS_FOR_COMPILATION -> {
-                    putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, audioItem.title)
-                    putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, audioItem.artist)
-                }
+                ContentHierarchyType.ALL_TRACKS_FOR_COMPILATION,
                 ContentHierarchyType.FILE -> {
                     putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, audioItem.title)
+                    putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, audioItem.artist)
+                    putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_DESCRIPTION, audioItem.album)
                 }
                 else -> {
                     throw AssertionError("createMetadataForItem() not supported for: $contentHierarchyID")

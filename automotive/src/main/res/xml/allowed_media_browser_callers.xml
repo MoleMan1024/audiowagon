@@ -78,5 +78,13 @@ Adding New Keys:
             1a:f3:f0:08:bb:dc:e0:13:ee:d8:cd:6b:b1:6b:ea:ad:b8:8d:7f:ec:1e:e8:46:24:dc:74:fe:41:a6:b9:89:55
         </key>
     </signature>
+
+    <signature
+            name="Google Media3 Controller Test app"
+            package="androidx.media3.testapp.controller">
+        <key release="false">
+            2b:e4:f0:2f:d0:9c:81:8e:a1:62:84:83:93:aa:5e:3d:5a:48:32:d9:2c:93:85:c5:a4:be:fd:f6:27:aa:75:c8
+        </key>
+    </signature>
 </allowed_callers>
 

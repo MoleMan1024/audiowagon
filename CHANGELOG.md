@@ -12,6 +12,19 @@ Google's review process which can take a couple of days.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project loosely follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.12.1] - 2026-02-22
+
+### Fixed
+
+- A user complained that upgrading album name and artist name were no longer being shown in the playback view after
+  their Volvo was updated to the latest Android version (Android 13). It looks like the Android car media playback view
+  now prefers different `MediaMetadataCompat` fields when showing this data. Previously those were called
+  `METADATA_KEY_ARTIST`, `METADATA_KEY_ALBUM`, `METADATA_KEY_TITLE` but in Android 13 it looks like
+  `METADATA_KEY_DISPLAY_TITLE`, `METADATA_KEY_DISPLAY_SUBTITLE`, `METADATA_KEY_DISPLAY_DESCRIPTION` are preferred. All
+  fields will now be provided by AudioWagon to be compatible with all Android versions
+  [#195](https://github.com/MoleMan1024/audiowagon/issues/195)
+
+
 ## [2.12.0] - 2026-02-11
 
 ### Added
