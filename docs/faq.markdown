@@ -39,12 +39,13 @@ The 2025 Lincoln Nautilus has this issue, please complain to Ford to integrate t
 
 #### General Motors
 
-The 2025 Chevrolet Equinox EV has this issue, please complain to General Motors to integrate the *car-usb-handler*
+The 2025 Chevrolet Equinox has this issue, please complain to General Motors to integrate the *car-usb-handler*
 properly.
 
 #### Renault
 
-This problem should *not* appear in Renault cars using the *OpenR Link* system.
+This problem should *not* appear in Renault cars using the *OpenR Link* system but I have also had reports where it
+does not work. Please send a log file as described below if you encounter the problem.
 
 #### Other
 

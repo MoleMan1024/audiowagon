@@ -155,6 +155,8 @@ class DatabaseTest {
             mockUSBDeviceFixture.createMP3().apply {
                 id3v2Tag.artist = "ARTIST_$i"
                 id3v2Tag.title = "TITLE_$i"
+                // FIXME: mp3agic seems to have a problem clearing IDv3 fields. Only works when template .mp3 file
+                //  has no tags initially
                 id3v2Tag.album = ""
             }.also {
                 mockUSBDeviceFixture.storeMP3(it, "$MUSIC_ROOT/ARTIST_$i/unknown/TITLE_$i.mp3")
@@ -163,7 +165,7 @@ class DatabaseTest {
         mockUSBDeviceFixture.attachUSBDevice()
         TestUtils.waitForIndexingCompleted(audioBrowserService)
         val traversal = MediaBrowserTraversal(browser)
-        val albumsRoot = "{\"type\":\"ROOT_ALBUMS\"}"
+        val albumsRoot = "{\"type\":\"ROOT_ALBUMS\",$STORAGE_ID}"
         traversal.start(albumsRoot)
         Assert.assertEquals(1, traversal.hierarchy[albumsRoot]?.size)
         Assert.assertEquals("Unknown album", traversal.hierarchy[albumsRoot]?.get(0)?.description?.title)

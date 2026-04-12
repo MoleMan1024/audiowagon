@@ -28,6 +28,7 @@ open class SharedPrefsStorage {
         mockPreferencesMap[SHARED_PREF_READ_METADATA] = "WHEN_USB_CONNECTED"
         mockPreferencesMap[SHARED_PREF_EQUALIZER_PRESET] = "LESS_BASS"
         mockPreferencesMap[SHARED_PREF_INCR_PLAYBACK_SPEED] = "ONE_DOT_FIVE"
+        mockPreferencesMap[SHARED_PREF_BALANCE] = 0
         mockPreferencesMap["${SHARED_PREF_VIEW_TAB_PREFIX}0"] = "TRACKS"
         mockPreferencesMap["${SHARED_PREF_VIEW_TAB_PREFIX}1"] = "ALBUMS"
         mockPreferencesMap["${SHARED_PREF_VIEW_TAB_PREFIX}2"] = "ARTISTS"
@@ -89,7 +90,11 @@ open class SharedPrefsStorage {
 
             override fun edit(): SharedPreferences.Editor {
                 return object : SharedPreferences.Editor {
-                    override fun putString(p0: String?, p1: String?): SharedPreferences.Editor {
+                    override fun putString(key: String?, value: String?): SharedPreferences.Editor {
+                        key?.also { keyStr -> value?.also { valueStr ->
+                            mockPreferencesMap[keyStr] = valueStr
+                        } }
+                        Logger.debug(TAG, "Setting mock preference $key to: $value")
                         return this
                     }
 

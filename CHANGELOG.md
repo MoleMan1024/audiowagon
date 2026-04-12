@@ -12,6 +12,30 @@ Google's review process which can take a couple of days.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project loosely follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.12.3] - 2026-04-12
+
+### Fixed
+
+- With the new Volvo/Polestar update for Android 13 there was a problem that when radio was playing and the car went
+  into suspend (e.g. by somebody leaving and locking the car) and returning afterwards the radio would resume playback
+  as intended but AudioWagon would also start playback a few seconds later even when it was not the last media playback
+  app. I checked the Android Automotive code a bit and updated the handling in AudioWagon which should prevent this. This
+  will probably also break the resume after suspend functionality of AudioWagon, I need to look more into that
+  [#199](https://github.com/MoleMan1024/audiowagon/issues/199)
+- The indexing notification was not removed sometimes when indexing had finished. This has been fixed.
+
+### Changed
+
+- Try to restore proper filename and linenumbers in stack traces by disabling all R8 optimizations. File size of the app
+  will increase to about 8 MB
+- When metadata indexing is turned off the tracks/artists/albums views will now show "Metadata not yet indexing. Check
+  the settings". Previously it showed "No audio files" even when you could still access audio files via the "Files" tab
+- Avoid a possible timing issue when an onStop() or onPause() MediaSession callback is received after storing an
+  onPlay() callback to be executed later after waiting a bit for USB access to be granted
+- make Android instrumented tests work again
+- bump some third-party library version
+
+
 ## [2.12.1] - 2026-02-22
 
 ### Fixed

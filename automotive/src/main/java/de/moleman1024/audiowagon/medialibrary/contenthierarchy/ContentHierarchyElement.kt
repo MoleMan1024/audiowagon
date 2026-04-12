@@ -307,7 +307,12 @@ abstract class ContentHierarchyElement(
                     if (audioFileStorage.areAnyStoragesAvail()) {
                         if (this !is ContentHierarchyRootFiles) {
                             val metadataReadSetting = sharedPrefs.getMetadataReadSettingEnum(context, logger, TAG)
-                            if (metadataReadSetting == MetadataReadSetting.MANUALLY || metadataReadSetting == MetadataReadSetting.FILEPATHS_ONLY) {
+                            if (listOf(
+                                    MetadataReadSetting.MANUALLY,
+                                    MetadataReadSetting.FILEPATHS_ONLY,
+                                    MetadataReadSetting.OFF
+                                ).contains(metadataReadSetting)
+                            ) {
                                 title = context.getString(R.string.browse_tree_metadata_not_yet_indexed_title)
                                 subtitle = context.getString(R.string.browse_tree_metadata_not_yet_indexed_desc)
                                 iconID = R.drawable.usb
@@ -359,11 +364,9 @@ abstract class ContentHierarchyElement(
             id.artistID >= DATABASE_ID_UNKNOWN -> {
                 id.artistID
             }
-
             id.albumArtistID >= DATABASE_ID_UNKNOWN -> {
                 id.albumArtistID
             }
-
             else -> {
                 -99
             }

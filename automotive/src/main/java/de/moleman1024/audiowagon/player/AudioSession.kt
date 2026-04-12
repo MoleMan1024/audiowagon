@@ -500,6 +500,7 @@ class AudioSession(
                 }
                 AudioSessionChangeType.ON_STOP -> {
                     audioFocusChangeListener.lastUserRequestedStateChange = audioSessionChange.type
+                    removeStoredOnPlayCallback()
                     launchInScopeSafely(audioSessionChange.type.name) {
                         setMediaSessionActive(false)
                         storePlaybackState()
@@ -657,6 +658,7 @@ class AudioSession(
                     }
                 }
                 AudioSessionChangeType.ON_PAUSE -> {
+                    removeStoredOnPlayCallback()
                     audioFocusChangeListener.lastUserRequestedStateChange = audioSessionChange.type
                 }
                 AudioSessionChangeType.ON_REQUEST_USB_PERMISSION -> {
@@ -686,7 +688,11 @@ class AudioSession(
             try {
                 if (playbackState.isStopped) {
                     val queueIndex = audioPlayer.getPlaybackQueueIndex()
-                    audioPlayer.preparePlayFromQueue(queueIndex, playbackState.position.toInt())
+                    audioPlayer.preparePlayFromQueue(
+                        queueIndex,
+                        playbackState.position.toInt(),
+                        PlaybackStateCompat.STATE_BUFFERING
+                    )
                 }
                 audioPlayer.start()
             } catch (exc: Exception) {
@@ -869,7 +875,11 @@ class AudioSession(
         if (currentQueueItem != null) {
             if (playbackState.isStopped) {
                 val queueIndex = audioPlayer.getPlaybackQueueIndex()
-                audioPlayer.preparePlayFromQueue(queueIndex, playbackState.position.toInt())
+                audioPlayer.preparePlayFromQueue(
+                    queueIndex,
+                    playbackState.position.toInt(),
+                    PlaybackStateCompat.STATE_BUFFERING
+                )
             }
             audioPlayer.start()
         } else {
@@ -969,7 +979,15 @@ class AudioSession(
         setMediaSessionQueue(queue)
         setMediaSessionActive(true)
         try {
-            audioPlayer.preparePlayFromQueue(state.queueIndex, state.trackPositionMS.toInt())
+            // Issue #199: We will not necessarily start playback after preparing playback queue from persistent
+            // data. That is why we use STATE_PAUSED here. This should make it so we are not considered a currently
+            // active media source when preparing from persistence:
+            // https://cs.android.com/android/platform/superproject/+/android-latest-release:packages/services/Car/service/src/com/android/car/CarMediaService.java;l=1447?
+            audioPlayer.preparePlayFromQueue(
+                state.queueIndex,
+                state.trackPositionMS.toInt(),
+                PlaybackStateCompat.STATE_PAUSED
+            )
             // TODO: not nice (same player status might have been sent shortly before)
             audioPlayer.notifyPlayerStatusChange()
         } catch (_: NoItemsInQueueException) {
@@ -982,6 +1000,16 @@ class AudioSession(
             onPlayCalledBeforeUSBReady = false
             logger.debug(TAG, "Starting playback that was requested during startup before")
             audioPlayer.start()
+        }
+    }
+
+    // In case we received an onPlay() callback before USB was ready we store it to be executed later. If we then
+    // receive an onPause() or onStop() callback we should reset that stored flag to not execute that onPlay() callback
+    // when USB finally becomes ready
+    private fun removeStoredOnPlayCallback() {
+        if (onPlayCalledBeforeUSBReady) {
+            logger.debug(TAG, "Removing previously stored onPlay() callback")
+            onPlayCalledBeforeUSBReady = false
         }
     }
 

@@ -13,8 +13,10 @@ import de.moleman1024.audiowagon.util.ServiceFixture
 import de.moleman1024.audiowagon.util.TestUtils
 import de.moleman1024.audiowagon.util.TestUtils.getDatabaseDirectory
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.runBlocking
-import org.junit.*
+import org.junit.After
+import org.junit.Assert
+import org.junit.Before
+import org.junit.Test
 import java.io.File
 
 private const val TAG = "DatabaseMigrationTest"

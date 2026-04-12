@@ -5,8 +5,12 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 package de.moleman1024.audiowagon
 
+import android.Manifest
+import android.app.NotificationManager
+import android.content.Context
 import android.support.v4.media.MediaBrowserCompat
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.rule.GrantPermissionRule
 import de.moleman1024.audiowagon.enums.IndexingStatus
 import de.moleman1024.audiowagon.filestorage.usb.USBMediaDevice
 import de.moleman1024.audiowagon.log.Logger
@@ -18,6 +22,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 
 private const val TAG = "IndexingTest"
@@ -29,6 +34,11 @@ class IndexingTest {
     private lateinit var browser: MediaBrowserCompat
     private lateinit var audioBrowserService: AudioBrowserService
     private lateinit var mockUSBDeviceFixture: MockUSBDeviceFixture
+
+    @JvmField
+    @Rule
+    val grantPostNotificationPermissionRule: GrantPermissionRule =
+        GrantPermissionRule.grant(Manifest.permission.POST_NOTIFICATIONS)
 
     @Before
     fun setUp() {
@@ -93,4 +103,5 @@ class IndexingTest {
             Assert.assertEquals(6, audioBrowserService.getPrimaryRepo()?.getNumTracks())
         }
     }
+
 }

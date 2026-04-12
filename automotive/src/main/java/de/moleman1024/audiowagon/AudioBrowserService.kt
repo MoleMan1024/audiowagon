@@ -106,6 +106,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -318,7 +319,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
 
     private fun isScreenLocked(): Boolean {
         return try {
-            val keyguardManager = this.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+            val keyguardManager = this.getSystemService(KEYGUARD_SERVICE) as KeyguardManager
             val isKeyGuardLocked = keyguardManager.isKeyguardLocked
             logger.debug(TAG, "isKeyGuardLocked: $isKeyGuardLocked")
             isKeyGuardLocked
@@ -366,7 +367,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
             updateAttachedDevices(PermissionBehaviour.DO_NOT_ASK_PERMISSION)
             // If we do NOT have permission for USB devices yet, wait some seconds for USBDummyActivity to trigger
             logger.debug(
-                Util.TAGCRT(TAG, coroutineContext),
+                Util.TAGCRT(TAG, currentCoroutineContext()),
                 "Delaying to update attached devices until ${
                     Util.getLocalDateTimeNowInstant().plusMillis(UPDATE_ATTACHED_DEVICES_AFTER_UNLOCK_DELAY_MS)
                 }"
@@ -437,11 +438,9 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                 is AudioPlayerEvent -> {
                     handleAudioPlayerEvent(event)
                 }
-
                 is SettingChangeEvent -> {
                     handleSettingChangeEvent(event)
                 }
-
                 is CustomActionEvent -> {
                     handleCustomActionEvent(event)
                 }
@@ -572,9 +571,9 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                     return
                 }
                 notifyIdleSingletonCoroutine.launch {
-                    logger.debug(Util.TAGCRT(TAG, coroutineContext), "Stop callback was called, will notify idle state in: ${IDLE_TIMEOUT_MS}ms")
+                    logger.debug(Util.TAGCRT(TAG, currentCoroutineContext()), "Stop callback was called, will notify idle state in: ${IDLE_TIMEOUT_MS}ms")
                     delay(IDLE_TIMEOUT_MS)
-                    logger.debug(Util.TAGCRT(TAG, coroutineContext), "Player is stopped and service is idle")
+                    logger.debug(Util.TAGCRT(TAG, currentCoroutineContext()), "Player is stopped and service is idle")
                     // notify the AlbumArtContentProvider so it will unbind, so Android can free resources if nothing
                     // else is bound either
                     notifyLifecycleObservers(LifecycleEvent.IDLE)
@@ -756,7 +755,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
 
     private suspend fun createLibraryFromStorage(storageIDs: List<String>) {
         // TODO: remove multiple storage IDs
-        logger.debug(Util.TAGCRT(TAG, coroutineContext), "createLibraryFromStorages(storageIDs=${storageIDs})")
+        logger.debug(Util.TAGCRT(TAG, currentCoroutineContext()), "createLibraryFromStorages(storageIDs=${storageIDs})")
         val storageLocations: List<AudioFileStorageLocation> = storageIDs.map {
             audioFileStorage.getStorageLocationForID(it)
         }
@@ -794,32 +793,30 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
 
     private suspend fun restoreFromPersistent(state: PersistentPlaybackState) {
         if (state.trackID.isBlank()) {
-            logger.debug(Util.TAGCRT(TAG, coroutineContext), "No recent content hierarchy ID to restore from")
+            logger.debug(Util.TAGCRT(TAG, currentCoroutineContext()), "No recent content hierarchy ID to restore from")
             return
         }
         val contentHierarchyID = ContentHierarchyElement.deserialize(state.trackID)
         when (contentHierarchyID.type) {
             ContentHierarchyType.TRACK -> {
                 if (audioItemLibrary.getRepoForContentHierarchyID(contentHierarchyID) == null) {
-                    logger.warning(Util.TAGCRT(TAG, coroutineContext), "Cannot restore recent track, storage repository mismatch")
+                    logger.warning(Util.TAGCRT(TAG, currentCoroutineContext()), "Cannot restore recent track, storage repository mismatch")
                     return
                 }
             }
-
             ContentHierarchyType.FILE -> {
                 if (audioFileStorage.getPrimaryStorageLocation().storageID != contentHierarchyID.storageID) {
-                    logger.warning(Util.TAGCRT(TAG, coroutineContext), "Cannot restore recent file, storage id mismatch")
+                    logger.warning(Util.TAGCRT(TAG, currentCoroutineContext()), "Cannot restore recent file, storage id mismatch")
                     return
                 }
             }
-
             else -> {
-                logger.error(Util.TAGCRT(TAG, coroutineContext), "Not supported to restore from type: $contentHierarchyID")
+                logger.error(Util.TAGCRT(TAG, currentCoroutineContext()), "Not supported to restore from type: $contentHierarchyID")
                 return
             }
         }
         if (state.queueIDs.isEmpty()) {
-            logger.warning(Util.TAGCRT(TAG, coroutineContext), "Found persistent recent track, but no queue items")
+            logger.warning(Util.TAGCRT(TAG, currentCoroutineContext()), "Found persistent recent track, but no queue items")
             return
         }
         audioSession.prepareFromPersistent(state)
@@ -1382,7 +1379,7 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         }
         val jobID = Util.generateUUID()
         val loadChildrenJob = launchInScopeSafely {
-            logger.verbose(TAG, "launch loadChildrenJob=$coroutineContext")
+            logger.verbose(TAG, "launch loadChildrenJob=${currentCoroutineContext()}")
             try {
                 val contentHierarchyID = ContentHierarchyElement.deserialize(parentId)
                 val mediaItems: List<MediaItem> = audioItemLibrary.getMediaItemsStartingFrom(contentHierarchyID)
@@ -1497,13 +1494,13 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
     }
 
     suspend fun getAlbumArtForURI(uri: Uri): ByteArray? {
-        logger.debug(Util.TAGCRT(TAG, coroutineContext), "getAlbumArtForURI($uri)")
+        logger.debug(Util.TAGCRT(TAG, currentCoroutineContext()), "getAlbumArtForURI($uri)")
         if (lifecycleRegistry.currentState == Lifecycle.State.DESTROYED) {
-            logger.warning(Util.TAGCRT(TAG, coroutineContext), "No album art because lifecycle destroyed")
+            logger.warning(Util.TAGCRT(TAG, currentCoroutineContext()), "No album art because lifecycle destroyed")
             return null
         }
         if (!audioFileStorage.areAnyStoragesAvail()) {
-            logger.debug(Util.TAGCRT(TAG, coroutineContext), "No album art because no storages available")
+            logger.debug(Util.TAGCRT(TAG, currentCoroutineContext()), "No album art because no storages available")
             return null
         }
         if (!isShowAlbumArtEnabled) {
@@ -1512,13 +1509,13 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
         try {
             return audioItemLibrary.getAlbumArtForArtURI(uri)
         } catch (exc: FileNotFoundException) {
-            logger.warning(Util.TAGCRT(TAG, coroutineContext), exc.message.toString())
+            logger.warning(Util.TAGCRT(TAG, currentCoroutineContext()), exc.message.toString())
         } catch (exc: RuntimeException) {
             if (!exc.message.toString().contains("Unknown storage id")) {
-                logger.exception(Util.TAGCRT(TAG, coroutineContext), exc.message.toString(), exc)
+                logger.exception(Util.TAGCRT(TAG, currentCoroutineContext()), exc.message.toString(), exc)
             }
         } catch (exc: IOException) {
-            logger.exception(Util.TAGCRT(TAG, coroutineContext), exc.message.toString(), exc)
+            logger.exception(Util.TAGCRT(TAG, currentCoroutineContext()), exc.message.toString(), exc)
         }
         return null
     }

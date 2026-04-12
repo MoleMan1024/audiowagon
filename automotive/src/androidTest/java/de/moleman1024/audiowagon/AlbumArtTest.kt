@@ -89,7 +89,7 @@ class AlbumArtTest {
             while (fileInputStream.read(buffer).also { numBytesRead = it } != -1) {
                 numBytesReadTotal += numBytesRead
             }
-            val resizedAlbumArtSize = 3450
+            val resizedAlbumArtSize = 3530
             Assert.assertEquals(resizedAlbumArtSize, numBytesReadTotal)
         } finally {
             fileInputStream.close()

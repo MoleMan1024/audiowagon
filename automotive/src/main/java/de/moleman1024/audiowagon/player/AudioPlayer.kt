@@ -316,7 +316,7 @@ class AudioPlayer(
         }
     }
 
-    private suspend fun prepare() {
+    private suspend fun prepare(playbackState: Int) {
         logger.debug(Util.TAGCRT(TAG, currentCoroutineContext()), "prepare(currentMediaPlayer=$currentMediaPlayer)")
         val validStates = listOf(AudioPlayerState.INITIALIZED, AudioPlayerState.STOPPED)
         val state = getState(currentMediaPlayer)
@@ -325,7 +325,7 @@ class AudioPlayer(
             return
         }
         playerStatus.hasPlaybackQueueEnded = false
-        playerStatus.playbackState = PlaybackStateCompat.STATE_BUFFERING
+        playerStatus.playbackState = playbackState
         notifyPlayerStatusChange()
         currentMediaPlayer?.prepare()
     }
@@ -657,7 +657,7 @@ class AudioPlayer(
                 setDataSource(mediaDataSource)
                 updatePlaybackSpeedInPlayer(currentMediaPlayer)
                 try {
-                    prepare()
+                    prepare(PlaybackStateCompat.STATE_BUFFERING)
                     numFilesNotFound = 0
                 } catch (_: IOException) {
                     val audioFile = AudioFile(uri)
@@ -705,7 +705,7 @@ class AudioPlayer(
         }
     }
 
-    suspend fun preparePlayFromQueue(queueIndex: Int = 0, startPositionMS: Int = 0) {
+    suspend fun preparePlayFromQueue(queueIndex: Int = 0, startPositionMS: Int = 0, playbackStateDuringPrepare: Int) {
         withContext(dispatcher) {
             logger.debug(Util.TAGCRT(TAG, coroutineContext), "preparePlayFromQueue()")
             playbackQueue.setIndex(queueIndex)
@@ -737,7 +737,7 @@ class AudioPlayer(
             }
             setDataSource(mediaDataSource)
             updatePlaybackSpeedInPlayer(currentMediaPlayer)
-            prepare()
+            prepare(playbackStateDuringPrepare)
             onPreparePlayFromQueueReady(currentMediaPlayer, startPositionMS)
         }
     }

@@ -7,12 +7,13 @@
 
 # Uncomment this to preserve the line number information for
 # debugging stack traces.
-# kotlinx.serialization
 -keepattributes SourceFile,LineNumberTable,*Annotation*,InnerClasses
 
-# do not obfuscate, project is open source anyway
+# Do not obfuscate, project is open source anyway.
+# Turn all this off to have proper stacktraces with real line numbers and file names
+-dontshrink
 -dontobfuscate
--optimizations !code/simplification/arithmetic,!field/*,!class/merging/*,!code/allocation/variable
+-dontoptimize
 
 # kotlinx.serialization
 -dontnote kotlinx.serialization.AnnotationsKt

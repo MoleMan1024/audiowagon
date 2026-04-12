@@ -35,7 +35,6 @@ open class GUI(
         SingletonCoroutine("GUINotif", singleThreadDispatcher, scope.coroutineContext, crashReporting)
 
     init {
-        notificationSingletonCoroutine.behaviour = SingletonCoroutineBehaviour.PREFER_FINISH
         isChannelCreated.set(false)
         deleteNotificationChannel()
         createNotificationChannel()

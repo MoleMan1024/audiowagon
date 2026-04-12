@@ -6,6 +6,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 package de.moleman1024.audiowagon.filestorage
 
 import android.content.Context
+import android.content.pm.ApplicationInfo
 import android.media.MediaDataSource
 import android.net.Uri
 import android.support.v4.media.MediaDescriptionCompat
@@ -123,17 +124,14 @@ open class AudioFileStorage(
                 DeviceAction.CONNECT -> deviceChange.device?.let {
                     addDevice(it)
                 }
-
                 DeviceAction.DISCONNECT -> deviceChange.device?.let {
                     setAllDataSourcesClosed()
                     detachStorageForDevice(it)
                     removeDevice(it)
                 }
-
                 DeviceAction.REFRESH -> {
                     notifyObservers(StorageChange("", StorageAction.REFRESH))
                 }
-
                 else -> {
                     // ignore
                 }
@@ -153,7 +151,7 @@ open class AudioFileStorage(
         }
         logger.verbose(TAG, "Running on emulator")
         if (!Util.isDebugBuild(context)) {
-            logger.debug(TAG, "initAssetsForEmulator()")
+            logger.debug(TAG, "Running a release build on emulator")
             try {
                 // agree to the legal disclaimer automatically in case this is automatically reviewed
                 sharedPrefs.setLegalDisclaimerAgreed(context)
