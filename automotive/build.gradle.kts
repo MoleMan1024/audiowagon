@@ -19,10 +19,10 @@ android {
         minSdk = 29
         compileSdk = 36
         //noinspection OldTargetApi
-        targetSdk = 34
-        versionName = "2.12.3"
+        targetSdk = 36
+        versionName = "2.12.5"
         // major * 10000 + minor * 100 + patch
-        versionCode = 21203
+        versionCode = 21205
         resValue("string", "VERSION_NAME", versionName as String)
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -40,6 +40,7 @@ android {
     buildFeatures {
         buildConfig = true
     }
+    //noinspection WrongGradleMethod
     room {
         schemaDirectory("$projectDir/schemas")
     }
@@ -62,6 +63,7 @@ android {
         }
         ndkVersion = "28.2.13676358"
     }
+    //noinspection WrongGradleMethod
     kotlin {
         jvmToolchain(11)
     }

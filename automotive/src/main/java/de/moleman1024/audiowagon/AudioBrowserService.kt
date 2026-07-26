@@ -456,7 +456,6 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                 restoreFromPersistentSingletonCoroutine.cancel()
                 cleanPersistentSingletonCoroutine.cancel()
                 notifyIdleSingletonCoroutine.cancel()
-                startServiceInForeground(ServiceStartStopReason.MEDIA_SESSION_CALLBACK)
             }
             AudioPlayerState.PAUSED -> {
                 notifyIdleSingletonCoroutine.cancel()
@@ -585,6 +584,10 @@ class AudioBrowserService : MediaBrowserServiceCompat(), LifecycleOwner {
                     restoreFromPersistentSingletonCoroutine.join()
                     audioSession.handleOnPlay()
                 }
+            }
+            CustomAction.START_FOREGROUND_SERVICE -> {
+                // For Android >= 15 we must have a foreground service before requesting audio focus
+                startServiceInForeground(ServiceStartStopReason.MEDIA_SESSION_CALLBACK)
             }
         }
     }

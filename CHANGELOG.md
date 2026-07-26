@@ -12,6 +12,18 @@ Google's review process which can take a couple of days.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project loosely follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.12.5] - 2026-07-26
+
+### Changed
+
+- try to recover from unknown Android media player -19 errors
+  [#210](https://github.com/MoleMan1024/audiowagon/issues/210)
+- updates to Italian translations
+- increase target API level to Android 16 to comply with Google Play Store requirements
+- start foreground service a bit earlier so that we can successfully request audio focus in Android 15
+- bump some library depency versions
+
+
 ## [2.12.3] - 2026-04-12
 
 ### Fixed

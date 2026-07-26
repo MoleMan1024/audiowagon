@@ -3,6 +3,7 @@ SPDX-FileCopyrightText: 2021 MoleMan1024 <moleman1024dev@gmail.com>
 SPDX-License-Identifier: GPL-3.0-or-later
 -->
 <!-- initial translation by: Luca M -->
+<!-- additions by: Daniele C -->
 <resources>
     <string name="app_name">AudioWagon</string>
     <string name="queue_title">Ascolta coda</string>
@@ -14,7 +15,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
     <string name="browse_tree_category_artists">Artisti</string>
     <string name="browse_tree_category_albums">Album</string>
     <string name="browse_tree_pseudo_track_shuffle_all">Ordine casuale</string>
-    <string name="browse_tree_pseudo_play_all">Ascolta tutto</string>
+    <string name="browse_tree_pseudo_play_all">Riproduci tutto</string>
     <string name="browse_tree_unknown_album">Album sconosciuto</string>
     <string name="browse_tree_unknown_artist">Artista sconosciuto</string>
     <string name="browse_tree_various_artists">Artisti vari</string>
@@ -29,41 +30,41 @@ SPDX-License-Identifier: GPL-3.0-or-later
     <string name="no_prev_track">Nessuna traccia precedente</string>
     <string name="eject_completed">Dispositivo USB espulso, ora è possibile scollegarlo</string>
     <string name="error">ERRORE: %1$s</string>
-    <string name="error_audio_focus_denied">Non è possibile ottenere il focus audio</string>
+    <string name="error_audio_focus_denied">Audio utilizzato da un\'altra applicazione</string>
     <string name="error_USB_init">Errore nella connessione al dispositivo USB</string>
     <string name="error_no_filesystem">Filesystem non supportato</string>
     <string name="error_library_creation_fail">Creazione della libreria fallita</string>
-    <string name="error_invalid_state">Stato invalido</string>
+    <string name="error_invalid_state">Stato non valido</string>
     <string name="error_IO">Errore I/O</string>
-    <string name="error_malformed_data">Data malformata</string>
-    <string name="error_timeout">Timeout</string>
+    <string name="error_malformed_data">Formato dati non valido</string>
+    <string name="error_timeout">Tempo di attesa scaduto</string>
     <string name="error_not_supported">Non supportato</string>
     <string name="error_no_USB_device">Nessun dispositivo USB</string>
     <string name="error_unknown">Errore sconosciuto</string>
     <string name="notif_action_play">Play</string>
     <string name="notif_action_pause">Pausa</string>
     <string name="notif_action_stop">Stop</string>
-    <string name="notif_action_next">Successiva</string>
+    <string name="notif_action_next">Successivo</string>
     <string name="notif_action_prev">Precedente</string>
-    <string name="notif_channel_name">Notifiche AudioWagon</string>
-    <string name="notif_channel_desc">Canale delle notifiche AudioWagon</string>
-    <string name="notif_channel_name_indexing">Notifiche indicizzazione AudioWagon</string>
-    <string name="notif_channel_desc_indexing">Canale delle notifiche indicizzazione AudioWagon</string>
+    <string name="notif_channel_name">Notifiche di AudioWagon</string>
+    <string name="notif_channel_desc">Canale delle notifiche di AudioWagon</string>
+    <string name="notif_channel_name_indexing">Notifiche di indicizzazione di AudioWagon</string>
+    <string name="notif_channel_desc_indexing">Canale delle notifiche di indicizzazione di AudioWagon</string>
     <string name="notif_indexing_title">Stato indicizzazione USB</string>
     <string name="notif_indexing_text_in_progress">In corso …</string>
-    <string name="notif_indexing_text_in_progress_num_items">Trovati elementi: %1$d …</string>
+    <string name="notif_indexing_text_in_progress_num_items">Elementi trovati: %1$d …</string>
     <string name="notif_indexing_text_completed">Completato</string>
-    <string name="action_shuffle_turn_on">Shuffle acceso</string>
-    <string name="action_shuffle_turn_off">Shuffle spento</string>
-    <string name="action_repeat_turn_on">Ripeti acceso</string>
-    <string name="action_repeat_one_turn_on">Ripeti uno acceso</string>
-    <string name="action_repeat_turn_off">Ripeti spento</string>
+    <string name="action_shuffle_turn_on">Riproduzione casuale attivata</string>
+    <string name="action_shuffle_turn_off">Riproduzione casuale disattivata</string>
+    <string name="action_repeat_turn_on">Ripetizione attivata</string>
+    <string name="action_repeat_one_turn_on">Ripeti brano attivato</string>
+    <string name="action_repeat_turn_off">Ripetizione disattivata</string>
     <string name="action_eject">Espelli</string>
-    <string name="action_rewind">Riavvolgere</string>
+    <string name="action_rewind">Riavvolgi</string>
     <string name="settings_title">Impostazioni</string>
     <string name="setting_equalizer_title">Equalizzatore</string>
-    <string name="setting_sound_category_title">Suono</string>
-    <string name="setting_equalizer_preset_title">Preset equalizzatore</string>
+    <string name="setting_sound_category_title">Audio</string>
+    <string name="setting_equalizer_preset_title">Preimpostazioni equalizzatore</string>
     <string name="equalizer_preset_less_bass">Meno bassi</string>
     <string name="equalizer_preset_more_bass">Più bassi</string>
     <string name="equalizer_preset_less_treble">Meno alti</string>
@@ -73,7 +74,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
     <string name="equalizer_preset_V_shape">Forma a V</string>
     <string name="setting_general_category_title">Generale</string>
     <string name="setting_log_to_USB_title">Scrivi file di log sul dispositivo USB</string>
-    <string name="setting_log_to_USB_desc">Fornisci questi file di log allo sviluppatore quando crei un bug
+    <string name="setting_log_to_USB_desc">Fornisci questi file di log allo sviluppatore quando crei un bug 
 report.</string>
     <string name="setting_USB_status_title">Stato USB</string>
     <string name="setting_USB_status_ok">OK</string>
@@ -92,24 +93,25 @@ l\'app</string>
     <string name="setting_version">Versione</string>
     <string name="legal_disclaimer_title">AudioWagon: Note legali</string>
     <string name="legal_disclaimer_distraction_heading">Distrazione autista</string>
-    <string name="legal_disclaimer_distraction_text">Accetti di sottostare alle leggi applicabili dallo stato in
-merito all\'utilizzo di questo software sul sistema di infotainment a bordo.\nUtilizza il software solo quando le
-condizioni stradali lo permettono.</string>
+    <string name="legal_disclaimer_distraction_text">L\'utente si impegna a rispettare tutte le leggi e normative
+applicabili in materia di distrazione alla guida e utilizzo dei sistemi di infotainment del veicolo durante l\'uso di
+questo software.\nUtilizzare questo software solo quando le condizioni del traffico consentono di farlo in
+sicurezza.</string>
     <string name="legal_disclaimer_liability_heading">Garanzia/Responsabilità</string>
-    <string name="legal_disclaimer_liability_text">Questo software viene fornito \"as-is\" senza garanzie implicite o
-esplicite.\nGli autori non possono essere ritenuti responsabili in nessun caso di eventuali danni provocati
-dall\'utilizzo del software.</string>
+    <string name="legal_disclaimer_liability_text">Questo software viene fornito \"così com\'è\", senza alcuna
+garanzia, espressa o implicita. In nessun caso gli autori potranno essere ritenuti responsabili per eventuali
+danni derivanti dall\'uso di questo software.</string>
     <string name="legal_disclaimer_license_heading">Licenza</string>
     <string name="legal_disclaimer_license_text">Questo software è sotto licenza GPLv3.\nCreato da MoleMan1024</string>
-    <string name="legal_disclaimer_third_party_licenses_heading">Licenze terze parti</string>
-    <string name="legal_disclaimer_third_party_licenses_text">Questa applicazione utilizza contenuti presi dai seguenti
-autori, tutti sotto licenza Apache 2.0:\n\n&#x2013; Librerie varie create da Android Open Source Project\n&#x2013;
-Libreria libaums creata da Magnus Jahnen\n&#x2013; Icone vettoriali Material design create da Google\n&#x2013; Firebase
-Crashlytics\n\nLicense texts:\nwww.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/licenses/gpl-3.0.html</string>
+    <string name="legal_disclaimer_third_party_licenses_heading">Licenze di terze parti</string>
+    <string name="legal_disclaimer_third_party_licenses_text">Questa applicazione utilizza componenti software e contenuti
+forniti dai seguenti autori, tutti distribuiti con licenza Apache 2.0:\n\n&#x2013; Varie librerie sviluppate dall\'Android
+Open Source Project\n&#x2013; Libreria libaums sviluppata da Magnus Jahnen\n&#x2013; Icone vettoriali Material Design
+sviluppate da Google\n&#x2013; Firebase Crashlytics\n\nTesti delle licenze:\nwww.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/licenses/gpl-3.0.html</string>
     <string name="legal_disclaimer_confirm_btn">Accetto</string>
     <string name="legal_disclaimer_cancel_btn">Annulla</string>
     <string name="error_no_tracks">Nessuna traccia</string>
-    <string name="error_not_enough_space_for_log">Spazio disco non sufficiente per scrivere i file di log</string>
+    <string name="error_not_enough_space_for_log">Spazio disco insufficiente per scrivere i file di log</string>
     <string name="browse_tree_category_files">File</string>
     <string name="setting_library_category_title">Media</string>
     <string name="setting_read_metadata">Leggi metadati</string>
@@ -118,16 +120,16 @@ Crashlytics\n\nLicense texts:\nwww.apache.org/licenses/LICENSE-2.0\nwww.gnu.org/
     <string name="setting_database_status_title">Database</string>
     <string name="setting_enable_replaygain">ReplayGain</string>
     <string name="searching_voice_input">Ricerca vocale: \"%1$s\"</string>
-    <string name="setting_read_metadata_when_connected">Quando dispositivo USB connesso</string>
+    <string name="setting_read_metadata_when_connected">Quando viene collegata l\'unità USB</string>
     <string name="setting_read_metadata_manual">Manualmente</string>
-    <string name="setting_read_metadata_filepaths_only">Solo percorsi file</string>
-    <string name="setting_read_metadata_off">Spento</string>
-    <string name="setting_read_metadata_start_now">Leggi metadati ora</string>
-    <string name="browse_tree_metadata_not_yet_indexed_title">Metadati ancora da indicizzare</string>
+    <string name="setting_read_metadata_filepaths_only">Solo percorsi dei file</string>
+    <string name="setting_read_metadata_off">Disattivato</string>
+    <string name="setting_read_metadata_start_now">Leggi i metadati ora</string>
+    <string name="browse_tree_metadata_not_yet_indexed_title">Metadati non ancora indicizzati</string>
     <string name="browse_tree_metadata_not_yet_indexed_desc">Controlla le impostazioni</string>
     <string name="setting_audiofocus_behavior">Comportamento durante avvisi navigatore</string>
     <string name="setting_audiofocus_pause">Metti in pausa</string>
-    <string name="setting_audiofocus_duck">Volume più basso</string>
+    <string name="setting_audiofocus_duck">Abbassa il volume</string>
     <string name="setting_crash_reporting_title">Invia report di crash</string>
     <string name="setting_crash_reporting_desc">Invia automaticamente report di crash allo sviluppatore per
 migliorare l\'app (richiede connessione a internet).</string>
@@ -138,7 +140,7 @@ migliorare l\'app (richiede connessione a internet).</string>
     <string name="setting_album_display_list">Lista</string>
     <string name="setting_requires_media_center_restart">(qualsiasi modifica richiede il riavvio dell\'app \"Media
 Center\")</string>
-    <string name="error_no_results">Niente trovato: \"%1$s\"</string>
+    <string name="error_no_results">Nessun risultato per: \"%1$s\"</string>
     <string name="setting_view_category_title">Display</string>
     <string name="setting_view_tab_1">Tab 1</string>
     <string name="setting_view_tab_2">Tab 2</string>
@@ -149,8 +151,8 @@ Center\")</string>
     <string name="setting_equalizer_enable">Abilitato</string>
     <string name="equalizer_preset_custom">Personalizzato</string>
     <string name="setting_show_album_art">Mostra la copertina dell\'album</string>
-    <string name="setting_increased_playback_speed">Velocità di riproduzione aumentata</string>
-    <string name="setting_equalizer_and_balance_title">Equalizzatore &amp; Bilanica</string>
-    <string name="setting_balance_title">Bilanica</string>
-    <string name="setting_balance_reset_to_center">Ripristina al centro</string>
+    <string name="setting_increased_playback_speed">Riproduzione accelerata</string>
+    <string name="setting_equalizer_and_balance_title">Equalizzatore e bilanciamento</string>
+    <string name="setting_balance_title">Bilanciamento</string>
+    <string name="setting_balance_reset_to_center">Centra</string>
 </resources>

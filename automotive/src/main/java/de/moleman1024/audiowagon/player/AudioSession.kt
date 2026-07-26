@@ -286,6 +286,7 @@ class AudioSession(
                     )
                     delay(5000)
                     setMediaSessionActive(true)
+                    notifyObservers(CustomActionEvent(CustomAction.START_FOREGROUND_SERVICE))
                     audioPlayer.start()
                 }
                 return@add
@@ -335,14 +336,15 @@ class AudioSession(
                 MediaPlayer.MEDIA_ERROR_TIMED_OUT,
                 MediaPlayer.MEDIA_ERROR_UNSUPPORTED,
                 PlaybackStateCompat.ERROR_CODE_END_OF_QUEUE,
-                PlaybackStateCompat.ERROR_CODE_APP_ERROR,
                 MEDIA_ERROR_AUDIO_FOCUS_DENIED
             )
         ) {
-            // no need to recover from this error
+            // No need to recover from this error
             return
         }
-        if (errorCode in listOf(MEDIA_ERROR_INVALID_STATE)) {
+        // Media player sometime returns error 1 (extra=-19) for unknown reasons, try to recover from that
+        // https://github.com/MoleMan1024/audiowagon/issues/210
+        if (errorCode in listOf(MEDIA_ERROR_INVALID_STATE, MediaPlayer.MEDIA_ERROR_UNKNOWN)) {
             recoverFromError()
             return
         }
@@ -685,6 +687,7 @@ class AudioSession(
                 }
             }
             setMediaSessionActive(true)
+            notifyObservers(CustomActionEvent(CustomAction.START_FOREGROUND_SERVICE))
             try {
                 if (playbackState.isStopped) {
                     val queueIndex = audioPlayer.getPlaybackQueueIndex()
@@ -872,6 +875,7 @@ class AudioSession(
     suspend fun playAnything() {
         logger.debug(Util.TAGCRT(TAG, currentCoroutineContext()), "playAnything()")
         setMediaSessionActive(true)
+        notifyObservers(CustomActionEvent(CustomAction.START_FOREGROUND_SERVICE))
         if (currentQueueItem != null) {
             if (playbackState.isStopped) {
                 val queueIndex = audioPlayer.getPlaybackQueueIndex()
@@ -908,8 +912,9 @@ class AudioSession(
         }
         audioPlayer.setPlayQueueAndNotify(queue, startIndex)
         audioPlayer.maybeShuffleNewQueue(startIndex)
-        setMediaSessionActive(true)
         setMediaSessionQueue(queue)
+        setMediaSessionActive(true)
+        notifyObservers(CustomActionEvent(CustomAction.START_FOREGROUND_SERVICE))
         try {
             audioPlayer.startPlayFromQueue()
         } catch (_: NoItemsInQueueException) {
@@ -978,6 +983,7 @@ class AudioSession(
         audioPlayer.setPlayQueue(queue)
         setMediaSessionQueue(queue)
         setMediaSessionActive(true)
+        notifyObservers(CustomActionEvent(CustomAction.START_FOREGROUND_SERVICE))
         try {
             // Issue #199: We will not necessarily start playback after preparing playback queue from persistent
             // data. That is why we use STATE_PAUSED here. This should make it so we are not considered a currently

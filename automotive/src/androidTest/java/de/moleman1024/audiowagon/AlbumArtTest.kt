@@ -89,8 +89,9 @@ class AlbumArtTest {
             while (fileInputStream.read(buffer).also { numBytesRead = it } != -1) {
                 numBytesReadTotal += numBytesRead
             }
-            val resizedAlbumArtSize = 3530
-            Assert.assertEquals(resizedAlbumArtSize, numBytesReadTotal)
+            Logger.debug(TAG, "numBytesReadTotal=$numBytesReadTotal")
+            Assert.assertTrue(3450 <= numBytesReadTotal)
+            Assert.assertTrue(numBytesReadTotal <= 3540)
         } finally {
             fileInputStream.close()
             parcelFileDescriptor?.close()

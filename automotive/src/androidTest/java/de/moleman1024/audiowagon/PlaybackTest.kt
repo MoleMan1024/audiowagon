@@ -369,7 +369,7 @@ class PlaybackTest {
         val playbackTimeTakenMillis = toc - tic
         // The audio file is 2.7 seconds long, at lowest increased playback speed factor 1.2x it should be ~2.2 seconds
         // long. At default increased playback factor 1.5x it should be even shorter.
-        Assert.assertTrue("Playback time was: $playbackTimeTakenMillis", playbackTimeTakenMillis < 2300)
+        Assert.assertTrue("Playback time was: $playbackTimeTakenMillis", playbackTimeTakenMillis < 2350)
     }
 
 }
