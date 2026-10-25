@@ -94,7 +94,7 @@ with a white outline). The other USB ports are for *charging your phone only*.
 ![USB port](/img/port.jpg)
 
 If you still have problems, try to [reboot the center
-display](https://www.volvocars.com/lb/support/topic/b34f02c4d48addecc0a801512c8f5561/).
+display](https://youtu.be/tbXcDH0vBp4?si=gEJDyiVhcAEMxwyw).
 
 
 ### Why does it take so long when starting the app?

@@ -77,8 +77,8 @@ Please see Github for a [list of changes for each version of the app](https://gi
 
 ## Limitations
 
-- The app will *not* work with *Volvo EX30* and *Polestar 3* cars, because the Android software in those cars do not
-  support *USB host mode*. The Google Play Store will show the app as *not compatible*
+- The app will *not* work with *Volvo EX30 (with Android 12)* and *Polestar 3* cars, because the Android software in
+  those cars do not support *USB host mode*. The Google Play Store will show the app as *not compatible*
 - The app will *not* work with Polestar/Volvo OTA car software version 2.0 nor 2.1. You will need the car software
   version 2.2 or higher that includes the CarPlay Update (or 1.9 or lower) which re-enables the USB data connection.
 - The app can *not* play back **.wma** files. Also Android does not support files encoded with "Apple Lossless Audio
@@ -150,6 +150,8 @@ This app uses content from the following other creators, all licensed under
 Also many thanks to all beta testers and translators!
 
 AudioWagon is licensed under [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.html)
+
+No AI was used in the production of this software.
 
 ---
 
